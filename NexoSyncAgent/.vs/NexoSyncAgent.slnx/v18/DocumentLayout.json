@@ -1,0 +1,207 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Produccion\\NexoSyncAgent\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|c:\\produccion\\nexosyncagent\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|c:\\produccion\\nexosyncagent\\worker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|solutionrelative:worker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|c:\\produccion\\nexosyncagent\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|c:\\produccion\\nexosyncagent\\nexoapiclient\\nexoapiclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|solutionrelative:nexoapiclient\\nexoapiclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|c:\\produccion\\nexosyncagent\\tareas\\tareaexportarventas.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|solutionrelative:tareas\\tareaexportarventas.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|c:\\produccion\\nexosyncagent\\tareas\\tareaaplicarentradasinventario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|solutionrelative:tareas\\tareaaplicarentradasinventario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|c:\\produccion\\nexosyncagent\\nexoapiclient\\inexoapiclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|solutionrelative:nexoapiclient\\inexoapiclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|c:\\produccion\\nexosyncagent\\nexoapiclient\\dtos\\eventodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|solutionrelative:nexoapiclient\\dtos\\eventodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|c:\\produccion\\nexosyncagent\\visionsdata\\visionsconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|solutionrelative:visionsdata\\visionsconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|c:\\produccion\\nexosyncagent\\visionsdata\\ivisionsconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|solutionrelative:visionsdata\\ivisionsconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|c:\\produccion\\nexosyncagent\\nexosyncagent.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{04E0F9AB-51CE-4219-8A5B-DC080124FF93}|NexoSyncAgent.csproj|solutionrelative:nexosyncagent.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 5,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoSyncAgent\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "C:\\Produccion\\NexoSyncAgent\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAqwBwAAAALAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T15:41:01.438Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "NexoApiClient.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoSyncAgent\\NexoApiClient\\NexoApiClient.cs",
+              "RelativeDocumentMoniker": "NexoApiClient\\NexoApiClient.cs",
+              "ToolTip": "C:\\Produccion\\NexoSyncAgent\\NexoApiClient\\NexoApiClient.cs",
+              "RelativeToolTip": "NexoApiClient\\NexoApiClient.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAAAkwCgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T15:39:16.356Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Worker.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoSyncAgent\\Worker.cs",
+              "RelativeDocumentMoniker": "Worker.cs",
+              "ToolTip": "C:\\Produccion\\NexoSyncAgent\\Worker.cs",
+              "RelativeToolTip": "Worker.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T15:40:46.799Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "TareaExportarVentas.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoSyncAgent\\Tareas\\TareaExportarVentas.cs",
+              "RelativeDocumentMoniker": "Tareas\\TareaExportarVentas.cs",
+              "ToolTip": "C:\\Produccion\\NexoSyncAgent\\Tareas\\TareaExportarVentas.cs",
+              "RelativeToolTip": "Tareas\\TareaExportarVentas.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T15:40:27.284Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "TareaAplicarEntradasInventario.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoSyncAgent\\Tareas\\TareaAplicarEntradasInventario.cs",
+              "RelativeDocumentMoniker": "Tareas\\TareaAplicarEntradasInventario.cs",
+              "ToolTip": "C:\\Produccion\\NexoSyncAgent\\Tareas\\TareaAplicarEntradasInventario.cs",
+              "RelativeToolTip": "Tareas\\TareaAplicarEntradasInventario.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T15:39:58.093Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Produccion\\NexoSyncAgent\\appsettings.json",
+              "RelativeDocumentMoniker": "appsettings.json",
+              "ToolTip": "C:\\Produccion\\NexoSyncAgent\\appsettings.json",
+              "RelativeToolTip": "appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-07-30T15:34:36.401Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "INexoApiClient.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoSyncAgent\\NexoApiClient\\INexoApiClient.cs",
+              "RelativeDocumentMoniker": "NexoApiClient\\INexoApiClient.cs",
+              "ToolTip": "C:\\Produccion\\NexoSyncAgent\\NexoApiClient\\INexoApiClient.cs",
+              "RelativeToolTip": "NexoApiClient\\INexoApiClient.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T15:38:53.011Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "EventoDtos.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoSyncAgent\\NexoApiClient\\Dtos\\EventoDtos.cs",
+              "RelativeDocumentMoniker": "NexoApiClient\\Dtos\\EventoDtos.cs",
+              "ToolTip": "C:\\Produccion\\NexoSyncAgent\\NexoApiClient\\Dtos\\EventoDtos.cs",
+              "RelativeToolTip": "NexoApiClient\\Dtos\\EventoDtos.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T15:38:25.941Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "VisionsConnectionFactory.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoSyncAgent\\VisionsData\\VisionsConnectionFactory.cs",
+              "RelativeDocumentMoniker": "VisionsData\\VisionsConnectionFactory.cs",
+              "ToolTip": "C:\\Produccion\\NexoSyncAgent\\VisionsData\\VisionsConnectionFactory.cs",
+              "RelativeToolTip": "VisionsData\\VisionsConnectionFactory.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T15:37:30.994Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "IVisionsConnectionFactory.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoSyncAgent\\VisionsData\\IVisionsConnectionFactory.cs",
+              "RelativeDocumentMoniker": "VisionsData\\IVisionsConnectionFactory.cs",
+              "ToolTip": "C:\\Produccion\\NexoSyncAgent\\VisionsData\\IVisionsConnectionFactory.cs",
+              "RelativeToolTip": "VisionsData\\IVisionsConnectionFactory.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T15:37:07.34Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "NexoSyncAgent",
+              "DocumentMoniker": "C:\\Produccion\\NexoSyncAgent\\NexoSyncAgent.csproj",
+              "RelativeDocumentMoniker": "NexoSyncAgent.csproj",
+              "ToolTip": "C:\\Produccion\\NexoSyncAgent\\NexoSyncAgent.csproj",
+              "RelativeToolTip": "NexoSyncAgent.csproj",
+              "ViewState": "AgIAABIAAAAAAAAAAAAgwBkAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-07-30T15:34:22.039Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

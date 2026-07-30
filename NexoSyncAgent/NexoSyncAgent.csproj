@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UserSecretsId>nexo-sync-agent-secrets</UserSecretsId>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Remove="Program.cs~RF38be514.TMP" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Conexion a la base de datos LOCAL de Visions -->
+		<PackageReference Include="Dapper" Version="2.1.35" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
+
+		<!-- Llamadas HTTP hacia la API central de NEXO -->
+		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+
+		<!-- Permite instalar y correr este programa como Servicio de Windows -->
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
+	</ItemGroup>
+
+</Project>
