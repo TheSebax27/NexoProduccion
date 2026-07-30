@@ -2,7 +2,6 @@
 using NexoApi.Common.Data;
 using NexoApi.Features.Traspasos.Dtos;
 using System.Data;
-using System.Data.Entity.Infrastructure;
 using System.Text.Json;
 
 namespace NexoApi.Features.Traspasos;

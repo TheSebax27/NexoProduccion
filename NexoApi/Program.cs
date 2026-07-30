@@ -8,6 +8,7 @@ using NexoApi.Common.Security;
 using NexoApi.Features.Auth;
 using NexoApi.Features.Catalogo;
 using NexoApi.Features.Compras;
+using NexoApi.Features.Dashboard;
 using NexoApi.Features.Integracion;
 using NexoApi.Features.Inventario;
 using NexoApi.Features.Produccion;
@@ -68,6 +69,7 @@ builder.Services.AddScoped<ITraspasosService, TraspasosService>();
 builder.Services.AddScoped<ICatalogoService, CatalogoService>();
 builder.Services.AddScoped<IRecetasService, RecetasService>();
 builder.Services.AddScoped<IIntegracionService, IntegracionService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // ----------------------------------------------------------------------------
 // AUTENTICACIÓN Y AUTORIZACIÓN (AQUÍ ESTÁ EL CAMBIO)

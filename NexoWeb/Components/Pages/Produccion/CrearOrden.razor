@@ -1,0 +1,206 @@
+﻿@page "/produccion/ordenes/crear"
+@attribute [Authorize(Roles = "Administrador,SupervisorPlanta")]
+@inject INexoApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject NavigationManager Navegacion
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Nueva Orden de Produccion - NEXO</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Nueva Orden de Produccion</MudText>
+
+@if (_cargandoCatalogos)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else
+{
+    <MudPaper Class="pa-6" MaxWidth="700px">
+        <MudTextField @bind-Value="_codigoOp" Label="Codigo de la OP" Class="mb-4" Required="true" />
+
+        <MudSelect T="int" Value="_tipoProduccionId" ValueChanged="OnTipoProduccionCambiadoAsync"
+                   Label="Tipo de Produccion" Class="mb-4" Required="true">
+            @foreach (var tipo in _tiposProduccion)
+            {
+                <MudSelectItem T="int" Value="@tipo.TipoProduccionID">@tipo.Nombre</MudSelectItem>
+            }
+        </MudSelect>
+
+        @if (_esMto)
+        {
+            <MudSelect T="int?" @bind-Value="_clienteId" Label="Cliente" Class="mb-4" Required="true">
+                @foreach (var cliente in _clientes)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)cliente.ClienteID)">@cliente.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+        }
+
+        <MudSelect T="int" Value="_productoTerminadoId" ValueChanged="OnProductoTerminadoCambiadoAsync"
+                   Label="Producto Terminado" Class="mb-4" Required="true">
+            @foreach (var producto in _productosTerminados)
+            {
+                <MudSelectItem T="int" Value="@producto.ArticuloID">@producto.SKU - @producto.Nombre</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="int" @bind-Value="_recetaId" Label="Receta (BOM)" Class="mb-4" Required="true"
+                   Disabled="@(_productoTerminadoId == 0)">
+            @foreach (var receta in _recetas)
+            {
+                <MudSelectItem T="int" Value="@receta.RecetaID">@receta.NombreReceta (v@(receta.Version))</MudSelectItem>
+            }
+        </MudSelect>
+        @if (_productoTerminadoId > 0 && _recetas.Count == 0)
+        {
+            <MudAlert Severity="Severity.Warning" Class="mb-4">
+                Este producto no tiene ninguna receta activa. Crea una receta antes de continuar.
+            </MudAlert>
+        }
+
+        <MudNumericField @bind-Value="_cantidadProgramada" Label="Cantidad programada" Min="0.01m" Class="mb-4" Required="true" />
+
+        <MudSelect T="int" @bind-Value="_centroCostoDestinoId" Label="Centro de Costo Destino" Class="mb-4" Required="true">
+            @foreach (var centro in _centrosCosto)
+            {
+                <MudSelectItem T="int" Value="@centro.CentroCostoID">@centro.Nombre</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="int" @bind-Value="_bodegaOrigenMpId" Label="Bodega Origen (Materia Prima)" Class="mb-4" Required="true">
+            @foreach (var bodega in _bodegasMateriaPrima)
+            {
+                <MudSelectItem T="int" Value="@bodega.BodegaID">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="int" @bind-Value="_bodegaDestinoPtId" Label="Bodega Destino (Producto Terminado)" Class="mb-4" Required="true">
+            @foreach (var bodega in _bodegasProductoTerminado)
+            {
+                <MudSelectItem T="int" Value="@bodega.BodegaID">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="int?" @bind-Value="_centroTrabajoId" Label="Centro de Trabajo (opcional)" Class="mb-4" Clearable="true">
+            @foreach (var centro in _centrosTrabajo)
+            {
+                <MudSelectItem T="int?" Value="@((int?)centro.CentroTrabajoID)">@centro.Nombre</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudDatePicker @bind-Date="_fechaPlanificada" Label="Fecha planificada" Class="mb-4" />
+
+        <MudTextField @bind-Value="_observaciones" Label="Observaciones (opcional)" Lines="2" Class="mb-4" />
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GuardarAsync"
+                   Disabled="@(!FormularioValido || _guardando)" StartIcon="@Icons.Material.Filled.Save">
+            @(_guardando ? "Guardando..." : "Crear Orden")
+        </MudButton>
+    </MudPaper>
+}
+
+@code {
+    // Catalogos para llenar los desplegables
+    private List<TipoProduccionItem> _tiposProduccion = new();
+    private List<ClienteItem> _clientes = new();
+    private List<ArticuloItem> _productosTerminados = new();
+    private List<RecetaResumen> _recetas = new();
+    private List<CentroCostoItem> _centrosCosto = new();
+    private List<BodegaItem> _bodegasMateriaPrima = new();
+    private List<BodegaItem> _bodegasProductoTerminado = new();
+    private List<CentroTrabajoItem> _centrosTrabajo = new();
+
+    // Valores del formulario
+    private string _codigoOp = "";
+    private int _tipoProduccionId;
+    private bool _esMto;
+    private int? _clienteId;
+    private int _productoTerminadoId;
+    private int _recetaId;
+    private decimal _cantidadProgramada;
+    private int _centroCostoDestinoId;
+    private int _bodegaOrigenMpId;
+    private int _bodegaDestinoPtId;
+    private int? _centroTrabajoId;
+    private DateTime? _fechaPlanificada = DateTime.Today.AddDays(1);
+    private string? _observaciones;
+
+    private bool _cargandoCatalogos = true;
+    private bool _guardando;
+
+    private bool FormularioValido =>
+        !string.IsNullOrWhiteSpace(_codigoOp) && _tipoProduccionId > 0 &&
+        _productoTerminadoId > 0 && _recetaId > 0 && _cantidadProgramada > 0 &&
+        _centroCostoDestinoId > 0 && _bodegaOrigenMpId > 0 && _bodegaDestinoPtId > 0 &&
+        (!_esMto || _clienteId.HasValue);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var tareaTipos = ApiClient.GetAsync<List<TipoProduccionItem>>("api/produccion/tipos-produccion");
+        var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/catalogo/clientes");
+        var tareaProductos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos?tipoArticuloId=3"); // 3 = Producto Terminado, ajustar segun tu script 02
+        var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
+        var tareaBodegas = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
+        var tareaCentrosTrabajo = ApiClient.GetAsync<List<CentroTrabajoItem>>("api/catalogo/centros-trabajo");
+
+        await Task.WhenAll(tareaTipos, tareaClientes, tareaProductos, tareaCentrosCosto, tareaBodegas, tareaCentrosTrabajo);
+
+        _tiposProduccion = await tareaTipos ?? new();
+        _clientes = await tareaClientes ?? new();
+        _productosTerminados = await tareaProductos ?? new();
+        _centrosCosto = await tareaCentrosCosto ?? new();
+        _centrosTrabajo = await tareaCentrosTrabajo ?? new();
+
+        var todasLasBodegas = await tareaBodegas ?? new();
+        _bodegasMateriaPrima = todasLasBodegas.Where(b => b.TipoBodega == "MATERIA_PRIMA").ToList();
+        _bodegasProductoTerminado = todasLasBodegas.Where(b => b.TipoBodega == "PRODUCTO_TERMINADO").ToList();
+
+        _cargandoCatalogos = false;
+    }
+
+    private Task OnTipoProduccionCambiadoAsync(int nuevoTipoId)
+    {
+        _tipoProduccionId = nuevoTipoId;
+        var tipoSeleccionado = _tiposProduccion.FirstOrDefault(t => t.TipoProduccionID == nuevoTipoId);
+        _esMto = tipoSeleccionado?.Codigo == "MTO";
+
+        if (!_esMto)
+            _clienteId = null;
+
+        return Task.CompletedTask;
+    }
+
+    private async Task OnProductoTerminadoCambiadoAsync(int nuevoProductoId)
+    {
+        _productoTerminadoId = nuevoProductoId;
+        _recetaId = 0;
+        _recetas = await ApiClient.GetAsync<List<RecetaResumen>>(
+            $"api/produccion/recetas?productoTerminadoId={nuevoProductoId}&soloActivas=true") ?? new();
+    }
+
+    private async Task GuardarAsync()
+    {
+        _guardando = true;
+
+        try
+        {
+            var request = new CrearOrdenProduccionRequest(
+                _codigoOp, _tipoProduccionId, _productoTerminadoId, _recetaId, _cantidadProgramada,
+                _esMto ? _clienteId : null, _centroCostoDestinoId, _bodegaOrigenMpId, _bodegaDestinoPtId,
+                _centroTrabajoId, _fechaPlanificada, _observaciones);
+
+            await ApiClient.PostAsync<CrearOrdenProduccionRequest, object?>("api/produccion/ordenes", request);
+
+            Snackbar.Add("Orden de produccion creada correctamente.", Severity.Success);
+            Navegacion.NavigateTo("/produccion/ordenes");
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _guardando = false;
+        }
+    }
+}

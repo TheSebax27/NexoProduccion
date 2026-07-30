@@ -26,4 +26,18 @@ public class AuthController : ControllerBase
 
         return Ok(resultado);
     }
+    [HttpPost("registrar")]
+    [AllowAnonymous]
+    public async Task<ActionResult> RegistrarPrimerAdmin(RegistrarUsuarioRequest request)
+    {
+        try
+        {
+            var id = await _authService.RegistrarPrimerAdminAsync(request);
+            return Ok(new { mensaje = "Usuario creado. Ya puedes hacer login.", usuarioId = id });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message }); // 409: ya no se permite usar este endpoint
+        }
+    }
 }

@@ -2,7 +2,6 @@
 using NexoApi.Common.Data;
 using NexoApi.Features.Compras.Dtos;
 using System.Data;
-using System.Data.Entity.Infrastructure;
 
 namespace NexoApi.Features.Compras;
 

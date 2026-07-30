@@ -28,3 +28,6 @@ public record RegistrarBajaRequest(
 );
 
 public record RegistrarBajaResponse(string CodigoBaja, int BajaID);
+
+// Agregar a Features/Inventario/Dtos/InventarioDtos.cs
+public record MotivoPerdidaItem(int MotivoID, string Nombre);

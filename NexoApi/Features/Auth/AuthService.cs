@@ -8,6 +8,7 @@ namespace NexoApi.Features.Auth;
 public interface IAuthService
 {
     Task<LoginResponse?> LoginAsync(LoginRequest request);
+    Task<int> RegistrarPrimerAdminAsync(RegistrarUsuarioRequest request);
 }
 
 public class AuthService : IAuthService
@@ -49,7 +50,7 @@ public class AuthService : IAuthService
         var accessToken = _jwt.GenerateAccessToken(usuario.UsuarioID, usuario.Username, usuario.Rol, usuario.CentroCostoID);
         var refreshToken = _jwt.GenerateRefreshToken();
         var expiraEn = DateTime.UtcNow.AddMinutes(double.Parse(_config["Jwt:ExpirationMinutes"]!));
-        var refreshExpira = DateTime.UtcNow.AddDays(double.Parse(_config["Jwt:RefreshExpirationDays"]!));
+        var refreshExpira = DateTime.UtcNow.AddDays(double.Parse(_config["Jwt:RefreshTokenExpirationDays"]!));
 
         const string insertSesion = @"
             INSERT INTO Seguridad.SesionesUsuario (UsuarioID, Token, RefreshToken, FechaExpiracion, Activa)
@@ -70,5 +71,34 @@ public class AuthService : IAuthService
         return new LoginResponse(
             accessToken, refreshToken, expiraEn, usuario.UsuarioID,
             $"{usuario.Nombres} {usuario.Apellidos}", usuario.Rol, usuario.CentroCostoID);
+    }
+    public async Task<int> RegistrarPrimerAdminAsync(RegistrarUsuarioRequest r)
+    {
+        using var connection = _db.CreateConnection();
+
+        var totalUsuarios = await connection.ExecuteScalarAsync<int>("SELECT COUNT(1) FROM Seguridad.Usuarios");
+
+        if (totalUsuarios > 0)
+            throw new InvalidOperationException(
+                "Ya existe al menos un usuario. Este endpoint de arranque queda deshabilitado; los usuarios nuevos se crean autenticado como Administrador.");
+
+        var (hash, salt) = PasswordHasher.HashPassword(r.Password);
+
+        const string sql = @"
+        INSERT INTO Seguridad.Usuarios (Nombres, Apellidos, Email, Username, PasswordHash, Salt, RolID, CentroCostoID)
+        OUTPUT INSERTED.UsuarioID
+        VALUES (@Nombres, @Apellidos, @Email, @Username, @Hash, @Salt, @RolID, @CentroCostoID)";
+
+        return await connection.ExecuteScalarAsync<int>(sql, new
+        {
+            r.Nombres,
+            r.Apellidos,
+            r.Email,
+            r.Username,
+            Hash = hash,
+            Salt = salt,
+            r.RolID,
+            r.CentroCostoID
+        });
     }
 }

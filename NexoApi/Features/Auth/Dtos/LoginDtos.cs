@@ -11,3 +11,13 @@ public record LoginResponse(
     string Rol,
     int? CentroCostoId
 );
+
+public record RegistrarUsuarioRequest(
+    string Nombres,
+    string Apellidos,
+    string Email,
+    string Username,
+    string Password,
+    int RolID,
+    int? CentroCostoID
+);

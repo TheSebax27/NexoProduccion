@@ -21,3 +21,5 @@ public record OrdenProduccionResumen(
     string CentroCosto, decimal CantidadProgramada, decimal? CantidadProducidaReal,
     DateTime? FechaPlanificada, DateTime? FechaInicio, DateTime? FechaFin, decimal? CostoUnitarioReal
 );
+
+public record TipoProduccionItem(int TipoProduccionID, string Codigo, string Nombre);

@@ -3,80 +3,92 @@
   "WorkspaceRootPath": "C:\\Produccion\\NexoApi\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\nexoapi.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:nexoapi.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\catalogo\\articuloscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\catalogo\\articuloscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\catalogo\\bodegascontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\catalogo\\bodegascontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\catalogo\\centrocostocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\catalogo\\centrocostocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\catalogo\\dtos\\catalogodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\catalogo\\dtos\\catalogodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\dashboard\\dashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\dashboard\\dashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\dashboard\\dashboardservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\dashboard\\dashboardservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\dashboard\\dtos\\dashboarddtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\dashboard\\dtos\\dashboarddtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\catalogo\\clientesycentrostrabajocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\catalogo\\clientesycentrostrabajocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\catalogo\\catalogoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\catalogo\\catalogoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\traspasos\\traspasoscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\traspasos\\traspasoscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\catalogo\\dtos\\catalogodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\catalogo\\dtos\\catalogodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\traspasos\\traspasosservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\traspasos\\traspasosservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\traspasos\\dtos\\traspasodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\traspasos\\dtos\\traspasodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\produccion\\ordenesproduccioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\produccion\\ordenesproduccioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\inventario\\inventarioservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\inventario\\inventarioservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\compras\\ordenescompracontroller..cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\compras\\ordenescompracontroller..cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\compras\\ordenescompraservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\compras\\ordenescompraservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\compras\\dtos\\compradtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\compras\\dtos\\compradtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\inventario\\inventariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\inventario\\inventariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\produccion\\dtos\\ordenproducciondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\produccion\\dtos\\ordenproducciondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\inventario\\dtos\\inventariodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\inventario\\dtos\\inventariodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\produccion\\ordenesproduccionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\produccion\\ordenesproduccionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\nexoapi.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:nexoapi.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}"
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\inventario\\inventariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\inventario\\inventariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\catalogo\\bodegascontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\catalogo\\bodegascontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\auth\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\auth\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\auth\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\auth\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\auth\\dtos\\logindtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\auth\\dtos\\logindtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\nexoapi.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:nexoapi.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\common\\data\\sqlconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:common\\data\\sqlconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\nexoapi.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:nexoapi.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\traspasos\\traspasosservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\traspasos\\traspasosservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -91,77 +103,75 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\appsettings.json",
-              "RelativeDocumentMoniker": "appsettings.json",
-              "ToolTip": "C:\\Produccion\\NexoApi\\appsettings.json",
-              "RelativeToolTip": "appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-07-30T13:55:50.177Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "ArticulosController.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\ArticulosController.cs",
-              "RelativeDocumentMoniker": "Features\\Catalogo\\ArticulosController.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\ArticulosController.cs",
-              "RelativeToolTip": "Features\\Catalogo\\ArticulosController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAEcAAABCAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T21:42:58.583Z",
+              "WhenOpened": "2026-07-30T21:33:28.874Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "NexoApi.csproj",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\NexoApi.csproj",
-              "RelativeDocumentMoniker": "NexoApi.csproj",
-              "ToolTip": "C:\\Produccion\\NexoApi\\NexoApi.csproj",
-              "RelativeToolTip": "NexoApi.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-07-29T20:39:46.011Z",
-              "EditorCaption": ""
+              "Title": "DashboardController.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Dashboard\\DashboardController.cs",
+              "RelativeDocumentMoniker": "Features\\Dashboard\\DashboardController.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Dashboard\\DashboardController.cs",
+              "RelativeToolTip": "Features\\Dashboard\\DashboardController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T21:33:06.528Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "DashboardService.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Dashboard\\DashboardService.cs",
+              "RelativeDocumentMoniker": "Features\\Dashboard\\DashboardService.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Dashboard\\DashboardService.cs",
+              "RelativeToolTip": "Features\\Dashboard\\DashboardService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T21:32:40.893Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 3,
-              "Title": "BodegasController.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\BodegasController.cs",
-              "RelativeDocumentMoniker": "Features\\Catalogo\\BodegasController.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\BodegasController.cs",
-              "RelativeToolTip": "Features\\Catalogo\\BodegasController.cs",
+              "Title": "DashboardDtos.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Dashboard\\Dtos\\DashboardDtos.cs",
+              "RelativeDocumentMoniker": "Features\\Dashboard\\Dtos\\DashboardDtos.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Dashboard\\Dtos\\DashboardDtos.cs",
+              "RelativeToolTip": "Features\\Dashboard\\Dtos\\DashboardDtos.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T21:42:44.59Z"
+              "WhenOpened": "2026-07-30T21:32:14.425Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 4,
-              "Title": "CentroCostoController.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\CentroCostoController.cs",
-              "RelativeDocumentMoniker": "Features\\Catalogo\\CentroCostoController.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\CentroCostoController.cs",
-              "RelativeToolTip": "Features\\Catalogo\\CentroCostoController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Title": "ClientesYCentrosTrabajoController.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\ClientesYCentrosTrabajoController.cs",
+              "RelativeDocumentMoniker": "Features\\Catalogo\\ClientesYCentrosTrabajoController.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\ClientesYCentrosTrabajoController.cs",
+              "RelativeToolTip": "Features\\Catalogo\\ClientesYCentrosTrabajoController.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAQwB4AAAA3AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T21:42:13.227Z"
+              "WhenOpened": "2026-07-30T21:18:50.918Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 5,
               "Title": "CatalogoService.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\CatalogoService.cs",
               "RelativeDocumentMoniker": "Features\\Catalogo\\CatalogoService.cs",
               "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\CatalogoService.cs",
               "RelativeToolTip": "Features\\Catalogo\\CatalogoService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAABYAAAAAAAAAAAAzwBsAAAA+AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T21:41:06.259Z"
+              "WhenOpened": "2026-07-30T21:17:53.016Z"
             },
             {
               "$type": "Document",
@@ -171,153 +181,188 @@
               "RelativeDocumentMoniker": "Features\\Catalogo\\Dtos\\CatalogoDtos.cs",
               "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\Dtos\\CatalogoDtos.cs",
               "RelativeToolTip": "Features\\Catalogo\\Dtos\\CatalogoDtos.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAIwB0AAABBAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T21:40:33.523Z"
+              "WhenOpened": "2026-07-30T20:24:32.417Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Program.cs",
-              "RelativeDocumentMoniker": "Program.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Program.cs",
-              "RelativeToolTip": "Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAowBAAAAA8AAAAAAAAAA==",
+              "DocumentIndex": 7,
+              "Title": "OrdenesProduccionController.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Produccion\\OrdenesProduccionController.cs",
+              "RelativeDocumentMoniker": "Features\\Produccion\\OrdenesProduccionController.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Produccion\\OrdenesProduccionController.cs",
+              "RelativeToolTip": "Features\\Produccion\\OrdenesProduccionController.cs",
+              "ViewState": "AgIAAD4AAAAAAAAAAAAuwE8AAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T21:12:07.618Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "TraspasosController.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Traspasos\\TraspasosController.cs",
-              "RelativeDocumentMoniker": "Features\\Traspasos\\TraspasosController.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Traspasos\\TraspasosController.cs",
-              "RelativeToolTip": "Features\\Traspasos\\TraspasosController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T21:25:50.029Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "TraspasosService.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Traspasos\\TraspasosService.cs",
-              "RelativeDocumentMoniker": "Features\\Traspasos\\TraspasosService.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Traspasos\\TraspasosService.cs",
-              "RelativeToolTip": "Features\\Traspasos\\TraspasosService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T21:25:34.617Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "TraspasoDtos.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Traspasos\\Dtos\\TraspasoDtos.cs",
-              "RelativeDocumentMoniker": "Features\\Traspasos\\Dtos\\TraspasoDtos.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Traspasos\\Dtos\\TraspasoDtos.cs",
-              "RelativeToolTip": "Features\\Traspasos\\Dtos\\TraspasoDtos.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T21:24:53.885Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 13,
-              "Title": "OrdenesCompraService.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Compras\\OrdenesCompraService.cs",
-              "RelativeDocumentMoniker": "Features\\Compras\\OrdenesCompraService.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Compras\\OrdenesCompraService.cs",
-              "RelativeToolTip": "Features\\Compras\\OrdenesCompraService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T21:18:32.7Z"
+              "WhenOpened": "2026-07-30T21:17:16Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 11,
-              "Title": "InventarioService.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Inventario\\InventarioService.cs",
-              "RelativeDocumentMoniker": "Features\\Inventario\\InventarioService.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Inventario\\InventarioService.cs",
-              "RelativeToolTip": "Features\\Inventario\\InventarioService.cs",
-              "ViewState": "AgIAACsAAAAAAAAAAAAcwAkAAAAjAAAAAAAAAA==",
+              "Title": "OrdenesProduccionService.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Produccion\\OrdenesProduccionService.cs",
+              "RelativeDocumentMoniker": "Features\\Produccion\\OrdenesProduccionService.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Produccion\\OrdenesProduccionService.cs",
+              "RelativeToolTip": "Features\\Produccion\\OrdenesProduccionService.cs",
+              "ViewState": "AgIAABoAAAAAAAAAAAAswBAAAABHAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T21:03:36.951Z"
+              "WhenOpened": "2026-07-30T21:15:58.568Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
-              "Title": "CompraDtos.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Compras\\Dtos\\CompraDtos.cs",
-              "RelativeDocumentMoniker": "Features\\Compras\\Dtos\\CompraDtos.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Compras\\Dtos\\CompraDtos.cs",
-              "RelativeToolTip": "Features\\Compras\\Dtos\\CompraDtos.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 9,
+              "Title": "OrdenProduccionDtos.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Produccion\\Dtos\\OrdenProduccionDtos.cs",
+              "RelativeDocumentMoniker": "Features\\Produccion\\Dtos\\OrdenProduccionDtos.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Produccion\\Dtos\\OrdenProduccionDtos.cs",
+              "RelativeToolTip": "Features\\Produccion\\Dtos\\OrdenProduccionDtos.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAABVAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T21:19:04.078Z"
+              "WhenOpened": "2026-07-30T21:15:38.121Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "OrdenesCompraController..cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Compras\\OrdenesCompraController..cs",
-              "RelativeDocumentMoniker": "Features\\Compras\\OrdenesCompraController..cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Compras\\OrdenesCompraController..cs",
-              "RelativeToolTip": "Features\\Compras\\OrdenesCompraController..cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T21:18:19.616Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 15,
-              "Title": "InventarioController.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Inventario\\InventarioController.cs",
-              "RelativeDocumentMoniker": "Features\\Inventario\\InventarioController.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Inventario\\InventarioController.cs",
-              "RelativeToolTip": "Features\\Inventario\\InventarioController.cs",
-              "ViewState": "AgIAADsAAAAAAAAAAAAAAAoAAABwAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T21:10:36.281Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 10,
               "Title": "InventarioDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Inventario\\Dtos\\InventarioDtos.cs",
               "RelativeDocumentMoniker": "Features\\Inventario\\Dtos\\InventarioDtos.cs",
               "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Inventario\\Dtos\\InventarioDtos.cs",
               "RelativeToolTip": "Features\\Inventario\\Dtos\\InventarioDtos.cs",
-              "ViewState": "AgIAAAgAAAAAAAAAAAAQwAIAAAAjAAAAAAAAAA==",
+              "ViewState": "AgIAABQAAAAAAAAAAAAQwCAAAAA9AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T20:39:51.005Z"
+              "WhenOpened": "2026-07-30T21:00:51.083Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "AuthService.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Auth\\AuthService.cs",
+              "RelativeDocumentMoniker": "Features\\Auth\\AuthService.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Auth\\AuthService.cs",
+              "RelativeToolTip": "Features\\Auth\\AuthService.cs",
+              "ViewState": "AgIAACEAAAAAAAAAAAAmwDQAAABoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T19:15:02.651Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "InventarioService.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Inventario\\InventarioService.cs",
+              "RelativeDocumentMoniker": "Features\\Inventario\\InventarioService.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Inventario\\InventarioService.cs",
+              "RelativeToolTip": "Features\\Inventario\\InventarioService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAABFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T16:28:23.16Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "InventarioController.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Inventario\\InventarioController.cs",
+              "RelativeDocumentMoniker": "Features\\Inventario\\InventarioController.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Inventario\\InventarioController.cs",
+              "RelativeToolTip": "Features\\Inventario\\InventarioController.cs",
+              "ViewState": "AgIAABsAAAAAAAAAAAAiwCsAAABGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T16:33:00.467Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\appsettings.json",
+              "RelativeDocumentMoniker": "appsettings.json",
+              "ToolTip": "C:\\Produccion\\NexoApi\\appsettings.json",
+              "RelativeToolTip": "appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-07-30T19:53:27.982Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "BodegasController.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\BodegasController.cs",
+              "RelativeDocumentMoniker": "Features\\Catalogo\\BodegasController.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\BodegasController.cs",
+              "RelativeToolTip": "Features\\Catalogo\\BodegasController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T20:24:17.741Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Auth\\AuthController.cs",
+              "RelativeDocumentMoniker": "Features\\Auth\\AuthController.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Auth\\AuthController.cs",
+              "RelativeToolTip": "Features\\Auth\\AuthController.cs",
+              "ViewState": "AgIAABYAAAAAAAAAAADwvyoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T19:27:38.862Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 17,
-              "Title": "WeatherForecastController.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Controllers\\WeatherForecastController.cs",
-              "RelativeDocumentMoniker": "Controllers\\WeatherForecastController.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Controllers\\WeatherForecastController.cs",
-              "RelativeToolTip": "Controllers\\WeatherForecastController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Title": "LoginDtos.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Auth\\Dtos\\LoginDtos.cs",
+              "RelativeDocumentMoniker": "Features\\Auth\\Dtos\\LoginDtos.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Auth\\Dtos\\LoginDtos.cs",
+              "RelativeToolTip": "Features\\Auth\\Dtos\\LoginDtos.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAgwBYAAAACAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-29T19:14:57.658Z"
+              "WhenOpened": "2026-07-30T19:14:12.087Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 18,
-              "Title": "NexoApi.http",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\NexoApi.http",
-              "RelativeDocumentMoniker": "NexoApi.http",
-              "ToolTip": "C:\\Produccion\\NexoApi\\NexoApi.http",
-              "RelativeToolTip": "NexoApi.http",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAXAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003502|",
-              "WhenOpened": "2026-07-29T16:39:55.692Z"
+              "Title": "NexoApi",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\NexoApi.csproj",
+              "RelativeDocumentMoniker": "NexoApi.csproj",
+              "ToolTip": "C:\\Produccion\\NexoApi\\NexoApi.csproj",
+              "RelativeToolTip": "NexoApi.csproj",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-07-30T16:54:36.816Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "SqlConnectionFactory.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Common\\Data\\SqlConnectionFactory.cs",
+              "RelativeDocumentMoniker": "Common\\Data\\SqlConnectionFactory.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Common\\Data\\SqlConnectionFactory.cs",
+              "RelativeToolTip": "Common\\Data\\SqlConnectionFactory.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T16:40:44.104Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "NexoApi.csproj",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\NexoApi.csproj",
+              "RelativeDocumentMoniker": "NexoApi.csproj",
+              "ToolTip": "C:\\Produccion\\NexoApi\\NexoApi.csproj",
+              "RelativeToolTip": "NexoApi.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-07-30T16:29:56.446Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "TraspasosService.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Traspasos\\TraspasosService.cs",
+              "RelativeDocumentMoniker": "Features\\Traspasos\\TraspasosService.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Traspasos\\TraspasosService.cs",
+              "RelativeToolTip": "Features\\Traspasos\\TraspasosService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAASAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T16:28:41.955Z"
             }
           ]
         }

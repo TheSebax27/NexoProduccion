@@ -1,7 +1,7 @@
 ﻿using Dapper;
 using NexoApi.Common.Data;
 using NexoApi.Features.Catalogo.Dtos;
-using System.Data.Entity.Infrastructure;
+
 
 namespace NexoApi.Features.Catalogo;
 
@@ -21,6 +21,12 @@ public interface ICatalogoService
     Task<int> CrearArticuloAsync(CrearArticuloRequest request);
     Task<IEnumerable<ArticuloItem>> ListarArticulosAsync(int? tipoArticuloId, string? texto);
     Task ActualizarArticuloAsync(int articuloId, ActualizarArticuloRequest request);
+
+    Task<IEnumerable<ClienteItem>> ListarClientesAsync();
+    Task<IEnumerable<CentroTrabajoItem>> ListarCentrosTrabajoAsync();
+
+    Task<IEnumerable<ProveedorItem>> ListarProveedoresAsync();
+
 }
 
 public class CatalogoService : ICatalogoService
@@ -179,5 +185,31 @@ public class CatalogoService : ICatalogoService
 
         if (filas == 0)
             throw new KeyNotFoundException($"No existe el articulo {articuloId}.");
+    }
+
+    
+
+    public async Task<IEnumerable<ClienteItem>> ListarClientesAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<ClienteItem>(
+            "SELECT ClienteID, Nombre FROM Catalogo.Clientes WHERE Estado = 1 ORDER BY Nombre");
+    }
+
+    public async Task<IEnumerable<CentroTrabajoItem>> ListarCentrosTrabajoAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<CentroTrabajoItem>(
+            "SELECT CentroTrabajoID, Nombre, CentroCostoID FROM Organizacion.CentrosTrabajo WHERE Estado = 1 ORDER BY Nombre");
+    }
+
+    // Agregar a ICatalogoService / CatalogoService
+   
+
+    public async Task<IEnumerable<ProveedorItem>> ListarProveedoresAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<ProveedorItem>(
+            "SELECT ProveedorID, RazonSocial FROM Catalogo.Proveedores WHERE Estado = 1 ORDER BY RazonSocial");
     }
 }

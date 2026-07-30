@@ -1,9 +1,7 @@
-﻿using Dapper;
-using Microsoft.AspNetCore.Connections;
-using NexoApi.Common;
+﻿using System.Data;
+using Dapper;
+using NexoApi.Common.Data;
 using NexoApi.Features.Inventario.Dtos;
-using System.Data;
-using System.Data.Entity.Infrastructure;
 
 namespace NexoApi.Features.Inventario;
 
@@ -11,6 +9,7 @@ public interface IInventarioService
 {
     Task<IEnumerable<StockConsolidadoItem>> ConsultarStockAsync(int? centroCostoId, int? bodegaId, string? sku);
     Task<RegistrarBajaResponse> RegistrarBajaAsync(RegistrarBajaRequest request, int usuarioId);
+    Task<IEnumerable<MotivoPerdidaItem>> ListarMotivosPerdidaAsync();
 }
 
 public class InventarioService : IInventarioService
@@ -63,5 +62,15 @@ public class InventarioService : IInventarioService
             commandType: CommandType.StoredProcedure);
 
         return resultado;
+    }
+
+    // Agregar a IInventarioService y InventarioService
+
+
+    public async Task<IEnumerable<MotivoPerdidaItem>> ListarMotivosPerdidaAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<MotivoPerdidaItem>(
+            "SELECT MotivoID, Nombre FROM Kardex.TiposMotivoLoss ORDER BY Nombre");
     }
 }

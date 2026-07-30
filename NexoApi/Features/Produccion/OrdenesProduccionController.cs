@@ -74,4 +74,10 @@ public class OrdenesProduccionController : ControllerBase
         var (costoUnitarioReal, loteId) = await _service.CerrarAsync(id, request, UsuarioActualId);
         return Ok(new { mensaje = "Orden finalizada.", costoUnitarioReal, loteProductoTerminadoId = loteId });
     }
+
+    [HttpGet("tipos-produccion")]
+    public async Task<ActionResult<IEnumerable<TipoProduccionItem>>> ListarTiposProduccion()
+    {
+        return Ok(await _service.ListarTiposProduccionAsync());
+    }
 }

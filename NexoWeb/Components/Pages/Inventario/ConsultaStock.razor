@@ -1,0 +1,95 @@
+﻿@page "/inventario/stock"
+@attribute [Authorize]
+@inject NexoWeb.Common.ApiClient.INexoApiClient ApiClient
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Consulta de Stock - NEXO</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Consulta de Stock</MudText>
+
+<MudGrid Class="mb-4">
+    <MudItem xs="12" sm="4">
+        <MudTextField @bind-Value="_filtroSku" Label="Buscar por SKU" Variant="Variant.Outlined"
+                      Immediate="true" DebounceInterval="400" OnDebounceIntervalElapsed="CargarAsync" />
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CargarAsync" StartIcon="@Icons.Material.Filled.Refresh">
+            Actualizar
+        </MudButton>
+    </MudItem>
+</MudGrid>
+
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else
+{
+    <MudTable Items="_stock" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>SKU</MudTh>
+            <MudTh>Articulo</MudTh>
+            <MudTh>Bodega</MudTh>
+            <MudTh>Centro de Costo</MudTh>
+            <MudTh>Cantidad</MudTh>
+            <MudTh>Valor Total</MudTh>
+            <MudTh>Alerta</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="SKU">@context.SKU</MudTd>
+            <MudTd DataLabel="Articulo">@context.Articulo</MudTd>
+            <MudTd DataLabel="Bodega">@context.Bodega</MudTd>
+            <MudTd DataLabel="Centro de Costo">@context.CentroCosto</MudTd>
+            <MudTd DataLabel="Cantidad">@context.CantidadActual.ToString("N2")</MudTd>
+            <MudTd DataLabel="Valor Total">@context.ValorTotal.ToString("C0")</MudTd>
+            <MudTd DataLabel="Alerta">
+                @if (context.RequierePedido)
+                {
+                    <MudChip T="string" Color="Color.Warning" Size="Size.Small">Requiere pedido</MudChip>
+                }
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No hay stock que coincida con el filtro.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+}
+
+@code {
+    private List<StockConsolidadoItem> _stock = new();
+    private string _filtroSku = "";
+    private bool _cargando = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        _cargando = true;
+        _error = null;
+
+        try
+        {
+            var ruta = string.IsNullOrWhiteSpace(_filtroSku)
+                ? "api/inventario/stock"
+                : $"api/inventario/stock?sku={Uri.EscapeDataString(_filtroSku)}";
+
+            _stock = await ApiClient.GetAsync<List<StockConsolidadoItem>>(ruta) ?? new();
+        }
+        catch (Exception ex)
+        {
+            _error = $"No se pudo cargar el stock: {ex.Message}";
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+}

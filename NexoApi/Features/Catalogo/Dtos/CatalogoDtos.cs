@@ -22,3 +22,9 @@ public record ArticuloItem(
     int ArticuloID, string SKU, string Nombre, string? Descripcion, string TipoArticulo, string Unidad,
     decimal CostoPromedio, decimal PrecioVenta, decimal StockMinimo, decimal PuntoReorden, bool Estado
 );
+
+public record ClienteItem(int ClienteID, string Nombre);
+public record CentroTrabajoItem(int CentroTrabajoID, string Nombre, int CentroCostoID);
+
+// Agregar a Features/Catalogo/Dtos/CatalogoDtos.cs
+public record ProveedorItem(int ProveedorID, string RazonSocial);

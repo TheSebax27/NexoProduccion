@@ -14,6 +14,7 @@ public interface IOrdenesProduccionService
     Task IniciarAsync(int ordenProduccionId, int usuarioId);
     Task<(decimal CostoUnitarioReal, int LoteProductoTerminadoID)> CerrarAsync(int ordenProduccionId, CerrarOrdenProduccionRequest request, int usuarioId);
     Task AjustarConsumoAsync(long consumoId, AjustarConsumoRealRequest request);
+    Task<IEnumerable<TipoProduccionItem>> ListarTiposProduccionAsync();
 }
 
 public class OrdenesProduccionService : IOrdenesProduccionService
@@ -149,5 +150,14 @@ public class OrdenesProduccionService : IOrdenesProduccionService
 
         await connection.ExecuteAsync(
             "Produccion.sp_AjustarConsumoReal", parametros, commandType: CommandType.StoredProcedure);
+    }
+
+    
+
+    public async Task<IEnumerable<TipoProduccionItem>> ListarTiposProduccionAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<TipoProduccionItem>(
+            "SELECT TipoProduccionID, Codigo, Nombre FROM Produccion.TiposProduccion ORDER BY TipoProduccionID");
     }
 }

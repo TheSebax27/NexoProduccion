@@ -1,66 +1,48 @@
-﻿using Dapper;
-using NexoApi.Common.Data;
+﻿// Features/Inventario/InventarioController.cs
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NexoApi.Features.Inventario.Dtos;
-using System.Data;
-using System.Data.Entity.Infrastructure;
 
 namespace NexoApi.Features.Inventario;
 
-public interface IInventarioService
+[ApiController]
+[Route("api/inventario")]
+[Authorize]
+public class InventarioController : ControllerBase
 {
-    Task<IEnumerable<StockConsolidadoItem>> ConsultarStockAsync(int? centroCostoId, int? bodegaId, string? sku);
-    Task<RegistrarBajaResponse> RegistrarBajaAsync(RegistrarBajaRequest request, int usuarioId);
-}
+    private readonly IInventarioService _service;
 
-public class InventarioService : IInventarioService
-{
-    private readonly IDbConnectionFactory _db;
-
-    public InventarioService(IDbConnectionFactory db)
+    public InventarioController(IInventarioService service)
     {
-        _db = db;
+        _service = service;
     }
 
-    public async Task<IEnumerable<StockConsolidadoItem>> ConsultarStockAsync(int? centroCostoId, int? bodegaId, string? sku)
+    private int UsuarioActualId =>
+        int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    /// <summary>Consulta el stock consolidado, con filtros opcionales.</summary>
+    [HttpGet("stock")]
+    public async Task<ActionResult<IEnumerable<StockConsolidadoItem>>> ConsultarStock(
+        [FromQuery] int? centroCostoId, [FromQuery] int? bodegaId, [FromQuery] string? sku)
     {
-        using var connection = _db.CreateConnection();
-
-        const string sql = @"
-            SELECT ArticuloID, SKU, Articulo, TipoArticulo, BodegaID, Bodega,
-                   CentroCostoID, CentroCosto, LoteID, NumeroLote, FechaVencimiento,
-                   CantidadActual, CostoUnitarioLote, ValorTotal, RequierePedido
-            FROM Inventario.vw_StockConsolidado
-            WHERE (@CentroCostoId IS NULL OR CentroCostoID = @CentroCostoId)
-              AND (@BodegaId IS NULL OR BodegaID = @BodegaId)
-              AND (@Sku IS NULL OR SKU = @Sku)
-            ORDER BY Articulo, Bodega";
-
-        return await connection.QueryAsync<StockConsolidadoItem>(sql, new
-        {
-            CentroCostoId = centroCostoId,
-            BodegaId = bodegaId,
-            Sku = sku
-        });
+        var stock = await _service.ConsultarStockAsync(centroCostoId, bodegaId, sku);
+        return Ok(stock);
     }
 
-    public async Task<RegistrarBajaResponse> RegistrarBajaAsync(RegistrarBajaRequest r, int usuarioId)
+    /// <summary>Registra una baja por dano o merma accidental. Descuenta stock y genera KARDEX.</summary>
+    [HttpPost("bajas")]
+    [Authorize(Roles = "Administrador,Bodeguero")]
+    public async Task<ActionResult<RegistrarBajaResponse>> RegistrarBaja(RegistrarBajaRequest request)
     {
-        using var connection = _db.CreateConnection();
+        var resultado = await _service.RegistrarBajaAsync(request, UsuarioActualId);
+        return Ok(resultado);
+    }
 
-        var parametros = new DynamicParameters();
-        parametros.Add("ArticuloID", r.ArticuloID);
-        parametros.Add("BodegaID", r.BodegaID);
-        parametros.Add("LoteID", r.LoteID);
-        parametros.Add("CantidadPerdida", r.CantidadPerdida);
-        parametros.Add("MotivoID", r.MotivoID);
-        parametros.Add("ObservacionDetallada", r.ObservacionDetallada);
-        parametros.Add("UsuarioRegistraID", usuarioId);
-
-        var resultado = await connection.QuerySingleAsync<RegistrarBajaResponse>(
-            "Kardex.sp_RegistrarBajaInventario",
-            parametros,
-            commandType: CommandType.StoredProcedure);
-
-        return resultado;
+    // Agregar a InventarioController
+    [HttpGet("motivos-perdida")]
+    public async Task<ActionResult<IEnumerable<MotivoPerdidaItem>>> ListarMotivosPerdida()
+    {
+        return Ok(await _service.ListarMotivosPerdidaAsync());
     }
 }
