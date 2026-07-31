@@ -1,0 +1,142 @@
+﻿@* Components/Pages/Dashboard/Dashboard.razor *@
+@page "/"
+@attribute [Authorize(Roles = "Administrador,SupervisorPlanta,Bodeguero")]
+@inject INexoApiClient ApiClient
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Dashboard - NEXO</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Dashboard de Produccion</MudText>
+
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="nexo-panel">
+                <MudText Typo="Typo.subtitle1" Class="nexo-panel-title">Produccion Planificada vs Real (ultimos 14 dias)</MudText>
+                <MudChart ChartType="ChartType.Bar" ChartSeries="@_seriesPlanVsReal" XAxisLabels="@_labelsPlanVsReal"
+                          Width="100%" Height="300px" />
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Class="nexo-panel">
+                <MudText Typo="Typo.subtitle1" Class="nexo-panel-title">Distribucion de Produccion por Centro de Costo</MudText>
+                <MudChart ChartType="ChartType.Donut" InputData="@_dataDistribucion" InputLabels="@_labelsDistribucion"
+                          Width="100%" Height="300px" />
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Class="nexo-panel">
+                <MudText Typo="Typo.subtitle1" Class="nexo-panel-title">Perdidas y Mermas por Motivo (ultimos 30 dias)</MudText>
+                @if (_dataPerdidas.Length == 0)
+                {
+                    <MudAlert Severity="Severity.Success">Sin perdidas registradas en este periodo.</MudAlert>
+                }
+                else
+                {
+                    <MudChart ChartType="ChartType.Pie" InputData="@_dataPerdidas" InputLabels="@_labelsPerdidas"
+                              Width="100%" Height="300px" />
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Class="nexo-panel">
+                <MudText Typo="Typo.subtitle1" Class="nexo-panel-title">Tendencia de Costo Unitario</MudText>
+                <MudSelect T="int" Value="_articuloSeleccionadoId" ValueChanged="OnProductoCambiadoAsync"
+                           Label="Producto" Class="mb-3">
+                    @foreach (var producto in _productosTerminados)
+                    {
+                        <MudSelectItem T="int" Value="@producto.ArticuloID">@producto.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+
+                @if (_articuloSeleccionadoId == 0)
+                {
+                    <MudText>Elige un producto para ver su tendencia de costo.</MudText>
+                }
+                else if (_seriesTendencia[0].Data.Length == 0)
+                {
+                    <MudAlert Severity="Severity.Info">Este producto aun no tiene ordenes finalizadas.</MudAlert>
+                }
+                else
+                {
+                    <MudChart ChartType="ChartType.Line" ChartSeries="@_seriesTendencia" XAxisLabels="@_labelsTendencia"
+                              Width="100%" Height="260px" />
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private bool _cargando = true;
+
+    // Plan vs Real
+    private List<ChartSeries> _seriesPlanVsReal = new();
+    private string[] _labelsPlanVsReal = Array.Empty<string>();
+
+    // Distribucion por Centro de Costo
+    private double[] _dataDistribucion = Array.Empty<double>();
+    private string[] _labelsDistribucion = Array.Empty<string>();
+
+    // Perdidas por Motivo
+    private double[] _dataPerdidas = Array.Empty<double>();
+    private string[] _labelsPerdidas = Array.Empty<string>();
+
+    // Tendencia de Costo
+    private List<ArticuloItem> _productosTerminados = new();
+    private int _articuloSeleccionadoId;
+    private List<ChartSeries> _seriesTendencia = new() { new ChartSeries { Name = "Costo Unitario", Data = Array.Empty<double>() } };
+    private string[] _labelsTendencia = Array.Empty<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var tareaPlanVsReal = ApiClient.GetAsync<List<PlanVsRealPunto>>("api/dashboard/plan-vs-real");
+        var tareaDistribucion = ApiClient.GetAsync<List<DistribucionCentroCostoItem>>("api/dashboard/distribucion-centro-costo");
+        var tareaPerdidas = ApiClient.GetAsync<List<PerdidaPorMotivoItem>>("api/dashboard/perdidas-por-motivo");
+        var tareaProductos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos?tipoArticuloId=3");
+
+        await Task.WhenAll(tareaPlanVsReal, tareaDistribucion, tareaPerdidas, tareaProductos);
+
+        var planVsReal = await tareaPlanVsReal ?? new();
+        _labelsPlanVsReal = planVsReal.Select(p => p.Fecha.ToString("dd/MM")).ToArray();
+        _seriesPlanVsReal = new List<ChartSeries>
+        {
+            new() { Name = "Planificado", Data = planVsReal.Select(p => (double)p.TotalPlanificado).ToArray() },
+            new() { Name = "Real", Data = planVsReal.Select(p => (double)p.TotalReal).ToArray() }
+        };
+
+        var distribucion = await tareaDistribucion ?? new();
+        _labelsDistribucion = distribucion.Select(d => d.CentroCosto).ToArray();
+        _dataDistribucion = distribucion.Select(d => (double)d.TotalUnidadesProducidas).ToArray();
+
+        var perdidas = await tareaPerdidas ?? new();
+        _labelsPerdidas = perdidas.Select(p => p.Motivo).ToArray();
+        _dataPerdidas = perdidas.Select(p => (double)p.ValorTotalPerdido).ToArray();
+
+        _productosTerminados = await tareaProductos ?? new();
+
+        _cargando = false;
+    }
+
+    private async Task OnProductoCambiadoAsync(int nuevoArticuloId)
+    {
+        _articuloSeleccionadoId = nuevoArticuloId;
+
+        var tendencia = await ApiClient.GetAsync<List<TendenciaCostoPunto>>(
+            $"api/dashboard/tendencia-costo?articuloId={nuevoArticuloId}") ?? new();
+
+        _labelsTendencia = tendencia.Select(t => t.Fecha.ToString("dd/MM")).ToArray();
+        _seriesTendencia = new List<ChartSeries>
+        {
+            new() { Name = "Costo Unitario", Data = tendencia.Select(t => (double)t.CostoUnitarioReal).ToArray() }
+        };
+    }
+}

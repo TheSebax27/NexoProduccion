@@ -1,0 +1,14 @@
+﻿@page "/not-found"
+@layout MainLayout
+
+<PageTitle>Pagina no encontrada - NEXO</PageTitle>
+
+<div class="nexo-empty-state">
+    <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Size="Size.Large" />
+    <MudText Typo="Typo.h5">Pagina no encontrada</MudText>
+    <MudText Typo="Typo.body2">El contenido que buscas no existe o fue movido.</MudText>
+    <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4"
+               StartIcon="@Icons.Material.Filled.Home">
+        Volver al Dashboard
+    </MudButton>
+</div>

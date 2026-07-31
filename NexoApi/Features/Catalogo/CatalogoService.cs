@@ -27,6 +27,10 @@ public interface ICatalogoService
 
     Task<IEnumerable<ProveedorItem>> ListarProveedoresAsync();
 
+    // Interfaz ICatalogoService, agregado:
+    Task<IEnumerable<TipoArticuloItem>> ListarTiposArticuloAsync();
+    Task<IEnumerable<UnidadMedidaItem>> ListarUnidadesMedidaAsync();
+
 }
 
 public class CatalogoService : ICatalogoService
@@ -212,4 +216,20 @@ public class CatalogoService : ICatalogoService
         return await connection.QueryAsync<ProveedorItem>(
             "SELECT ProveedorID, RazonSocial FROM Catalogo.Proveedores WHERE Estado = 1 ORDER BY RazonSocial");
     }
+
+    public async Task<IEnumerable<TipoArticuloItem>> ListarTiposArticuloAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<TipoArticuloItem>(
+            "SELECT TipoArticuloID, Codigo, Nombre FROM Catalogo.TiposArticulo ORDER BY Nombre");
+    }
+
+    public async Task<IEnumerable<UnidadMedidaItem>> ListarUnidadesMedidaAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<UnidadMedidaItem>(
+            "SELECT UnidadID, Nombre, Abreviatura, Tipo FROM Catalogo.UnidadesMedida ORDER BY Nombre");
+    }
+
+
 }

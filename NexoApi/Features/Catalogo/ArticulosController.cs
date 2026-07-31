@@ -45,4 +45,16 @@ public class ArticulosController : ControllerBase
             return NotFound(new { error = ex.Message });
         }
     }
+
+    [HttpGet("tipos")]
+    public async Task<ActionResult<IEnumerable<TipoArticuloItem>>> ListarTipos()
+    {
+        return Ok(await _service.ListarTiposArticuloAsync());
+    }
+
+    [HttpGet("unidades")]
+    public async Task<ActionResult<IEnumerable<UnidadMedidaItem>>> ListarUnidades()
+    {
+        return Ok(await _service.ListarUnidadesMedidaAsync());
+    }
 }

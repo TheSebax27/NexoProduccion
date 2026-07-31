@@ -1,0 +1,135 @@
+﻿@page "/inventario/traspasos"
+@attribute [Authorize(Roles = "Administrador,Bodeguero")]
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Traspasos - NEXO</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Traspasos entre Bodegas</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
+           StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
+    Nuevo Traspaso
+</MudButton>
+
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else
+{
+    <MudTable Items="_traspasos" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Codigo</MudTh>
+            <MudTh>Origen</MudTh>
+            <MudTh>Destino</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Envio</MudTh>
+            <MudTh>Recepcion</MudTh>
+            <MudTh>Accion</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Codigo">@context.Codigo</MudTd>
+            <MudTd DataLabel="Origen">@context.BodegaOrigen</MudTd>
+            <MudTd DataLabel="Destino">@context.BodegaDestino</MudTd>
+            <MudTd DataLabel="Estado">
+                <MudChip T="string" Color="@ColorSegunEstado(context.EstadoTraspaso)" Size="Size.Small">
+                    @context.EstadoTraspaso
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Envio">@(context.FechaEnvio?.ToString("dd/MM/yyyy HH:mm") ?? "-")</MudTd>
+            <MudTd DataLabel="Recepcion">@(context.FechaRecepcion?.ToString("dd/MM/yyyy HH:mm") ?? "-")</MudTd>
+            <MudTd DataLabel="Accion">
+                @if (context.EstadoTraspaso == "EN_TRANSITO")
+                {
+                    <MudButton Size="Size.Small" Color="Color.Primary" OnClick="@(() => RecibirAsync(context.TraspasoID))">
+                        Recibir
+                    </MudButton>
+                }
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No hay traspasos registrados.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+}
+
+@code {
+    private List<TraspasoResumen> _traspasos = new();
+    private List<BodegaItem> _bodegas = new();
+    private List<ArticuloItem> _articulos = new();
+    private bool _cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        _cargando = true;
+        _traspasos = await ApiClient.GetAsync<List<TraspasoResumen>>("api/inventario/traspasos") ?? new();
+        _cargando = false;
+    }
+
+    private async Task AbrirCreacionAsync()
+    {
+        if (_bodegas.Count == 0)
+        {
+            var tareaBodegas = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
+            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+            await Task.WhenAll(tareaBodegas, tareaArticulos);
+            _bodegas = await tareaBodegas ?? new();
+            _articulos = await tareaArticulos ?? new();
+        }
+
+        var parametros = new DialogParameters<CrearTraspasoDialog>
+        {
+            { x => x.Bodegas, _bodegas },
+            { x => x.Articulos, _articulos }
+        };
+
+        var dialogo = await DialogService.ShowAsync<CrearTraspasoDialog>("Nuevo Traspaso", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (CrearTraspasoRequest)resultado.Data!;
+            await ApiClient.PostAsync<CrearTraspasoRequest, object?>("api/inventario/traspasos", request);
+            Snackbar.Add("Traspaso enviado. Stock descontado de la bodega origen.", Severity.Success);
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task RecibirAsync(int traspasoId)
+    {
+        try
+        {
+            await ApiClient.PostAsync($"api/inventario/traspasos/{traspasoId}/recibir");
+            Snackbar.Add("Traspaso recibido. Stock actualizado en bodega destino.", Severity.Success);
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private static Color ColorSegunEstado(string estado) => estado switch
+    {
+        "PENDIENTE" => Color.Default,
+        "EN_TRANSITO" => Color.Warning,
+        "RECIBIDO" => Color.Success,
+        "CANCELADO" => Color.Error,
+        _ => Color.Default
+    };
+}

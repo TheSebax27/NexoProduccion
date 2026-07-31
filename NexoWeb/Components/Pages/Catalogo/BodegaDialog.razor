@@ -1,0 +1,61 @@
+﻿@using NexoWeb.Common.Dtos
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" Model="@this">
+            <MudTextField @bind-Value="_nombre" Label="Nombre" Required="true"
+                          RequiredError="El nombre es obligatorio" Class="mb-3" />
+
+            <MudSelect T="int" @bind-Value="_centroCostoId" Label="Centro de Costo" Required="true"
+                       RequiredError="Selecciona un centro de costo" Class="mb-3">
+                @foreach (var centro in CentrosCosto)
+                {
+                    <MudSelectItem Value="@centro.CentroCostoID">@centro.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="string" @bind-Value="_tipoBodega" Label="Tipo de Bodega" Required="true"
+                       RequiredError="Selecciona un tipo" Class="mb-3">
+                <MudSelectItem Value="@("MATERIA_PRIMA")">Materia Prima</MudSelectItem>
+                <MudSelectItem Value="@("PRODUCTO_TERMINADO")">Producto Terminado</MudSelectItem>
+                <MudSelectItem Value="@("WIP")">WIP (En Proceso)</MudSelectItem>
+                <MudSelectItem Value="@("TRANSITO")">Transito</MudSelectItem>
+            </MudSelect>
+
+            <MudSwitch T="bool" @bind-Value="_esVirtual" Color="Color.Info" Label="Es Virtual (no fisica)" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancelar">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="GuardarAsync">Crear</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+
+    // Catalogo de centros de costo activos para el selector; lo carga la pagina
+    // que abre este dialogo, asi evitamos que el dialogo dependa de ApiClient.
+    [Parameter] public List<CentroCostoItem> CentrosCosto { get; set; } = new();
+
+    private MudForm _form = default!;
+    private string _nombre = string.Empty;
+    private int _centroCostoId;
+    private string _tipoBodega = "MATERIA_PRIMA";
+    private bool _esVirtual;
+
+    private async Task GuardarAsync()
+    {
+        await _form.Validate();
+        if (!_form.IsValid)
+            return;
+
+        if (_centroCostoId == 0)
+            return;
+
+        var request = new CrearBodegaRequest(_nombre, _centroCostoId, _tipoBodega, _esVirtual);
+        MudDialog.Close(DialogResult.Ok(request));
+    }
+
+    private void Cancelar() => MudDialog.Cancel();
+}

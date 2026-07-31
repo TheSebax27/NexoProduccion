@@ -1,136 +1,210 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\",
+  "WorkspaceRootPath": "C:\\Produccion\\NexoWeb\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\routes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\routes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\layout\\mainlayout.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\layout\\mainlayout.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\app.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\app.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\apiclient\\nexoapiclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\apiclient\\nexoapiclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\layout\\navmenu.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\layout\\navmenu.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\layout\\authlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\layout\\authlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\_imports.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\_imports.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\pages\\auth\\login.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\auth\\login.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\auth\\login.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\layout\\inicializadorsesion.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\layout\\inicializadorsesion.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\nexotheme.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\nexotheme.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\common\\dtos\\authdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\authdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\nexoweb.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:nexoweb.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\common\\dtos\\inventariodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\inventariodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\common\\dtos\\catalogodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\catalogodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\common\\dtos\\dashboarddtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\dashboarddtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\pages\\dashboard\\dashboard.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\dashboard\\dashboard.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\dashboard\\dashboard.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\pages\\traspasos\\listatraspasos.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\traspasos\\listatraspasos.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\e40cd255b1f30a5ee3545be0b3a9c988f0faef0893ee5660ff76961557283b9b\\CircuitHost.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\pages\\traspasos\\creartraspasodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\traspasos\\creartraspasodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\auth\\login.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\auth\\login.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\common\\dtos\\traspasosdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\traspasosdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\layout\\authlayout.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\layout\\authlayout.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\pages\\compras\\listaordenescompra.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\compras\\listaordenescompra.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\catalogo\\bodegadialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\catalogo\\bodegadialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\pages\\compras\\recibirlineadialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\compras\\recibirlineadialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\catalogo\\articulodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\catalogo\\articulodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\pages\\compras\\crearordencompradialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\compras\\crearordencompradialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\produccion\\recetadetalledialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\produccion\\recetadetalledialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\common\\dtos\\comprasdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\comprasdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\produccion\\crearreceta.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\produccion\\crearreceta.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\pages\\produccion\\listaordenes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\produccion\\listaordenes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\produccion\\recetas.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\produccion\\recetas.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\pages\\produccion\\crearorden.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\produccion\\crearorden.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\common\\dtos\\producciondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\producciondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\producciondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\pages\\inventario\\registrarbaja.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\inventario\\registrarbaja.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\catalogo\\articulos.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\catalogo\\articulos.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\common\\apiclient\\nexoapiclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\apiclient\\nexoapiclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\catalogodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\catalogodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\common\\apiclient\\inexoapiclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\catalogo\\bodegas.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\catalogo\\bodegas.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\apiclient\\inexoapiclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\apiclient\\inexoapiclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\pages\\produccion\\cerrarordendialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\notfound.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\notfound.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\error.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\error.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\app.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\app.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\7359755a63a0eef4e8a101bde875a0a6c6013760bb23441bb9b04a92876a282b\\ExecutionContext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\catalogo\\centrocostodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\catalogo\\centrocostodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\catalogo\\centroscosto.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\catalogo\\centroscosto.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\routes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\routes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\_imports.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\_imports.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\layout\\inicializadorsesion.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\layout\\inicializadorsesion.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\authdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\authdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\nexoweb.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:nexoweb.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\inventariodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\inventariodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\dashboarddtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\dashboarddtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\traspasos\\listatraspasos.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\traspasos\\listatraspasos.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\traspasos\\creartraspasodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\traspasos\\creartraspasodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\traspasosdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\traspasosdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\compras\\listaordenescompra.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\compras\\listaordenescompra.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\compras\\recibirlineadialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\compras\\recibirlineadialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\compras\\crearordencompradialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\compras\\crearordencompradialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\comprasdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\comprasdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\produccion\\listaordenes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\produccion\\listaordenes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\produccion\\crearorden.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\produccion\\crearorden.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\inventario\\registrarbaja.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\inventario\\registrarbaja.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\produccion\\cerrarordendialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\produccion\\cerrarordendialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\pages\\inventario\\consultastock.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\inventario\\consultastock.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\inventario\\consultastock.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\components\\layout\\navmenu.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\layout\\navmenu.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\layout\\navmenu.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\common\\auth\\customauthstateprovider.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\auth\\customauthstateprovider.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\auth\\customauthstateprovider.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb-corregido\\nexoweb\\common\\auth\\authstateservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\auth\\authstateservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\auth\\authstateservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
@@ -141,41 +215,369 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "ClientProxyExtensions.cs",
-              "DocumentMoniker": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs",
-              "RelativeDocumentMoniker": "..\\..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs",
-              "ToolTip": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs [Solo lectura]",
-              "RelativeToolTip": "..\\..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs [Solo lectura]",
-              "ViewState": "AgIAAAwAAAAAAAAAAAAkwBkAAAACAAAAAQAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-30T22:30:55.959Z",
-              "EditorCaption": " [Solo lectura]"
+              "DocumentIndex": 0,
+              "Title": "MainLayout.razor.css",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Layout\\MainLayout.razor.css",
+              "RelativeDocumentMoniker": "Components\\Layout\\MainLayout.razor.css",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Layout\\MainLayout.razor.css",
+              "RelativeToolTip": "Components\\Layout\\MainLayout.razor.css",
+              "ViewState": "AgIAACsAAAAAAAAAAADwvzQAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-07-31T20:37:48.104Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 1,
               "Title": "MainLayout.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Layout\\MainLayout.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Layout\\MainLayout.razor",
               "RelativeDocumentMoniker": "Components\\Layout\\MainLayout.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Layout\\MainLayout.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Layout\\MainLayout.razor",
               "RelativeToolTip": "Components\\Layout\\MainLayout.razor",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAtwAoAAAAdAAAAAAAAAA==",
+              "ViewState": "AgIAAAUAAAAAAAAAAADwvzAAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2026-07-30T20:52:00.983Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "NexoApiClient.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\ApiClient\\NexoApiClient.cs",
+              "RelativeDocumentMoniker": "Common\\ApiClient\\NexoApiClient.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\ApiClient\\NexoApiClient.cs",
+              "RelativeToolTip": "Common\\ApiClient\\NexoApiClient.cs",
+              "ViewState": "AgIAABsAAAAAAAAAAAAgwCEAAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T20:45:06.846Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 9,
+              "Title": "CircuitHost.cs",
+              "DocumentMoniker": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\e40cd255b1f30a5ee3545be0b3a9c988f0faef0893ee5660ff76961557283b9b\\CircuitHost.cs",
+              "RelativeDocumentMoniker": "..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\e40cd255b1f30a5ee3545be0b3a9c988f0faef0893ee5660ff76961557283b9b\\CircuitHost.cs",
+              "ToolTip": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\e40cd255b1f30a5ee3545be0b3a9c988f0faef0893ee5660ff76961557283b9b\\CircuitHost.cs [Solo lectura]",
+              "RelativeToolTip": "..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\e40cd255b1f30a5ee3545be0b3a9c988f0faef0893ee5660ff76961557283b9b\\CircuitHost.cs [Solo lectura]",
+              "ViewState": "AgIAAOMDAAAAAAAAAAAkwO4DAAADAAAAAQAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-31T20:25:03.348Z",
+              "EditorCaption": " [Solo lectura]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "NavMenu.razor.css",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Layout\\NavMenu.razor.css",
+              "RelativeDocumentMoniker": "Components\\Layout\\NavMenu.razor.css",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Layout\\NavMenu.razor.css",
+              "RelativeToolTip": "Components\\Layout\\NavMenu.razor.css",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-07-31T20:38:00.03Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ClientProxyExtensions.cs",
+              "DocumentMoniker": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs",
+              "RelativeDocumentMoniker": "..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs",
+              "ToolTip": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs",
+              "RelativeToolTip": "..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAkwBkAAAACAAAAAQAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T22:30:55.959Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "NexoTheme.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\NexoTheme.cs",
+              "RelativeDocumentMoniker": "Components\\NexoTheme.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\NexoTheme.cs",
+              "RelativeToolTip": "Components\\NexoTheme.cs",
+              "ViewState": "AgIAADEAAAAAAAAAAAAAADEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-31T20:35:02.807Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Login.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Auth\\Login.razor",
+              "RelativeDocumentMoniker": "Components\\Pages\\Auth\\Login.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Auth\\Login.razor",
+              "RelativeToolTip": "Components\\Pages\\Auth\\Login.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-30T20:50:26.345Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "AuthLayout.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Layout\\AuthLayout.razor",
+              "RelativeDocumentMoniker": "Components\\Layout\\AuthLayout.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Layout\\AuthLayout.razor",
+              "RelativeToolTip": "Components\\Layout\\AuthLayout.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAtAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-31T19:41:49.199Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "BodegaDialog.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Catalogo\\BodegaDialog.razor",
+              "RelativeDocumentMoniker": "Components\\Pages\\Catalogo\\BodegaDialog.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Catalogo\\BodegaDialog.razor",
+              "RelativeToolTip": "Components\\Pages\\Catalogo\\BodegaDialog.razor",
+              "ViewState": "AgIAABcAAAAAAAAAAAAtwCIAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-31T19:15:12.574Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "RecetaDetalleDialog.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Produccion\\RecetaDetalleDialog.razor",
+              "RelativeDocumentMoniker": "Components\\Pages\\Produccion\\RecetaDetalleDialog.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Produccion\\RecetaDetalleDialog.razor",
+              "RelativeToolTip": "Components\\Pages\\Produccion\\RecetaDetalleDialog.razor",
+              "ViewState": "AgIAAB0AAAAAAAAAAAAcwCcAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-31T19:34:12.743Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "CrearReceta.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Produccion\\CrearReceta.razor",
+              "RelativeDocumentMoniker": "Components\\Pages\\Produccion\\CrearReceta.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Produccion\\CrearReceta.razor",
+              "RelativeToolTip": "Components\\Pages\\Produccion\\CrearReceta.razor",
+              "ViewState": "AgIAANYAAAAAAAAAAAAcwN0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-31T19:34:41.994Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "Dashboard.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Dashboard\\Dashboard.razor",
+              "RelativeDocumentMoniker": "Components\\Pages\\Dashboard\\Dashboard.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Dashboard\\Dashboard.razor",
+              "RelativeToolTip": "Components\\Pages\\Dashboard\\Dashboard.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGcAAABbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-30T21:34:43.508Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Login.razor.css",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Auth\\Login.razor.css",
+              "RelativeDocumentMoniker": "Components\\Pages\\Auth\\Login.razor.css",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Auth\\Login.razor.css",
+              "RelativeToolTip": "Components\\Pages\\Auth\\Login.razor.css",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-07-31T19:53:24.425Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "Articulos.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Catalogo\\Articulos.razor",
+              "RelativeDocumentMoniker": "Components\\Pages\\Catalogo\\Articulos.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Catalogo\\Articulos.razor",
+              "RelativeToolTip": "Components\\Pages\\Catalogo\\Articulos.razor",
+              "ViewState": "AgIAAJcAAAAAAAAAAAAcwK4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-31T19:29:02.261Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "AuthLayout.razor.css",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Layout\\AuthLayout.razor.css",
+              "RelativeDocumentMoniker": "Components\\Layout\\AuthLayout.razor.css",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Layout\\AuthLayout.razor.css",
+              "RelativeToolTip": "Components\\Layout\\AuthLayout.razor.css",
+              "ViewState": "AgIAALAAAAAAAAAAAAAswMYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-07-31T19:47:58.783Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "ArticuloDialog.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Catalogo\\ArticuloDialog.razor",
+              "RelativeDocumentMoniker": "Components\\Pages\\Catalogo\\ArticuloDialog.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Catalogo\\ArticuloDialog.razor",
+              "RelativeToolTip": "Components\\Pages\\Catalogo\\ArticuloDialog.razor",
+              "ViewState": "AgIAACwAAAAAAAAAAAAtwDcAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-31T19:28:42.598Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "ProduccionDtos.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\ProduccionDtos.cs",
+              "RelativeDocumentMoniker": "Common\\Dtos\\ProduccionDtos.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\ProduccionDtos.cs",
+              "RelativeToolTip": "Common\\Dtos\\ProduccionDtos.cs",
+              "ViewState": "AgIAADEAAAAAAAAAAAAcwEgAAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T20:56:49.799Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "Recetas.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Produccion\\Recetas.razor",
+              "RelativeDocumentMoniker": "Components\\Pages\\Produccion\\Recetas.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Produccion\\Recetas.razor",
+              "RelativeToolTip": "Components\\Pages\\Produccion\\Recetas.razor",
+              "ViewState": "AgIAAGEAAAAAAAAAAAAcwHgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-31T19:35:09.686Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "Bodegas.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Catalogo\\Bodegas.razor",
+              "RelativeDocumentMoniker": "Components\\Pages\\Catalogo\\Bodegas.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Catalogo\\Bodegas.razor",
+              "RelativeToolTip": "Components\\Pages\\Catalogo\\Bodegas.razor",
+              "ViewState": "AgIAAH4AAAAAAAAAAAAcwJUAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-31T19:15:31.495Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "CatalogoDtos.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\CatalogoDtos.cs",
+              "RelativeDocumentMoniker": "Common\\Dtos\\CatalogoDtos.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\CatalogoDtos.cs",
+              "RelativeToolTip": "Common\\Dtos\\CatalogoDtos.cs",
+              "ViewState": "AgIAADYAAAAAAAAAAAAowGwAAABdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T21:09:13.178Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "INexoApiClient.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\ApiClient\\INexoApiClient.cs",
+              "RelativeDocumentMoniker": "Common\\ApiClient\\INexoApiClient.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\ApiClient\\INexoApiClient.cs",
+              "RelativeToolTip": "Common\\ApiClient\\INexoApiClient.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAAAgwBUAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T20:44:39.569Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "NotFound.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\NotFound.razor",
+              "RelativeDocumentMoniker": "Components\\Pages\\NotFound.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\NotFound.razor",
+              "RelativeToolTip": "Components\\Pages\\NotFound.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAA9AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-31T19:11:34.325Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "Error.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Error.razor",
+              "RelativeDocumentMoniker": "Components\\Pages\\Error.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Error.razor",
+              "RelativeToolTip": "Components\\Pages\\Error.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-31T19:11:33.235Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "ExecutionContext.cs",
+              "DocumentMoniker": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\7359755a63a0eef4e8a101bde875a0a6c6013760bb23441bb9b04a92876a282b\\ExecutionContext.cs",
+              "RelativeDocumentMoniker": "..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\7359755a63a0eef4e8a101bde875a0a6c6013760bb23441bb9b04a92876a282b\\ExecutionContext.cs",
+              "ToolTip": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\7359755a63a0eef4e8a101bde875a0a6c6013760bb23441bb9b04a92876a282b\\ExecutionContext.cs",
+              "RelativeToolTip": "..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\7359755a63a0eef4e8a101bde875a0a6c6013760bb23441bb9b04a92876a282b\\ExecutionContext.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAALIAAABVAAAAAQAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-31T13:46:24.696Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "CentrosCosto.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Catalogo\\CentrosCosto.razor",
+              "RelativeDocumentMoniker": "Components\\Pages\\Catalogo\\CentrosCosto.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Catalogo\\CentrosCosto.razor",
+              "RelativeToolTip": "Components\\Pages\\Catalogo\\CentrosCosto.razor",
+              "ViewState": "AgIAAGQAAAAAAAAAAAAUwHkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-31T13:40:53.681Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "CentroCostoDialog.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Catalogo\\CentroCostoDialog.razor",
+              "RelativeDocumentMoniker": "Components\\Pages\\Catalogo\\CentroCostoDialog.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Catalogo\\CentroCostoDialog.razor",
+              "RelativeToolTip": "Components\\Pages\\Catalogo\\CentroCostoDialog.razor",
+              "ViewState": "AgIAAB4AAAAAAAAAAAAtwCkAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-31T13:40:06.505Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "Routes.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Routes.razor",
+              "RelativeDocumentMoniker": "Components\\Routes.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Routes.razor",
+              "RelativeToolTip": "Components\\Routes.razor",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAIwAgAAABMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-30T20:48:09.82Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "App.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\App.razor",
+              "RelativeDocumentMoniker": "Components\\App.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\App.razor",
+              "RelativeToolTip": "Components\\App.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-07-30T21:30:12.713Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 33,
               "Title": "AuthDtos.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Dtos\\AuthDtos.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\AuthDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\AuthDtos.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Dtos\\AuthDtos.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\AuthDtos.cs",
               "RelativeToolTip": "Common\\Dtos\\AuthDtos.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -183,37 +585,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "App.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\App.razor",
-              "RelativeDocumentMoniker": "Components\\App.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\App.razor",
-              "RelativeToolTip": "Components\\App.razor",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAAHAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-07-30T21:30:12.713Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Routes.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Routes.razor",
-              "RelativeDocumentMoniker": "Components\\Routes.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Routes.razor",
-              "RelativeToolTip": "Components\\Routes.razor",
-              "ViewState": "AgIAAAIAAAAAAAAAAAAIwBsAAAAWAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-07-30T20:48:09.82Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 31,
               "Title": "_Imports.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\_Imports.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\_Imports.razor",
               "RelativeDocumentMoniker": "Components\\_Imports.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\_Imports.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\_Imports.razor",
               "RelativeToolTip": "Components\\_Imports.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
@@ -221,36 +597,23 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "Login.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Auth\\Login.razor",
-              "RelativeDocumentMoniker": "Components\\Pages\\Auth\\Login.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Auth\\Login.razor",
-              "RelativeToolTip": "Components\\Pages\\Auth\\Login.razor",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAjAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-07-30T20:50:26.345Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 30,
               "Title": "appsettings.json",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\appsettings.json",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\appsettings.json",
               "RelativeDocumentMoniker": "appsettings.json",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\appsettings.json",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\appsettings.json",
               "RelativeToolTip": "appsettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAmAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-07-30T20:41:21.472Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-30T20:41:21.472Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 32,
               "Title": "InicializadorSesion.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Layout\\InicializadorSesion.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Layout\\InicializadorSesion.razor",
               "RelativeDocumentMoniker": "Components\\Layout\\InicializadorSesion.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Layout\\InicializadorSesion.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Layout\\InicializadorSesion.razor",
               "RelativeToolTip": "Components\\Layout\\InicializadorSesion.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
@@ -258,24 +621,23 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 29,
               "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Program.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Program.cs",
               "RelativeDocumentMoniker": "Program.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Program.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Program.cs",
               "RelativeToolTip": "Program.cs",
               "ViewState": "AgIAABIAAAAAAAAAAAAIwBcAAAAvAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-30T20:45:48.072Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-30T20:45:48.072Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 34,
               "Title": "NexoWeb.csproj",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\NexoWeb.csproj",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\NexoWeb.csproj",
               "RelativeDocumentMoniker": "NexoWeb.csproj",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\NexoWeb.csproj",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\NexoWeb.csproj",
               "RelativeToolTip": "NexoWeb.csproj",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
@@ -283,11 +645,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 35,
               "Title": "InventarioDtos.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Dtos\\InventarioDtos.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\InventarioDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\InventarioDtos.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Dtos\\InventarioDtos.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\InventarioDtos.cs",
               "RelativeToolTip": "Common\\Dtos\\InventarioDtos.cs",
               "ViewState": "AgIAABgAAAAAAAAAAAAkwCEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -295,35 +657,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "CatalogoDtos.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Dtos\\CatalogoDtos.cs",
-              "RelativeDocumentMoniker": "Common\\Dtos\\CatalogoDtos.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Dtos\\CatalogoDtos.cs",
-              "RelativeToolTip": "Common\\Dtos\\CatalogoDtos.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAASAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-30T21:09:13.178Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 14,
-              "Title": "Dashboard.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Dashboard\\Dashboard.razor",
-              "RelativeDocumentMoniker": "Components\\Pages\\Dashboard\\Dashboard.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Dashboard\\Dashboard.razor",
-              "RelativeToolTip": "Components\\Pages\\Dashboard\\Dashboard.razor",
-              "ViewState": "AgIAAIEAAAAAAAAAAAAAAIgAAAAoAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-07-30T21:34:43.508Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 36,
               "Title": "DashboardDtos.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Dtos\\DashboardDtos.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\DashboardDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\DashboardDtos.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Dtos\\DashboardDtos.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\DashboardDtos.cs",
               "RelativeToolTip": "Common\\Dtos\\DashboardDtos.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -331,11 +669,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 37,
               "Title": "ListaTraspasos.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Traspasos\\ListaTraspasos.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Traspasos\\ListaTraspasos.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Traspasos\\ListaTraspasos.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Traspasos\\ListaTraspasos.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Traspasos\\ListaTraspasos.razor",
               "RelativeToolTip": "Components\\Pages\\Traspasos\\ListaTraspasos.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
@@ -343,11 +681,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 38,
               "Title": "CrearTraspasoDialog.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
               "RelativeToolTip": "Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
@@ -355,11 +693,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 39,
               "Title": "TraspasosDtos.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Dtos\\TraspasosDtos.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\TraspasosDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\TraspasosDtos.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Dtos\\TraspasosDtos.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\TraspasosDtos.cs",
               "RelativeToolTip": "Common\\Dtos\\TraspasosDtos.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -367,11 +705,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 40,
               "Title": "ListaOrdenesCompra.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Compras\\ListaOrdenesCompra.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Compras\\ListaOrdenesCompra.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Compras\\ListaOrdenesCompra.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Compras\\ListaOrdenesCompra.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Compras\\ListaOrdenesCompra.razor",
               "RelativeToolTip": "Components\\Pages\\Compras\\ListaOrdenesCompra.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
@@ -379,11 +717,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 41,
               "Title": "RecibirLineaDialog.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Compras\\RecibirLineaDialog.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Compras\\RecibirLineaDialog.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Compras\\RecibirLineaDialog.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Compras\\RecibirLineaDialog.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Compras\\RecibirLineaDialog.razor",
               "RelativeToolTip": "Components\\Pages\\Compras\\RecibirLineaDialog.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
@@ -391,11 +729,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 42,
               "Title": "CrearOrdenCompraDialog.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Compras\\CrearOrdenCompraDialog.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Compras\\CrearOrdenCompraDialog.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Compras\\CrearOrdenCompraDialog.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Compras\\CrearOrdenCompraDialog.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Compras\\CrearOrdenCompraDialog.razor",
               "RelativeToolTip": "Components\\Pages\\Compras\\CrearOrdenCompraDialog.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
@@ -403,11 +741,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 21,
+              "DocumentIndex": 43,
               "Title": "ComprasDtos.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Dtos\\ComprasDtos.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\ComprasDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\ComprasDtos.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Dtos\\ComprasDtos.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\ComprasDtos.cs",
               "RelativeToolTip": "Common\\Dtos\\ComprasDtos.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -415,11 +753,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 23,
+              "DocumentIndex": 45,
               "Title": "CrearOrden.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Produccion\\CrearOrden.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Produccion\\CrearOrden.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Produccion\\CrearOrden.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Produccion\\CrearOrden.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Produccion\\CrearOrden.razor",
               "RelativeToolTip": "Components\\Pages\\Produccion\\CrearOrden.razor",
               "ViewState": "AgIAAL0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
@@ -427,11 +765,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
+              "DocumentIndex": 44,
               "Title": "ListaOrdenes.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Produccion\\ListaOrdenes.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Produccion\\ListaOrdenes.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Produccion\\ListaOrdenes.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Produccion\\ListaOrdenes.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Produccion\\ListaOrdenes.razor",
               "RelativeToolTip": "Components\\Pages\\Produccion\\ListaOrdenes.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
@@ -439,23 +777,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 24,
-              "Title": "ProduccionDtos.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Dtos\\ProduccionDtos.cs",
-              "RelativeDocumentMoniker": "Common\\Dtos\\ProduccionDtos.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Dtos\\ProduccionDtos.cs",
-              "RelativeToolTip": "Common\\Dtos\\ProduccionDtos.cs",
-              "ViewState": "AgIAABoAAAAAAAAAAAAcwCUAAAACAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-30T20:56:49.799Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 25,
+              "DocumentIndex": 46,
               "Title": "RegistrarBaja.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Inventario\\RegistrarBaja.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Inventario\\RegistrarBaja.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Inventario\\RegistrarBaja.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Inventario\\RegistrarBaja.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Inventario\\RegistrarBaja.razor",
               "RelativeToolTip": "Components\\Pages\\Inventario\\RegistrarBaja.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
@@ -463,35 +789,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 26,
-              "Title": "NexoApiClient.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\ApiClient\\NexoApiClient.cs",
-              "RelativeDocumentMoniker": "Common\\ApiClient\\NexoApiClient.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\ApiClient\\NexoApiClient.cs",
-              "RelativeToolTip": "Common\\ApiClient\\NexoApiClient.cs",
-              "ViewState": "AgIAADYAAAAAAAAAAAAmwEoAAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-30T20:45:06.846Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 27,
-              "Title": "INexoApiClient.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\ApiClient\\INexoApiClient.cs",
-              "RelativeDocumentMoniker": "Common\\ApiClient\\INexoApiClient.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\ApiClient\\INexoApiClient.cs",
-              "RelativeToolTip": "Common\\ApiClient\\INexoApiClient.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAgAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-30T20:44:39.569Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 28,
+              "DocumentIndex": 47,
               "Title": "CerrarOrdenDialog.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Produccion\\CerrarOrdenDialog.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Produccion\\CerrarOrdenDialog.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Produccion\\CerrarOrdenDialog.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Produccion\\CerrarOrdenDialog.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Produccion\\CerrarOrdenDialog.razor",
               "RelativeToolTip": "Components\\Pages\\Produccion\\CerrarOrdenDialog.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
@@ -499,11 +801,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 29,
+              "DocumentIndex": 48,
               "Title": "ConsultaStock.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Inventario\\ConsultaStock.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Inventario\\ConsultaStock.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Inventario\\ConsultaStock.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Pages\\Inventario\\ConsultaStock.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Inventario\\ConsultaStock.razor",
               "RelativeToolTip": "Components\\Pages\\Inventario\\ConsultaStock.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAmAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
@@ -511,11 +813,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 30,
+              "DocumentIndex": 49,
               "Title": "NavMenu.razor",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Layout\\NavMenu.razor",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Layout\\NavMenu.razor",
               "RelativeDocumentMoniker": "Components\\Layout\\NavMenu.razor",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Components\\Layout\\NavMenu.razor",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Layout\\NavMenu.razor",
               "RelativeToolTip": "Components\\Layout\\NavMenu.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
@@ -523,11 +825,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 31,
+              "DocumentIndex": 50,
               "Title": "CustomAuthStateProvider.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Auth\\CustomAuthStateProvider.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Auth\\CustomAuthStateProvider.cs",
               "RelativeDocumentMoniker": "Common\\Auth\\CustomAuthStateProvider.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Auth\\CustomAuthStateProvider.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Auth\\CustomAuthStateProvider.cs",
               "RelativeToolTip": "Common\\Auth\\CustomAuthStateProvider.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -535,11 +837,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 32,
+              "DocumentIndex": 51,
               "Title": "AuthStateService.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Auth\\AuthStateService.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Auth\\AuthStateService.cs",
               "RelativeDocumentMoniker": "Common\\Auth\\AuthStateService.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\Common\\Auth\\AuthStateService.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Auth\\AuthStateService.cs",
               "RelativeToolTip": "Common\\Auth\\AuthStateService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",

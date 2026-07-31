@@ -1,0 +1,175 @@
+﻿@page "/catalogo/articulos"
+@attribute [Authorize(Roles = "Administrador,SupervisorPlanta")]
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Articulos - NEXO</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Articulos</MudText>
+
+<MudGrid Class="mb-4">
+    <MudItem xs="12" sm="6" md="4">
+        <MudTextField T="string" Label="Buscar por nombre o SKU" Value="_filtroTexto"
+                      ValueChanged="OnFiltroTextoCambiadoAsync" Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search" Immediate="false" DebounceInterval="400" />
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudSelect T="int?" Value="_filtroTipoId" ValueChanged="OnFiltroTipoCambiadoAsync"
+                   Label="Filtrar por Tipo" Clearable="true">
+            @foreach (var tipo in _tiposArticulo)
+            {
+                <MudSelectItem T="int?" Value="@tipo.TipoArticuloID">@tipo.Nombre</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+</MudGrid>
+
+<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
+           StartIcon="@Icons.Material.Filled.Add" Class="mb-4"
+           Disabled="_tiposArticulo.Count == 0 || _unidadesMedida.Count == 0">
+    Nuevo Articulo
+</MudButton>
+
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else
+{
+    <MudTable Items="_articulos" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>SKU</MudTh>
+            <MudTh>Nombre</MudTh>
+            <MudTh>Tipo</MudTh>
+            <MudTh>Unidad</MudTh>
+            <MudTh>Costo Promedio</MudTh>
+            <MudTh>Precio Venta</MudTh>
+            <MudTh>Stock Minimo</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Accion</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="SKU">@context.SKU</MudTd>
+            <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+            <MudTd DataLabel="Tipo">@context.TipoArticulo</MudTd>
+            <MudTd DataLabel="Unidad">@context.Unidad</MudTd>
+            <MudTd DataLabel="Costo Promedio">@context.CostoPromedio.ToString("N2")</MudTd>
+            <MudTd DataLabel="Precio Venta">@context.PrecioVenta.ToString("N2")</MudTd>
+            <MudTd DataLabel="Stock Minimo">@context.StockMinimo.ToString("N2")</MudTd>
+            <MudTd DataLabel="Estado">
+                <MudChip T="string" Color="@(context.Estado ? Color.Success : Color.Error)" Size="Size.Small">
+                    @(context.Estado ? "Activo" : "Inactivo")
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Accion">
+                <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">
+                    Editar
+                </MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No hay articulos que coincidan con el filtro.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+}
+
+@code {
+    private List<ArticuloItem> _articulos = new();
+    private List<TipoArticuloItem> _tiposArticulo = new();
+    private List<UnidadMedidaItem> _unidadesMedida = new();
+    private int? _filtroTipoId;
+    private string? _filtroTexto;
+    private bool _cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Los catalogos de apoyo (tipos y unidades) se cargan una sola vez;
+        // no cambian en tiempo real y los necesita el dialogo de creacion.
+        _tiposArticulo = await ApiClient.GetAsync<List<TipoArticuloItem>>("api/catalogo/articulos/tipos") ?? new();
+        _unidadesMedida = await ApiClient.GetAsync<List<UnidadMedidaItem>>("api/catalogo/articulos/unidades") ?? new();
+        await CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        _cargando = true;
+
+        var query = new List<string>();
+        if (_filtroTipoId.HasValue)
+            query.Add($"tipoArticuloId={_filtroTipoId}");
+        if (!string.IsNullOrWhiteSpace(_filtroTexto))
+            query.Add($"texto={Uri.EscapeDataString(_filtroTexto)}");
+
+        var ruta = "api/catalogo/articulos" + (query.Count > 0 ? "?" + string.Join("&", query) : "");
+        _articulos = await ApiClient.GetAsync<List<ArticuloItem>>(ruta) ?? new();
+        _cargando = false;
+    }
+
+    private async Task OnFiltroTipoCambiadoAsync(int? nuevoValor)
+    {
+        _filtroTipoId = nuevoValor;
+        await CargarAsync();
+    }
+
+    private async Task OnFiltroTextoCambiadoAsync(string? nuevoValor)
+    {
+        _filtroTexto = nuevoValor;
+        await CargarAsync();
+    }
+
+    private async Task AbrirCreacionAsync()
+    {
+        var parametros = new DialogParameters<ArticuloDialog>
+        {
+            { x => x.TiposArticulo, _tiposArticulo },
+            { x => x.UnidadesMedida, _unidadesMedida }
+        };
+
+        var dialogo = await DialogService.ShowAsync<ArticuloDialog>("Nuevo Articulo", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (CrearArticuloRequest)resultado.Data!;
+            await ApiClient.PostAsync<CrearArticuloRequest, object?>("api/catalogo/articulos", request);
+            Snackbar.Add("Articulo creado correctamente.", Severity.Success);
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AbrirEdicionAsync(ArticuloItem articulo)
+    {
+        var parametros = new DialogParameters<ArticuloDialog>
+        {
+            { x => x.Articulo, articulo }
+        };
+
+        var dialogo = await DialogService.ShowAsync<ArticuloDialog>("Editar Articulo", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (ActualizarArticuloRequest)resultado.Data!;
+            await ApiClient.PutAsync<ActualizarArticuloRequest, object?>(
+                $"api/catalogo/articulos/{articulo.ArticuloID}", request);
+            Snackbar.Add("Articulo actualizado correctamente.", Severity.Success);
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

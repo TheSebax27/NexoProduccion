@@ -1,0 +1,238 @@
+﻿@page "/produccion/recetas/crear"
+@page "/produccion/recetas/{RecetaBaseId:int}/nueva-version"
+@attribute [Authorize(Roles = "Administrador,SupervisorPlanta")]
+@inject INexoApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject NavigationManager Navegacion
+@using NexoWeb.Common.Dtos
+
+<PageTitle>@(EsNuevaVersion ? "Nueva Version de Receta" : "Nueva Receta") - NEXO</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">
+    @(EsNuevaVersion ? $"Nueva Version de Receta" : "Nueva Receta (BOM)")
+</MudText>
+
+@if (_cargandoCatalogos)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else
+{
+    <MudPaper Class="pa-6 mb-4" MaxWidth="700px">
+        @if (!EsNuevaVersion)
+        {
+            <MudSelect T="int" @bind-Value="_productoTerminadoId" Label="Producto Terminado" Class="mb-4" Required="true">
+                @foreach (var articulo in _articulos)
+                {
+                    <MudSelectItem T="int" Value="@articulo.ArticuloID">@articulo.Nombre (@articulo.TipoArticulo)</MudSelectItem>
+                }
+            </MudSelect>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4">
+                Estas creando una nueva version de la receta. La version actual se desactivara
+                automaticamente al guardar (no se elimina, queda en el historial).
+            </MudAlert>
+        }
+
+        <MudTextField @bind-Value="_nombreReceta" Label="Nombre de la Receta" Class="mb-4" Required="true" />
+
+        <MudNumericField @bind-Value="_cantidadRendimientoBase" Label="Cantidad de Rendimiento Base"
+                         Min="0.001m" Class="mb-4" Required="true" />
+
+        <MudSelect T="int" @bind-Value="_unidadRendimientoId" Label="Unidad de Rendimiento" Class="mb-4" Required="true">
+            @foreach (var unidad in _unidadesMedida)
+            {
+                <MudSelectItem T="int" Value="@unidad.UnidadID">@unidad.Nombre (@unidad.Abreviatura)</MudSelectItem>
+            }
+        </MudSelect>
+    </MudPaper>
+
+    <MudText Typo="Typo.h6" Class="mb-2">Insumos de la Receta</MudText>
+
+    <MudTable Items="_lineas" Dense="true" Hover="true" Class="mb-4">
+        <HeaderContent>
+            <MudTh>Insumo</MudTh>
+            <MudTh>Cantidad</MudTh>
+            <MudTh>Unidad</MudTh>
+            <MudTh>% Merma Std.</MudTh>
+            <MudTh>Centro de Trabajo</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Insumo">
+                <MudSelect T="int" @bind-Value="context.InsumoID" Dense="true">
+                    @foreach (var articulo in _articulos)
+                    {
+                        <MudSelectItem T="int" Value="@articulo.ArticuloID">@articulo.Nombre (@articulo.TipoArticulo)</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudTd>
+            <MudTd DataLabel="Cantidad">
+                <MudNumericField @bind-Value="context.CantidadRequerida" Min="0.001m" Dense="true" />
+            </MudTd>
+            <MudTd DataLabel="Unidad">
+                <MudSelect T="int" @bind-Value="context.UnidadID" Dense="true">
+                    @foreach (var unidad in _unidadesMedida)
+                    {
+                        <MudSelectItem T="int" Value="@unidad.UnidadID">@unidad.Abreviatura</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudTd>
+            <MudTd DataLabel="% Merma Std.">
+                <MudNumericField @bind-Value="context.PorcentajeMermaEstandar" Min="0m" Max="100m" Dense="true" />
+            </MudTd>
+            <MudTd DataLabel="Centro de Trabajo">
+                <MudSelect T="int?" @bind-Value="context.CentroTrabajoID" Dense="true" Clearable="true">
+                    @foreach (var centro in _centrosTrabajo)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)centro.CentroTrabajoID)">@centro.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                               OnClick="@(() => QuitarLinea(context))" />
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>Agrega al menos un insumo.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+
+    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AgregarLinea" Class="mb-4">
+        Agregar Insumo
+    </MudButton>
+
+    <br />
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GuardarAsync"
+               Disabled="@(!FormularioValido || _guardando)" StartIcon="@Icons.Material.Filled.Save">
+        @(_guardando ? "Guardando..." : "Guardar Receta")
+    </MudButton>
+}
+
+@code {
+    // Si viene con valor, la pagina esta en modo "nueva version" de esta receta base.
+    [Parameter] public int? RecetaBaseId { get; set; }
+
+    private bool EsNuevaVersion => RecetaBaseId.HasValue;
+
+    // Catalogos para llenar los desplegables
+    private List<ArticuloItem> _articulos = new();
+    private List<UnidadMedidaItem> _unidadesMedida = new();
+    private List<CentroTrabajoItem> _centrosTrabajo = new();
+
+    // Encabezado del formulario
+    private int _productoTerminadoId;
+    private string _nombreReceta = string.Empty;
+    private decimal _cantidadRendimientoBase = 1;
+    private int _unidadRendimientoId;
+
+    // Lineas dinamicas: se manejan como clase mutable en la UI y se convierten
+    // a record inmutable (DetalleRecetaRequest) recien al enviar, siguiendo la
+    // misma convencion que ya usa el resto del proyecto para formularios dinamicos.
+    private class LineaRecetaEditable
+    {
+        public int InsumoID { get; set; }
+        public decimal CantidadRequerida { get; set; }
+        public int UnidadID { get; set; }
+        public decimal PorcentajeMermaEstandar { get; set; }
+        public int? CentroTrabajoID { get; set; }
+    }
+
+    private List<LineaRecetaEditable> _lineas = new();
+
+    private bool _cargandoCatalogos = true;
+    private bool _guardando;
+
+    private bool FormularioValido =>
+        !string.IsNullOrWhiteSpace(_nombreReceta) && _cantidadRendimientoBase > 0 &&
+        _unidadRendimientoId > 0 && (EsNuevaVersion || _productoTerminadoId > 0) &&
+        _lineas.Count > 0 && _lineas.All(l => l.InsumoID > 0 && l.CantidadRequerida > 0 && l.UnidadID > 0);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+        var tareaUnidades = ApiClient.GetAsync<List<UnidadMedidaItem>>("api/catalogo/articulos/unidades");
+        var tareaCentrosTrabajo = ApiClient.GetAsync<List<CentroTrabajoItem>>("api/catalogo/centros-trabajo");
+
+        await Task.WhenAll(tareaArticulos, tareaUnidades, tareaCentrosTrabajo);
+
+        _articulos = await tareaArticulos ?? new();
+        _unidadesMedida = await tareaUnidades ?? new();
+        _centrosTrabajo = await tareaCentrosTrabajo ?? new();
+
+        if (EsNuevaVersion)
+        {
+            // Precargamos nombre, rendimiento e insumos de la version actual para
+            // que el usuario solo tenga que ajustar lo que cambio.
+            var detalleActual = await ApiClient.GetAsync<List<RecetaDetalleItem>>(
+                $"api/produccion/recetas/{RecetaBaseId}/detalle") ?? new();
+
+            _lineas = detalleActual
+                .OrderBy(d => d.Orden)
+                .Select(d => new LineaRecetaEditable
+                {
+                    InsumoID = d.InsumoID,
+                    CantidadRequerida = d.CantidadRequerida,
+                    UnidadID = _unidadesMedida.FirstOrDefault(u => u.Abreviatura == d.Unidad)?.UnidadID ?? 0,
+                    PorcentajeMermaEstandar = d.PorcentajeMermaEstandar,
+                    CentroTrabajoID = d.CentroTrabajoID
+                })
+                .ToList();
+        }
+        else
+        {
+            AgregarLinea();
+        }
+
+        _cargandoCatalogos = false;
+    }
+
+    private void AgregarLinea() => _lineas.Add(new LineaRecetaEditable());
+
+    private void QuitarLinea(LineaRecetaEditable linea) => _lineas.Remove(linea);
+
+    private async Task GuardarAsync()
+    {
+        _guardando = true;
+
+        try
+        {
+            var detalle = _lineas
+                .Select((linea, indice) => new DetalleRecetaRequest(
+                    linea.InsumoID, linea.CantidadRequerida, linea.UnidadID,
+                    linea.PorcentajeMermaEstandar, linea.CentroTrabajoID, indice + 1))
+                .ToList();
+
+            if (EsNuevaVersion)
+            {
+                var request = new CrearNuevaVersionRequest(
+                    _nombreReceta, _cantidadRendimientoBase, _unidadRendimientoId, detalle);
+
+                await ApiClient.PostAsync<CrearNuevaVersionRequest, object?>(
+                    $"api/produccion/recetas/{RecetaBaseId}/nueva-version", request);
+            }
+            else
+            {
+                var request = new CrearRecetaRequest(
+                    _productoTerminadoId, _nombreReceta, _cantidadRendimientoBase, _unidadRendimientoId, detalle);
+
+                await ApiClient.PostAsync<CrearRecetaRequest, object?>("api/produccion/recetas", request);
+            }
+
+            Snackbar.Add("Receta guardada correctamente.", Severity.Success);
+            Navegacion.NavigateTo("/produccion/recetas");
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _guardando = false;
+        }
+    }
+}

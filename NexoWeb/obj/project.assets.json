@@ -98,11 +98,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\NexoWeb.csproj",
+      "projectUniqueName": "C:\\Produccion\\NexoWeb\\NexoWeb.csproj",
       "projectName": "NexoWeb",
-      "projectPath": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\NexoWeb.csproj",
+      "projectPath": "C:\\Produccion\\NexoWeb\\NexoWeb.csproj",
       "packagesPath": "C:\\Users\\USER\\.nuget\\packages\\",
-      "outputPath": "C:\\Produccion\\NexoWeb-corregido\\NexoWeb\\obj\\",
+      "outputPath": "C:\\Produccion\\NexoWeb\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
