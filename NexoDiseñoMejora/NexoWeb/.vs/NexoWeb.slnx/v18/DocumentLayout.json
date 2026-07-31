@@ -1,18 +1,21 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\USER\\Downloads\\NexoWeb\\",
+  "WorkspaceRootPath": "C:\\Produccion\\NexoDise\u00F1oMejora\\NexoWeb\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\e40cd255b1f30a5ee3545be0b3a9c988f0faef0893ee5660ff76961557283b9b\\CircuitHost.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\7359755a63a0eef4e8a101bde875a0a6c6013760bb23441bb9b04a92876a282b\\ExecutionContext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\2c9f52e0c9460a71604cda943507deb57fb6c03eae3535500dfa559debfcbfd7\\RemoteJSRuntime.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\e40cd255b1f30a5ee3545be0b3a9c988f0faef0893ee5660ff76961557283b9b\\CircuitHost.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\users\\user\\downloads\\nexoweb\\components\\nexotheme.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexodise\u00F1omejora\\nexoweb\\components\\nexotheme.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\nexotheme.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
@@ -23,7 +26,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
@@ -31,38 +34,51 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "RemoteJSRuntime.cs",
-              "DocumentMoniker": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\2c9f52e0c9460a71604cda943507deb57fb6c03eae3535500dfa559debfcbfd7\\RemoteJSRuntime.cs",
-              "RelativeDocumentMoniker": "..\\..\\AppData\\Local\\Temp\\.vsdbgsrc\\2c9f52e0c9460a71604cda943507deb57fb6c03eae3535500dfa559debfcbfd7\\RemoteJSRuntime.cs",
-              "ToolTip": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\2c9f52e0c9460a71604cda943507deb57fb6c03eae3535500dfa559debfcbfd7\\RemoteJSRuntime.cs [Solo lectura]",
-              "RelativeToolTip": "..\\..\\AppData\\Local\\Temp\\.vsdbgsrc\\2c9f52e0c9460a71604cda943507deb57fb6c03eae3535500dfa559debfcbfd7\\RemoteJSRuntime.cs [Solo lectura]",
-              "ViewState": "AgIAAMYAAAAAAAAAAAAkwNMAAAADAAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "ExecutionContext.cs",
+              "DocumentMoniker": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\7359755a63a0eef4e8a101bde875a0a6c6013760bb23441bb9b04a92876a282b\\ExecutionContext.cs",
+              "RelativeDocumentMoniker": "..\\..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\7359755a63a0eef4e8a101bde875a0a6c6013760bb23441bb9b04a92876a282b\\ExecutionContext.cs",
+              "ToolTip": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\7359755a63a0eef4e8a101bde875a0a6c6013760bb23441bb9b04a92876a282b\\ExecutionContext.cs [Solo lectura]",
+              "RelativeToolTip": "..\\..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\7359755a63a0eef4e8a101bde875a0a6c6013760bb23441bb9b04a92876a282b\\ExecutionContext.cs [Solo lectura]",
+              "ViewState": "AgIAAL4AAAAAAAAAAAAkwMsAAAACAAAAAQAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-31T21:55:54.992Z",
+              "WhenOpened": "2026-07-31T22:30:05.417Z",
               "EditorCaption": " [Solo lectura]"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "CircuitHost.cs",
-              "DocumentMoniker": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\e40cd255b1f30a5ee3545be0b3a9c988f0faef0893ee5660ff76961557283b9b\\CircuitHost.cs",
-              "RelativeDocumentMoniker": "..\\..\\AppData\\Local\\Temp\\.vsdbgsrc\\e40cd255b1f30a5ee3545be0b3a9c988f0faef0893ee5660ff76961557283b9b\\CircuitHost.cs",
-              "ToolTip": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\e40cd255b1f30a5ee3545be0b3a9c988f0faef0893ee5660ff76961557283b9b\\CircuitHost.cs [Solo lectura]",
-              "RelativeToolTip": "..\\..\\AppData\\Local\\Temp\\.vsdbgsrc\\e40cd255b1f30a5ee3545be0b3a9c988f0faef0893ee5660ff76961557283b9b\\CircuitHost.cs [Solo lectura]",
-              "ViewState": "AgIAAOMDAAAAAAAAAAAkwO4DAAADAAAAAQAAAA==",
+              "DocumentIndex": 1,
+              "Title": "RemoteJSRuntime.cs",
+              "DocumentMoniker": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\2c9f52e0c9460a71604cda943507deb57fb6c03eae3535500dfa559debfcbfd7\\RemoteJSRuntime.cs",
+              "RelativeDocumentMoniker": "..\\..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\2c9f52e0c9460a71604cda943507deb57fb6c03eae3535500dfa559debfcbfd7\\RemoteJSRuntime.cs",
+              "ToolTip": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\2c9f52e0c9460a71604cda943507deb57fb6c03eae3535500dfa559debfcbfd7\\RemoteJSRuntime.cs",
+              "RelativeToolTip": "..\\..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\2c9f52e0c9460a71604cda943507deb57fb6c03eae3535500dfa559debfcbfd7\\RemoteJSRuntime.cs",
+              "ViewState": "AgIAAMsAAAAAAAAAAAAkwNgAAAADAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-31T21:49:34.312Z",
-              "EditorCaption": " [Solo lectura]"
+              "WhenOpened": "2026-07-31T21:55:54.992Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
+              "Title": "CircuitHost.cs",
+              "DocumentMoniker": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\e40cd255b1f30a5ee3545be0b3a9c988f0faef0893ee5660ff76961557283b9b\\CircuitHost.cs",
+              "RelativeDocumentMoniker": "..\\..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\e40cd255b1f30a5ee3545be0b3a9c988f0faef0893ee5660ff76961557283b9b\\CircuitHost.cs",
+              "ToolTip": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\e40cd255b1f30a5ee3545be0b3a9c988f0faef0893ee5660ff76961557283b9b\\CircuitHost.cs",
+              "RelativeToolTip": "..\\..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\e40cd255b1f30a5ee3545be0b3a9c988f0faef0893ee5660ff76961557283b9b\\CircuitHost.cs",
+              "ViewState": "AgIAAOMDAAAAAAAAAAAkwO4DAAADAAAAAQAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-31T21:49:34.312Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "ClientProxyExtensions.cs",
               "DocumentMoniker": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs",
-              "RelativeDocumentMoniker": "..\\..\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs",
+              "RelativeDocumentMoniker": "..\\..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs",
               "ToolTip": "C:\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs [Solo lectura]",
-              "RelativeToolTip": "..\\..\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs [Solo lectura]",
+              "RelativeToolTip": "..\\..\\..\\Users\\USER\\AppData\\Local\\Temp\\.vsdbgsrc\\c5b2729678e1a03df19e65899b4ad191802bd617a3623b940d97308bcc2b98d9\\ClientProxyExtensions.cs [Solo lectura]",
               "ViewState": "AgIAAAwAAAAAAAAAAAAkwBkAAAACAAAAAQAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-07-31T21:49:29.278Z",
@@ -70,16 +86,15 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "NexoTheme.cs",
-              "DocumentMoniker": "C:\\Users\\USER\\Downloads\\NexoWeb\\Components\\NexoTheme.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoDise\u00F1oMejora\\NexoWeb\\Components\\NexoTheme.cs",
               "RelativeDocumentMoniker": "Components\\NexoTheme.cs",
-              "ToolTip": "C:\\Users\\USER\\Downloads\\NexoWeb\\Components\\NexoTheme.cs",
+              "ToolTip": "C:\\Produccion\\NexoDise\u00F1oMejora\\NexoWeb\\Components\\NexoTheme.cs",
               "RelativeToolTip": "Components\\NexoTheme.cs",
               "ViewState": "AgIAAEEAAAAAAAAAAAAowFwAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-31T21:33:27.869Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-31T21:33:27.869Z"
             }
           ]
         }
