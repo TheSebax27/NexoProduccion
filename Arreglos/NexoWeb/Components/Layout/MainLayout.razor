@@ -1,0 +1,49 @@
+﻿@inherits LayoutComponentBase
+@inject NexoWeb.Common.Auth.AuthStateService AuthState
+@inject NavigationManager Navegacion
+
+<MudThemeProvider Theme="@NexoTheme.Theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                       OnClick="@(() => _menuAbierto = !_menuAbierto)" />
+        <MudText Typo="Typo.h6" Class="ml-2">NEXO ERP</MudText>
+        <MudSpacer />
+
+        @if (AuthState.EstaLogueado)
+        {
+            <div class="nexo-appbar-user">
+                <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Size="Size.Small" />
+                <span>@AuthState.NombreCompleto <span class="nexo-appbar-user__role">(@AuthState.Rol)</span></span>
+            </div>
+            <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="CerrarSesionAsync" />
+        }
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_menuAbierto" Elevation="2" Variant="DrawerVariant.Responsive" Class="nexo-drawer">
+        <MudDrawerHeader Class="nexo-drawer-header">
+            <img src="images/LogoV.png" alt="NEXO ERP" class="nexo-drawer-logo" />
+            <MudText Typo="Typo.h6" Class="nexo-drawer-title">NEXO <strong>ERP</strong></MudText>
+        </MudDrawerHeader>
+        <MudDivider Class="nexo-drawer-divider" />
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent Class="pa-4">
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _menuAbierto = true;
+
+    private async Task CerrarSesionAsync()
+    {
+        await AuthState.CerrarSesionAsync();
+        Navegacion.NavigateTo("/login", forceLoad: true);
+    }
+}

@@ -1,0 +1,35 @@
+/* Los colores base (fondo del drawer, texto, iconos) vienen del tema
+   centralizado en NexoTheme.cs. Este archivo solo pule el estado hover/activo
+   de cada item del menu para que combine con la identidad Grafito + Beige.
+
+   NOTA: las reglas que estaban aqui antes (.nav-item, .navbar-toggler,
+   .bi-*-nav-menu, .nav-scrollable) eran restos de la plantilla por defecto de
+   Blazor (NavLink + Bootstrap) y no le pegaban a ninguna clase presente en
+   este menu (que usa MudNavMenu/MudNavLink/MudNavGroup). Se eliminaron por
+   ser codigo muerto. */
+
+[b-vumnekz1w9] .mud-nav-link {
+    border-radius: 10px;
+    margin: 0.15rem 0.75rem;
+    color: #E8E2D9;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+    [b-vumnekz1w9] .mud-nav-link:hover {
+        background-color: rgba(37, 99, 235, 0.22);
+        color: #FFFFFF;
+    }
+
+    [b-vumnekz1w9] .mud-nav-link.active {
+        background-color: #2563EB;
+        color: #FFFFFF;
+    }
+
+        [b-vumnekz1w9] .mud-nav-link.active .mud-icon-root {
+            color: #FFFFFF;
+        }
+
+[b-vumnekz1w9] .mud-nav-group .mud-nav-link {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
