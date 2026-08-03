@@ -1,0 +1,49 @@
+@* Components/Pages/Settings/Settings.razor *@
+@page "/settings"
+@attribute [Authorize]
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
+
+<PageTitle>Configuración - NEXO</PageTitle>
+
+<div class="nexo-page-hero">
+    <div class="nexo-page-hero__left">
+        <div class="nexo-page-hero__accent"></div>
+        <div>
+            <p class="nexo-page-hero__module">Cuenta</p>
+            <h1 class="nexo-page-hero__title">Configuración</h1>
+        </div>
+    </div>
+</div>
+
+<MudPaper Class="pa-5 mb-4" Style="max-width: 640px;">
+    <div class="nexo-chart-header mb-4">
+        <MudIcon Icon="@Icons.Material.Outlined.Palette" Size="Size.Small" Class="nexo-chart-header__icon" />
+        <div>
+            <div class="nexo-chart-header__title">Apariencia</div>
+            <div class="nexo-chart-header__sub">Se guarda para tu usuario — no afecta a los demás</div>
+        </div>
+    </div>
+
+    <div class="d-flex align-center justify-space-between py-2">
+        <div>
+            <div style="font-weight:600; font-size:0.9rem;">Tema oscuro</div>
+            <div style="font-size:0.78rem; color:var(--n-text-3);">
+                Cambia el fondo de las páginas a oscuro. La barra superior y el menú lateral no cambian.
+            </div>
+        </div>
+        <MudSwitch T="bool" Value="Preferencias.TemaOscuro" ValueChanged="OnTemaOscuroCambiadoAsync"
+                   Color="Color.Primary" />
+    </div>
+</MudPaper>
+
+<MudAlert Severity="Severity.Info" Density="Density.Compact" Style="max-width: 640px;">
+    Más opciones de configuración personal (vista de lista/tarjetas por pantalla, densidad de tablas, etc.)
+    se irán agregando aquí.
+</MudAlert>
+
+@code {
+    private async Task OnTemaOscuroCambiadoAsync(bool nuevoValor)
+    {
+        await Preferencias.EstablecerTemaOscuroAsync(nuevoValor);
+    }
+}

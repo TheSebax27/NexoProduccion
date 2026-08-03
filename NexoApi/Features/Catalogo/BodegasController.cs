@@ -30,6 +30,21 @@ public class BodegasController : ControllerBase
         return CreatedAtAction(nameof(Listar), new { BodegaID = id });
     }
 
+    [HttpPut("{id:int}")]
+    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    public async Task<ActionResult> Actualizar(int id, ActualizarBodegaRequest request)
+    {
+        try
+        {
+            await _service.ActualizarBodegaAsync(id, request);
+            return Ok();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Administrador")]
     public async Task<ActionResult> Desactivar(int id)

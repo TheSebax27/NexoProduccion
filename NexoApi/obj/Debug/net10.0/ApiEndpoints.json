@@ -42,6 +42,130 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "NexoApi.Features.Auth.AuthController",
+    "Method": "ListarRoles",
+    "RelativePath": "api/auth/roles",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Auth.Dtos.RolItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Auth.AuthController",
+    "Method": "ListarUsuarios",
+    "RelativePath": "api/auth/usuarios",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Auth.Dtos.UsuarioItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Auth.AuthController",
+    "Method": "CrearUsuario",
+    "RelativePath": "api/auth/usuarios",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Auth.Dtos.CrearUsuarioRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Auth.AuthController",
+    "Method": "ActualizarUsuario",
+    "RelativePath": "api/auth/usuarios/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Auth.Dtos.ActualizarUsuarioRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Auth.AuthController",
+    "Method": "ResetearPassword",
+    "RelativePath": "api/auth/usuarios/{id}/resetear-password",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Auth.Dtos.ResetearPasswordRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Busqueda.BusquedaController",
+    "Method": "Buscar",
+    "RelativePath": "api/busqueda",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "q",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Busqueda.Dtos.ResultadoBusqueda, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
     "ContainingType": "NexoApi.Features.Catalogo.ArticulosController",
     "Method": "Listar",
     "RelativePath": "api/catalogo/articulos",
@@ -193,6 +317,27 @@
   },
   {
     "ContainingType": "NexoApi.Features.Catalogo.BodegasController",
+    "Method": "Actualizar",
+    "RelativePath": "api/catalogo/bodegas/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.ActualizarBodegaRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.BodegasController",
     "Method": "Desactivar",
     "RelativePath": "api/catalogo/bodegas/{id}",
     "HttpMethod": "DELETE",
@@ -277,7 +422,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "soloActivos",
+        "Type": "System.Boolean",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Catalogo.Dtos.CentroTrabajoItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -289,6 +440,43 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.ClientesYCentrosTrabajoController",
+    "Method": "CrearCentroTrabajo",
+    "RelativePath": "api/catalogo/centros-trabajo",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.CrearCentroTrabajoRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.ClientesYCentrosTrabajoController",
+    "Method": "ActualizarCentroTrabajo",
+    "RelativePath": "api/catalogo/centros-trabajo/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.ActualizarCentroTrabajoRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "NexoApi.Features.Catalogo.ClientesYCentrosTrabajoController",
@@ -312,6 +500,43 @@
   },
   {
     "ContainingType": "NexoApi.Features.Catalogo.ClientesYCentrosTrabajoController",
+    "Method": "CrearCliente",
+    "RelativePath": "api/catalogo/clientes",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.CrearClienteRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.ClientesYCentrosTrabajoController",
+    "Method": "ActualizarCliente",
+    "RelativePath": "api/catalogo/clientes/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.ActualizarClienteRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.ClientesYCentrosTrabajoController",
     "Method": "ListarProveedores",
     "RelativePath": "api/catalogo/proveedores",
     "HttpMethod": "GET",
@@ -329,6 +554,43 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.ClientesYCentrosTrabajoController",
+    "Method": "CrearProveedor",
+    "RelativePath": "api/catalogo/proveedores",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.CrearProveedorRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.ClientesYCentrosTrabajoController",
+    "Method": "ActualizarProveedor",
+    "RelativePath": "api/catalogo/proveedores/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.ActualizarProveedorRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "NexoApi.Features.Compras.OrdenesCompraController",
@@ -421,6 +683,26 @@
   },
   {
     "ContainingType": "NexoApi.Features.Dashboard.DashboardController",
+    "Method": "CumplimientoPlanificacion",
+    "RelativePath": "api/dashboard/cumplimiento-planificacion",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Dashboard.Dtos.CumplimientoCentroCostoItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Dashboard.DashboardController",
     "Method": "DistribucionCentroCosto",
     "RelativePath": "api/dashboard/distribucion-centro-costo",
     "HttpMethod": "GET",
@@ -448,8 +730,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "dias",
-        "Type": "System.Int32",
+        "Name": "desde",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "hasta",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": false
       }
     ],
@@ -474,8 +761,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "dias",
-        "Type": "System.Int32",
+        "Name": "desde",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "hasta",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": false
       }
     ],
@@ -597,6 +889,32 @@
   },
   {
     "ContainingType": "NexoApi.Features.Inventario.InventarioController",
+    "Method": "AjustarInventario",
+    "RelativePath": "api/inventario/ajustes",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Inventario.Dtos.AjustarInventarioRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Inventario.Dtos.AjustarInventarioResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Inventario.InventarioController",
     "Method": "RegistrarBaja",
     "RelativePath": "api/inventario/bajas",
     "HttpMethod": "POST",
@@ -612,6 +930,47 @@
     "ReturnTypes": [
       {
         "Type": "NexoApi.Features.Inventario.Dtos.RegistrarBajaResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Inventario.InventarioController",
+    "Method": "ConsultarKardex",
+    "RelativePath": "api/inventario/kardex",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "articuloId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "bodegaId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "desde",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "hasta",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Inventario.Dtos.KardexMovimientoItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -762,6 +1121,67 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "NexoApi.Features.Notificaciones.NotificacionesController",
+    "Method": "ObtenerResumen",
+    "RelativePath": "api/notificaciones/resumen",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Notificaciones.Dtos.ResumenNotificaciones",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Preferencias.PreferenciasController",
+    "Method": "ObtenerTodas",
+    "RelativePath": "api/preferencias",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.Dictionary\u00602[[System.String, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Preferencias.PreferenciasController",
+    "Method": "Guardar",
+    "RelativePath": "api/preferencias/{clave}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "clave",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Preferencias.Dtos.GuardarPreferenciaRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "NexoApi.Features.Produccion.OrdenesProduccionController",
     "Method": "Listar",
     "RelativePath": "api/produccion/ordenes",
@@ -836,6 +1256,43 @@
   },
   {
     "ContainingType": "NexoApi.Features.Produccion.OrdenesProduccionController",
+    "Method": "Actualizar",
+    "RelativePath": "api/produccion/ordenes/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Produccion.Dtos.ActualizarOrdenProduccionRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.OrdenesProduccionController",
+    "Method": "Cancelar",
+    "RelativePath": "api/produccion/ordenes/{id}/cancelar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.OrdenesProduccionController",
     "Method": "Cerrar",
     "RelativePath": "api/produccion/ordenes/{id}/cerrar",
     "HttpMethod": "POST",
@@ -854,6 +1311,58 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.OrdenesProduccionController",
+    "Method": "ListarConsumos",
+    "RelativePath": "api/produccion/ordenes/{id}/consumos",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Produccion.Dtos.ConsumoOpItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.OrdenesProduccionController",
+    "Method": "ObtenerParaEdicion",
+    "RelativePath": "api/produccion/ordenes/{id}/editar",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Produccion.Dtos.OrdenProduccionDetalleEdicion",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "NexoApi.Features.Produccion.OrdenesProduccionController",
@@ -907,6 +1416,26 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.OrdenesProduccionController",
+    "Method": "ListarMotivosExceso",
+    "RelativePath": "api/produccion/ordenes/motivos-exceso",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Produccion.Dtos.MotivoExcesoItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "NexoApi.Features.Produccion.OrdenesProduccionController",
@@ -970,6 +1499,22 @@
       {
         "Name": "request",
         "Type": "NexoApi.Features.Recetas.Dtos.CrearRecetaRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Recetas.RecetasController",
+    "Method": "Desactivar",
+    "RelativePath": "api/produccion/recetas/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
         "IsRequired": true
       }
     ],

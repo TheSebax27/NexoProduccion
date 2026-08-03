@@ -13,10 +13,7 @@ public interface INexoApiClient
     Task<TResponse?> PostAsync<TRequest, TResponse>(string ruta, TRequest body);
     Task PostAsync<TRequest>(string ruta, TRequest body);
     Task<TResponse?> PutAsync<TRequest, TResponse>(string ruta, TRequest body);
-    // Agregar a INexoApiClient.cs
     Task PostAsync(string ruta);
-
-    // Agregado para el punto #2 (pantalla de Bodegas): la API expone
-    // "desactivar" como HTTP DELETE y el cliente no tenia forma de llamarlo.
     Task DeleteAsync(string ruta);
+    Task<TResponse?> PatchAsync<TRequest, TResponse>(string ruta, TRequest body);
 }

@@ -1,18 +1,42 @@
 ﻿@page "/inventario/stock"
 @attribute [Authorize]
+@implements IDisposable
 @inject NexoWeb.Common.ApiClient.INexoApiClient ApiClient
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
+@inject NavigationManager Navegacion
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Consulta de Stock - NEXO</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">Consulta de Stock</MudText>
+<div class="d-flex align-center justify-space-between mb-4">
+    <MudText Typo="Typo.h5" Class="mb-0">Consulta de Stock</MudText>
+    <VistaToggle Pagina="consulta-stock" />
+</div>
 
 <MudGrid Class="mb-4">
-    <MudItem xs="12" sm="4">
+    <MudItem xs="12" sm="3">
         <MudTextField @bind-Value="_filtroSku" Label="Buscar por SKU" Variant="Variant.Outlined"
                       Immediate="true" DebounceInterval="400" OnDebounceIntervalElapsed="CargarAsync" />
     </MudItem>
-    <MudItem xs="12" sm="4">
+    <MudItem xs="12" sm="3">
+        <MudSelect T="int?" Value="_filtroCentroCostoId" ValueChanged="OnCentroCostoCambiadoAsync"
+                   Label="Centro de Costo" Variant="Variant.Outlined" Clearable="true">
+            @foreach (var cc in _centrosCosto)
+            {
+                <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" sm="3">
+        <MudSelect T="int?" @bind-Value="_filtroBodegaId" @bind-Value:after="CargarAsync"
+                   Label="Bodega" Variant="Variant.Outlined" Clearable="true">
+            @foreach (var b in _bodegasFiltradas)
+            {
+                <MudSelectItem T="int?" Value="@b.BodegaID">@b.Nombre</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" sm="3" Class="d-flex align-center">
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CargarAsync" StartIcon="@Icons.Material.Filled.Refresh">
             Actualizar
         </MudButton>
@@ -26,6 +50,56 @@
 else if (_error is not null)
 {
     <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else if (_stock.Count == 0)
+{
+    <MudText>No hay stock que coincida con el filtro.</MudText>
+}
+else if (Preferencias.ObtenerVista("consulta-stock") == "tarjetas")
+{
+    <div class="nexo-card-grid">
+        @foreach (var item in _stock)
+        {
+            <div class="nexo-item-card">
+                <div class="nexo-item-card__title">@item.Articulo</div>
+                <div class="nexo-item-card__sub">@item.SKU · @item.Bodega · @item.CentroCosto</div>
+                <div class="nexo-item-card__row">
+                    <span>Cantidad</span>
+                    <strong>
+                        @item.CantidadActual.ToString("N2") @item.Unidad
+                        @if (item.Unidad == "cja" && item.UnidadesPorEmbalaje is > 0)
+                        {
+                            <span style="font-weight:400; color:var(--n-text-3);">
+                                (@((item.CantidadActual * item.UnidadesPorEmbalaje.Value).ToString("N0")) und)
+                            </span>
+                        }
+                    </strong>
+                </div>
+                <div class="nexo-item-card__row">
+                    <span>Valor total</span>
+                    <strong>@item.ValorTotal.ToString("C0")</strong>
+                </div>
+                @if (item.CantidadActual <= 0)
+                {
+                    <div class="nexo-item-card__actions">
+                        <MudChip T="string" Color="Color.Error" Size="Size.Small" Icon="@Icons.Material.Filled.ShoppingCart"
+                                 OnClick="@(() => IrAOrdenarAsync(item.ArticuloID))" Style="cursor:pointer;">
+                            Sin stock
+                        </MudChip>
+                    </div>
+                }
+                else if (item.RequierePedido)
+                {
+                    <div class="nexo-item-card__actions">
+                        <MudChip T="string" Color="Color.Warning" Size="Size.Small" Icon="@Icons.Material.Filled.ShoppingCart"
+                                 OnClick="@(() => IrAOrdenarAsync(item.ArticuloID))" Style="cursor:pointer;">
+                            Requiere pedido
+                        </MudChip>
+                    </div>
+                }
+            </div>
+        }
+    </div>
 }
 else
 {
@@ -44,12 +118,30 @@ else
             <MudTd DataLabel="Articulo">@context.Articulo</MudTd>
             <MudTd DataLabel="Bodega">@context.Bodega</MudTd>
             <MudTd DataLabel="Centro de Costo">@context.CentroCosto</MudTd>
-            <MudTd DataLabel="Cantidad">@context.CantidadActual.ToString("N2")</MudTd>
+            <MudTd DataLabel="Cantidad">
+                @context.CantidadActual.ToString("N2") @context.Unidad
+                @if (context.Unidad == "cja" && context.UnidadesPorEmbalaje is > 0)
+                {
+                    <MudText Typo="Typo.caption" Class="d-block" Style="color: var(--n-text-3, #9B9BB4);">
+                        = @((context.CantidadActual * context.UnidadesPorEmbalaje.Value).ToString("N0")) unidades
+                    </MudText>
+                }
+            </MudTd>
             <MudTd DataLabel="Valor Total">@context.ValorTotal.ToString("C0")</MudTd>
             <MudTd DataLabel="Alerta">
-                @if (context.RequierePedido)
+                @if (context.CantidadActual <= 0)
                 {
-                    <MudChip T="string" Color="Color.Warning" Size="Size.Small">Requiere pedido</MudChip>
+                    <MudChip T="string" Color="Color.Error" Size="Size.Small" Icon="@Icons.Material.Filled.ShoppingCart"
+                             OnClick="@(() => IrAOrdenarAsync(context.ArticuloID))" Style="cursor:pointer;">
+                        Sin stock
+                    </MudChip>
+                }
+                else if (context.RequierePedido)
+                {
+                    <MudChip T="string" Color="Color.Warning" Size="Size.Small" Icon="@Icons.Material.Filled.ShoppingCart"
+                             OnClick="@(() => IrAOrdenarAsync(context.ArticuloID))" Style="cursor:pointer;">
+                        Requiere pedido
+                    </MudChip>
                 }
             </MudTd>
         </RowTemplate>
@@ -62,11 +154,49 @@ else
 @code {
     private List<StockConsolidadoItem> _stock = new();
     private string _filtroSku = "";
+    private int? _filtroCentroCostoId;
+    private int? _filtroBodegaId;
     private bool _cargando = true;
     private string? _error;
 
+    private List<CentroCostoItem> _centrosCosto = new();
+    private List<BodegaItem> _bodegas = new();
+    private IEnumerable<BodegaItem> _bodegasFiltradas =>
+        _filtroCentroCostoId is null ? _bodegas : _bodegas.Where(b => b.CentroCostoID == _filtroCentroCostoId);
+
+    protected override void OnInitialized()
+    {
+        Preferencias.OnCambio += OnPreferenciasCambiaron;
+    }
+
+    private void OnPreferenciasCambiaron() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Preferencias.OnCambio -= OnPreferenciasCambiaron;
+    }
+
     protected override async Task OnInitializedAsync()
     {
+        var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
+        var tareaBodegas      = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
+        await Task.WhenAll(tareaCentrosCosto, tareaBodegas);
+        _centrosCosto = await tareaCentrosCosto ?? new();
+        _bodegas      = await tareaBodegas ?? new();
+
+        await CargarAsync();
+    }
+
+    private void IrAOrdenarAsync(int articuloId) =>
+        Navegacion.NavigateTo($"/compras/ordenes?articuloId={articuloId}");
+
+    private async Task OnCentroCostoCambiadoAsync(int? nuevoCentroCostoId)
+    {
+        _filtroCentroCostoId = nuevoCentroCostoId;
+        // Si la bodega elegida ya no pertenece al centro de costo filtrado, se limpia
+        if (_filtroBodegaId is not null && _bodegasFiltradas.All(b => b.BodegaID != _filtroBodegaId))
+            _filtroBodegaId = null;
+
         await CargarAsync();
     }
 
@@ -77,9 +207,12 @@ else
 
         try
         {
-            var ruta = string.IsNullOrWhiteSpace(_filtroSku)
-                ? "api/inventario/stock"
-                : $"api/inventario/stock?sku={Uri.EscapeDataString(_filtroSku)}";
+            var parametros = new List<string>();
+            if (!string.IsNullOrWhiteSpace(_filtroSku)) parametros.Add($"sku={Uri.EscapeDataString(_filtroSku)}");
+            if (_filtroCentroCostoId is not null) parametros.Add($"centroCostoId={_filtroCentroCostoId}");
+            if (_filtroBodegaId is not null) parametros.Add($"bodegaId={_filtroBodegaId}");
+
+            var ruta = "api/inventario/stock" + (parametros.Count > 0 ? "?" + string.Join("&", parametros) : "");
 
             _stock = await ApiClient.GetAsync<List<StockConsolidadoItem>>(ruta) ?? new();
         }

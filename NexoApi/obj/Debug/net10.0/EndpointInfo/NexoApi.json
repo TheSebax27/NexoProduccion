@@ -286,6 +286,195 @@
         }
       }
     },
+    "/api/auth/usuarios": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UsuarioItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UsuarioItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UsuarioItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearUsuarioRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearUsuarioRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearUsuarioRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/usuarios/{id}": {
+      "put": {
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarUsuarioRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarUsuarioRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarUsuarioRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/usuarios/{id}/resetear-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetearPasswordRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetearPasswordRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetearPasswordRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/roles": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RolItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RolItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RolItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/catalogo/bodegas": {
       "get": {
         "tags": [
@@ -364,6 +553,46 @@
       }
     },
     "/api/catalogo/bodegas/{id}": {
+      "put": {
+        "tags": [
+          "Bodegas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarBodegaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarBodegaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarBodegaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
       "delete": {
         "tags": [
           "Bodegas"
@@ -382,6 +611,53 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/busqueda": {
+      "get": {
+        "tags": [
+          "Busqueda"
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResultadoBusqueda"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResultadoBusqueda"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResultadoBusqueda"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -541,12 +817,93 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "ClientesYCentrosTrabajo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearClienteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearClienteRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearClienteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/clientes/{id}": {
+      "put": {
+        "tags": [
+          "ClientesYCentrosTrabajo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarClienteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarClienteRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarClienteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/catalogo/centros-trabajo": {
       "get": {
         "tags": [
           "ClientesYCentrosTrabajo"
+        ],
+        "parameters": [
+          {
+            "name": "soloActivos",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -577,6 +934,77 @@
                 }
               }
             }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ClientesYCentrosTrabajo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearCentroTrabajoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearCentroTrabajoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearCentroTrabajoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/centros-trabajo/{id}": {
+      "put": {
+        "tags": [
+          "ClientesYCentrosTrabajo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarCentroTrabajoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarCentroTrabajoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarCentroTrabajoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -617,6 +1045,77 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "ClientesYCentrosTrabajo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearProveedorRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearProveedorRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearProveedorRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/proveedores/{id}": {
+      "put": {
+        "tags": [
+          "ClientesYCentrosTrabajo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarProveedorRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarProveedorRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarProveedorRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/dashboard/plan-vs-real": {
@@ -626,12 +1125,19 @@
         ],
         "parameters": [
           {
-            "name": "dias",
+            "name": "desde",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 14
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
             }
           }
         ],
@@ -713,12 +1219,19 @@
         ],
         "parameters": [
           {
-            "name": "dias",
+            "name": "desde",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 30
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
             }
           }
         ],
@@ -795,6 +1308,44 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/TendenciaCostoPunto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/cumplimiento-planificacion": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CumplimientoCentroCostoItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CumplimientoCentroCostoItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CumplimientoCentroCostoItem"
                   }
                 }
               }
@@ -1054,6 +1605,54 @@
         }
       }
     },
+    "/api/inventario/ajustes": {
+      "post": {
+        "tags": [
+          "Inventario"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AjustarInventarioRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AjustarInventarioRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AjustarInventarioRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjustarInventarioResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjustarInventarioResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjustarInventarioResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/inventario/motivos-perdida": {
       "get": {
         "tags": [
@@ -1085,6 +1684,107 @@
                   "items": {
                     "$ref": "#/components/schemas/MotivoPerdidaItem"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/inventario/kardex": {
+      "get": {
+        "tags": [
+          "Inventario"
+        ],
+        "parameters": [
+          {
+            "name": "articuloId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "bodegaId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KardexMovimientoItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KardexMovimientoItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KardexMovimientoItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notificaciones/resumen": {
+      "get": {
+        "tags": [
+          "Notificaciones"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumenNotificaciones"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumenNotificaciones"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumenNotificaciones"
                 }
               }
             }
@@ -1381,6 +2081,109 @@
             }
           }
         }
+      },
+      "put": {
+        "tags": [
+          "OrdenesProduccion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarOrdenProduccionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarOrdenProduccionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarOrdenProduccionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/produccion/ordenes/{id}/editar": {
+      "get": {
+        "tags": [
+          "OrdenesProduccion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrdenProduccionDetalleEdicion"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrdenProduccionDetalleEdicion"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrdenProduccionDetalleEdicion"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/produccion/ordenes/{id}/cancelar": {
+      "post": {
+        "tags": [
+          "OrdenesProduccion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/produccion/ordenes/{id}/liberar": {
@@ -1513,6 +2316,93 @@
         }
       }
     },
+    "/api/produccion/ordenes/{id}/consumos": {
+      "get": {
+        "tags": [
+          "OrdenesProduccion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConsumoOpItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConsumoOpItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConsumoOpItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/produccion/ordenes/motivos-exceso": {
+      "get": {
+        "tags": [
+          "OrdenesProduccion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MotivoExcesoItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MotivoExcesoItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MotivoExcesoItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/produccion/ordenes/tipos-produccion": {
       "get": {
         "tags": [
@@ -1547,6 +2437,85 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/preferencias": {
+      "get": {
+        "tags": [
+          "Preferencias"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/preferencias/{clave}": {
+      "put": {
+        "tags": [
+          "Preferencias"
+        ],
+        "parameters": [
+          {
+            "name": "clave",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarPreferenciaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarPreferenciaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarPreferenciaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -1720,6 +2689,29 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/produccion/recetas/{id}": {
+      "delete": {
+        "tags": [
+          "Recetas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -1908,6 +2900,31 @@
           },
           "estado": {
             "type": "boolean"
+          },
+          "unidadesPorEmbalaje": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarBodegaRequest": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoBodega": {
+            "type": "string",
+            "nullable": true
+          },
+          "esVirtual": {
+            "type": "boolean"
+          },
+          "estado": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -1933,6 +2950,176 @@
         },
         "additionalProperties": false
       },
+      "ActualizarCentroTrabajoRequest": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "costoHoraManoObra": {
+            "type": "number",
+            "format": "double"
+          },
+          "costoHoraCIF": {
+            "type": "number",
+            "format": "double"
+          },
+          "estado": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarClienteRequest": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "contacto": {
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarOrdenProduccionRequest": {
+        "type": "object",
+        "properties": {
+          "tipoProduccionID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "productoTerminadoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "recetaID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cantidadProgramada": {
+            "type": "number",
+            "format": "double"
+          },
+          "clienteID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "centroCostoDestinoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bodegaOrigenMPID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bodegaDestinoPTID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "centroTrabajoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "fechaPlanificada": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarProveedorRequest": {
+        "type": "object",
+        "properties": {
+          "razonSocial": {
+            "type": "string",
+            "nullable": true
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "contacto": {
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarUsuarioRequest": {
+        "type": "object",
+        "properties": {
+          "nombres": {
+            "type": "string",
+            "nullable": true
+          },
+          "apellidos": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "rolID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "estado": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "AjustarConsumoRealRequest": {
         "type": "object",
         "properties": {
@@ -1948,6 +3135,50 @@
           "observacion": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AjustarInventarioRequest": {
+        "type": "object",
+        "properties": {
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bodegaID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cantidad": {
+            "type": "number",
+            "format": "double"
+          },
+          "costoUnitario": {
+            "type": "number",
+            "format": "double"
+          },
+          "motivo": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AjustarInventarioResponse": {
+        "type": "object",
+        "properties": {
+          "codigoAjuste": {
+            "type": "string",
+            "nullable": true
+          },
+          "ajusteID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nuevoSaldo": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -2001,6 +3232,11 @@
           "diasVidaUtil": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "unidadesPorEmbalaje": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           }
         },
@@ -2084,6 +3320,21 @@
           "centroCostoID": {
             "type": "integer",
             "format": "int32"
+          },
+          "centroCosto": {
+            "type": "string",
+            "nullable": true
+          },
+          "costoHoraManoObra": {
+            "type": "number",
+            "format": "double"
+          },
+          "costoHoraCIF": {
+            "type": "number",
+            "format": "double"
+          },
+          "estado": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -2125,6 +3376,63 @@
           "nombre": {
             "type": "string",
             "nullable": true
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "contacto": {
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConsumoOpItem": {
+        "type": "object",
+        "properties": {
+          "consumoID": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "articulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidadTeorica": {
+            "type": "number",
+            "format": "double"
+          },
+          "cantidadReal": {
+            "type": "number",
+            "format": "double"
+          },
+          "motivoExceso": {
+            "type": "string",
+            "nullable": true
+          },
+          "observacion": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -2150,7 +3458,8 @@
           },
           "unidadID": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "nullable": true
           },
           "precioVenta": {
             "type": "number",
@@ -2167,6 +3476,11 @@
           "diasVidaUtil": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "unidadesPorEmbalaje": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           }
         },
@@ -2213,6 +3527,58 @@
             "nullable": true
           },
           "telefono": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CrearCentroTrabajoRequest": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "costoHoraManoObra": {
+            "type": "number",
+            "format": "double"
+          },
+          "costoHoraCIF": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CrearClienteRequest": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "contacto": {
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
             "type": "string",
             "nullable": true
           }
@@ -2326,6 +3692,36 @@
         },
         "additionalProperties": false
       },
+      "CrearProveedorRequest": {
+        "type": "object",
+        "properties": {
+          "razonSocial": {
+            "type": "string",
+            "nullable": true
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "contacto": {
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CrearRecetaRequest": {
         "type": "object",
         "properties": {
@@ -2372,6 +3768,67 @@
               "$ref": "#/components/schemas/DetalleTraspasoRequest"
             },
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CrearUsuarioRequest": {
+        "type": "object",
+        "properties": {
+          "nombres": {
+            "type": "string",
+            "nullable": true
+          },
+          "apellidos": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "rolID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CumplimientoCentroCostoItem": {
+        "type": "object",
+        "properties": {
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "centroCosto": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalOrdenesFinalizadas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ordenesATiempo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "porcentajeCumplimiento": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -2532,6 +3989,58 @@
         },
         "additionalProperties": false
       },
+      "GuardarPreferenciaRequest": {
+        "type": "object",
+        "properties": {
+          "valor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "KardexMovimientoItem": {
+        "type": "object",
+        "properties": {
+          "kardexID": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "articulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "bodega": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoMovimiento": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidad": {
+            "type": "number",
+            "format": "double"
+          },
+          "costoUnitario": {
+            "type": "number",
+            "format": "double"
+          },
+          "cantidadSaldo": {
+            "type": "number",
+            "format": "double"
+          },
+          "observacionDetallada": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "LoginRequest": {
         "type": "object",
         "properties": {
@@ -2581,6 +4090,20 @@
         },
         "additionalProperties": false
       },
+      "MotivoExcesoItem": {
+        "type": "object",
+        "properties": {
+          "motivoExcesoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "MotivoPerdidaItem": {
         "type": "object",
         "properties": {
@@ -2589,6 +4112,32 @@
             "format": "int32"
           },
           "nombre": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NotificacionItem": {
+        "type": "object",
+        "properties": {
+          "categoria": {
+            "type": "string",
+            "nullable": true
+          },
+          "severidad": {
+            "type": "string",
+            "nullable": true
+          },
+          "mensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "detalle": {
+            "type": "string",
+            "nullable": true
+          },
+          "link": {
             "type": "string",
             "nullable": true
           }
@@ -2621,6 +4170,15 @@
           "costoUnitario": {
             "type": "number",
             "format": "double"
+          },
+          "unidad": {
+            "type": "string",
+            "nullable": true
+          },
+          "unidadesPorEmbalaje": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -2651,6 +4209,71 @@
           "total": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OrdenProduccionDetalleEdicion": {
+        "type": "object",
+        "properties": {
+          "ordenProduccionID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "codigoOP": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoProduccionID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "productoTerminadoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "recetaID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cantidadProgramada": {
+            "type": "number",
+            "format": "double"
+          },
+          "clienteID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "centroCostoDestinoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bodegaOrigenMPID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bodegaDestinoPTID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "centroTrabajoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "fechaPlanificada": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -2756,6 +4379,29 @@
           "razonSocial": {
             "type": "string",
             "nullable": true
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "contacto": {
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -2957,6 +4603,69 @@
         },
         "additionalProperties": false
       },
+      "ResetearPasswordRequest": {
+        "type": "object",
+        "properties": {
+          "nuevaPassword": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResultadoBusqueda": {
+        "type": "object",
+        "properties": {
+          "categoria": {
+            "type": "string",
+            "nullable": true
+          },
+          "titulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "subtitulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "link": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResumenNotificaciones": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificacionItem"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RolItem": {
+        "type": "object",
+        "properties": {
+          "rolID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "StockConsolidadoItem": {
         "type": "object",
         "properties": {
@@ -2974,6 +4683,15 @@
           },
           "tipoArticulo": {
             "type": "string",
+            "nullable": true
+          },
+          "unidad": {
+            "type": "string",
+            "nullable": true
+          },
+          "unidadesPorEmbalaje": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           },
           "bodegaID": {
@@ -3158,6 +4876,57 @@
           },
           "tipo": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UsuarioItem": {
+        "type": "object",
+        "properties": {
+          "usuarioID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nombres": {
+            "type": "string",
+            "nullable": true
+          },
+          "apellidos": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "rolID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rol": {
+            "type": "string",
+            "nullable": true
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "centroCosto": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "boolean"
+          },
+          "ultimoAcceso": {
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           }
         },

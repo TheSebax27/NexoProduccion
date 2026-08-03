@@ -37,6 +37,24 @@ public record CrearOrdenProduccionRequest(
     DateTime? FechaPlanificada, string? Observaciones
 );
 
+// Solo aplica cuando la orden esta en estado Planificada; el codigo de la OP
+// no se puede editar (es el identificador de negocio).
+public record ActualizarOrdenProduccionRequest(
+    int TipoProduccionID, int ProductoTerminadoID, int RecetaID,
+    decimal CantidadProgramada, int? ClienteID, int CentroCostoDestinoID,
+    int BodegaOrigenMPID, int BodegaDestinoPTID, int? CentroTrabajoID,
+    DateTime? FechaPlanificada, string? Observaciones
+);
+
+// IDs crudos (no nombres) para precargar el formulario de edicion.
+public record OrdenProduccionDetalleEdicion(
+    int OrdenProduccionID, string CodigoOP, string Estado,
+    int TipoProduccionID, int ProductoTerminadoID, int RecetaID,
+    decimal CantidadProgramada, int? ClienteID, int CentroCostoDestinoID,
+    int BodegaOrigenMPID, int BodegaDestinoPTID, int? CentroTrabajoID,
+    DateTime? FechaPlanificada, string? Observaciones
+);
+
 public record RecetaDetalleItem(
     int RecetaDetalleID,
     int InsumoID,
@@ -71,3 +89,13 @@ public record CrearNuevaVersionRequest(
     int UnidadRendimientoID,
     List<DetalleRecetaRequest> Detalle
 );
+
+public record ConsumoOpItem(
+    long ConsumoID, int ArticuloID, string Articulo,
+    decimal CantidadTeorica, decimal CantidadReal,
+    string? MotivoExceso, string? Observacion
+);
+
+public record MotivoExcesoItem(int MotivoExcesoID, string Nombre);
+
+public record AjustarConsumoRealRequest(decimal CantidadReal, int? MotivoExcesoID, string? Observacion);

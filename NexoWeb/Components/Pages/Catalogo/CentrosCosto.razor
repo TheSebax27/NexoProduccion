@@ -14,11 +14,15 @@
     Nuevo Centro de Costo
 </MudButton>
 
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar los centros de costo: @_errorCarga</MudAlert>
+}
 @if (_cargando)
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
 }
-else
+else if (_errorCarga is null)
 {
     <MudTable Items="_centrosCosto" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
@@ -57,6 +61,7 @@ else
 @code {
     private List<CentroCostoItem> _centrosCosto = new();
     private bool _cargando = true;
+    private string? _errorCarga;
 
     protected override async Task OnInitializedAsync()
     {
@@ -66,10 +71,21 @@ else
     private async Task CargarAsync()
     {
         _cargando = true;
-        // soloActivos=false para que el administrador tambien vea (y pueda reactivar)
-        // los centros de costo inactivos, no solo los activos.
-        _centrosCosto = await ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=false") ?? new();
-        _cargando = false;
+        _errorCarga = null;
+
+        try
+        {
+            // soloActivos=false para que el administrador tambien vea los inactivos
+            _centrosCosto = await ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=false") ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
     }
 
     private async Task AbrirCreacionAsync()

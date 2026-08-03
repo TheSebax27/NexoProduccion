@@ -2,11 +2,11 @@
 
 <MudDialog>
     <DialogContent>
-        <MudNumericField @bind-Value="_cantidadProducidaReal" Label="Cantidad producida real" Min="0.01m" Class="mb-3" />
-        <MudNumericField @bind-Value="_horasManoObra" Label="Horas de mano de obra" Min="0m" Class="mb-3" />
-        <MudNumericField @bind-Value="_horasCif" Label="Horas de CIF" Min="0m" Class="mb-3" />
+        <MudNumericField @bind-Value="_cantidadProducidaReal" Label="Cantidad producida real" Min="0.01m" Format="N2" Class="mb-3" />
+        <MudHorasField @bind-Value="_horasManoObra" Label="Horas de mano de obra" Class="mb-3" />
+        <MudHorasField @bind-Value="_horasCif" Label="Horas de CIF" Class="mb-3" />
         <MudTextField @bind-Value="_numeroLotePt" Label="Numero de lote (producto terminado)" Class="mb-3" />
-        <MudDatePicker @bind-Date="_fechaVencimiento" Label="Fecha de vencimiento (opcional)" />
+        <MudDatePicker @bind-Date="_fechaVencimiento" Label="Fecha de vencimiento (opcional)" PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancelar">Cancelar</MudButton>

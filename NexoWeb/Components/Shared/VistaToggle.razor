@@ -1,0 +1,43 @@
+@* Components/Shared/VistaToggle.razor
+   Botones Lista/Tarjetas reutilizables. La preferencia se guarda por
+   usuario y por pantalla (parametro Pagina) via PreferenciasState -- al
+   cambiarla, cualquier componente suscrito a Preferencias.OnCambio se
+   re-renderiza solo (la pagina que usa este toggle debe suscribirse ella
+   misma para saber que vista mostrar). *@
+@implements IDisposable
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
+
+<div class="nexo-vista-toggle">
+    <button type="button" class="nexo-vista-toggle__btn @(Vista == "lista" ? "nexo-vista-toggle__btn--activo" : "")"
+            @onclick="@(() => CambiarAsync("lista"))" title="Ver como lista" aria-label="Ver como lista">
+        <MudIcon Icon="@Icons.Material.Filled.ViewList" Size="Size.Small" />
+    </button>
+    <button type="button" class="nexo-vista-toggle__btn @(Vista == "tarjetas" ? "nexo-vista-toggle__btn--activo" : "")"
+            @onclick="@(() => CambiarAsync("tarjetas"))" title="Ver como tarjetas" aria-label="Ver como tarjetas">
+        <MudIcon Icon="@Icons.Material.Filled.ViewModule" Size="Size.Small" />
+    </button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Pagina { get; set; } = "";
+
+    private string Vista => Preferencias.ObtenerVista(Pagina);
+
+    protected override void OnInitialized()
+    {
+        Preferencias.OnCambio += OnPreferenciasCambiaron;
+    }
+
+    private void OnPreferenciasCambiaron() => InvokeAsync(StateHasChanged);
+
+    private async Task CambiarAsync(string nuevaVista)
+    {
+        if (Vista != nuevaVista)
+            await Preferencias.EstablecerVistaAsync(Pagina, nuevaVista);
+    }
+
+    public void Dispose()
+    {
+        Preferencias.OnCambio -= OnPreferenciasCambiaron;
+    }
+}

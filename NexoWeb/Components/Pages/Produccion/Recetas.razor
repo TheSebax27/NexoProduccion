@@ -2,6 +2,7 @@
 @attribute [Authorize(Roles = "Administrador,SupervisorPlanta")]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
+@inject ISnackbar Snackbar
 @inject NavigationManager Navegacion
 @using NexoWeb.Common.Dtos
 
@@ -30,11 +31,15 @@
     Nueva Receta
 </MudButton>
 
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar las recetas: @_errorCarga</MudAlert>
+}
 @if (_cargando)
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
 }
-else
+else if (_errorCarga is null)
 {
     <MudTable Items="_recetas" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
@@ -65,6 +70,10 @@ else
                                Href="@($"/produccion/recetas/{context.RecetaID}/nueva-version")">
                         Nueva Version
                     </MudButton>
+                    <MudButton Size="Size.Small" Color="Color.Error"
+                               OnClick="@(() => DesactivarAsync(context))">
+                        Desactivar
+                    </MudButton>
                 }
             </MudTd>
         </RowTemplate>
@@ -80,32 +89,82 @@ else
     private int? _filtroProductoId;
     private bool _soloActivas = true;
     private bool _cargando = true;
+    private string? _errorCarga;
 
     protected override async Task OnInitializedAsync()
     {
-        // Se usa para el filtro por producto terminado y para etiquetar el
-        // selector "Producto Terminado" al crear una receta nueva.
-        _articulos = await ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos") ?? new();
-        await CargarAsync();
+        try
+        {
+            // Se filtra por nombre de tipo, no por ID: los IDs de Catalogo.TiposArticulo
+            // dependen del orden de insercion de los datos semilla y no son confiables
+            // como numero fijo. Este selector es "Filtrar por Producto Terminado", no
+            // debe listar Materia Prima/Insumo/Servicio.
+            _articulos = (await ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos") ?? new())
+                .Where(a => a.TipoArticulo == "Producto Terminado")
+                .ToList();
+            await CargarAsync();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+            _cargando = false;
+        }
     }
 
     private async Task CargarAsync()
     {
         _cargando = true;
+        _errorCarga = null;
 
-        var query = new List<string> { $"soloActivas={_soloActivas.ToString().ToLower()}" };
-        if (_filtroProductoId.HasValue)
-            query.Add($"productoTerminadoId={_filtroProductoId}");
+        try
+        {
+            var query = new List<string> { $"soloActivas={_soloActivas.ToString().ToLower()}" };
+            if (_filtroProductoId.HasValue)
+                query.Add($"productoTerminadoId={_filtroProductoId}");
 
-        var ruta = "api/produccion/recetas?" + string.Join("&", query);
-        _recetas = await ApiClient.GetAsync<List<RecetaResumen>>(ruta) ?? new();
-        _cargando = false;
+            var ruta = "api/produccion/recetas?" + string.Join("&", query);
+            _recetas = await ApiClient.GetAsync<List<RecetaResumen>>(ruta) ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
     }
 
     private async Task OnFiltroCambiadoAsync(int? nuevoValor)
     {
         _filtroProductoId = nuevoValor;
         await CargarAsync();
+    }
+
+    private async Task DesactivarAsync(RecetaResumen receta)
+    {
+        var confirmacion = await DialogService.ShowMessageBox(
+            "Desactivar Receta",
+            $"Esta receta no vuelve a estar disponible para crear ordenes de produccion. " +
+            $"No se borra: las ordenes que ya la usaron siguen mostrando su historial correctamente.\n\n" +
+            $"Receta: {receta.NombreReceta} (v{receta.Version})\n\n" +
+            "¿Confirmar?",
+            yesText: "Si, desactivar",
+            noText: "Cancelar");
+
+        if (confirmacion != true)
+            return;
+
+        try
+        {
+            await ApiClient.DeleteAsync($"api/produccion/recetas/{receta.RecetaID}");
+            Snackbar.Add("Receta desactivada correctamente.", Severity.Success);
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
     }
 
     private async Task VerDetalleAsync(RecetaResumen receta)

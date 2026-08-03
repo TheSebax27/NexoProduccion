@@ -1,13 +1,18 @@
 ﻿@page "/produccion/ordenes"
 @attribute [Authorize(Roles = "Administrador,SupervisorPlanta,Operario")]
+@implements IDisposable
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Ordenes de Produccion - NEXO</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">Ordenes de Produccion</MudText>
+<div class="d-flex align-center justify-space-between mb-4">
+    <MudText Typo="Typo.h5" Class="mb-0">Ordenes de Produccion</MudText>
+    <VistaToggle Pagina="ordenes-produccion" />
+</div>
 @if (_puedeGestionar)
 {
     <MudButton Variant="Variant.Filled" Color="Color.Success" Href="/produccion/ordenes/crear"
@@ -22,6 +27,7 @@
             <MudSelectItem Value="@("Liberada")">Liberada</MudSelectItem>
             <MudSelectItem Value="@("En Proceso")">En Proceso</MudSelectItem>
             <MudSelectItem Value="@("Finalizada")">Finalizada</MudSelectItem>
+            <MudSelectItem Value="@("Cancelada")">Cancelada</MudSelectItem>
         </MudSelect>
     </MudItem>
     <MudItem xs="12" sm="4" Class="d-flex align-center">
@@ -34,6 +40,69 @@
 @if (_cargando)
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_ordenes.Count == 0)
+{
+    <MudText>No hay ordenes de produccion con este filtro.</MudText>
+}
+else if (Preferencias.ObtenerVista("ordenes-produccion") == "tarjetas")
+{
+    <div class="nexo-card-grid">
+        @foreach (var orden in _ordenes)
+        {
+            <div class="nexo-item-card">
+                <div class="d-flex align-center justify-space-between">
+                    <div class="nexo-item-card__title">@orden.CodigoOP</div>
+                    <MudChip T="string" Color="@ColorSegunEstado(orden.Estado)" Size="Size.Small">@orden.Estado</MudChip>
+                </div>
+                <div class="nexo-item-card__sub">@orden.Producto · @orden.CentroCosto</div>
+                <div class="nexo-item-card__row">
+                    <span>Programada</span>
+                    <strong>@orden.CantidadProgramada.ToString("N2")</strong>
+                </div>
+                <div class="nexo-item-card__row">
+                    <span>Producida</span>
+                    <strong>@(orden.CantidadProducidaReal?.ToString("N2") ?? "-")</strong>
+                </div>
+                <div class="nexo-item-card__row">
+                    <span>Costo Unitario</span>
+                    <strong>@(orden.CostoUnitarioReal?.ToString("C2") ?? "-")</strong>
+                </div>
+                <div class="nexo-item-card__actions" style="flex-wrap:wrap;">
+                    @if (orden.Estado == "Planificada" && _puedeGestionar)
+                    {
+                        <MudButton Size="Size.Small" Color="Color.Default" Href="@($"/produccion/ordenes/{orden.OrdenProduccionID}/editar")">
+                            Editar
+                        </MudButton>
+                        <MudButton Size="Size.Small" Color="Color.Info" OnClick="@(() => LiberarAsync(orden.OrdenProduccionID))">
+                            Liberar
+                        </MudButton>
+                        <MudButton Size="Size.Small" Color="Color.Error" OnClick="@(() => CancelarAsync(orden.OrdenProduccionID))">
+                            Cancelar
+                        </MudButton>
+                    }
+                    @if (orden.Estado == "Liberada" && _puedeGestionar)
+                    {
+                        <MudButton Size="Size.Small" Color="Color.Primary" OnClick="@(() => IniciarAsync(orden.OrdenProduccionID))">
+                            Iniciar
+                        </MudButton>
+                    }
+                    @if (orden.Estado == "En Proceso" && _puedeGestionar)
+                    {
+                        <MudButton Size="Size.Small" Color="Color.Warning" OnClick="@(() => AbrirAjusteConsumoAsync(orden))">
+                            Ajustar Consumo
+                        </MudButton>
+                    }
+                    @if (orden.Estado == "En Proceso" && _puedeCerrar)
+                    {
+                        <MudButton Size="Size.Small" Color="Color.Success" OnClick="@(() => AbrirCierreAsync(orden.OrdenProduccionID))">
+                            Cerrar
+                        </MudButton>
+                    }
+                </div>
+            </div>
+        }
+    </div>
 }
 else
 {
@@ -61,14 +130,26 @@ else
             <MudTd DataLabel="Acciones">
                 @if (context.Estado == "Planificada" && _puedeGestionar)
                 {
+                    <MudButton Size="Size.Small" Color="Color.Default" Href="@($"/produccion/ordenes/{context.OrdenProduccionID}/editar")">
+                        Editar
+                    </MudButton>
                     <MudButton Size="Size.Small" Color="Color.Info" OnClick="@(() => LiberarAsync(context.OrdenProduccionID))">
                         Liberar
+                    </MudButton>
+                    <MudButton Size="Size.Small" Color="Color.Error" OnClick="@(() => CancelarAsync(context.OrdenProduccionID))">
+                        Cancelar
                     </MudButton>
                 }
                 @if (context.Estado == "Liberada" && _puedeGestionar)
                 {
                     <MudButton Size="Size.Small" Color="Color.Primary" OnClick="@(() => IniciarAsync(context.OrdenProduccionID))">
                         Iniciar
+                    </MudButton>
+                }
+                @if (context.Estado == "En Proceso" && _puedeGestionar)
+                {
+                    <MudButton Size="Size.Small" Color="Color.Warning" OnClick="@(() => AbrirAjusteConsumoAsync(context))">
+                        Ajustar Consumo
                     </MudButton>
                 }
                 @if (context.Estado == "En Proceso" && _puedeCerrar)
@@ -93,6 +174,18 @@ else
     private bool _cargando = true;
     private bool _puedeGestionar;
     private bool _puedeCerrar;
+
+    protected override void OnInitialized()
+    {
+        Preferencias.OnCambio += OnPreferenciasCambiaron;
+    }
+
+    private void OnPreferenciasCambiaron() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Preferencias.OnCambio -= OnPreferenciasCambiaron;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -129,10 +222,55 @@ else
     }
 
     private async Task LiberarAsync(int id) =>
-    await EjecutarAccionAsync(() => ApiClient.PostAsync($"api/produccion/ordenes/{id}/liberar"), "Orden liberada correctamente.");
+        await EjecutarAccionAsync(() => ApiClient.PostAsync($"api/produccion/ordenes/{id}/liberar"), "Orden liberada correctamente.");
 
-private async Task IniciarAsync(int id) =>
-    await EjecutarAccionAsync(() => ApiClient.PostAsync($"api/produccion/ordenes/{id}/iniciar"), "Orden iniciada, materia prima descontada.");
+    private async Task CancelarAsync(int id)
+    {
+        var confirmacion = await DialogService.ShowMessageBox(
+            "Cancelar Orden de Produccion",
+            "La orden quedara marcada como Cancelada. No se puede deshacer, pero no se toca inventario " +
+            "porque la orden todavia no habia sido liberada.\n\n¿Confirmar la cancelacion?",
+            yesText: "Si, cancelar orden",
+            noText: "No");
+
+        if (confirmacion != true)
+            return;
+
+        await EjecutarAccionAsync(
+            () => ApiClient.PostAsync($"api/produccion/ordenes/{id}/cancelar"),
+            "Orden cancelada.");
+    }
+
+    private async Task IniciarAsync(int id)
+    {
+        var confirmacion = await DialogService.ShowMessageBox(
+            "Confirmar Inicio de Orden",
+            "Esta accion consumira la materia prima de forma PERMANENTE segun la receta y el FEFO.\n\n" +
+            "¿Desea iniciar la orden de produccion?",
+            yesText: "Si, iniciar orden",
+            noText: "Cancelar");
+
+        if (confirmacion != true)
+            return;
+
+        await EjecutarAccionAsync(
+            () => ApiClient.PostAsync($"api/produccion/ordenes/{id}/iniciar"),
+            "Orden iniciada, materia prima descontada.");
+    }
+
+    private async Task AbrirAjusteConsumoAsync(OrdenProduccionResumen orden)
+    {
+        var parametros = new DialogParameters<AjustarConsumoDialog>
+        {
+            { x => x.Orden, orden }
+        };
+
+        var dialogo = await DialogService.ShowAsync<AjustarConsumoDialog>(
+            $"Ajustar Consumo - {orden.CodigoOP}", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+
+        await dialogo.Result;
+    }
 
     private async Task AbrirCierreAsync(int id)
     {

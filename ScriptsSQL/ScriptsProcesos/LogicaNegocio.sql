@@ -59,15 +59,39 @@ BEGIN
 
     DECLARE @FactorEscala DECIMAL(18,8) = @CantidadProgramada / @RendimientoBase;
 
-    -- Requerimiento total por insumo (incluyendo merma estandar)
+    -- Requerimiento total por insumo (incluyendo merma estandar), convertido a
+    -- la Unidad BASE del articulo (la que usa InventarioStock). La receta puede
+    -- pedir una Unidad distinta a la del articulo (ej. receta en "und" pero el
+    -- articulo se stockea por "Caja") -- se convierte usando
+    -- Catalogo.Articulos.UnidadesPorEmbalaje cuando el par es Caja<->Unidad;
+    -- cualquier otra combinacion de unidades distintas sin factor conocido
+    -- (ej. kg vs caja) se deja sin convertir (responsabilidad de quien arma
+    -- la receta usar la misma unidad que el articulo en ese caso).
+    -- Ademas, si la Unidad resultante es 'UNIDAD' (discreta, ej. piezas), se
+    -- redondea hacia arriba: no se puede tomar una fraccion de un articulo
+    -- indivisible. Para PESO/VOLUMEN/LONGITUD se deja fraccionario.
     IF OBJECT_ID('tempdb..#Requerido') IS NOT NULL DROP TABLE #Requerido;
     SELECT
         rd.InsumoID,
         a.Nombre AS NombreInsumo,
-        (rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0) AS CantidadNecesaria
+        CASE
+            WHEN rd.UnidadID = a.UnidadID THEN
+                CASE WHEN um.Tipo = 'UNIDAD'
+                     THEN CEILING((rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0))
+                     ELSE (rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)
+                END
+            WHEN um.Abreviatura = 'und' AND umArt.Abreviatura = 'cja' AND a.UnidadesPorEmbalaje > 0 THEN
+                ((rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)) / a.UnidadesPorEmbalaje
+            WHEN um.Abreviatura = 'cja' AND umArt.Abreviatura = 'und' AND a.UnidadesPorEmbalaje > 0 THEN
+                CEILING(((rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)) * a.UnidadesPorEmbalaje)
+            ELSE
+                (rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)
+        END AS CantidadNecesaria
     INTO #Requerido
     FROM Produccion.RecetaBOM_Detalle rd
     JOIN Catalogo.Articulos a ON a.ArticuloID = rd.InsumoID
+    JOIN Catalogo.UnidadesMedida um ON um.UnidadID = rd.UnidadID
+    LEFT JOIN Catalogo.UnidadesMedida umArt ON umArt.UnidadID = a.UnidadID
     WHERE rd.RecetaID = @RecetaID;
 
     -- Disponible en la bodega de origen de materia prima
@@ -139,9 +163,28 @@ BEGIN
     BEGIN TRANSACTION;
 
     DECLARE @InsumoID INT, @CantidadNecesaria DECIMAL(18,4);
+    -- Mismo criterio de conversion Caja<->Unidad y redondeo que
+    -- sp_LiberarOrdenProduccion (ver comentario alli).
     DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
-        SELECT rd.InsumoID, (rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)
-        FROM Produccion.RecetaBOM_Detalle rd WHERE rd.RecetaID = @RecetaID;
+        SELECT rd.InsumoID,
+               CASE
+                   WHEN rd.UnidadID = a.UnidadID THEN
+                       CASE WHEN um.Tipo = 'UNIDAD'
+                            THEN CEILING((rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0))
+                            ELSE (rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)
+                       END
+                   WHEN um.Abreviatura = 'und' AND umArt.Abreviatura = 'cja' AND a.UnidadesPorEmbalaje > 0 THEN
+                       ((rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)) / a.UnidadesPorEmbalaje
+                   WHEN um.Abreviatura = 'cja' AND umArt.Abreviatura = 'und' AND a.UnidadesPorEmbalaje > 0 THEN
+                       CEILING(((rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)) * a.UnidadesPorEmbalaje)
+                   ELSE
+                       (rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)
+               END
+        FROM Produccion.RecetaBOM_Detalle rd
+        JOIN Catalogo.Articulos a ON a.ArticuloID = rd.InsumoID
+        JOIN Catalogo.UnidadesMedida um ON um.UnidadID = rd.UnidadID
+        LEFT JOIN Catalogo.UnidadesMedida umArt ON umArt.UnidadID = a.UnidadID
+        WHERE rd.RecetaID = @RecetaID;
 
     OPEN cur;
     FETCH NEXT FROM cur INTO @InsumoID, @CantidadNecesaria;
@@ -213,28 +256,110 @@ GO
 -- SP: sp_AjustarConsumoReal
 -- Permite corregir la cantidad real consumida de un insumo dentro de una OP
 -- En Proceso. Si CantidadReal > CantidadTeorica exige justificacion.
+--
+-- IMPORTANTE: no basta con actualizar el numero guardado -- el ajuste debe
+-- reflejarse en InventarioStock y en Kardex, porque sp_IniciarOrdenProduccion
+-- ya desconto la cantidad TEORICA del stock. Si el consumo real es mayor,
+-- falta descontar la diferencia (exceso); si es menor, hay que devolverla.
 -- ============================================================================
 CREATE OR ALTER PROCEDURE Produccion.sp_AjustarConsumoReal
     @ConsumoID BIGINT,
     @CantidadReal DECIMAL(18,4),
     @MotivoExcesoID INT = NULL,
-    @Observacion NVARCHAR(300) = NULL
+    @Observacion NVARCHAR(300) = NULL,
+    @UsuarioID INT
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @Teorica DECIMAL(18,4);
-    SELECT @Teorica = CantidadTeorica FROM Produccion.OrdenesProduccionConsumo WHERE ConsumoID = @ConsumoID;
+    SET XACT_ABORT ON;
+
+    DECLARE @Teorica DECIMAL(18,4), @CantidadRealAnterior DECIMAL(18,4), @ArticuloID INT,
+            @LoteID INT, @OrdenProduccionID INT, @BodegaID INT, @CentroCostoID INT;
+
+    SELECT @Teorica = c.CantidadTeorica, @CantidadRealAnterior = c.CantidadReal,
+           @ArticuloID = c.ArticuloID, @LoteID = c.LoteID, @OrdenProduccionID = c.OrdenProduccionID
+    FROM Produccion.OrdenesProduccionConsumo c
+    WHERE c.ConsumoID = @ConsumoID;
 
     IF @Teorica IS NULL
         THROW 51020, 'Registro de consumo no encontrado.', 1;
 
+    IF @CantidadReal <= 0
+        THROW 51022, 'La cantidad real debe ser mayor a cero.', 1;
+
     IF @CantidadReal > @Teorica AND @MotivoExcesoID IS NULL
         THROW 51021, 'Debe indicar un motivo de exceso de consumo cuando la cantidad real supera la teorica.', 1;
+
+    SELECT @BodegaID = op.BodegaOrigenMPID, @CentroCostoID = op.CentroCostoDestinoID
+    FROM Produccion.OrdenesProduccion op WHERE op.OrdenProduccionID = @OrdenProduccionID;
+
+    DECLARE @Delta DECIMAL(18,4) = @CantidadReal - @CantidadRealAnterior;
+
+    BEGIN TRANSACTION;
+
+    IF @Delta > 0
+    BEGIN
+        DECLARE @Disponible DECIMAL(18,4), @CostoUnitLote DECIMAL(18,4), @InventarioID BIGINT;
+
+        SELECT @InventarioID = s.InventarioID, @Disponible = s.CantidadActual, @CostoUnitLote = s.CostoUnitarioLote
+        FROM Inventario.InventarioStock s
+        WHERE s.ArticuloID = @ArticuloID AND s.BodegaID = @BodegaID
+              AND ((@LoteID IS NULL AND s.LoteID IS NULL) OR s.LoteID = @LoteID);
+
+        IF @InventarioID IS NULL OR @Disponible < @Delta
+            THROW 51023, 'No hay stock suficiente para cubrir el exceso de consumo ajustado.', 1;
+
+        UPDATE Inventario.InventarioStock
+        SET CantidadActual = CantidadActual - @Delta, FechaUltimaActualizacion = SYSUTCDATETIME()
+        WHERE InventarioID = @InventarioID;
+
+        DECLARE @NuevoSaldo1 DECIMAL(18,4) = (SELECT SUM(CantidadActual) FROM Inventario.InventarioStock WHERE ArticuloID=@ArticuloID AND BodegaID=@BodegaID);
+        DECLARE @TipoSalida INT = (SELECT TipoMovID FROM Kardex.TiposMovimientoKardex WHERE Codigo='SALIDA_WIP');
+
+        INSERT INTO Kardex.KardexMovimientos
+            (ArticuloID, BodegaID, LoteID, TipoMovID, OrdenProduccionID, CentroCostoID,
+             Cantidad, CostoUnitario, CantidadSaldo, CostoPromedioSaldo, ObservacionDetallada, UsuarioID)
+        VALUES
+            (@ArticuloID, @BodegaID, @LoteID, @TipoSalida, @OrdenProduccionID, @CentroCostoID,
+             @Delta, @CostoUnitLote, @NuevoSaldo1, @CostoUnitLote,
+             CONCAT('Ajuste de consumo real en OP #', @OrdenProduccionID, ' (exceso adicional)'), @UsuarioID);
+    END
+    ELSE IF @Delta < 0
+    BEGIN
+        DECLARE @Devolver DECIMAL(18,4) = -@Delta;
+        DECLARE @CostoUnitDevolucion DECIMAL(18,4) = (
+            SELECT TOP 1 CostoUnitarioLote FROM Inventario.InventarioStock
+            WHERE ArticuloID = @ArticuloID AND BodegaID = @BodegaID
+                  AND ((@LoteID IS NULL AND LoteID IS NULL) OR LoteID = @LoteID)
+        );
+
+        MERGE Inventario.InventarioStock AS destino
+        USING (SELECT @ArticuloID AS ArticuloID, @BodegaID AS BodegaID, @LoteID AS LoteID) AS origen
+        ON destino.ArticuloID = origen.ArticuloID AND destino.BodegaID = origen.BodegaID
+           AND ((destino.LoteID IS NULL AND origen.LoteID IS NULL) OR destino.LoteID = origen.LoteID)
+        WHEN MATCHED THEN
+            UPDATE SET CantidadActual = destino.CantidadActual + @Devolver, FechaUltimaActualizacion = SYSUTCDATETIME()
+        WHEN NOT MATCHED THEN
+            INSERT (ArticuloID, BodegaID, LoteID, CantidadActual, CostoUnitarioLote, FechaUltimaActualizacion)
+            VALUES (@ArticuloID, @BodegaID, @LoteID, @Devolver, ISNULL(@CostoUnitDevolucion,0), SYSUTCDATETIME());
+
+        DECLARE @NuevoSaldo2 DECIMAL(18,4) = (SELECT SUM(CantidadActual) FROM Inventario.InventarioStock WHERE ArticuloID=@ArticuloID AND BodegaID=@BodegaID);
+        DECLARE @TipoDevolucion INT = (SELECT TipoMovID FROM Kardex.TiposMovimientoKardex WHERE Codigo='AJU_INV');
+
+        INSERT INTO Kardex.KardexMovimientos
+            (ArticuloID, BodegaID, LoteID, TipoMovID, OrdenProduccionID, CentroCostoID,
+             Cantidad, CostoUnitario, CantidadSaldo, CostoPromedioSaldo, ObservacionDetallada, UsuarioID)
+        VALUES
+            (@ArticuloID, @BodegaID, @LoteID, @TipoDevolucion, @OrdenProduccionID, @CentroCostoID,
+             @Devolver, ISNULL(@CostoUnitDevolucion,0), @NuevoSaldo2, ISNULL(@CostoUnitDevolucion,0),
+             CONCAT('Ajuste de consumo real en OP #', @OrdenProduccionID, ' (devolucion, se uso menos de lo previsto)'), @UsuarioID);
+    END
 
     UPDATE Produccion.OrdenesProduccionConsumo
     SET CantidadReal = @CantidadReal, MotivoExcesoID = @MotivoExcesoID, Observacion = @Observacion
     WHERE ConsumoID = @ConsumoID;
 
+    COMMIT TRANSACTION;
     SELECT 'OK' AS Resultado;
 END
 GO
@@ -425,44 +550,99 @@ BEGIN
     VALUES (@Codigo, @BodegaOrigenID, @BodegaDestinoID, 'EN_TRANSITO', SYSUTCDATETIME(), @UsuarioEnviaID);
     SET @TraspasoID = SCOPE_IDENTITY();
 
-    DECLARE @ArticuloID INT, @LoteID INT, @Cantidad DECIMAL(18,4);
+    DECLARE @ArticuloID INT, @LoteIDPedido INT, @Cantidad DECIMAL(18,4);
     DECLARE @TipoSalida INT = (SELECT TipoMovID FROM Kardex.TiposMovimientoKardex WHERE Codigo='TRASPASO_SALIDA');
     DECLARE @CentroCostoOrigen INT = (SELECT CentroCostoID FROM Inventario.Bodegas WHERE BodegaID = @BodegaOrigenID);
 
     DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
         SELECT ArticuloID, LoteID, Cantidad FROM OPENJSON(@DetalleJSON)
         WITH (ArticuloID INT, LoteID INT, Cantidad DECIMAL(18,4));
-    OPEN cur; FETCH NEXT FROM cur INTO @ArticuloID, @LoteID, @Cantidad;
+    OPEN cur; FETCH NEXT FROM cur INTO @ArticuloID, @LoteIDPedido, @Cantidad;
 
     WHILE @@FETCH_STATUS = 0
     BEGIN
-        DECLARE @Disponible DECIMAL(18,4), @CostoUnitario DECIMAL(18,4), @InventarioID BIGINT;
-        SELECT @Disponible = CantidadActual, @CostoUnitario = CostoUnitarioLote, @InventarioID = InventarioID
-        FROM Inventario.InventarioStock
-        WHERE ArticuloID = @ArticuloID AND BodegaID = @BodegaOrigenID
-              AND ((@LoteID IS NULL AND LoteID IS NULL) OR LoteID = @LoteID);
-
-        IF @Disponible IS NULL OR @Disponible < @Cantidad
+        IF @LoteIDPedido IS NOT NULL
         BEGIN
-            ROLLBACK TRANSACTION;
-            THROW 53000, 'Stock insuficiente para el traspaso de al menos un articulo.', 1;
+            -- Se pidio un lote especifico: comportamiento exacto anterior.
+            DECLARE @Disponible DECIMAL(18,4), @CostoUnitario DECIMAL(18,4), @InventarioID BIGINT;
+            SELECT @Disponible = CantidadActual, @CostoUnitario = CostoUnitarioLote, @InventarioID = InventarioID
+            FROM Inventario.InventarioStock
+            WHERE ArticuloID = @ArticuloID AND BodegaID = @BodegaOrigenID AND LoteID = @LoteIDPedido;
+
+            IF @Disponible IS NULL OR @Disponible < @Cantidad
+            BEGIN
+                ROLLBACK TRANSACTION;
+                THROW 53000, 'Stock insuficiente para el traspaso de al menos un articulo.', 1;
+            END
+
+            UPDATE Inventario.InventarioStock SET CantidadActual = CantidadActual - @Cantidad, FechaUltimaActualizacion = SYSUTCDATETIME()
+            WHERE InventarioID = @InventarioID;
+
+            INSERT INTO Inventario.TraspasosDetalle (TraspasoID, ArticuloID, LoteID, CantidadEnviada, CostoUnitario)
+            VALUES (@TraspasoID, @ArticuloID, @LoteIDPedido, @Cantidad, @CostoUnitario);
+
+            DECLARE @NuevoSaldo1 DECIMAL(18,4) = (SELECT SUM(CantidadActual) FROM Inventario.InventarioStock WHERE ArticuloID=@ArticuloID AND BodegaID=@BodegaOrigenID);
+
+            INSERT INTO Kardex.KardexMovimientos
+                (ArticuloID, BodegaID, LoteID, TipoMovID, TraspasoID, CentroCostoID, Cantidad, CostoUnitario, CantidadSaldo, CostoPromedioSaldo, ObservacionDetallada, UsuarioID)
+            VALUES
+                (@ArticuloID, @BodegaOrigenID, @LoteIDPedido, @TipoSalida, @TraspasoID, @CentroCostoOrigen, @Cantidad, @CostoUnitario, @NuevoSaldo1, @CostoUnitario,
+                 CONCAT('Envio por traspaso ', @Codigo), @UsuarioEnviaID);
+        END
+        ELSE
+        BEGIN
+            -- No se pidio un lote especifico (caso normal desde la UI, que no
+            -- deja elegir lote): se toma de TODOS los lotes disponibles por
+            -- FEFO -- igual criterio que sp_IniciarOrdenProduccion -- porque
+            -- casi todo el stock real tiene lote (Compras y Produccion
+            -- siempre asignan uno). Antes esto SIEMPRE fallaba con "stock
+            -- insuficiente" para cualquier articulo con lote.
+            DECLARE @Pendiente DECIMAL(18,4) = @Cantidad;
+            DECLARE @LoteID INT, @CantidadLote DECIMAL(18,4), @CostoLote DECIMAL(18,4), @InvID BIGINT;
+
+            DECLARE curLotes CURSOR LOCAL FAST_FORWARD FOR
+                SELECT s.InventarioID, s.LoteID, s.CantidadActual, s.CostoUnitarioLote
+                FROM Inventario.InventarioStock s
+                LEFT JOIN Inventario.Lotes l ON l.LoteID = s.LoteID
+                WHERE s.ArticuloID = @ArticuloID AND s.BodegaID = @BodegaOrigenID AND s.CantidadActual > 0
+                      AND (l.Estado IS NULL OR l.Estado = 'APROBADO')
+                ORDER BY ISNULL(l.FechaVencimiento,'9999-12-31') ASC; -- FEFO
+
+            OPEN curLotes;
+            FETCH NEXT FROM curLotes INTO @InvID, @LoteID, @CantidadLote, @CostoLote;
+
+            WHILE @@FETCH_STATUS = 0 AND @Pendiente > 0
+            BEGIN
+                DECLARE @Tomar DECIMAL(18,4) = CASE WHEN @CantidadLote >= @Pendiente THEN @Pendiente ELSE @CantidadLote END;
+
+                UPDATE Inventario.InventarioStock SET CantidadActual = CantidadActual - @Tomar, FechaUltimaActualizacion = SYSUTCDATETIME()
+                WHERE InventarioID = @InvID;
+
+                INSERT INTO Inventario.TraspasosDetalle (TraspasoID, ArticuloID, LoteID, CantidadEnviada, CostoUnitario)
+                VALUES (@TraspasoID, @ArticuloID, @LoteID, @Tomar, @CostoLote);
+
+                DECLARE @NuevoSaldo2 DECIMAL(18,4) = (SELECT SUM(CantidadActual) FROM Inventario.InventarioStock WHERE ArticuloID=@ArticuloID AND BodegaID=@BodegaOrigenID);
+
+                INSERT INTO Kardex.KardexMovimientos
+                    (ArticuloID, BodegaID, LoteID, TipoMovID, TraspasoID, CentroCostoID, Cantidad, CostoUnitario, CantidadSaldo, CostoPromedioSaldo, ObservacionDetallada, UsuarioID)
+                VALUES
+                    (@ArticuloID, @BodegaOrigenID, @LoteID, @TipoSalida, @TraspasoID, @CentroCostoOrigen, @Tomar, @CostoLote, @NuevoSaldo2, @CostoLote,
+                     CONCAT('Envio por traspaso ', @Codigo), @UsuarioEnviaID);
+
+                SET @Pendiente -= @Tomar;
+                FETCH NEXT FROM curLotes INTO @InvID, @LoteID, @CantidadLote, @CostoLote;
+            END
+            CLOSE curLotes; DEALLOCATE curLotes;
+
+            IF @Pendiente > 0
+            BEGIN
+                ROLLBACK TRANSACTION;
+                CLOSE cur; DEALLOCATE cur;
+                THROW 53000, 'Stock insuficiente para el traspaso de al menos un articulo.', 1;
+            END
         END
 
-        UPDATE Inventario.InventarioStock SET CantidadActual = CantidadActual - @Cantidad, FechaUltimaActualizacion = SYSUTCDATETIME()
-        WHERE InventarioID = @InventarioID;
-
-        INSERT INTO Inventario.TraspasosDetalle (TraspasoID, ArticuloID, LoteID, CantidadEnviada, CostoUnitario)
-        VALUES (@TraspasoID, @ArticuloID, @LoteID, @Cantidad, @CostoUnitario);
-
-        DECLARE @NuevoSaldo DECIMAL(18,4) = (SELECT SUM(CantidadActual) FROM Inventario.InventarioStock WHERE ArticuloID=@ArticuloID AND BodegaID=@BodegaOrigenID);
-
-        INSERT INTO Kardex.KardexMovimientos
-            (ArticuloID, BodegaID, LoteID, TipoMovID, TraspasoID, CentroCostoID, Cantidad, CostoUnitario, CantidadSaldo, CostoPromedioSaldo, ObservacionDetallada, UsuarioID)
-        VALUES
-            (@ArticuloID, @BodegaOrigenID, @LoteID, @TipoSalida, @TraspasoID, @CentroCostoOrigen, @Cantidad, @CostoUnitario, @NuevoSaldo, @CostoUnitario,
-             CONCAT('Envio por traspaso ', @Codigo), @UsuarioEnviaID);
-
-        FETCH NEXT FROM cur INTO @ArticuloID, @LoteID, @Cantidad;
+        FETCH NEXT FROM cur INTO @ArticuloID, @LoteIDPedido, @Cantidad;
     END
     CLOSE cur; DEALLOCATE cur;
 

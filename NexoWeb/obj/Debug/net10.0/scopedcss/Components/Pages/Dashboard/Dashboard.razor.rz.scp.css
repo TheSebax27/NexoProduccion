@@ -1,0 +1,254 @@
+/* ================================================================
+   Dashboard — Estilos de página
+   Tarjetas KPI blancas, encabezado, gráficos, estados vacíos
+   ================================================================ */
+
+/* ── Encabezado de página ──────────────────────────────────── */
+.nexo-page-hero[b-p6pn72qmbn] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+}
+
+.nexo-page-hero__left[b-p6pn72qmbn] {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.nexo-page-hero__accent[b-p6pn72qmbn] {
+  width: 4px;
+  height: 2.25rem;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #7C5CFF 0%, #5A3BFF 100%);
+  flex-shrink: 0;
+}
+
+.nexo-page-hero__module[b-p6pn72qmbn] {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7C5CFF;
+  margin: 0 0 0.1rem;
+}
+
+.nexo-page-hero__title[b-p6pn72qmbn] {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #1A1C2E;
+  margin: 0;
+  line-height: 1.15;
+}
+
+.nexo-page-hero__timestamp[b-p6pn72qmbn] {
+  display: flex;
+  align-items: center;
+  font-size: 0.76rem;
+  color: #B0B0C8;
+  white-space: nowrap;
+}
+
+/* ── Grid de tarjetas KPI ──────────────────────────────────── */
+.nexo-kpi-grid[b-p6pn72qmbn] {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 1100px) { .nexo-kpi-grid[b-p6pn72qmbn] { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px)  { .nexo-kpi-grid[b-p6pn72qmbn] { grid-template-columns: 1fr; } }
+
+/* ── Tarjeta KPI ───────────────────────────────────────────── */
+.nexo-kpi[b-p6pn72qmbn] {
+  position: relative;
+  background: #FFFFFF;
+  border: 1px solid #E8E9EF;
+  border-radius: 16px;
+  padding: 1.35rem 1.5rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(26,28,46,0.06), 0 1px 2px rgba(26,28,46,0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.nexo-kpi:hover[b-p6pn72qmbn] {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(26,28,46,0.09), 0 2px 6px rgba(26,28,46,0.04);
+}
+.nexo-kpi[b-p6pn72qmbn]::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+}
+
+.nexo-kpi__icon[b-p6pn72qmbn] {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  flex-shrink: 0;
+}
+
+.nexo-kpi__value[b-p6pn72qmbn] {
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: #1A1C2E;
+  margin-bottom: 0.15rem;
+}
+
+.nexo-kpi__label[b-p6pn72qmbn] {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6B6B8A;
+  letter-spacing: 0.01em;
+}
+
+.nexo-kpi__sub[b-p6pn72qmbn] {
+  font-size: 0.72rem;
+  color: #B0B0C8;
+  margin-top: 0.2rem;
+}
+
+/* Variantes de color */
+.nexo-kpi--blue   .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(124,92,255,0.10); color: #7C5CFF; }
+.nexo-kpi--blue   .nexo-kpi__value[b-p6pn72qmbn] { color: #7C5CFF; }
+
+.nexo-kpi--green  .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(16,185,129,0.10); color: #10B981; }
+.nexo-kpi--green  .nexo-kpi__value[b-p6pn72qmbn] { color: #10B981; }
+
+.nexo-kpi--amber  .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(245,158,11,0.10); color: #F59E0B; }
+.nexo-kpi--amber  .nexo-kpi__value[b-p6pn72qmbn] { color: #F59E0B; }
+
+.nexo-kpi--red    .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(239,68,68,0.10); color: #EF4444; }
+.nexo-kpi--red    .nexo-kpi__value[b-p6pn72qmbn] { color: #EF4444; }
+
+.nexo-kpi--indigo .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(99,102,241,0.10); color: #6366F1; }
+.nexo-kpi--indigo .nexo-kpi__value[b-p6pn72qmbn] { color: #6366F1; }
+
+.nexo-kpi--teal   .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(20,184,166,0.10); color: #14B8A6; }
+.nexo-kpi--teal   .nexo-kpi__value[b-p6pn72qmbn] { color: #14B8A6; }
+
+/* ── Cabecera de gráfico ───────────────────────────────────── */
+.nexo-chart-header[b-p6pn72qmbn] {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-bottom: 1.1rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid #EEEEF5;
+}
+
+.nexo-chart-header__icon[b-p6pn72qmbn] {
+  color: #B0B0C8 !important;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.nexo-chart-header__title[b-p6pn72qmbn] {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1A1C2E;
+  line-height: 1.3;
+}
+
+.nexo-chart-header__sub[b-p6pn72qmbn] {
+  font-size: 0.72rem;
+  color: #B0B0C8;
+  margin-top: 0.1rem;
+}
+
+/* ── Estado vacío ──────────────────────────────────────────── */
+.nexo-empty-state[b-p6pn72qmbn] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+}
+
+.nexo-empty-state__icon[b-p6pn72qmbn] { font-size: 2.25rem !important; color: #D1D5E8 !important; }
+.nexo-empty-state__icon--success[b-p6pn72qmbn] { color: #10B981 !important; }
+.nexo-empty-state__text[b-p6pn72qmbn] { font-size: 0.875rem; color: #B0B0C8; margin: 0; }
+
+/* ── Gráfico de Variación de Producción (estilo IPI) ─────────
+   Barras verdes/rojas centradas en una línea de cero: verde
+   cuando lo real supera o iguala el plan, rojo cuando queda por
+   debajo — igual que el índice de referencia (INE).
+   ────────────────────────────────────────────────────────────── */
+.nexo-variacion-chart[b-p6pn72qmbn] {
+  width: 100%;
+}
+
+.nexo-variacion-chart__svg[b-p6pn72qmbn] {
+  width: 100%;
+  height: 240px;
+  display: block;
+  overflow: visible;
+}
+
+.nexo-variacion-chart__zero[b-p6pn72qmbn] {
+  stroke: #D1D5E8;
+  stroke-width: 1.5;
+}
+
+.nexo-variacion-chart__bar[b-p6pn72qmbn] {
+  transition: opacity 0.15s ease;
+}
+.nexo-variacion-chart__bar:hover[b-p6pn72qmbn] {
+  opacity: 0.78;
+}
+
+.nexo-variacion-chart__label[b-p6pn72qmbn] {
+  font-size: 13px;
+  font-weight: 700;
+  fill: #1A1C2E;
+  font-family: 'Mango Dream', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+}
+
+.nexo-variacion-chart__axis[b-p6pn72qmbn] {
+  display: flex;
+  width: 100%;
+  margin-top: 0.35rem;
+}
+.nexo-variacion-chart__axis span[b-p6pn72qmbn] {
+  flex: 1 1 0;
+  text-align: center;
+  font-size: 0.65rem;
+  color: #9B9BB4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nexo-variacion-chart__legend[b-p6pn72qmbn] {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
+  font-size: 0.76rem;
+  color: #6B6B8A;
+  flex-wrap: wrap;
+}
+.nexo-variacion-chart__legend-dot[b-p6pn72qmbn] {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-left: 0.75rem;
+}
+.nexo-variacion-chart__legend-dot:first-child[b-p6pn72qmbn] { margin-left: 0; }
+.nexo-variacion-chart__legend-dot--up[b-p6pn72qmbn]   { background: #10B981; }
+.nexo-variacion-chart__legend-dot--down[b-p6pn72qmbn] { background: #EF4444; }

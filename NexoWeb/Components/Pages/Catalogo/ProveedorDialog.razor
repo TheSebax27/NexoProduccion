@@ -1,0 +1,61 @@
+@using NexoWeb.Common.Dtos
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="_razonSocial" Label="Razon Social" Required="true" Class="mb-3" />
+        <MudTextField @bind-Value="_nit" Label="NIT" Required="true" Class="mb-3" />
+        <MudTextField @bind-Value="_contacto" Label="Persona de Contacto" Class="mb-3" />
+        <MudTextField @bind-Value="_telefono" Label="Telefono" Class="mb-3" />
+        <MudTextField @bind-Value="_email" Label="Email" Class="mb-3" InputType="InputType.Email" />
+        <MudTextField @bind-Value="_direccion" Label="Direccion" Class="mb-3" />
+        @if (Proveedor is not null)
+        {
+            <MudSwitch T="bool" @bind-Value="_estado" Label="Activo" Color="Color.Success" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancelar">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled"
+                   Disabled="@(string.IsNullOrWhiteSpace(_razonSocial) || string.IsNullOrWhiteSpace(_nit))"
+                   OnClick="Guardar">
+            Guardar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ProveedorItem? Proveedor { get; set; }
+
+    private string _razonSocial = "";
+    private string _nit = "";
+    private string? _contacto;
+    private string? _telefono;
+    private string? _email;
+    private string? _direccion;
+    private bool _estado = true;
+
+    protected override void OnParametersSet()
+    {
+        if (Proveedor is not null)
+        {
+            _razonSocial = Proveedor.RazonSocial;
+            _nit = Proveedor.NIT;
+            _contacto = Proveedor.Contacto;
+            _telefono = Proveedor.Telefono;
+            _email = Proveedor.Email;
+            _direccion = Proveedor.Direccion;
+            _estado = Proveedor.Estado;
+        }
+    }
+
+    private void Guardar()
+    {
+        object resultado = Proveedor is null
+            ? new CrearProveedorRequest(_razonSocial.Trim(), _nit.Trim(), _contacto?.Trim(), _telefono?.Trim(), _email?.Trim(), _direccion?.Trim())
+            : new ActualizarProveedorRequest(_razonSocial.Trim(), _nit.Trim(), _contacto?.Trim(), _telefono?.Trim(), _email?.Trim(), _direccion?.Trim(), _estado);
+        MudDialog.Close(DialogResult.Ok(resultado));
+    }
+
+    private void Cancelar() => MudDialog.Cancel();
+}

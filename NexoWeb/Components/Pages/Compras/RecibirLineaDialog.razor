@@ -5,9 +5,20 @@
         <MudText Class="mb-3">Articulo: <b>@Articulo</b></MudText>
         <MudText Class="mb-3">Pendiente por recibir: <b>@Pendiente.ToString("N2")</b></MudText>
 
-        <MudNumericField @bind-Value="_cantidadRecibida" Label="Cantidad recibida" Min="0.01m" Max="@Pendiente" Class="mb-3" />
+        <MudNumericField @bind-Value="_cantidadRecibida" Label="Cantidad recibida" Min="0.01m" Max="@Pendiente" Format="N2" Class="mb-1" />
+        @if (Unidad == "cja" && UnidadesPorEmbalaje is > 0 && _cantidadRecibida > 0)
+        {
+            <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
+                @_cantidadRecibida.ToString("N2") cajas x @UnidadesPorEmbalaje.Value.ToString("N0") und/caja
+                = @((_cantidadRecibida * UnidadesPorEmbalaje.Value).ToString("N0")) unidades
+            </MudText>
+        }
+        else
+        {
+            <div class="mb-3"></div>
+        }
         <MudTextField @bind-Value="_numeroLote" Label="Numero de lote" Class="mb-3" />
-        <MudDatePicker @bind-Date="_fechaVencimiento" Label="Fecha de vencimiento (opcional)" />
+        <MudDatePicker @bind-Date="_fechaVencimiento" Label="Fecha de vencimiento (opcional)" PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancelar">Cancelar</MudButton>
@@ -22,6 +33,8 @@
     [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public string Articulo { get; set; } = "";
     [Parameter] public decimal Pendiente { get; set; }
+    [Parameter] public string? Unidad { get; set; }
+    [Parameter] public decimal? UnidadesPorEmbalaje { get; set; }
 
     private decimal _cantidadRecibida;
     private string _numeroLote = "";

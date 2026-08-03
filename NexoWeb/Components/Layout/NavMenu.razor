@@ -18,8 +18,14 @@
 
     <MudNavGroup Title="Inventario" Icon="@Icons.Material.Filled.Inventory2" Expanded="false">
         <MudNavLink Href="/inventario/stock">Consulta de Stock</MudNavLink>
+        <AuthorizeView Roles="Administrador,SupervisorPlanta,Bodeguero">
+            <Authorized>
+                <MudNavLink Href="/inventario/kardex">Kardex</MudNavLink>
+            </Authorized>
+        </AuthorizeView>
         <AuthorizeView Roles="Administrador,Bodeguero">
             <Authorized>
+                <MudNavLink Href="/inventario/ajustes">Ajuste de Inventario</MudNavLink>
                 <MudNavLink Href="/inventario/bajas">Registrar Baja</MudNavLink>
                 <MudNavLink Href="/inventario/traspasos">Traspasos</MudNavLink>
             </Authorized>
@@ -39,8 +45,19 @@
         <AuthorizeView Roles="Administrador">
             <Authorized>
                 <MudNavLink Href="/catalogo/centros-costo">Centros de Costo</MudNavLink>
+                <MudNavLink Href="/catalogo/centros-trabajo">Centros de Trabajo</MudNavLink>
                 <MudNavLink Href="/catalogo/bodegas">Bodegas</MudNavLink>
+                <MudNavLink Href="/catalogo/clientes">Clientes</MudNavLink>
+                <MudNavLink Href="/catalogo/proveedores">Proveedores</MudNavLink>
             </Authorized>
         </AuthorizeView>
     </MudNavGroup>
+
+    <AuthorizeView Roles="Administrador">
+        <Authorized>
+            <MudNavGroup Title="Administracion" Icon="@Icons.Material.Filled.AdminPanelSettings" Expanded="false">
+                <MudNavLink Href="/admin/usuarios">Usuarios</MudNavLink>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
 </MudNavMenu>

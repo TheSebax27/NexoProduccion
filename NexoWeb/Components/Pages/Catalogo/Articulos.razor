@@ -1,13 +1,18 @@
 ﻿@page "/catalogo/articulos"
 @attribute [Authorize(Roles = "Administrador,SupervisorPlanta")]
+@implements IDisposable
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Articulos - NEXO</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">Articulos</MudText>
+<div class="d-flex align-center justify-space-between mb-4">
+    <MudText Typo="Typo.h5" Class="mb-0">Articulos</MudText>
+    <VistaToggle Pagina="articulos" />
+</div>
 
 <MudGrid Class="mb-4">
     <MudItem xs="12" sm="6" md="4">
@@ -32,9 +37,62 @@
     Nuevo Articulo
 </MudButton>
 
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar los articulos: @_errorCarga</MudAlert>
+}
 @if (_cargando)
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_articulos.Count == 0)
+{
+    <MudText>No hay articulos que coincidan con el filtro.</MudText>
+}
+else if (Preferencias.ObtenerVista("articulos") == "tarjetas")
+{
+    <div class="nexo-card-grid">
+        @foreach (var articulo in _articulos)
+        {
+            <div class="nexo-item-card">
+                <div class="nexo-item-card__title">@articulo.Nombre</div>
+                <div class="nexo-item-card__sub">
+                    @articulo.SKU · @articulo.TipoArticulo
+                    <MudChip T="string" Color="@(articulo.Estado ? Color.Success : Color.Error)" Size="Size.Small" Class="ml-2">
+                        @(articulo.Estado ? "Activo" : "Inactivo")
+                    </MudChip>
+                </div>
+                <div class="nexo-item-card__row">
+                    <span>Unidad</span>
+                    <strong>
+                        @(articulo.Unidad ?? "-")
+                        @if (articulo.Unidad == "cja" && articulo.UnidadesPorEmbalaje is > 0)
+                        {
+                            <span style="font-weight:400; color:var(--n-text-3);">(@articulo.UnidadesPorEmbalaje.Value.ToString("N0") und/caja)</span>
+                        }
+                    </strong>
+                </div>
+                <div class="nexo-item-card__row">
+                    <span>Costo Promedio</span>
+                    <strong>@articulo.CostoPromedio.ToString("C2")</strong>
+                </div>
+                @if (articulo.TipoArticulo == "Producto Terminado")
+                {
+                    <div class="nexo-item-card__row">
+                        <span>Precio Venta</span>
+                        <strong>@articulo.PrecioVenta.ToString("C2")</strong>
+                    </div>
+                }
+                <div class="nexo-item-card__row">
+                    <span>Stock Mínimo</span>
+                    <strong>@articulo.StockMinimo.ToString("N2")</strong>
+                </div>
+                <div class="nexo-item-card__actions">
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(articulo))">Editar</MudButton>
+                </div>
+            </div>
+        }
+    </div>
 }
 else
 {
@@ -54,9 +112,19 @@ else
             <MudTd DataLabel="SKU">@context.SKU</MudTd>
             <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
             <MudTd DataLabel="Tipo">@context.TipoArticulo</MudTd>
-            <MudTd DataLabel="Unidad">@context.Unidad</MudTd>
-            <MudTd DataLabel="Costo Promedio">@context.CostoPromedio.ToString("N2")</MudTd>
-            <MudTd DataLabel="Precio Venta">@context.PrecioVenta.ToString("N2")</MudTd>
+            <MudTd DataLabel="Unidad">
+                @(context.Unidad ?? "-")
+                @if (context.Unidad == "cja" && context.UnidadesPorEmbalaje is > 0)
+                {
+                    <MudText Typo="Typo.caption" Class="d-block" Style="color: var(--n-text-3, #9B9BB4);">
+                        = @context.UnidadesPorEmbalaje.Value.ToString("N0") und/caja
+                    </MudText>
+                }
+            </MudTd>
+            <MudTd DataLabel="Costo Promedio">@context.CostoPromedio.ToString("C2")</MudTd>
+            <MudTd DataLabel="Precio Venta">
+                @(context.TipoArticulo == "Producto Terminado" ? context.PrecioVenta.ToString("C2") : "-")
+            </MudTd>
             <MudTd DataLabel="Stock Minimo">@context.StockMinimo.ToString("N2")</MudTd>
             <MudTd DataLabel="Estado">
                 <MudChip T="string" Color="@(context.Estado ? Color.Success : Color.Error)" Size="Size.Small">
@@ -80,31 +148,66 @@ else
     private List<TipoArticuloItem> _tiposArticulo = new();
     private List<UnidadMedidaItem> _unidadesMedida = new();
     private int? _filtroTipoId;
-    private string? _filtroTexto;
+
+    // Permite llegar con un termino precargado desde la busqueda global
+    // (ej. /catalogo/articulos?texto=SKU-001) sin tener que volver a escribirlo.
+    [SupplyParameterFromQuery(Name = "texto")]
+    private string? _filtroTexto { get; set; }
+
     private bool _cargando = true;
+    private string? _errorCarga;
+
+    protected override void OnInitialized()
+    {
+        Preferencias.OnCambio += OnPreferenciasCambiaron;
+    }
+
+    private void OnPreferenciasCambiaron() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Preferencias.OnCambio -= OnPreferenciasCambiaron;
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        // Los catalogos de apoyo (tipos y unidades) se cargan una sola vez;
-        // no cambian en tiempo real y los necesita el dialogo de creacion.
-        _tiposArticulo = await ApiClient.GetAsync<List<TipoArticuloItem>>("api/catalogo/articulos/tipos") ?? new();
-        _unidadesMedida = await ApiClient.GetAsync<List<UnidadMedidaItem>>("api/catalogo/articulos/unidades") ?? new();
-        await CargarAsync();
+        try
+        {
+            _tiposArticulo = await ApiClient.GetAsync<List<TipoArticuloItem>>("api/catalogo/articulos/tipos") ?? new();
+            _unidadesMedida = await ApiClient.GetAsync<List<UnidadMedidaItem>>("api/catalogo/articulos/unidades") ?? new();
+            await CargarAsync();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+            _cargando = false;
+        }
     }
 
     private async Task CargarAsync()
     {
         _cargando = true;
+        _errorCarga = null;
 
-        var query = new List<string>();
-        if (_filtroTipoId.HasValue)
-            query.Add($"tipoArticuloId={_filtroTipoId}");
-        if (!string.IsNullOrWhiteSpace(_filtroTexto))
-            query.Add($"texto={Uri.EscapeDataString(_filtroTexto)}");
+        try
+        {
+            var query = new List<string>();
+            if (_filtroTipoId.HasValue)
+                query.Add($"tipoArticuloId={_filtroTipoId}");
+            if (!string.IsNullOrWhiteSpace(_filtroTexto))
+                query.Add($"texto={Uri.EscapeDataString(_filtroTexto)}");
 
-        var ruta = "api/catalogo/articulos" + (query.Count > 0 ? "?" + string.Join("&", query) : "");
-        _articulos = await ApiClient.GetAsync<List<ArticuloItem>>(ruta) ?? new();
-        _cargando = false;
+            var ruta = "api/catalogo/articulos" + (query.Count > 0 ? "?" + string.Join("&", query) : "");
+            _articulos = await ApiClient.GetAsync<List<ArticuloItem>>(ruta) ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
     }
 
     private async Task OnFiltroTipoCambiadoAsync(int? nuevoValor)

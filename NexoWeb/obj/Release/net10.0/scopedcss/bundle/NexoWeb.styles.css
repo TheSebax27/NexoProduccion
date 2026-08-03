@@ -1,0 +1,1044 @@
+/* /Components/Layout/AuthLayout.razor.rz.scp.css */
+/* Paleta de identidad visual de NEXO ERP, definida como variables locales
+   para no interferir con estilos globales de MudBlazor/Bootstrap. */
+.auth-shell[b-aafiierusu] {
+    --nexo-bg: #EDE6DA;
+    --nexo-card: #F4EFE6;
+    --nexo-border: #D8D2C6;
+    --nexo-text: #1A1C22;
+    --nexo-sidebar: #1A1C22;
+    --nexo-primary: #2563EB;
+    --nexo-primary-hover: #1D4ED8;
+    position: relative;
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    background-color: var(--nexo-bg);
+    font-family: 'Inter', 'IBM Plex Sans', 'Manrope', 'Helvetica Neue', Arial, sans-serif;
+    color: var(--nexo-text);
+    overflow: hidden;
+}
+
+/* ---------- Columna izquierda: imagen empresarial ---------- */
+.auth-shell__visual[b-aafiierusu] {
+    position: relative;
+    flex: 0 0 58%;
+    max-width: 58%;
+    background-image: url('images/login-hero.png');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 3rem;
+    overflow: hidden;
+}
+
+.auth-shell__visual-overlay[b-aafiierusu] {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(180deg, rgba(43, 45, 49, 0.62) 0%, rgba(43, 45, 49, 0.22) 38%, rgba(43, 45, 49, 0.72) 100%), linear-gradient(115deg, rgba(37, 99, 235, 0.18) 0%, rgba(43, 45, 49, 0) 55%);
+}
+
+/* ---------- Blobs decorativos (version sobria del recorte de referencia) ---------- */
+.auth-shell__blob[b-aafiierusu] {
+    position: absolute;
+    z-index: 1;
+    border-radius: 50%;
+    filter: blur(2px);
+    pointer-events: none;
+}
+
+.auth-shell__blob--one[b-aafiierusu] {
+    top: -4rem;
+    right: 4rem;
+    width: 11rem;
+    height: 11rem;
+    background: radial-gradient(circle at 30% 30%, rgba(37, 99, 235, 0.35), rgba(43, 45, 49, 0.05) 70%);
+}
+
+.auth-shell__blob--two[b-aafiierusu] {
+    bottom: 6rem;
+    right: -3rem;
+    width: 15rem;
+    height: 15rem;
+    background: radial-gradient(circle at 35% 35%, rgba(247, 243, 236, 0.22), rgba(43, 45, 49, 0.05) 70%);
+}
+
+.auth-shell__blob--three[b-aafiierusu] {
+    bottom: -5rem;
+    left: 8%;
+    width: 9rem;
+    height: 9rem;
+    background: radial-gradient(circle at 40% 40%, rgba(247, 243, 236, 0.16), rgba(43, 45, 49, 0.02) 70%);
+}
+
+.auth-shell__brand[b-aafiierusu] {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.auth-shell__brand-mark[b-aafiierusu] {
+    display: block;
+    height: 2.25rem;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
+}
+
+.auth-shell__brand-name[b-aafiierusu] {
+    color: #FFFFFF;
+    font-size: 1.05rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.95;
+}
+
+.auth-shell__caption[b-aafiierusu] {
+    position: relative;
+    z-index: 2;
+    max-width: 30rem;
+}
+
+.auth-shell__caption-title[b-aafiierusu] {
+    color: #FFFFFF;
+    font-size: 1.85rem;
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 0 0 0.75rem 0;
+    letter-spacing: -0.01em;
+}
+
+.auth-shell__caption-subtitle[b-aafiierusu] {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.975rem;
+    line-height: 1.6;
+    margin: 0;
+    font-weight: 400;
+}
+
+/* ---------- Divisor en ondas ---------- */
+/* Se posiciona sobre el limite entre .auth-shell__visual y .auth-shell__panel.
+   El ancho (120px) y el "left" se calculan para que el borde derecho del SVG
+   coincida exactamente con el inicio del panel beige (flex-basis del panel visual). */
+.auth-shell__divider[b-aafiierusu] {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(58% - 120px);
+    width: 120px;
+    z-index: 1;
+    pointer-events: none;
+}
+
+    .auth-shell__divider svg[b-aafiierusu] {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+.auth-shell__divider-path[b-aafiierusu] {
+    fill: var(--nexo-bg);
+}
+
+/* ---------- Columna derecha: panel del formulario ---------- */
+.auth-shell__panel[b-aafiierusu] {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem;
+    background-color: var(--nexo-bg);
+}
+
+.auth-shell__panel-inner[b-aafiierusu] {
+    width: 100%;
+    max-width: 25rem;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1024px) {
+    .auth-shell__visual[b-aafiierusu] {
+        flex-basis: 46%;
+        max-width: 46%;
+        padding: 2.25rem;
+    }
+
+    .auth-shell__caption-title[b-aafiierusu] {
+        font-size: 1.5rem;
+    }
+
+    .auth-shell__divider[b-aafiierusu] {
+        left: calc(46% - 90px);
+        width: 90px;
+    }
+}
+
+@media (max-width: 900px) {
+    .auth-shell__visual[b-aafiierusu] {
+        display: none;
+    }
+
+    .auth-shell__divider[b-aafiierusu] {
+        display: none;
+    }
+
+    .auth-shell__panel[b-aafiierusu] {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-shell__panel-inner[b-aafiierusu] {
+        max-width: 100%;
+    }
+}
+/* /Components/Layout/MainLayout.razor.rz.scp.css */
+/* ================================================================
+   MainLayout — Chrome de la aplicación (AppBar + Drawer)
+   Los colores base vienen de NexoTheme.cs.
+   Este archivo añade gradientes, sombras y detalles premium.
+   ================================================================ */
+
+/* ── AppBar ──────────────────────────────────────────────────── */
+[b-w5ifl9lb28] .mud-appbar {
+  background: linear-gradient(90deg, #1A1C22 0%, #22252D 100%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.03), 0 2px 12px rgba(0,0,0,0.22) !important;
+}
+
+/* Título NEXO ERP en la barra superior */
+[b-w5ifl9lb28] .mud-appbar .mud-typography-h6 {
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: #E8E2D5 !important;
+  opacity: 0.95;
+}
+
+/* ── Drawer (Sidebar) ────────────────────────────────────────── */
+[b-w5ifl9lb28] .mud-drawer {
+  background: linear-gradient(180deg, #1A1C22 0%, #1E2028 60%, #1C1E25 100%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.04) !important;
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.18) !important;
+}
+
+/* ── Header de marca dentro del Drawer ──────────────────────── */
+[b-w5ifl9lb28] .nexo-drawer-header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1.2rem 1.35rem 1.1rem;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0.03) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[b-w5ifl9lb28] .nexo-drawer-logo {
+  height: 1.95rem;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));
+}
+
+[b-w5ifl9lb28] .nexo-drawer-title {
+  color: #F0EBE2 !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.875rem !important;
+  white-space: nowrap;
+}
+
+[b-w5ifl9lb28] .nexo-drawer-title strong {
+  color: #FFFFFF;
+}
+
+[b-w5ifl9lb28] .nexo-drawer-divider {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  margin: 0 !important;
+}
+
+/* ── Chip de usuario en el AppBar ───────────────────────────── */
+[b-w5ifl9lb28] .nexo-appbar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 999px;
+  padding: 0.32rem 0.9rem 0.32rem 0.6rem;
+  margin-right: 0.5rem;
+  font-size: 0.835rem;
+  white-space: nowrap;
+  color: #E8E2D5;
+  backdrop-filter: blur(4px);
+  transition: background-color 0.15s ease;
+}
+
+[b-w5ifl9lb28] .nexo-appbar-user:hover {
+  background: rgba(255, 255, 255, 0.11);
+}
+
+[b-w5ifl9lb28] .nexo-appbar-user__role {
+  opacity: 0.65;
+  font-weight: 400;
+  font-size: 0.78rem;
+}
+
+/* ── Área de contenido principal ────────────────────────────── */
+[b-w5ifl9lb28] .mud-main-content {
+  padding: 1.75rem 2rem !important;
+}
+
+@media (max-width: 960px) {
+  [b-w5ifl9lb28] .mud-main-content {
+    padding: 1.25rem 1rem !important;
+  }
+}
+
+/* ── Error UI de Blazor ─────────────────────────────────────── */
+#blazor-error-ui[b-w5ifl9lb28] {
+  color-scheme: light only;
+  background: #FEF9C3;
+  bottom: 0;
+  box-shadow: 0 -1px 2px rgba(0,0,0,0.12);
+  box-sizing: border-box;
+  display: none;
+  left: 0;
+  padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+  position: fixed;
+  width: 100%;
+  z-index: 1000;
+  font-size: 0.875rem;
+}
+
+#blazor-error-ui .dismiss[b-w5ifl9lb28] {
+  cursor: pointer;
+  position: absolute;
+  right: 0.75rem;
+  top: 0.5rem;
+}
+/* /Components/Layout/NavMenu.razor.rz.scp.css */
+/* ================================================================
+   NavMenu — Menú lateral de navegación
+   Construye sobre los colores base del Drawer (NexoTheme.cs) y
+   añade estados hover, activo y estilos de grupo premium.
+   ================================================================ */
+
+/* ── Sección general del nav ────────────────────────────────── */
+[b-vumnekz1w9] .mud-nav-menu {
+  padding: 0.75rem 0 1rem !important;
+}
+
+/* ── Enlace de navegación base ──────────────────────────────── */
+[b-vumnekz1w9] .mud-nav-link {
+  display: flex;
+  align-items: center;
+  border-radius: 8px !important;
+  margin: 1px 10px !important;
+  padding: 0.52rem 0.85rem !important;
+  color: #B8B3AA !important;
+  font-size: 0.855rem !important;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease !important;
+  position: relative;
+}
+
+/* Hover */
+[b-vumnekz1w9] .mud-nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #E8E2D5 !important;
+}
+
+/* ── Estado activo — acento izquierdo + gradiente azul ──────── */
+[b-vumnekz1w9] .mud-nav-link.active {
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.22) 0%, rgba(37, 99, 235, 0.08) 100%) !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  box-shadow: inset 3px 0 0 #2563EB !important;
+}
+
+[b-vumnekz1w9] .mud-nav-link.active .mud-nav-link-icon-wrapper,
+[b-vumnekz1w9] .mud-nav-link.active .mud-icon-root {
+  color: #2563EB !important;
+  filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.5));
+}
+
+/* ── Iconos de los enlaces ──────────────────────────────────── */
+[b-vumnekz1w9] .mud-nav-link .mud-nav-link-icon-wrapper {
+  margin-right: 0.1rem;
+  color: #7C8090 !important;
+  transition: color 0.15s ease !important;
+}
+
+[b-vumnekz1w9] .mud-nav-link:hover .mud-nav-link-icon-wrapper,
+[b-vumnekz1w9] .mud-nav-link:hover .mud-icon-root {
+  color: #C8C3BA !important;
+}
+
+/* ── Grupos de navegación ───────────────────────────────────── */
+[b-vumnekz1w9] .mud-nav-group {
+  margin: 0.2rem 0 !important;
+}
+
+/* Cabecera del grupo (botón de expansión) */
+[b-vumnekz1w9] .mud-nav-group > .mud-nav-group-toggle.mud-nav-link {
+  color: #7C8090 !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  margin: 0.6rem 10px 0.15rem !important;
+  padding: 0.3rem 0.85rem !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+[b-vumnekz1w9] .mud-nav-group > .mud-nav-group-toggle.mud-nav-link:hover {
+  color: #9EA3B0 !important;
+  background: transparent !important;
+}
+
+/* Flecha del grupo */
+[b-vumnekz1w9] .mud-nav-group .mud-nav-group-toggle .mud-nav-link-expand-icon {
+  color: #5C6070 !important;
+  transition: transform 0.22s ease, color 0.15s ease !important;
+}
+
+[b-vumnekz1w9] .mud-nav-group .mud-nav-group-toggle:hover .mud-nav-link-expand-icon {
+  color: #7C8090 !important;
+}
+
+/* Contenido expandido del grupo */
+[b-vumnekz1w9] .mud-nav-group-content {
+  padding: 0 !important;
+}
+
+/* Sub-enlaces dentro de grupos */
+[b-vumnekz1w9] .mud-nav-group-content .mud-nav-link {
+  padding-left: 2.75rem !important;
+  font-size: 0.83rem !important;
+}
+
+/* Separador entre grupos — línea muy sutil */
+[b-vumnekz1w9] .mud-nav-group + .mud-nav-group::before {
+  content: '';
+  display: block;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.04);
+  margin: 0.35rem 1.25rem 0.55rem;
+}
+/* /Components/Layout/ReconnectModal.razor.rz.scp.css */
+.components-reconnect-first-attempt-visible[b-f4cvqfw4dp],
+.components-reconnect-repeated-attempt-visible[b-f4cvqfw4dp],
+.components-reconnect-failed-visible[b-f4cvqfw4dp],
+.components-pause-visible[b-f4cvqfw4dp],
+.components-resume-failed-visible[b-f4cvqfw4dp],
+.components-rejoining-animation[b-f4cvqfw4dp] {
+    display: none;
+}
+
+#components-reconnect-modal.components-reconnect-show .components-reconnect-first-attempt-visible[b-f4cvqfw4dp],
+#components-reconnect-modal.components-reconnect-show .components-rejoining-animation[b-f4cvqfw4dp],
+#components-reconnect-modal.components-reconnect-paused .components-pause-visible[b-f4cvqfw4dp],
+#components-reconnect-modal.components-reconnect-resume-failed .components-resume-failed-visible[b-f4cvqfw4dp],
+#components-reconnect-modal.components-reconnect-retrying[b-f4cvqfw4dp],
+#components-reconnect-modal.components-reconnect-retrying .components-reconnect-repeated-attempt-visible[b-f4cvqfw4dp],
+#components-reconnect-modal.components-reconnect-retrying .components-rejoining-animation[b-f4cvqfw4dp],
+#components-reconnect-modal.components-reconnect-failed[b-f4cvqfw4dp],
+#components-reconnect-modal.components-reconnect-failed .components-reconnect-failed-visible[b-f4cvqfw4dp] {
+    display: block;
+}
+
+
+#components-reconnect-modal[b-f4cvqfw4dp] {
+    background-color: white;
+    width: 20rem;
+    margin: 20vh auto;
+    padding: 2rem;
+    border: 0;
+    border-radius: 0.5rem;
+    box-shadow: 0 3px 6px 2px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: display 0.5s allow-discrete, overlay 0.5s allow-discrete;
+    animation: components-reconnect-modal-fadeOutOpacity-b-f4cvqfw4dp 0.5s both;
+    &[open]
+
+{
+    animation: components-reconnect-modal-slideUp-b-f4cvqfw4dp 1.5s cubic-bezier(.05, .89, .25, 1.02) 0.3s, components-reconnect-modal-fadeInOpacity-b-f4cvqfw4dp 0.5s ease-in-out 0.3s;
+    animation-fill-mode: both;
+}
+
+}
+
+#components-reconnect-modal[b-f4cvqfw4dp]::backdrop {
+    background-color: rgba(0, 0, 0, 0.4);
+    animation: components-reconnect-modal-fadeInOpacity-b-f4cvqfw4dp 0.5s ease-in-out;
+    opacity: 1;
+}
+
+@keyframes components-reconnect-modal-slideUp-b-f4cvqfw4dp {
+    0% {
+        transform: translateY(30px) scale(0.95);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+@keyframes components-reconnect-modal-fadeInOpacity-b-f4cvqfw4dp {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes components-reconnect-modal-fadeOutOpacity-b-f4cvqfw4dp {
+    0% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+.components-reconnect-container[b-f4cvqfw4dp] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+#components-reconnect-modal p[b-f4cvqfw4dp] {
+    margin: 0;
+    text-align: center;
+}
+
+#components-reconnect-modal button[b-f4cvqfw4dp] {
+    border: 0;
+    background-color: #6b9ed2;
+    color: white;
+    padding: 4px 24px;
+    border-radius: 4px;
+}
+
+    #components-reconnect-modal button:hover[b-f4cvqfw4dp] {
+        background-color: #3b6ea2;
+    }
+
+    #components-reconnect-modal button:active[b-f4cvqfw4dp] {
+        background-color: #6b9ed2;
+    }
+
+.components-rejoining-animation[b-f4cvqfw4dp] {
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+
+    .components-rejoining-animation div[b-f4cvqfw4dp] {
+        position: absolute;
+        border: 3px solid #0087ff;
+        opacity: 1;
+        border-radius: 50%;
+        animation: components-rejoining-animation-b-f4cvqfw4dp 1.5s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+    }
+
+        .components-rejoining-animation div:nth-child(2)[b-f4cvqfw4dp] {
+            animation-delay: -0.5s;
+        }
+
+@keyframes components-rejoining-animation-b-f4cvqfw4dp {
+    0% {
+        top: 40px;
+        left: 40px;
+        width: 0;
+        height: 0;
+        opacity: 0;
+    }
+
+    4.9% {
+        top: 40px;
+        left: 40px;
+        width: 0;
+        height: 0;
+        opacity: 0;
+    }
+
+    5% {
+        top: 40px;
+        left: 40px;
+        width: 0;
+        height: 0;
+        opacity: 1;
+    }
+
+    100% {
+        top: 0px;
+        left: 0px;
+        width: 80px;
+        height: 80px;
+        opacity: 0;
+    }
+}
+/* /Components/Pages/Auth/Login.razor.rz.scp.css */
+.login-card[b-tcjkolkcds] {
+    --nexo-card: #F4EFE6;
+    --nexo-border: #D8D2C6;
+    --nexo-text: #1A1C22;
+    --nexo-text-muted: #5E6272;
+    --nexo-primary: #2563EB;
+    --nexo-primary-hover: #1D4ED8;
+    --nexo-primary-soft: rgba(37, 99, 235, 0.08);
+    width: 100%;
+}
+
+/* ---------- Logo ---------- */
+.login-card__logo[b-tcjkolkcds] {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 2.25rem;
+}
+
+.login-card__logo-mark[b-tcjkolkcds] {
+    display: block;
+    height: 2.1rem;
+    width: auto;
+    object-fit: contain;
+}
+
+.login-card__logo-text[b-tcjkolkcds] {
+    font-size: 0.95rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--nexo-text);
+}
+
+/* ---------- Encabezado ---------- */
+.login-card__title[b-tcjkolkcds] {
+    font-size: 1.65rem;
+    font-weight: 600;
+    color: var(--nexo-text);
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.01em;
+}
+
+.login-card__subtitle[b-tcjkolkcds] {
+    font-size: 0.9rem;
+    color: var(--nexo-text-muted);
+    line-height: 1.55;
+    margin: 0 0 2.25rem 0;
+}
+
+/* ---------- Campos ---------- */
+.login-field[b-tcjkolkcds] {
+    margin-bottom: 1.25rem;
+}
+
+.login-field__label[b-tcjkolkcds] {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--nexo-text);
+    margin-bottom: 0.4rem;
+}
+
+.login-input[b-tcjkolkcds] {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--nexo-card);
+    border: 1.5px solid var(--nexo-border);
+    border-radius: 12px;
+    padding: 0.15rem 0.9rem;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+    .login-input:focus-within[b-tcjkolkcds] {
+        border-color: var(--nexo-primary);
+        box-shadow: 0 0 0 3.5px var(--nexo-primary-soft);
+    }
+
+    .login-input[b-tcjkolkcds]  .login-input__icon {
+        color: var(--nexo-text-muted);
+        flex-shrink: 0;
+    }
+
+    .login-input:focus-within[b-tcjkolkcds]  .login-input__icon {
+        color: var(--nexo-primary);
+    }
+
+.login-input__control[b-tcjkolkcds] {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.925rem;
+    color: var(--nexo-text);
+    padding: 0.7rem 0;
+    font-family: inherit;
+}
+
+    .login-input__control[b-tcjkolkcds]::placeholder {
+        color: #B9B2A6;
+    }
+
+.login-input__toggle[b-tcjkolkcds] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--nexo-text-muted);
+    padding: 0.25rem;
+    border-radius: 8px;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+    .login-input__toggle:hover[b-tcjkolkcds] {
+        color: var(--nexo-primary);
+        background-color: var(--nexo-primary-soft);
+    }
+
+/* ---------- Alerta de error ---------- */
+.login-alert[b-tcjkolkcds] {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #FDECEC;
+    border: 1px solid #F3C6C6;
+    color: #B42323;
+    font-size: 0.85rem;
+    border-radius: 10px;
+    padding: 0.65rem 0.85rem;
+    margin-bottom: 1.25rem;
+}
+
+/* ---------- Fila Recordarme / Olvidaste ---------- */
+.login-card__row[b-tcjkolkcds] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.75rem;
+}
+
+.login-checkbox[b-tcjkolkcds] {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--nexo-text);
+    user-select: none;
+}
+
+    .login-checkbox input[b-tcjkolkcds] {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+.login-checkbox__box[b-tcjkolkcds] {
+    width: 1.05rem;
+    height: 1.05rem;
+    border-radius: 5px;
+    border: 1.5px solid var(--nexo-border);
+    background: var(--nexo-card);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.login-checkbox input:checked + .login-checkbox__box[b-tcjkolkcds] {
+    background: var(--nexo-primary);
+    border-color: var(--nexo-primary);
+}
+
+    .login-checkbox input:checked + .login-checkbox__box[b-tcjkolkcds]::after {
+        content: "";
+        width: 0.3rem;
+        height: 0.55rem;
+        border-right: 2px solid #FFFFFF;
+        border-bottom: 2px solid #FFFFFF;
+        transform: rotate(45deg) translate(-1px, -1px);
+    }
+
+.login-checkbox input:focus-visible + .login-checkbox__box[b-tcjkolkcds] {
+    box-shadow: 0 0 0 3px var(--nexo-primary-soft);
+}
+
+.login-card__forgot[b-tcjkolkcds] {
+    font-size: 0.85rem;
+    color: var(--nexo-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+    .login-card__forgot:hover[b-tcjkolkcds] {
+        text-decoration: underline;
+    }
+
+/* ---------- Boton principal ---------- */
+.login-card__submit[b-tcjkolkcds] {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    background: var(--nexo-primary);
+    color: #FFFFFF;
+    border: none;
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.25), 0 8px 16px -8px rgba(37, 99, 235, 0.45);
+    transition: background-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+}
+
+    .login-card__submit:hover:not(:disabled)[b-tcjkolkcds] {
+        background: var(--nexo-primary-hover);
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3), 0 10px 20px -8px rgba(37, 99, 235, 0.5);
+    }
+
+    .login-card__submit:active:not(:disabled)[b-tcjkolkcds] {
+        transform: translateY(1px);
+    }
+
+    .login-card__submit:disabled[b-tcjkolkcds] {
+        opacity: 0.75;
+        cursor: not-allowed;
+    }
+
+    .login-card__submit[b-tcjkolkcds]  .login-card__spinner {
+        color: #FFFFFF;
+    }
+/* /Components/Pages/Dashboard/Dashboard.razor.rz.scp.css */
+/* ================================================================
+   Dashboard — Estilos específicos
+   KPI cards, encabezado de página y componentes de gráfico.
+   ================================================================ */
+
+/* ── Encabezado de página ──────────────────────────────────── */
+.nexo-page-hero[b-p6pn72qmbn] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--nexo-beige-border, #D8D2C6);
+}
+
+.nexo-page-hero__left[b-p6pn72qmbn] {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.nexo-page-hero__accent[b-p6pn72qmbn] {
+    width: 4px;
+    height: 2.25rem;
+    border-radius: 4px;
+    background: linear-gradient(180deg, #2563EB 0%, #6366F1 100%);
+    flex-shrink: 0;
+}
+
+.nexo-page-hero__module[b-p6pn72qmbn] {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #2563EB;
+    margin: 0 0 0.15rem;
+}
+
+.nexo-page-hero__title[b-p6pn72qmbn] {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    color: #1A1C22;
+    margin: 0;
+    line-height: 1.15;
+}
+
+.nexo-page-hero__timestamp[b-p6pn72qmbn] {
+    display: flex;
+    align-items: center;
+    font-size: 0.76rem;
+    color: #9EA3B0;
+    white-space: nowrap;
+}
+
+/* ── Grid de tarjetas KPI ──────────────────────────────────── */
+.nexo-kpi-grid[b-p6pn72qmbn] {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 1100px) {
+    .nexo-kpi-grid[b-p6pn72qmbn] { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+    .nexo-kpi-grid[b-p6pn72qmbn] { grid-template-columns: 1fr; }
+}
+
+/* ── Tarjeta KPI base ──────────────────────────────────────── */
+.nexo-kpi[b-p6pn72qmbn] {
+    position: relative;
+    background: linear-gradient(145deg, #F4EFE6 0%, #EAE4D8 100%);
+    border: 1px solid #D8D2C6;
+    border-radius: 14px;
+    padding: 1.35rem 1.5rem 1.2rem;
+    box-shadow: 0 1px 3px rgba(26,28,34,0.06), 0 3px 10px rgba(26,28,34,0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    overflow: hidden;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.nexo-kpi:hover[b-p6pn72qmbn] {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(26,28,34,0.10), 0 1px 4px rgba(26,28,34,0.06);
+}
+
+/* Brillo sutil en la esquina superior */
+.nexo-kpi[b-p6pn72qmbn]::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+}
+
+/* ── Icono de la tarjeta ───────────────────────────────────── */
+.nexo-kpi__icon[b-p6pn72qmbn] {
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* ── Valor numérico ────────────────────────────────────────── */
+.nexo-kpi__value[b-p6pn72qmbn] {
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: #1A1C22;
+    margin-bottom: 0.15rem;
+}
+
+/* ── Etiqueta ──────────────────────────────────────────────── */
+.nexo-kpi__label[b-p6pn72qmbn] {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #5E6272;
+    letter-spacing: 0.01em;
+}
+
+/* ── Subtexto ──────────────────────────────────────────────── */
+.nexo-kpi__sub[b-p6pn72qmbn] {
+    font-size: 0.72rem;
+    color: #9EA3B0;
+    margin-top: 0.2rem;
+}
+
+/* ── Variantes de color ────────────────────────────────────── */
+.nexo-kpi--blue   .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(37,99,235,0.12); color: #2563EB; }
+.nexo-kpi--blue   .nexo-kpi__value[b-p6pn72qmbn] { color: #2563EB; }
+
+.nexo-kpi--green  .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(5,150,105,0.12); color: #059669; }
+.nexo-kpi--green  .nexo-kpi__value[b-p6pn72qmbn] { color: #059669; }
+
+.nexo-kpi--amber  .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(217,119,6,0.12); color: #D97706; }
+.nexo-kpi--amber  .nexo-kpi__value[b-p6pn72qmbn] { color: #D97706; }
+
+.nexo-kpi--red    .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(220,38,38,0.12); color: #DC2626; }
+.nexo-kpi--red    .nexo-kpi__value[b-p6pn72qmbn] { color: #DC2626; }
+
+.nexo-kpi--indigo .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(99,102,241,0.12); color: #6366F1; }
+.nexo-kpi--indigo .nexo-kpi__value[b-p6pn72qmbn] { color: #6366F1; }
+
+.nexo-kpi--teal   .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(20,184,166,0.12); color: #14B8A6; }
+.nexo-kpi--teal   .nexo-kpi__value[b-p6pn72qmbn] { color: #14B8A6; }
+
+/* ── Cabecera de gráfico dentro de un panel ─────────────────── */
+.nexo-chart-header[b-p6pn72qmbn] {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin-bottom: 1.1rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid rgba(216, 210, 198, 0.7);
+}
+
+.nexo-chart-header__icon[b-p6pn72qmbn] {
+    color: #7C8090 !important;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.nexo-chart-header__title[b-p6pn72qmbn] {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1A1C22;
+    line-height: 1.3;
+}
+
+.nexo-chart-header__sub[b-p6pn72qmbn] {
+    font-size: 0.72rem;
+    color: #9EA3B0;
+    margin-top: 0.1rem;
+}
+
+/* ── Estado vacío ──────────────────────────────────────────── */
+.nexo-empty-state[b-p6pn72qmbn] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 2.5rem 1rem;
+    text-align: center;
+}
+
+.nexo-empty-state__icon[b-p6pn72qmbn] {
+    font-size: 2.25rem !important;
+    color: #C8C3BA !important;
+}
+
+.nexo-empty-state__icon--success[b-p6pn72qmbn] {
+    color: #059669 !important;
+}
+
+.nexo-empty-state__text[b-p6pn72qmbn] {
+    font-size: 0.875rem;
+    color: #9EA3B0;
+    margin: 0;
+}

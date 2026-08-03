@@ -1,0 +1,107 @@
+@page "/catalogo/proveedores"
+@attribute [Authorize(Roles = "Administrador")]
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Proveedores - NEXO</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Proveedores</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
+           StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
+    Nuevo Proveedor
+</MudButton>
+
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar los proveedores: @_errorCarga</MudAlert>
+}
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_errorCarga is null)
+{
+    <MudTable Items="_proveedores" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Razon Social</MudTh>
+            <MudTh>NIT</MudTh>
+            <MudTh>Contacto</MudTh>
+            <MudTh>Telefono</MudTh>
+            <MudTh>Email</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Accion</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Razon Social">@context.RazonSocial</MudTd>
+            <MudTd DataLabel="NIT">@context.NIT</MudTd>
+            <MudTd DataLabel="Contacto">@(context.Contacto ?? "-")</MudTd>
+            <MudTd DataLabel="Telefono">@(context.Telefono ?? "-")</MudTd>
+            <MudTd DataLabel="Email">@(context.Email ?? "-")</MudTd>
+            <MudTd DataLabel="Estado">
+                <MudChip T="string" Color="@(context.Estado ? Color.Success : Color.Error)" Size="Size.Small">
+                    @(context.Estado ? "Activo" : "Inactivo")
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Accion">
+                <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">Editar</MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No hay proveedores registrados.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+}
+
+@code {
+    private List<ProveedorItem> _proveedores = new();
+    private bool _cargando = true;
+    private string? _errorCarga;
+
+    protected override async Task OnInitializedAsync() => await CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        _cargando = true;
+        _errorCarga = null;
+        try
+        {
+            _proveedores = await ApiClient.GetAsync<List<ProveedorItem>>("api/catalogo/proveedores") ?? new();
+        }
+        catch (Exception ex) { _errorCarga = ex.Message; }
+        finally { _cargando = false; }
+    }
+
+    private async Task AbrirCreacionAsync()
+    {
+        var dialogo = await DialogService.ShowAsync<ProveedorDialog>("Nuevo Proveedor");
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled) return;
+        try
+        {
+            var request = (CrearProveedorRequest)resultado.Data!;
+            await ApiClient.PostAsync<CrearProveedorRequest, object?>("api/catalogo/proveedores", request);
+            Snackbar.Add("Proveedor creado correctamente.", Severity.Success);
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+    }
+
+    private async Task AbrirEdicionAsync(ProveedorItem proveedor)
+    {
+        var parametros = new DialogParameters<ProveedorDialog> { { x => x.Proveedor, proveedor } };
+        var dialogo = await DialogService.ShowAsync<ProveedorDialog>("Editar Proveedor", parametros);
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled) return;
+        try
+        {
+            var request = (ActualizarProveedorRequest)resultado.Data!;
+            await ApiClient.PutAsync<ActualizarProveedorRequest, object?>($"api/catalogo/proveedores/{proveedor.ProveedorID}", request);
+            Snackbar.Add("Proveedor actualizado correctamente.", Severity.Success);
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+    }
+}

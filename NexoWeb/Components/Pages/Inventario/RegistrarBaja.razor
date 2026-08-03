@@ -2,6 +2,7 @@
 @attribute [Authorize(Roles = "Administrador,Bodeguero")]
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Registrar Baja - NEXO</PageTitle>
@@ -23,7 +24,7 @@
         }
     </MudSelect>
 
-    <MudNumericField @bind-Value="_cantidadPerdida" Label="Cantidad perdida" Min="0.01m" Class="mb-4" Required="true" />
+    <MudNumericField @bind-Value="_cantidadPerdida" Label="Cantidad perdida" Min="0.01m" Format="N2" Class="mb-4" Required="true" />
 
     <MudSelect T="int" @bind-Value="_motivoId" Label="Motivo" Class="mb-4" Required="true">
         @foreach (var motivo in _motivos)
@@ -77,6 +78,24 @@
 
     private async Task RegistrarAsync()
     {
+        var articuloNombre = _articulos.FirstOrDefault(a => a.ArticuloID == _articuloId)?.Nombre ?? "?";
+        var bodegaNombre = _bodegas.FirstOrDefault(b => b.BodegaID == _bodegaId)?.Nombre ?? "?";
+        var motivoNombre = _motivos.FirstOrDefault(m => m.MotivoID == _motivoId)?.Nombre ?? "?";
+
+        var confirmacion = await DialogService.ShowMessageBox(
+            "Confirmar Baja de Inventario",
+            $"Esta accion es IRREVERSIBLE y quedara registrada en el Kardex.\n\n" +
+            $"Articulo: {articuloNombre}\n" +
+            $"Bodega: {bodegaNombre}\n" +
+            $"Cantidad: {_cantidadPerdida:N2}\n" +
+            $"Motivo: {motivoNombre}\n\n" +
+            "¿Confirmar la baja?",
+            yesText: "Si, registrar baja",
+            noText: "Cancelar");
+
+        if (confirmacion != true)
+            return;
+
         _guardando = true;
 
         try

@@ -1,0 +1,125 @@
+/* ================================================================
+   MainLayout — Chrome de la aplicación (AppBar + Drawer)
+   Los colores base vienen de NexoTheme.cs.
+   Este archivo añade gradientes, sombras y detalles premium.
+   ================================================================ */
+
+/* ── AppBar ──────────────────────────────────────────────────── */
+[b-w5ifl9lb28] .mud-appbar {
+  background: linear-gradient(90deg, #1A1C22 0%, #22252D 100%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.03), 0 2px 12px rgba(0,0,0,0.22) !important;
+}
+
+/* Título NEXO ERP en la barra superior */
+[b-w5ifl9lb28] .mud-appbar .mud-typography-h6 {
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: #E8E2D5 !important;
+  opacity: 0.95;
+}
+
+/* ── Drawer (Sidebar) ────────────────────────────────────────── */
+[b-w5ifl9lb28] .mud-drawer {
+  background: linear-gradient(180deg, #1A1C22 0%, #1E2028 60%, #1C1E25 100%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.04) !important;
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.18) !important;
+}
+
+/* ── Header de marca dentro del Drawer ──────────────────────── */
+[b-w5ifl9lb28] .nexo-drawer-header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1.2rem 1.35rem 1.1rem;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0.03) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[b-w5ifl9lb28] .nexo-drawer-logo {
+  height: 1.95rem;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));
+}
+
+[b-w5ifl9lb28] .nexo-drawer-title {
+  color: #F0EBE2 !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.875rem !important;
+  white-space: nowrap;
+}
+
+[b-w5ifl9lb28] .nexo-drawer-title strong {
+  color: #FFFFFF;
+}
+
+[b-w5ifl9lb28] .nexo-drawer-divider {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  margin: 0 !important;
+}
+
+/* ── Chip de usuario en el AppBar ───────────────────────────── */
+[b-w5ifl9lb28] .nexo-appbar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 999px;
+  padding: 0.32rem 0.9rem 0.32rem 0.6rem;
+  margin-right: 0.5rem;
+  font-size: 0.835rem;
+  white-space: nowrap;
+  color: #E8E2D5;
+  backdrop-filter: blur(4px);
+  transition: background-color 0.15s ease;
+}
+
+[b-w5ifl9lb28] .nexo-appbar-user:hover {
+  background: rgba(255, 255, 255, 0.11);
+}
+
+[b-w5ifl9lb28] .nexo-appbar-user__role {
+  opacity: 0.65;
+  font-weight: 400;
+  font-size: 0.78rem;
+}
+
+/* ── Área de contenido principal ────────────────────────────── */
+[b-w5ifl9lb28] .mud-main-content {
+  padding: 1.75rem 2rem !important;
+}
+
+@media (max-width: 960px) {
+  [b-w5ifl9lb28] .mud-main-content {
+    padding: 1.25rem 1rem !important;
+  }
+}
+
+/* ── Error UI de Blazor ─────────────────────────────────────── */
+#blazor-error-ui[b-w5ifl9lb28] {
+  color-scheme: light only;
+  background: #FEF9C3;
+  bottom: 0;
+  box-shadow: 0 -1px 2px rgba(0,0,0,0.12);
+  box-sizing: border-box;
+  display: none;
+  left: 0;
+  padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+  position: fixed;
+  width: 100%;
+  z-index: 1000;
+  font-size: 0.875rem;
+}
+
+#blazor-error-ui .dismiss[b-w5ifl9lb28] {
+  cursor: pointer;
+  position: absolute;
+  right: 0.75rem;
+  top: 0.5rem;
+}

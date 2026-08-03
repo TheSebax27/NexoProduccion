@@ -34,14 +34,14 @@
     </div>
 
     <div class="login-field">
-        <label class="login-field__label" for="login-password">Contrasena</label>
+        <label class="login-field__label" for="login-password">Contraseña</label>
         <div class="login-input">
             <MudIcon Icon="@Icons.Material.Outlined.Lock" Size="Size.Small" Class="login-input__icon" />
             <input id="login-password"
                    class="login-input__control"
                    type="@(_mostrarPassword ? "text" : "password")"
                    autocomplete="current-password"
-                   placeholder="Ingresa tu contrasena"
+                   placeholder="Ingresa tu contraseña"
                    @bind="_password"
                    @bind:event="oninput"
                    disabled="@_cargando" />
@@ -70,7 +70,7 @@
             <span class="login-checkbox__label">Recordarme</span>
         </label>
 
-        <a href="#" class="login-card__forgot">¿Olvidaste tu contrasena?</a>
+        <a href="#" class="login-card__forgot">¿Olvidaste tu contraseña?</a>
     </div>
 
     <button type="button"
@@ -99,24 +99,33 @@
     private bool _cargando;
 
     private string ObtenerTituloToggle() =>
-        _mostrarPassword ? "Ocultar contrasena" : "Mostrar contrasena";
+        _mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña";
 
     private async Task EntrarAsync()
     {
         _error = null;
         _cargando = true;
 
-        var respuesta = await ApiClient.LoginAsync(new NexoWeb.Common.Dtos.LoginRequest(_username, _password));
-
-        _cargando = false;
-
-        if (respuesta is null)
+        try
         {
-            _error = "Usuario o contrasena incorrectos.";
-            return;
-        }
+            var respuesta = await ApiClient.LoginAsync(new NexoWeb.Common.Dtos.LoginRequest(_username, _password));
 
-        await AuthState.IniciarSesionAsync(respuesta);
-        Navegacion.NavigateTo("/", forceLoad: false);
+            if (respuesta is null)
+            {
+                _error = "Usuario o contraseña incorrectos.";
+                return;
+            }
+
+            await AuthState.IniciarSesionAsync(respuesta);
+            Navegacion.NavigateTo("/", forceLoad: false);
+        }
+        catch (Exception)
+        {
+            _error = "No se pudo conectar con el servidor. Verifique su conexion de red.";
+        }
+        finally
+        {
+            _cargando = false;
+        }
     }
 }

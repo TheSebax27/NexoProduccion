@@ -22,9 +22,9 @@ else
         @if (!EsNuevaVersion)
         {
             <MudSelect T="int" @bind-Value="_productoTerminadoId" Label="Producto Terminado" Class="mb-4" Required="true">
-                @foreach (var articulo in _articulos)
+                @foreach (var articulo in _productosTerminados)
                 {
-                    <MudSelectItem T="int" Value="@articulo.ArticuloID">@articulo.Nombre (@articulo.TipoArticulo)</MudSelectItem>
+                    <MudSelectItem T="int" Value="@articulo.ArticuloID">@articulo.Nombre</MudSelectItem>
                 }
             </MudSelect>
         }
@@ -39,7 +39,7 @@ else
         <MudTextField @bind-Value="_nombreReceta" Label="Nombre de la Receta" Class="mb-4" Required="true" />
 
         <MudNumericField @bind-Value="_cantidadRendimientoBase" Label="Cantidad de Rendimiento Base"
-                         Min="0.001m" Class="mb-4" Required="true" />
+                         Min="0.001m" Format="N2" Class="mb-4" Required="true" />
 
         <MudSelect T="int" @bind-Value="_unidadRendimientoId" Label="Unidad de Rendimiento" Class="mb-4" Required="true">
             @foreach (var unidad in _unidadesMedida)
@@ -63,14 +63,14 @@ else
         <RowTemplate>
             <MudTd DataLabel="Insumo">
                 <MudSelect T="int" @bind-Value="context.InsumoID" Dense="true">
-                    @foreach (var articulo in _articulos)
+                    @foreach (var articulo in _insumosDisponibles)
                     {
                         <MudSelectItem T="int" Value="@articulo.ArticuloID">@articulo.Nombre (@articulo.TipoArticulo)</MudSelectItem>
                     }
                 </MudSelect>
             </MudTd>
             <MudTd DataLabel="Cantidad">
-                <MudNumericField @bind-Value="context.CantidadRequerida" Min="0.001m" Dense="true" />
+                <MudNumericField @bind-Value="context.CantidadRequerida" Min="0.001m" Format="N2" Dense="true" />
             </MudTd>
             <MudTd DataLabel="Unidad">
                 <MudSelect T="int" @bind-Value="context.UnidadID" Dense="true">
@@ -81,7 +81,7 @@ else
                 </MudSelect>
             </MudTd>
             <MudTd DataLabel="% Merma Std.">
-                <MudNumericField @bind-Value="context.PorcentajeMermaEstandar" Min="0m" Max="100m" Dense="true" />
+                <MudNumericField @bind-Value="context.PorcentajeMermaEstandar" Min="0m" Max="100m" Format="N1" Dense="true" />
             </MudTd>
             <MudTd DataLabel="Centro de Trabajo">
                 <MudSelect T="int?" @bind-Value="context.CentroTrabajoID" Dense="true" Clearable="true">
@@ -123,6 +123,14 @@ else
     private List<ArticuloItem> _articulos = new();
     private List<UnidadMedidaItem> _unidadesMedida = new();
     private List<CentroTrabajoItem> _centrosTrabajo = new();
+
+    // Un Producto Terminado es lo que la receta PRODUCE; los insumos (Materia
+    // Prima/Insumo/Servicio) son lo que la receta CONSUME. Servicio se incluye
+    // porque cosas como una licencia de Windows tambien se "consumen" al armar
+    // un producto (ej. un Computador necesita 1 licencia). No tiene sentido
+    // mezclar Producto Terminado: no se elige como insumo de si mismo.
+    private List<ArticuloItem> _productosTerminados => _articulos.Where(a => a.TipoArticulo == "Producto Terminado").ToList();
+    private List<ArticuloItem> _insumosDisponibles => _articulos.Where(a => a.TipoArticulo is "Materia Prima" or "Insumo" or "Servicio").ToList();
 
     // Encabezado del formulario
     private int _productoTerminadoId;

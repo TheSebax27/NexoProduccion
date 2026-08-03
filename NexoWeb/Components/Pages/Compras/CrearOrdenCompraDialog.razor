@@ -33,15 +33,21 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="3">
-                    <MudNumericField @bind-Value="linea.Cantidad" Label="Cantidad" Min="0.01m" Dense="true" />
+                    <MudNumericField @bind-Value="linea.Cantidad" Label="Cantidad" Min="0.01m" Format="N2" Dense="true" />
                 </MudItem>
                 <MudItem xs="3">
-                    <MudNumericField @bind-Value="linea.CostoUnitario" Label="Costo Unit." Min="0m" Dense="true" />
+                    <MudMoneyField @bind-Value="linea.CostoUnitario" Label="Costo Unit." />
                 </MudItem>
                 <MudItem xs="1">
                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
                                    OnClick="@(() => _lineas.Remove(linea))" />
                 </MudItem>
+                @if (PistaEmbalaje(linea) is string pistaEmbalaje)
+                {
+                    <MudItem xs="12" Class="pt-0">
+                        <MudText Typo="Typo.caption" Style="color: var(--n-text-3, #9B9BB4);">@pistaEmbalaje</MudText>
+                    </MudItem>
+                }
             </MudGrid>
         }
 
@@ -79,12 +85,31 @@
         !string.IsNullOrWhiteSpace(_codigo) && _proveedorId > 0 && _bodegaDestinoId > 0 &&
         _lineas.Count > 0 && _lineas.All(l => l.ArticuloID > 0 && l.Cantidad > 0 && l.CostoUnitario > 0);
 
+    // Llegada desde Consulta de Stock (chip "Requiere pedido"): precarga este
+    // articulo en la primera linea en vez de arrancar vacio.
+    [Parameter] public int? ArticuloPreseleccionadoID { get; set; }
+
     protected override void OnInitialized()
     {
-        AgregarLinea(); // arranca con una fila vacia, para no obligar al usuario a hacer click primero
+        AgregarLinea();
+        if (ArticuloPreseleccionadoID.HasValue)
+            _lineas[0].ArticuloID = ArticuloPreseleccionadoID.Value;
     }
 
     private void AgregarLinea() => _lineas.Add(new LineaFormulario());
+
+    // La Cantidad siempre se captura en la unidad base del articulo (la que
+    // ya tiene definida en Catalogo). Si esa unidad es "Caja", esta pista
+    // ayuda a verificar cuantas unidades sueltas representa en total.
+    private string? PistaEmbalaje(LineaFormulario linea)
+    {
+        var articulo = _articulos.FirstOrDefault(a => a.ArticuloID == linea.ArticuloID);
+        if (articulo is null || articulo.Unidad != "cja" || articulo.UnidadesPorEmbalaje is not > 0 || linea.Cantidad <= 0)
+            return null;
+
+        var totalUnidades = linea.Cantidad * articulo.UnidadesPorEmbalaje.Value;
+        return $"{linea.Cantidad:N2} cajas x {articulo.UnidadesPorEmbalaje:N0} und/caja = {totalUnidades:N0} unidades";
+    }
 
     private void Confirmar()
     {

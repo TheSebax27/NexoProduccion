@@ -1,13 +1,13 @@
 ﻿/* Paleta de identidad visual de NEXO ERP, definida como variables locales
    para no interferir con estilos globales de MudBlazor/Bootstrap. */
 .auth-shell {
-    --nexo-bg: #F7F3EC;
-    --nexo-card: #FFFCF8;
-    --nexo-border: #E8E2D9;
-    --nexo-text: #2E2E2E;
-    --nexo-sidebar: #2B2D31;
-    --nexo-primary: #2563EB;
-    --nexo-primary-hover: #1D4ED8;
+    --nexo-bg: #F4F5F9;
+    --nexo-card: #FFFFFF;
+    --nexo-border: #E8E9EF;
+    --nexo-text: #1A1C2E;
+    --nexo-sidebar: #13131F;
+    --nexo-primary: #7C5CFF;
+    --nexo-primary-hover: #5A3BFF;
     position: relative;
     display: flex;
     min-height: 100vh;
@@ -37,7 +37,7 @@
     position: absolute;
     inset: 0;
     z-index: 1;
-    background: linear-gradient(180deg, rgba(43, 45, 49, 0.62) 0%, rgba(43, 45, 49, 0.22) 38%, rgba(43, 45, 49, 0.72) 100%), linear-gradient(115deg, rgba(37, 99, 235, 0.18) 0%, rgba(43, 45, 49, 0) 55%);
+    background: linear-gradient(180deg, rgba(19, 19, 31, 0.62) 0%, rgba(19, 19, 31, 0.22) 38%, rgba(19, 19, 31, 0.72) 100%), linear-gradient(115deg, rgba(124, 92, 255, 0.22) 0%, rgba(19, 19, 31, 0) 55%);
 }
 
 /* ---------- Blobs decorativos (version sobria del recorte de referencia) ---------- */
@@ -54,7 +54,7 @@
     right: 4rem;
     width: 11rem;
     height: 11rem;
-    background: radial-gradient(circle at 30% 30%, rgba(37, 99, 235, 0.35), rgba(43, 45, 49, 0.05) 70%);
+    background: radial-gradient(circle at 30% 30%, rgba(124, 92, 255, 0.35), rgba(19, 19, 31, 0.05) 70%);
 }
 
 .auth-shell__blob--two {

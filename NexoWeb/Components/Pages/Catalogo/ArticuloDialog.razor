@@ -24,19 +24,81 @@
                     }
                 </MudSelect>
 
-                <MudSelect T="int" @bind-Value="_unidadId" Label="Unidad de Medida" Required="true"
-                           RequiredError="Selecciona una unidad" Class="mb-3">
+                <MudSelect T="int?" @bind-Value="_unidadId" Label="Unidad de Medida" Clearable="@EsServicio"
+                           Required="@(!EsServicio)" RequiredError="Selecciona una unidad" Class="mb-1">
                     @foreach (var unidad in UnidadesMedida)
                     {
-                        <MudSelectItem Value="@unidad.UnidadID">@unidad.Nombre (@unidad.Abreviatura)</MudSelectItem>
+                        <MudSelectItem T="int?" Value="@((int?)unidad.UnidadID)">@unidad.Nombre (@unidad.Abreviatura)</MudSelectItem>
                     }
                 </MudSelect>
+                @if (EsServicio)
+                {
+                    <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
+                        Opcional: solo si este servicio se cuenta por unidades (ej. claves de licencia).
+                        Si es intangible sin cantidad (ej. horas de consultoria), dejalo en blanco.
+                    </MudText>
+                }
+                else
+                {
+                    <div class="mb-3"></div>
+                }
             }
 
-            <MudNumericField @bind-Value="_precioVenta" Label="Precio de Venta" Min="0m" Format="N2" Class="mb-3" />
+            @if (EsUnidadCaja)
+            {
+                <MudNumericField @bind-Value="_unidadesPorEmbalaje" Label="Unidades por Caja/Embalaje" Min="1m" Format="N2"
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Inventory2" Class="mb-1" />
+                <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
+                    Cuantas unidades individuales trae 1 caja de este articulo. Se usa como referencia
+                    al comprar, recibir o ajustar inventario en cajas (el stock se sigue registrando
+                    en la unidad base del articulo).
+                </MudText>
+            }
+
+            @if (EsProductoTerminado)
+            {
+                <MudMoneyField @bind-Value="_precioVenta" Label="@(EsUnidadCaja ? "Precio de Venta por Caja" : "Precio de Venta")" Class="mb-1" />
+                @if (EsUnidadCaja && _unidadesPorEmbalaje is > 0 && _precioVenta > 0)
+                {
+                    <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
+                        = @((_precioVenta / _unidadesPorEmbalaje.Value).ToString("C2")) por unidad (@_unidadesPorEmbalaje.Value.ToString("N0") unidades/caja)
+                    </MudText>
+                }
+                else
+                {
+                    <div class="mb-3"></div>
+                }
+            }
+            else if (EsEdicion && Articulo!.CostoPromedio > 0)
+            {
+                <MudTextField Value="@Articulo!.CostoPromedio.ToString("C2")" Label="Costo Promedio de Compra" ReadOnly="true"
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.ShoppingCart" Class="mb-1" />
+                <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
+                    Se calcula automaticamente con el costo promedio ponderado de las compras recibidas. No se edita aqui.
+                </MudText>
+            }
+
+            @* Stock Minimo/Punto de Reorden aplican a cualquier tipo que se pueda
+               comprar y tener existencias (hasta un Servicio como claves de licencia
+               puede tener "me quedan pocas"). Vida Util solo aplica a bienes fisicos
+               perecederos, un bien digital no caduca por tiempo en bodega. *@
             <MudNumericField @bind-Value="_stockMinimo" Label="Stock Minimo" Min="0m" Format="N2" Class="mb-3" />
             <MudNumericField @bind-Value="_puntoReorden" Label="Punto de Reorden" Min="0m" Format="N2" Class="mb-3" />
-            <MudNumericField @bind-Value="_diasVidaUtil" Label="Dias de Vida Util (opcional)" Min="0" Class="mb-3" />
+            @if (!EsServicio)
+            {
+                <MudNumericField @bind-Value="_diasVidaUtil" Label="Vida Util (dias hasta caducidad)" Min="0"
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.EventBusy" Class="mb-1" />
+                @if (_diasVidaUtil is > 0)
+                {
+                    <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
+                        Un lote producido hoy caducaria aproximadamente el @DateTime.Today.AddDays(_diasVidaUtil.Value).ToString("dd/MM/yyyy").
+                    </MudText>
+                }
+                else
+                {
+                    <div class="mb-3"></div>
+                }
+            }
 
             @if (EsEdicion)
             {
@@ -61,16 +123,34 @@
 
     private bool EsEdicion => Articulo is not null;
 
+    // El formulario cambia segun el tipo: Producto Terminado es lo unico que
+    // se vende (Precio de Venta); Materia Prima/Insumo se compran (se muestra
+    // su costo promedio, ya calculado por las recepciones de compra); Servicio
+    // no maneja stock.
+    private string? TipoSeleccionadoNombre => EsEdicion
+        ? Articulo!.TipoArticulo
+        : TiposArticulo.FirstOrDefault(t => t.TipoArticuloID == _tipoArticuloId)?.Nombre;
+
+    private bool EsProductoTerminado => TipoSeleccionadoNombre == "Producto Terminado";
+    private bool EsServicio => TipoSeleccionadoNombre == "Servicio";
+
+    // En edicion no se muestra el selector de Unidad (no se puede cambiar), asi
+    // que se compara contra el string ya resuelto que trae el articulo.
+    private bool EsUnidadCaja => EsEdicion
+        ? Articulo!.Unidad == "cja"
+        : UnidadesMedida.FirstOrDefault(u => u.UnidadID == _unidadId)?.Abreviatura == "cja";
+
     private MudForm _form = default!;
     private string _sku = string.Empty;
     private string _nombre = string.Empty;
     private string? _descripcion;
     private int _tipoArticuloId;
-    private int _unidadId;
+    private int? _unidadId;
     private decimal _precioVenta;
     private decimal _stockMinimo;
     private decimal _puntoReorden;
     private int? _diasVidaUtil;
+    private decimal? _unidadesPorEmbalaje;
     private bool _estado = true;
 
     protected override void OnInitialized()
@@ -83,6 +163,7 @@
             _stockMinimo = Articulo.StockMinimo;
             _puntoReorden = Articulo.PuntoReorden;
             _diasVidaUtil = Articulo.DiasVidaUtil;
+            _unidadesPorEmbalaje = Articulo.UnidadesPorEmbalaje;
             _estado = Articulo.Estado;
         }
     }
@@ -93,20 +174,24 @@
         if (!_form.IsValid)
             return;
 
+        // Si la unidad ya no es Caja (ej. se corrigio el tipo), el factor no aplica.
+        var embalajeAEnviar = EsUnidadCaja ? _unidadesPorEmbalaje : null;
+
         if (EsEdicion)
         {
             var request = new ActualizarArticuloRequest(
-                _nombre, _descripcion, _precioVenta, _stockMinimo, _puntoReorden, _diasVidaUtil, _estado);
+                _nombre, _descripcion, _precioVenta, _stockMinimo, _puntoReorden, _diasVidaUtil, _estado,
+                embalajeAEnviar);
             MudDialog.Close(DialogResult.Ok(request));
         }
         else
         {
-            if (_tipoArticuloId == 0 || _unidadId == 0)
+            if (_tipoArticuloId == 0 || (!EsServicio && (_unidadId is null or 0)))
                 return;
 
             var request = new CrearArticuloRequest(
                 _sku, _nombre, _descripcion, _tipoArticuloId, _unidadId,
-                _precioVenta, _stockMinimo, _puntoReorden, _diasVidaUtil);
+                _precioVenta, _stockMinimo, _puntoReorden, _diasVidaUtil, embalajeAEnviar);
             MudDialog.Close(DialogResult.Ok(request));
         }
     }

@@ -12,7 +12,6 @@ public record OrdenCompraResumen(int OrdenCompraID, string Codigo, string Provee
 
 public record OrdenCompraDetalleItem(
     int OrdenCompraDetalleID, int ArticuloID, string Articulo,
-    decimal CantidadSolicitada, decimal CantidadRecibida, decimal CostoUnitario
+    decimal CantidadSolicitada, decimal CantidadRecibida, decimal CostoUnitario,
+    string? Unidad, decimal? UnidadesPorEmbalaje
 );
-
-public record ProveedorItem(int ProveedorID, string RazonSocial);

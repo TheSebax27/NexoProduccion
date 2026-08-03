@@ -1,60 +1,837 @@
+/* ================================================================
+   NEXO ERP — Global Design System v3
+   Paleta: Morado profundo (#7C5CFF / #5A3BFF) + Gris moderno
+   Fondo: #F4F5F9 | Cards: #FFFFFF | Sidebar: #13131F
+   Fuente: Mango Dream › Plus Jakarta Sans › Inter
+   ================================================================ */
+
+/* ── Variables globales ─────────────────────────────────────── */
+:root {
+  --n-purple:      #7C5CFF;
+  --n-purple-d:    #5A3BFF;
+  --n-purple-dd:   #4B2FE0;
+  --n-purple-l:    #9B7FFF;
+  --n-purple-xl:   #EDE9FF;
+  --n-purple-grad: linear-gradient(135deg, #7C5CFF 0%, #5A3BFF 100%);
+  --n-purple-glow: 0 4px 16px rgba(124,92,255,0.28), 0 1px 4px rgba(124,92,255,0.16);
+
+  --n-dark:    #13131F;
+  --n-dark-2:  #1A1A2E;
+  --n-dark-3:  #22223A;
+
+  --n-bg:      #F4F5F9;
+  --n-card:    #FFFFFF;
+  --n-border:  #E8E9EF;
+  --n-border-2:#D1D5E8;
+
+  --n-text-1:  #1A1C2E;
+  --n-text-2:  #6B6B8A;
+  --n-text-3:  #9B9BB4;
+
+  --n-success: #10B981;
+  --n-warning: #F59E0B;
+  --n-error:   #EF4444;
+  --n-info:    #0EA5E9;
+
+  --n-shadow:    0 2px 8px rgba(26,28,46,0.07), 0 1px 2px rgba(26,28,46,0.04);
+  --n-shadow-md: 0 4px 16px rgba(26,28,46,0.08), 0 2px 4px rgba(26,28,46,0.04);
+  --n-shadow-lg: 0 8px 32px rgba(26,28,46,0.10), 0 2px 8px rgba(26,28,46,0.05);
+
+  --n-radius:    14px;
+  --n-radius-sm: 8px;
+  --n-radius-lg: 20px;
+  --n-radius-xl: 24px;
+
+  --n-font: 'Mango Dream', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+}
+
+/* ── Base ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: var(--n-font) !important;
+  background-color: var(--n-bg) !important;
+  color: var(--n-text-1) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-a, .btn-link {
-    color: #006bb7;
+/* Forzar background en MudBlazor layout wrappers */
+.mud-layout,
+.mud-layout-prevent-scroll-default,
+.mud-drawer-container,
+.mud-main-content {
+  background: var(--n-bg) !important;
 }
 
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+/* Fuente global en todo MudBlazor */
+.mud-typography,
+.mud-button-label,
+.mud-input-input,
+.mud-select-input,
+.mud-nav-link,
+.mud-table-cell,
+.mud-chip,
+.mud-alert,
+.mud-dialog-title,
+.mud-dialog-content,
+.mud-snackbar-content,
+.mud-list-item-text,
+.mud-tooltip-root,
+* {
+  font-family: var(--n-font) !important;
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+/* ── Top bar — alineación global (refuerza scoped CSS) ──────── */
+.nexo-topbar__user {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+  flex-shrink: 0 !important;
 }
 
-.content {
-    padding-top: 1.1rem;
+.nexo-topbar__avatar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #7C5CFF 0%, #5A3BFF 100%) !important;
+  color: #FFFFFF !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  flex-shrink: 0 !important;
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 8px rgba(124,92,255,0.30);
+  line-height: 1 !important;
 }
 
-h1:focus {
-    outline: none;
+.nexo-topbar__user-info {
+  display: flex !important;
+  flex-direction: column !important;
+  line-height: 1.25 !important;
 }
 
-.valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
+.nexo-topbar__user-name {
+  font-size: 0.84rem !important;
+  font-weight: 600 !important;
+  color: #FFFFFF !important;
+  white-space: nowrap !important;
+  display: block !important;
 }
 
-.invalid {
-    outline: 1px solid #e50000;
+.nexo-topbar__user-role {
+  font-size: 0.7rem !important;
+  color: #9B9BB4 !important;
+  white-space: nowrap !important;
+  display: block !important;
 }
 
-.validation-message {
-    color: #e50000;
+/* ── MudPaper / Cards ───────────────────────────────────────── */
+.mud-paper:not(.mud-appbar):not(.mud-popover-cascading):not(.mud-dialog):not(.mud-snackbar-content):not(.mud-drawer) {
+  background: var(--n-card) !important;
+  border: 1px solid var(--n-border) !important;
+  border-radius: var(--n-radius) !important;
+  box-shadow: var(--n-shadow) !important;
 }
 
+.mud-paper.mud-elevation-2,
+.mud-paper.mud-elevation-3,
+.mud-paper.mud-elevation-4,
+.mud-paper.mud-elevation-8 {
+  box-shadow: var(--n-shadow-md) !important;
+}
+
+/* ── Páginas — Encabezado (MudText h5) ──────────────────────── */
+.mud-main-content .mud-typography-h5 {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.7rem !important;
+  font-size: 1.4rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.025em !important;
+  color: var(--n-text-1) !important;
+  margin-bottom: 1.5rem !important;
+  padding-bottom: 1rem !important;
+  border-bottom: 1px solid var(--n-border) !important;
+}
+
+.mud-main-content .mud-typography-h5::before {
+  content: '' !important;
+  display: inline-block !important;
+  width: 4px !important;
+  height: 1.4rem !important;
+  border-radius: 4px !important;
+  background: var(--n-purple-grad) !important;
+  flex-shrink: 0 !important;
+}
+
+/* ── Páginas — Subtítulos ───────────────────────────────────── */
+.mud-main-content .mud-typography-subtitle1 {
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  color: var(--n-text-1) !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* ── Toolbar de filtros (MudGrid dentro del contenido) ──────── */
+.mud-main-content .mud-grid {
+  margin-bottom: 1rem;
+}
+
+/* ── MudTable ───────────────────────────────────────────────── */
+.mud-table-container {
+  border-radius: var(--n-radius) !important;
+  overflow: hidden !important;
+  border: 1px solid var(--n-border) !important;
+  box-shadow: var(--n-shadow) !important;
+  background: var(--n-card) !important;
+}
+
+.mud-table-head .mud-table-row {
+  background: #F8F8FC !important;
+}
+
+.mud-table-head .mud-table-cell {
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.07em !important;
+  text-transform: uppercase !important;
+  color: var(--n-text-3) !important;
+  border-bottom: 1px solid var(--n-border) !important;
+  padding: 13px 18px !important;
+  white-space: nowrap !important;
+  background: #F8F8FC !important;
+}
+
+.mud-table-body .mud-table-cell {
+  font-size: 0.875rem !important;
+  padding: 12px 18px !important;
+  color: var(--n-text-1) !important;
+  border-bottom: 1px solid rgba(232,233,239,0.6) !important;
+}
+
+.mud-table-body .mud-table-row:hover {
+  background-color: #F2EEFF !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.mud-table-body .mud-table-row:last-child .mud-table-cell {
+  border-bottom: none !important;
+}
+
+.mud-table-striped .mud-table-body .mud-table-row:nth-child(odd) {
+  background-color: #FAFAFD !important;
+}
+
+/* Paginación */
+.mud-table-pagination {
+  border-top: 1px solid var(--n-border) !important;
+  background: #FAFAFD !important;
+  font-size: 0.8rem !important;
+}
+
+/* ── MudTable — toolbar de búsqueda ────────────────────────── */
+.mud-table-toolbar {
+  background: var(--n-card) !important;
+  border-bottom: 1px solid var(--n-border) !important;
+  padding: 0.75rem 1.25rem !important;
+}
+
+/* ── Botones — degradado morado ─────────────────────────────── */
+.mud-button-root {
+  font-family: var(--n-font) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
+  border-radius: var(--n-radius-sm) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Primary */
+.mud-button-filled-primary {
+  background: var(--n-purple-grad) !important;
+  box-shadow: var(--n-purple-glow) !important;
+  color: #FFFFFF !important;
+}
+.mud-button-filled-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #6B4BEE 0%, #4B2FE0 100%) !important;
+  box-shadow: 0 6px 20px rgba(124,92,255,0.38) !important;
+  transform: translateY(-1px) !important;
+}
+.mud-button-filled-primary:active:not(:disabled) {
+  transform: translateY(0) !important;
+}
+
+/* Success — también usa morado (botones de acción principal en páginas) */
+.mud-button-filled-success {
+  background: var(--n-purple-grad) !important;
+  box-shadow: var(--n-purple-glow) !important;
+  color: #FFFFFF !important;
+}
+.mud-button-filled-success:hover:not(:disabled) {
+  background: linear-gradient(135deg, #6B4BEE 0%, #4B2FE0 100%) !important;
+  box-shadow: 0 6px 20px rgba(124,92,255,0.38) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Info */
+.mud-button-filled-info {
+  background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%) !important;
+  box-shadow: 0 4px 14px rgba(14,165,233,0.25) !important;
+  color: #FFFFFF !important;
+}
+.mud-button-filled-info:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Warning */
+.mud-button-filled-warning {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%) !important;
+  box-shadow: 0 4px 14px rgba(245,158,11,0.20) !important;
+  color: #FFFFFF !important;
+}
+.mud-button-filled-warning:hover:not(:disabled) {
+  transform: translateY(-1px) !important;
+}
+
+/* Error */
+.mud-button-filled-error {
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%) !important;
+  box-shadow: 0 4px 14px rgba(239,68,68,0.22) !important;
+  color: #FFFFFF !important;
+}
+.mud-button-filled-error:hover:not(:disabled) {
+  transform: translateY(-1px) !important;
+}
+
+/* Secondary */
+.mud-button-filled-secondary {
+  background: linear-gradient(135deg, #6B6B8A 0%, #4A4A6A 100%) !important;
+}
+.mud-button-filled-secondary:hover:not(:disabled) {
+  transform: translateY(-1px) !important;
+}
+
+/* Outlined */
+.mud-button-outlined {
+  border-width: 1.5px !important;
+}
+.mud-button-outlined-primary {
+  border-color: var(--n-purple) !important;
+  color: var(--n-purple) !important;
+}
+.mud-button-outlined-primary:hover:not(:disabled) {
+  background: var(--n-purple-xl) !important;
+}
+
+/* Disabled */
+.mud-button-root:disabled {
+  opacity: 0.48 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Tamaño pequeño */
+.mud-button-root.mud-button-size-small {
+  border-radius: 6px !important;
+  font-size: 0.75rem !important;
+  padding: 4px 12px !important;
+}
+
+/* ── MudChip ────────────────────────────────────────────────── */
+.mud-chip {
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.04em !important;
+  padding: 2px 10px !important;
+}
+
+/* ── MudAlert ───────────────────────────────────────────────── */
+.mud-alert {
+  border-radius: var(--n-radius) !important;
+  font-size: 0.875rem !important;
+}
+
+/* ── MudSelect / MudTextField ────────────────────────────────── */
+.mud-input-outlined .mud-input-outlined-border {
+  border-radius: var(--n-radius-sm) !important;
+  border-color: var(--n-border-2) !important;
+}
+.mud-input-outlined.mud-input-outlined-focused .mud-input-outlined-border {
+  border-color: var(--n-purple) !important;
+  box-shadow: 0 0 0 3px rgba(124,92,255,0.10) !important;
+}
+.mud-input-label {
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  color: var(--n-text-2) !important;
+}
+
+/* ── MudDialog ──────────────────────────────────────────────── */
+.mud-dialog {
+  border-radius: var(--n-radius-lg) !important;
+  box-shadow: var(--n-shadow-lg) !important;
+  border: 1px solid var(--n-border) !important;
+}
+.mud-dialog .mud-dialog-title {
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  letter-spacing: -0.01em !important;
+  color: var(--n-text-1) !important;
+  border-bottom: 1px solid var(--n-border) !important;
+  padding-bottom: 1rem !important;
+}
+.mud-dialog .mud-dialog-content {
+  padding: 1.25rem 1.5rem !important;
+}
+.mud-dialog .mud-dialog-actions {
+  border-top: 1px solid var(--n-border) !important;
+  padding: 0.75rem 1.5rem !important;
+  gap: 0.5rem !important;
+}
+.mud-overlay {
+  background: rgba(19, 19, 31, 0.48) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* ── MudDatePicker / MudDateRangePicker (modo Dialog) ────────
+   Se usa PickerVariant.Dialog en toda la app para evitar que el
+   calendario se recorte dentro de contenedores angostos (era la
+   causa del texto superpuesto/ilegible en el header morado).
+   Aquí se retema el modal del calendario acorde al morado de NEXO.
+   ────────────────────────────────────────────────────────────── */
+.mud-picker {
+  border-radius: var(--n-radius-lg) !important;
+  overflow: hidden !important;
+  box-shadow: var(--n-shadow-lg) !important;
+  min-width: 340px !important;
+}
+
+/* Toolbar superior (año + fecha/rango grande) — mud-button-year y
+   mud-button-date venían encimados porque son MudButton (inline-flex,
+   nowrap por defecto) apilados sin flujo de documento normal; con un
+   rango de fechas el texto es largo ("lun, 20 jul – lun, 03 ago") y
+   se desbordaba encima del año. Se fuerza flujo en columna, ancho
+   completo y wrap de texto para que cada uno ocupe su propia línea. */
+.mud-picker-datepicker-toolbar,
+.mud-picker-timepicker-toolbar,
+.mud-picker-toolbar {
+  background: var(--n-purple-grad) !important;
+  padding: 1rem 1.25rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 0.3rem !important;
+}
+.mud-picker-datepicker-toolbar .mud-typography,
+.mud-picker-timepicker-toolbar .mud-typography,
+.mud-picker-toolbar .mud-typography,
+.mud-picker-datepicker-toolbar .mud-button-root,
+.mud-picker-toolbar .mud-button-root {
+  color: #FFFFFF !important;
+}
+.mud-picker-datepicker-toolbar .mud-button-year,
+.mud-picker-datepicker-toolbar .mud-button-date {
+  position: static !important;
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0.1rem 0 !important;
+  text-align: left !important;
+  text-transform: none !important;
+}
+.mud-picker-datepicker-toolbar .mud-button-year .mud-button-label {
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  opacity: 0.85;
+  white-space: normal !important;
+  justify-content: flex-start !important;
+}
+.mud-picker-datepicker-toolbar .mud-button-date .mud-button-label {
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+  white-space: normal !important;
+  display: block !important;
+  text-align: left !important;
+  justify-content: flex-start !important;
+}
+
+/* Header de navegación de mes (flechas + "agosto 2026") */
+.mud-picker-calendar-header-switch {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-weight: 700 !important;
+  color: var(--n-text-1) !important;
+}
+.mud-picker-calendar-header-transition {
+  overflow: hidden !important;
+}
+.mud-picker-nav-button-prev,
+.mud-picker-nav-button-next {
+  color: var(--n-purple) !important;
+}
+
+/* Fila de letras de días de la semana (D L M M J V S) */
+.mud-picker-calendar-week-text {
+  color: var(--n-text-3) !important;
+  font-weight: 700 !important;
+  font-size: 0.7rem !important;
+}
+
+/* Cuadrícula de días */
+.mud-picker-calendar-container {
+  padding: 0.5rem 1rem 1rem !important;
+}
+.mud-picker .mud-day {
+  border-radius: 50% !important;
+  font-weight: 500 !important;
+  transition: background-color 0.15s ease !important;
+}
+.mud-picker .mud-day:hover {
+  background: var(--n-purple-xl) !important;
+}
+.mud-picker .mud-day.mud-current {
+  border: 1.5px solid var(--n-purple) !important;
+  color: var(--n-purple) !important;
+  font-weight: 700 !important;
+}
+.mud-picker .mud-day.mud-selected {
+  background: var(--n-purple-grad) !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  box-shadow: var(--n-purple-glow) !important;
+}
+.mud-picker .mud-range-selection {
+  background: var(--n-purple-xl) !important;
+}
+.mud-picker .mud-day.mud-range-start-selected,
+.mud-picker .mud-day.mud-range-end-selected {
+  background: var(--n-purple-grad) !important;
+  color: #FFFFFF !important;
+  border-radius: 50% !important;
+  box-shadow: var(--n-purple-glow) !important;
+}
+
+/* Selectores de mes/año (vista alterna) */
+.mud-picker-year-container .mud-picker-year.mud-picker-year-selected,
+.mud-picker-month.mud-picker-month-selected {
+  color: var(--n-purple) !important;
+  font-weight: 800 !important;
+}
+
+/* Footer (botones Cancelar / OK) */
+.mud-picker-actions {
+  border-top: 1px solid var(--n-border) !important;
+  padding: 0.6rem 1rem !important;
+}
+
+/* ── MudSnackbar ────────────────────────────────────────────── */
+.mud-snackbar {
+  border-radius: var(--n-radius-sm) !important;
+  font-weight: 500 !important;
+  font-size: 0.875rem !important;
+}
+
+/* ── MudProgressCircular ────────────────────────────────────── */
+.mud-progress-circular-svg .mud-progress-circular-circle {
+  stroke: var(--n-purple) !important;
+}
+
+/* ── MudDivider ─────────────────────────────────────────────── */
+.mud-divider { border-color: var(--n-border) !important; }
+
+/* ── MudIconButton ──────────────────────────────────────────── */
+.mud-icon-button {
+  border-radius: 10px !important;
+  transition: all 0.18s ease !important;
+}
+
+/* ── MudTypography overrides ────────────────────────────────── */
+.mud-typography-h5 {
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+}
+.mud-typography-h6 {
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
+.mud-typography-subtitle1 {
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+}
+
+/* ── Filtros / Panel de herramientas  ─────────────────────────
+   Cuando un MudPaper contiene inputs de filtro en páginas,
+   que tenga el mismo look que las demás tarjetas.
+   ────────────────────────────────────────────────────────────── */
+.mud-paper.pa-4,
+.mud-paper.pa-3,
+.mud-paper.pa-2 {
+  background: var(--n-card) !important;
+  border: 1px solid var(--n-border) !important;
+  border-radius: var(--n-radius) !important;
+  box-shadow: var(--n-shadow) !important;
+}
+
+/* ── Formularios HTML (Login etc.) ──────────────────────────── */
+a, .btn-link { color: var(--n-purple); }
+.valid.modified:not([type=checkbox]) { outline: 1.5px solid var(--n-success); }
+.invalid { outline: 1.5px solid var(--n-error); }
+.validation-message { color: var(--n-error); font-size: 0.8rem; margin-top: 0.25rem; }
+
+/* ── Blazor error boundary ──────────────────────────────────── */
 .blazor-error-boundary {
-    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
-    padding: 1rem 1rem 1rem 3.7rem;
-    color: white;
+  background: #FEE2E2;
+  border: 1px solid #FECACA;
+  border-radius: var(--n-radius);
+  padding: 1rem 1.25rem;
+  color: #991B1B;
+  font-size: 0.875rem;
+}
+.blazor-error-boundary::after { content: "Ha ocurrido un error inesperado."; }
+
+#blazor-error-ui {
+  background: #FEF9C3;
+  border-top: 1px solid #FDE68A;
+  bottom: 0; left: 0;
+  padding: 0.65rem 1.25rem;
+  position: fixed;
+  width: 100%;
+  z-index: 1000;
+  display: none;
+  font-size: 0.875rem;
+}
+#blazor-error-ui .dismiss {
+  cursor: pointer;
+  position: absolute;
+  right: 0.75rem;
+  top: 0.55rem;
 }
 
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
+/* ================================================================
+   MODO OSCURO — solo contenido de páginas (Settings, guardado por
+   usuario). NUNCA toca .nexo-topbar ni .nexo-sidebar -- esos ya son
+   oscuros de por si y quedan igual sin importar el tema.
+   Se activa envolviendo MudLayout + MudDialogProvider/MudPopoverProvider
+   en <div class="nexo-tema-oscuro"> desde MainLayout.razor.
+   Todo usa !important porque el CSS scoped de cada pagina (*.razor.css)
+   se compila a la misma especificidad (clase + atributo) y carga
+   DESPUES de app.css en NexoWeb.styles.css -- sin !important, el CSS
+   scoped ganaria y el tema oscuro no se aplicaria en esas paginas.
+   ================================================================ */
+.nexo-tema-oscuro {
+  --n-bg:      #15151F !important;
+  --n-card:    #1E1E2E !important;
+  --n-border:  rgba(255,255,255,0.09) !important;
+  --n-border-2:rgba(255,255,255,0.16) !important;
+  --n-text-1:  #F4F5F9 !important;
+  --n-text-2:  #A9A9C0 !important;
+  --n-text-3:  #7C7C96 !important;
+  --n-purple-xl: rgba(124,92,255,0.16) !important;
 
-.darker-border-checkbox.form-check-input {
-    border-color: #929292;
+  /* Variables propias de MudBlazor -- alcanzan tambien a los MudChart
+     (eje X/Y usa fill: var(--mud-palette-text-primary)) y a los inputs. */
+  --mud-palette-text-primary: #F4F5F9 !important;
+  --mud-palette-text-secondary: #A9A9C0 !important;
+  --mud-palette-background: #15151F !important;
+  --mud-palette-background-grey: #1E1E2E !important;
+  --mud-palette-surface: #1E1E2E !important;
+  --mud-palette-divider: rgba(255,255,255,0.09) !important;
+  --mud-palette-lines-default: rgba(255,255,255,0.09) !important;
+  --mud-palette-lines-inputs: rgba(255,255,255,0.16) !important;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-    color: var(--bs-secondary-color);
-    text-align: end;
+.nexo-tema-oscuro .mud-main-content.nexo-main-content {
+  background: var(--n-bg) !important;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-    text-align: start;
+/* Tablas -- las unicas reglas del sistema de diseño que usaban hex fijo
+   en vez de las variables (F8F8FC, F2EEFF, FAFAFD) */
+.nexo-tema-oscuro .mud-table-container,
+.nexo-tema-oscuro .mud-table-head .mud-table-row,
+.nexo-tema-oscuro .mud-table-head .mud-table-cell,
+.nexo-tema-oscuro .mud-table-pagination {
+  background: var(--n-card) !important;
+}
+.nexo-tema-oscuro .mud-table-body .mud-table-row:hover {
+  background-color: rgba(124,92,255,0.14) !important;
+}
+.nexo-tema-oscuro .mud-table-striped .mud-table-body .mud-table-row:nth-child(odd) {
+  background-color: rgba(255,255,255,0.02) !important;
+}
+.nexo-tema-oscuro .mud-table-toolbar {
+  background: var(--n-card) !important;
+}
+
+/* Dialogs y pickers (portalados fuera de MudMainContent, pero dentro
+   del wrapper .nexo-tema-oscuro igual) */
+.nexo-tema-oscuro .mud-dialog,
+.nexo-tema-oscuro .mud-picker,
+.nexo-tema-oscuro .mud-popover-paper,
+.nexo-tema-oscuro .mud-list {
+  background: var(--n-card) !important;
+  color: var(--n-text-1) !important;
+}
+.nexo-tema-oscuro .mud-list-item-text,
+.nexo-tema-oscuro .mud-list-item-icon {
+  color: var(--n-text-1) !important;
+}
+.nexo-tema-oscuro .mud-list-item:hover {
+  background: rgba(255,255,255,0.06) !important;
+}
+
+/* Excepcion: el panel de notificaciones cuelga del Top Bar (chrome, no
+   pagina) -- se mantiene blanco siempre, sin importar el tema. */
+.nexo-tema-oscuro .nexo-topbar__notif-panel {
+  background: #FFFFFF !important;
+  color: #1A1C2E !important;
+}
+.nexo-tema-oscuro .nexo-topbar__notif-panel .mud-list-item-text,
+.nexo-tema-oscuro .nexo-topbar__notif-panel-title {
+  color: inherit !important;
+}
+
+/* KPIs, encabezados de grafico y estados vacios (Dashboard.razor.css y
+   similares) -- viven como CSS scoped por pagina con hex fijo. */
+.nexo-tema-oscuro .nexo-kpi {
+  background: var(--n-card) !important;
+  border-color: var(--n-border) !important;
+}
+.nexo-tema-oscuro .nexo-kpi__value,
+.nexo-tema-oscuro .nexo-page-hero__title {
+  color: var(--n-text-1) !important;
+}
+.nexo-tema-oscuro .nexo-chart-header {
+  border-bottom-color: var(--n-border) !important;
+}
+.nexo-tema-oscuro .nexo-chart-header__title {
+  color: var(--n-text-1) !important;
+}
+.nexo-tema-oscuro .nexo-empty-state__text {
+  color: var(--n-text-3) !important;
+}
+.nexo-tema-oscuro .nexo-variacion-chart__zero {
+  stroke: rgba(255,255,255,0.16) !important;
+}
+.nexo-tema-oscuro .nexo-variacion-chart__label {
+  fill: var(--n-text-1) !important;
+}
+.nexo-tema-oscuro .nexo-variacion-chart__axis span {
+  color: var(--n-text-3) !important;
+}
+
+/* Inputs / selects -- fondo transparente sobre --n-card ya cubre la
+   mayoria via variables, esto ajusta el borde por defecto (no enfocado) */
+.nexo-tema-oscuro .mud-input-outlined .mud-input-outlined-border {
+  border-color: var(--n-border-2) !important;
+}
+.nexo-tema-oscuro .mud-input-slot,
+.nexo-tema-oscuro .mud-select-input,
+.nexo-tema-oscuro .mud-input-input {
+  color: var(--n-text-1) !important;
+}
+
+/* Overlay de dialogo -- un poco mas oscuro para que el card resalte */
+.nexo-tema-oscuro .mud-overlay {
+  background: rgba(0,0,0,0.65) !important;
+}
+
+/* ================================================================
+   TOGGLE LISTA / TARJETAS + GRID DE TARJETAS
+   Reutilizable en cualquier pantalla de listado (Components/Shared/
+   VistaToggle.razor + .nexo-card-grid/.nexo-item-card en el markup
+   de cada pagina).
+   ================================================================ */
+.nexo-vista-toggle {
+  display: inline-flex;
+  border: 1px solid var(--n-border-2);
+  border-radius: var(--n-radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.nexo-vista-toggle__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: var(--n-card);
+  color: var(--n-text-3);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.nexo-vista-toggle__btn + .nexo-vista-toggle__btn {
+  border-left: 1px solid var(--n-border-2);
+}
+.nexo-vista-toggle__btn:hover {
+  background: var(--n-purple-xl);
+  color: var(--n-purple);
+}
+.nexo-vista-toggle__btn--activo {
+  background: var(--n-purple-grad);
+  color: #FFFFFF;
+}
+.nexo-vista-toggle__btn--activo:hover {
+  color: #FFFFFF;
+}
+
+.nexo-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.nexo-item-card {
+  background: var(--n-card);
+  border: 1px solid var(--n-border);
+  border-radius: var(--n-radius);
+  box-shadow: var(--n-shadow);
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.nexo-item-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--n-shadow-md);
+}
+.nexo-item-card__title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--n-text-1);
+  line-height: 1.3;
+}
+.nexo-item-card__sub {
+  font-size: 0.76rem;
+  color: var(--n-text-3);
+}
+.nexo-item-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--n-text-2);
+  padding-top: 0.3rem;
+  border-top: 1px solid var(--n-border);
+  margin-top: 0.3rem;
+}
+.nexo-item-card__row strong { color: var(--n-text-1); font-weight: 600; }
+.nexo-item-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
 }

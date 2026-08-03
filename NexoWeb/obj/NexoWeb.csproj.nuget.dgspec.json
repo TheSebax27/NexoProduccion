@@ -10,14 +10,14 @@
         "projectUniqueName": "C:\\Produccion\\NexoWeb\\NexoWeb.csproj",
         "projectName": "NexoWeb",
         "projectPath": "C:\\Produccion\\NexoWeb\\NexoWeb.csproj",
-        "packagesPath": "C:\\Users\\USER\\.nuget\\packages\\",
+        "packagesPath": "C:\\Users\\ASROCK\\.nuget\\packages\\",
         "outputPath": "C:\\Produccion\\NexoWeb\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\USER\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\ASROCK\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],

@@ -9,16 +9,20 @@
 
 <MudText Typo="Typo.h5" Class="mb-4">Ordenes de Compra</MudText>
 
-<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
+<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => AbrirCreacionAsync(null))"
            StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
     Nueva Orden de Compra
 </MudButton>
 
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar las ordenes de compra: @_errorCarga</MudAlert>
+}
 @if (_cargando)
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
 }
-else
+else if (_errorCarga is null)
 {
     <MudTable Items="_ordenes" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
@@ -91,17 +95,37 @@ else
     private List<ArticuloItem> _articulos = new();
     private int? _detalleAbierto;
     private bool _cargando = true;
+    private string? _errorCarga;
+
+    // Llegada desde Consulta de Stock (chip "Requiere pedido"): abre el
+    // dialogo de creacion automaticamente con el articulo ya cargado.
+    [SupplyParameterFromQuery] private int? ArticuloId { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         await CargarAsync();
+
+        if (ArticuloId.HasValue)
+            await AbrirCreacionAsync(ArticuloId.Value);
     }
 
     private async Task CargarAsync()
     {
         _cargando = true;
-        _ordenes = await ApiClient.GetAsync<List<OrdenCompraResumen>>("api/compras/ordenes") ?? new();
-        _cargando = false;
+        _errorCarga = null;
+
+        try
+        {
+            _ordenes = await ApiClient.GetAsync<List<OrdenCompraResumen>>("api/compras/ordenes") ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
     }
 
     private async Task VerDetalleAsync(int ordenCompraId)
@@ -110,7 +134,7 @@ else
         _detalle = await ApiClient.GetAsync<List<OrdenCompraDetalleItem>>($"api/compras/ordenes/{ordenCompraId}/detalle") ?? new();
     }
 
-    private async Task AbrirCreacionAsync()
+    private async Task AbrirCreacionAsync(int? articuloPreseleccionado = null)
     {
         // Se cargan los catalogos SOLO cuando el usuario realmente va a crear
         // una orden -- no en cada carga de la pagina, para no pedir datos
@@ -119,20 +143,25 @@ else
         {
             var tareaProveedores = ApiClient.GetAsync<List<ProveedorItem>>("api/catalogo/proveedores");
             var tareaBodegas = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
-            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos?tipoArticuloId=1");
+            // Se compran Materia Prima, Insumos y Servicios (lo que llega de proveedores,
+            // ej. claves de licencia). Producto Terminado no se compra (se produce).
+            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
 
             await Task.WhenAll(tareaProveedores, tareaBodegas, tareaArticulos);
 
             _proveedores = await tareaProveedores ?? new();
             _bodegas = await tareaBodegas ?? new();
-            _articulos = await tareaArticulos ?? new();
+            _articulos = (await tareaArticulos ?? new())
+                .Where(a => a.TipoArticulo is "Materia Prima" or "Insumo" or "Servicio")
+                .ToList();
         }
 
         var parametros = new DialogParameters<CrearOrdenCompraDialog>
         {
             { x => x._proveedores, _proveedores },
             { x => x._bodegas, _bodegas },
-            { x => x._articulos, _articulos }
+            { x => x._articulos, _articulos },
+            { x => x.ArticuloPreseleccionadoID, articuloPreseleccionado }
         };
 
         var dialogo = await DialogService.ShowAsync<CrearOrdenCompraDialog>("Nueva Orden de Compra", parametros);
@@ -161,7 +190,9 @@ else
         var parametros = new DialogParameters<RecibirLineaDialog>
         {
             { x => x.Articulo, linea.Articulo },
-            { x => x.Pendiente, pendiente }
+            { x => x.Pendiente, pendiente },
+            { x => x.Unidad, linea.Unidad },
+            { x => x.UnidadesPorEmbalaje, linea.UnidadesPorEmbalaje }
         };
 
         var dialogo = await DialogService.ShowAsync<RecibirLineaDialog>("Recibir Mercancia", parametros);

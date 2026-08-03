@@ -10,11 +10,16 @@ public interface IOrdenesProduccionService
     Task<int> CrearAsync(CrearOrdenProduccionRequest request, int usuarioCreaId);
     Task<IEnumerable<OrdenProduccionResumen>> ListarAsync(int? centroCostoId, string? estado);
     Task<OrdenProduccionResumen?> ObtenerAsync(int ordenProduccionId);
+    Task<OrdenProduccionDetalleEdicion?> ObtenerParaEdicionAsync(int ordenProduccionId);
+    Task ActualizarAsync(int ordenProduccionId, ActualizarOrdenProduccionRequest request);
+    Task CancelarAsync(int ordenProduccionId);
     Task LiberarAsync(int ordenProduccionId, int usuarioId);
     Task IniciarAsync(int ordenProduccionId, int usuarioId);
     Task<(decimal CostoUnitarioReal, int LoteProductoTerminadoID)> CerrarAsync(int ordenProduccionId, CerrarOrdenProduccionRequest request, int usuarioId);
-    Task AjustarConsumoAsync(long consumoId, AjustarConsumoRealRequest request);
+    Task AjustarConsumoAsync(long consumoId, AjustarConsumoRealRequest request, int usuarioId);
     Task<IEnumerable<TipoProduccionItem>> ListarTiposProduccionAsync();
+    Task<IEnumerable<ConsumoOpItem>> ListarConsumosAsync(int ordenProduccionId);
+    Task<IEnumerable<MotivoExcesoItem>> ListarMotivosExcesoAsync();
 }
 
 public class OrdenesProduccionService : IOrdenesProduccionService
@@ -99,6 +104,55 @@ public class OrdenesProduccionService : IOrdenesProduccionService
         return await connection.QuerySingleOrDefaultAsync<OrdenProduccionResumen>(sql, new { OrdenProduccionId = ordenProduccionId });
     }
 
+    public async Task<OrdenProduccionDetalleEdicion?> ObtenerParaEdicionAsync(int ordenProduccionId)
+    {
+        using var connection = _db.CreateConnection();
+
+        const string sql = @"
+            SELECT op.OrdenProduccionID, op.CodigoOP, e.Nombre AS Estado,
+                   op.TipoProduccionID, op.ProductoTerminadoID, op.RecetaID,
+                   op.CantidadProgramada, op.ClienteID, op.CentroCostoDestinoID,
+                   op.BodegaOrigenMPID, op.BodegaDestinoPTID, op.CentroTrabajoID,
+                   op.FechaPlanificada, op.Observaciones
+            FROM Produccion.OrdenesProduccion op
+            JOIN Produccion.EstadosOP e ON e.EstadoOPID = op.EstadoOPID
+            WHERE op.OrdenProduccionID = @OrdenProduccionId";
+
+        return await connection.QuerySingleOrDefaultAsync<OrdenProduccionDetalleEdicion>(
+            sql, new { OrdenProduccionId = ordenProduccionId });
+    }
+
+    public async Task ActualizarAsync(int ordenProduccionId, ActualizarOrdenProduccionRequest r)
+    {
+        using var connection = _db.CreateConnection();
+        var parametros = new DynamicParameters();
+        parametros.Add("OrdenProduccionID", ordenProduccionId);
+        parametros.Add("TipoProduccionID", r.TipoProduccionID);
+        parametros.Add("ProductoTerminadoID", r.ProductoTerminadoID);
+        parametros.Add("RecetaID", r.RecetaID);
+        parametros.Add("CantidadProgramada", r.CantidadProgramada);
+        parametros.Add("ClienteID", r.ClienteID);
+        parametros.Add("CentroCostoDestinoID", r.CentroCostoDestinoID);
+        parametros.Add("BodegaOrigenMPID", r.BodegaOrigenMPID);
+        parametros.Add("BodegaDestinoPTID", r.BodegaDestinoPTID);
+        parametros.Add("CentroTrabajoID", r.CentroTrabajoID);
+        parametros.Add("FechaPlanificada", r.FechaPlanificada);
+        parametros.Add("Observaciones", r.Observaciones);
+
+        await connection.ExecuteAsync(
+            "Produccion.sp_ActualizarOrdenProduccion", parametros, commandType: CommandType.StoredProcedure);
+    }
+
+    public async Task CancelarAsync(int ordenProduccionId)
+    {
+        using var connection = _db.CreateConnection();
+        var parametros = new DynamicParameters();
+        parametros.Add("OrdenProduccionID", ordenProduccionId);
+
+        await connection.ExecuteAsync(
+            "Produccion.sp_CancelarOrdenProduccion", parametros, commandType: CommandType.StoredProcedure);
+    }
+
     public async Task LiberarAsync(int ordenProduccionId, int usuarioId)
     {
         using var connection = _db.CreateConnection();
@@ -139,7 +193,7 @@ public class OrdenesProduccionService : IOrdenesProduccionService
         return (resultado.CostoUnitarioReal, resultado.LoteProductoTerminadoID);
     }
 
-    public async Task AjustarConsumoAsync(long consumoId, AjustarConsumoRealRequest r)
+    public async Task AjustarConsumoAsync(long consumoId, AjustarConsumoRealRequest r, int usuarioId)
     {
         using var connection = _db.CreateConnection();
         var parametros = new DynamicParameters();
@@ -147,12 +201,33 @@ public class OrdenesProduccionService : IOrdenesProduccionService
         parametros.Add("CantidadReal", r.CantidadReal);
         parametros.Add("MotivoExcesoID", r.MotivoExcesoID);
         parametros.Add("Observacion", r.Observacion);
+        parametros.Add("UsuarioID", usuarioId);
 
         await connection.ExecuteAsync(
             "Produccion.sp_AjustarConsumoReal", parametros, commandType: CommandType.StoredProcedure);
     }
 
-    
+    public async Task<IEnumerable<ConsumoOpItem>> ListarConsumosAsync(int ordenProduccionId)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT c.ConsumoID, c.ArticuloID, a.Nombre AS Articulo,
+                   c.CantidadTeorica, c.CantidadReal,
+                   me.Nombre AS MotivoExceso, c.Observacion
+            FROM Produccion.OrdenesProduccionConsumo c
+            JOIN Catalogo.Articulos a ON a.ArticuloID = c.ArticuloID
+            LEFT JOIN Produccion.MotivosExcesoConsumo me ON me.MotivoExcesoID = c.MotivoExcesoID
+            WHERE c.OrdenProduccionID = @OrdenProduccionId
+            ORDER BY c.ConsumoID";
+        return await connection.QueryAsync<ConsumoOpItem>(sql, new { OrdenProduccionId = ordenProduccionId });
+    }
+
+    public async Task<IEnumerable<MotivoExcesoItem>> ListarMotivosExcesoAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<MotivoExcesoItem>(
+            "SELECT MotivoExcesoID, Nombre FROM Produccion.MotivosExcesoConsumo ORDER BY Nombre");
+    }
 
     public async Task<IEnumerable<TipoProduccionItem>> ListarTiposProduccionAsync()
     {

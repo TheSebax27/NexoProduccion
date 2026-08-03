@@ -34,5 +34,7 @@ public record OrdenCompraDetalleItem(
     string Articulo,
     decimal CantidadSolicitada,
     decimal CantidadRecibida,
-    decimal CostoUnitario
+    decimal CostoUnitario,
+    string? Unidad,
+    decimal? UnidadesPorEmbalaje
 );

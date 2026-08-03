@@ -9,3 +9,6 @@ obj/
 
 # Logs
 *.log
+
+wwwroot/tailwind.css
+tailwindcss.exe

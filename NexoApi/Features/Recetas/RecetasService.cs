@@ -10,6 +10,7 @@ public interface IRecetasService
     Task<int> CrearNuevaVersionAsync(int recetaBaseId, CrearNuevaVersionRequest request);
     Task<IEnumerable<RecetaResumen>> ListarAsync(int? productoTerminadoId, bool soloActivas);
     Task<IEnumerable<RecetaDetalleItem>> ObtenerDetalleAsync(int recetaId);
+    Task DesactivarAsync(int recetaId);
 }
 
 public class RecetasService : IRecetasService
@@ -161,5 +162,21 @@ public class RecetasService : IRecetasService
             ORDER BY d.Orden";
 
         return await connection.QueryAsync<RecetaDetalleItem>(sql, new { RecetaId = recetaId });
+    }
+
+    // No se borra fisicamente: las ordenes de produccion ya ejecutadas quedan
+    // enlazadas a esta receta por RecetaID, asi que se desactiva (igual que
+    // Bodegas, Articulos, Clientes, Proveedores en este mismo sistema) para no
+    // romper ese historial.
+    public async Task DesactivarAsync(int recetaId)
+    {
+        using var connection = _db.CreateConnection();
+
+        var filas = await connection.ExecuteAsync(
+            "UPDATE Produccion.RecetaBOM SET Estado = 0 WHERE RecetaID = @RecetaId",
+            new { RecetaId = recetaId });
+
+        if (filas == 0)
+            throw new KeyNotFoundException($"No existe la receta {recetaId}.");
     }
 }

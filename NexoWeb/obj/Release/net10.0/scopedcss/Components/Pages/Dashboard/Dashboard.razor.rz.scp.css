@@ -1,0 +1,210 @@
+/* ================================================================
+   Dashboard — Estilos específicos
+   KPI cards, encabezado de página y componentes de gráfico.
+   ================================================================ */
+
+/* ── Encabezado de página ──────────────────────────────────── */
+.nexo-page-hero[b-p6pn72qmbn] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--nexo-beige-border, #D8D2C6);
+}
+
+.nexo-page-hero__left[b-p6pn72qmbn] {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.nexo-page-hero__accent[b-p6pn72qmbn] {
+    width: 4px;
+    height: 2.25rem;
+    border-radius: 4px;
+    background: linear-gradient(180deg, #2563EB 0%, #6366F1 100%);
+    flex-shrink: 0;
+}
+
+.nexo-page-hero__module[b-p6pn72qmbn] {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #2563EB;
+    margin: 0 0 0.15rem;
+}
+
+.nexo-page-hero__title[b-p6pn72qmbn] {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    color: #1A1C22;
+    margin: 0;
+    line-height: 1.15;
+}
+
+.nexo-page-hero__timestamp[b-p6pn72qmbn] {
+    display: flex;
+    align-items: center;
+    font-size: 0.76rem;
+    color: #9EA3B0;
+    white-space: nowrap;
+}
+
+/* ── Grid de tarjetas KPI ──────────────────────────────────── */
+.nexo-kpi-grid[b-p6pn72qmbn] {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 1100px) {
+    .nexo-kpi-grid[b-p6pn72qmbn] { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+    .nexo-kpi-grid[b-p6pn72qmbn] { grid-template-columns: 1fr; }
+}
+
+/* ── Tarjeta KPI base ──────────────────────────────────────── */
+.nexo-kpi[b-p6pn72qmbn] {
+    position: relative;
+    background: linear-gradient(145deg, #F4EFE6 0%, #EAE4D8 100%);
+    border: 1px solid #D8D2C6;
+    border-radius: 14px;
+    padding: 1.35rem 1.5rem 1.2rem;
+    box-shadow: 0 1px 3px rgba(26,28,34,0.06), 0 3px 10px rgba(26,28,34,0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    overflow: hidden;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.nexo-kpi:hover[b-p6pn72qmbn] {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(26,28,34,0.10), 0 1px 4px rgba(26,28,34,0.06);
+}
+
+/* Brillo sutil en la esquina superior */
+.nexo-kpi[b-p6pn72qmbn]::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+}
+
+/* ── Icono de la tarjeta ───────────────────────────────────── */
+.nexo-kpi__icon[b-p6pn72qmbn] {
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* ── Valor numérico ────────────────────────────────────────── */
+.nexo-kpi__value[b-p6pn72qmbn] {
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: #1A1C22;
+    margin-bottom: 0.15rem;
+}
+
+/* ── Etiqueta ──────────────────────────────────────────────── */
+.nexo-kpi__label[b-p6pn72qmbn] {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #5E6272;
+    letter-spacing: 0.01em;
+}
+
+/* ── Subtexto ──────────────────────────────────────────────── */
+.nexo-kpi__sub[b-p6pn72qmbn] {
+    font-size: 0.72rem;
+    color: #9EA3B0;
+    margin-top: 0.2rem;
+}
+
+/* ── Variantes de color ────────────────────────────────────── */
+.nexo-kpi--blue   .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(37,99,235,0.12); color: #2563EB; }
+.nexo-kpi--blue   .nexo-kpi__value[b-p6pn72qmbn] { color: #2563EB; }
+
+.nexo-kpi--green  .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(5,150,105,0.12); color: #059669; }
+.nexo-kpi--green  .nexo-kpi__value[b-p6pn72qmbn] { color: #059669; }
+
+.nexo-kpi--amber  .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(217,119,6,0.12); color: #D97706; }
+.nexo-kpi--amber  .nexo-kpi__value[b-p6pn72qmbn] { color: #D97706; }
+
+.nexo-kpi--red    .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(220,38,38,0.12); color: #DC2626; }
+.nexo-kpi--red    .nexo-kpi__value[b-p6pn72qmbn] { color: #DC2626; }
+
+.nexo-kpi--indigo .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(99,102,241,0.12); color: #6366F1; }
+.nexo-kpi--indigo .nexo-kpi__value[b-p6pn72qmbn] { color: #6366F1; }
+
+.nexo-kpi--teal   .nexo-kpi__icon[b-p6pn72qmbn] { background: rgba(20,184,166,0.12); color: #14B8A6; }
+.nexo-kpi--teal   .nexo-kpi__value[b-p6pn72qmbn] { color: #14B8A6; }
+
+/* ── Cabecera de gráfico dentro de un panel ─────────────────── */
+.nexo-chart-header[b-p6pn72qmbn] {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin-bottom: 1.1rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid rgba(216, 210, 198, 0.7);
+}
+
+.nexo-chart-header__icon[b-p6pn72qmbn] {
+    color: #7C8090 !important;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.nexo-chart-header__title[b-p6pn72qmbn] {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1A1C22;
+    line-height: 1.3;
+}
+
+.nexo-chart-header__sub[b-p6pn72qmbn] {
+    font-size: 0.72rem;
+    color: #9EA3B0;
+    margin-top: 0.1rem;
+}
+
+/* ── Estado vacío ──────────────────────────────────────────── */
+.nexo-empty-state[b-p6pn72qmbn] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 2.5rem 1rem;
+    text-align: center;
+}
+
+.nexo-empty-state__icon[b-p6pn72qmbn] {
+    font-size: 2.25rem !important;
+    color: #C8C3BA !important;
+}
+
+.nexo-empty-state__icon--success[b-p6pn72qmbn] {
+    color: #059669 !important;
+}
+
+.nexo-empty-state__text[b-p6pn72qmbn] {
+    font-size: 0.875rem;
+    color: #9EA3B0;
+    margin: 0;
+}

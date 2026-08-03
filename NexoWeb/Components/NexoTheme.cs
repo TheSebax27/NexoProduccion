@@ -1,17 +1,11 @@
-﻿using MudBlazor;
+using MudBlazor;
 
 namespace NexoWeb.Components;
 
 /// <summary>
-/// Tema visual unico de NEXO ERP (paleta "Grafito + Beige"), compartido entre
-/// AuthLayout (Login) y MainLayout (resto del sistema), para que toda la
-/// aplicacion use exactamente los mismos colores de marca.
-///
-/// Antes de este archivo, &lt;MudThemeProvider /&gt; no recibia ningun Theme
-/// personalizado, asi que MudBlazor aplicaba su paleta azul-violeta POR DEFECTO
-/// al AppBar, al Drawer y a los enlaces activos del menu. De ahi salia el morado
-/// que se veia en el sistema - no de MainLayout.razor.css ni de NavMenu.razor.css
-/// (esos archivos no le pegan a ninguna clase que MudBlazor realmente genera).
+/// Tema visual de NEXO ERP — paleta "Morado profundo + Gris moderno".
+/// Inspirada en el diseño de referencia SaaS: sidebar oscuro, acento morado,
+/// fondo gris muy claro, tarjetas blancas.
 /// </summary>
 public static class NexoTheme
 {
@@ -19,32 +13,47 @@ public static class NexoTheme
     {
         PaletteLight = new PaletteLight
         {
-            // Botones, enlaces activos, foco de inputs
-            Primary = "#2563EB",
+            // ── Acción principal ──────────────────────────────────────
+            Primary             = "#7C5CFF",
             PrimaryContrastText = "#FFFFFF",
+            PrimaryDarken       = "#5A3BFF",
+            PrimaryLighten      = "#9B7FFF",
 
-            // Fondo general de la app y superficie de tarjetas/paneles
-            Background = "#F7F3EC",
-            Surface = "#FFFCF8",
+            // ── Semánticos ────────────────────────────────────────────
+            Secondary           = "#6B6B8A",
+            SecondaryContrastText = "#FFFFFF",
+            Info                = "#0EA5E9",
+            Success             = "#10B981",
+            Warning             = "#F59E0B",
+            Error               = "#EF4444",
 
-            // Barra superior (AppBar)
-            AppbarBackground = "#2B2D31",
-            AppbarText = "#F7F3EC",
+            // ── Fondos ────────────────────────────────────────────────
+            Background          = "#F4F5F9",   // Gris claro elegante
+            Surface             = "#FFFFFF",   // Tarjetas y paneles blancos
 
-            // Menu lateral (Drawer / Sidebar)
-            DrawerBackground = "#2B2D31",
-            DrawerText = "#E8E2D9",
-            DrawerIcon = "#E8E2D9",
+            // ── Barra superior (blanca) ───────────────────────────────
+            AppbarBackground    = "#FFFFFF",
+            AppbarText          = "#1A1C2E",
 
-            // Texto general
-            TextPrimary = "#2E2E2E",
-            TextSecondary = "#6B6B6B",
+            // ── Sidebar oscuro ────────────────────────────────────────
+            DrawerBackground    = "#13131F",
+            DrawerText          = "#9B9BB4",
+            DrawerIcon          = "#6B6B8A",
 
-            // Bordes y separadores (tablas, inputs, divisores)
-            LinesDefault = "#E8E2D9",
-            LinesInputs = "#E8E2D9",
-            TableLines = "#E8E2D9",
-            Divider = "#E8E2D9",
+            // ── Texto ─────────────────────────────────────────────────
+            TextPrimary         = "#1A1C2E",
+            TextSecondary       = "#6B6B8A",
+            TextDisabled        = "#B0B0C8",
+
+            // ── Líneas y bordes ───────────────────────────────────────
+            LinesDefault        = "#E8E9EF",
+            LinesInputs         = "#D1D5E8",
+            TableLines          = "#EEEEF5",
+            Divider             = "#E8E9EF",
+
+            // ── Superposiciones ───────────────────────────────────────
+            OverlayDark         = "rgba(26, 28, 46, 0.5)",
+            OverlayLight        = "rgba(26, 28, 46, 0.04)",
         }
     };
 }

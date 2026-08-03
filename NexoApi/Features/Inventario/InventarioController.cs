@@ -39,10 +39,22 @@ public class InventarioController : ControllerBase
         return Ok(resultado);
     }
 
-    // Agregar a InventarioController
+    /// <summary>Registra una entrada positiva de inventario (carga inicial o correccion por conteo fisico). Aumenta stock y genera KARDEX.</summary>
+    [HttpPost("ajustes")]
+    [Authorize(Roles = "Administrador,Bodeguero")]
+    public async Task<ActionResult<AjustarInventarioResponse>> AjustarInventario(AjustarInventarioRequest request)
+    {
+        var resultado = await _service.AjustarInventarioAsync(request, UsuarioActualId);
+        return Ok(resultado);
+    }
+
     [HttpGet("motivos-perdida")]
     public async Task<ActionResult<IEnumerable<MotivoPerdidaItem>>> ListarMotivosPerdida()
-    {
-        return Ok(await _service.ListarMotivosPerdidaAsync());
-    }
+        => Ok(await _service.ListarMotivosPerdidaAsync());
+
+    [HttpGet("kardex")]
+    public async Task<ActionResult<IEnumerable<KardexMovimientoItem>>> ConsultarKardex(
+        [FromQuery] int? articuloId, [FromQuery] int? bodegaId,
+        [FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
+        => Ok(await _service.ConsultarKardexAsync(articuloId, bodegaId, desde, hasta));
 }

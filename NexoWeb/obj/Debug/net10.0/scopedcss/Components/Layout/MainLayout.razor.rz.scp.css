@@ -1,86 +1,428 @@
-/* Los colores del AppBar y el Drawer vienen del tema centralizado en
-   NexoTheme.cs (PaletteLight.AppbarBackground / DrawerBackground, etc.),
-   inyectado via <MudThemeProvider Theme="@NexoTheme.Theme" />.
+/* ================================================================
+   MainLayout — Chrome completo de la aplicación
+   Top Bar blanca + Sidebar oscuro con acento morado
+   ================================================================ */
 
-   Este archivo solo agrega ajustes finos que el Theme no cubre.
-
-   NOTA: las reglas que estaban aqui antes (.sidebar, .top-row, .page, article)
-   eran restos de la plantilla por defecto de Blazor y no le pegaban a ninguna
-   clase presente en este layout (que usa MudAppBar/MudDrawer, no HTML plano).
-   Se eliminaron por ser codigo muerto. */
-
-[b-w5ifl9lb28] .mud-appbar {
-    border-bottom: 1px solid #E8E2D9;
+/* ══ ANIMACIONES ════════════════════════════════════════════════ */
+@keyframes blobFloat-b-w5ifl9lb28 {
+  0%, 100% { transform: scale(1) translate(0, 0) rotate(0deg); opacity: 0.65; }
+  33%       { transform: scale(1.08) translate(6px, -8px) rotate(5deg); opacity: 0.85; }
+  66%       { transform: scale(0.95) translate(-4px, 4px) rotate(-3deg); opacity: 0.7; }
 }
 
-[b-w5ifl9lb28] .mud-drawer {
-    border-right: 1px solid rgba(0, 0, 0, 0.22);
+@keyframes blobFloat2-b-w5ifl9lb28 {
+  0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.4; }
+  50%       { transform: scale(1.12) translate(-6px, -10px); opacity: 0.6; }
 }
 
-/* ---------- Header de marca dentro del Drawer ---------- */
-[b-w5ifl9lb28] .nexo-drawer-header {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    padding: 1.1rem 1.25rem;
+@keyframes activePulse-b-w5ifl9lb28 {
+  0%, 100% { box-shadow: 0 4px 14px rgba(124,92,255,0.30); }
+  50%       { box-shadow: 0 4px 20px rgba(124,92,255,0.50), 0 0 0 3px rgba(124,92,255,0.12); }
 }
 
-[b-w5ifl9lb28] .nexo-drawer-logo {
-    height: 1.85rem;
-    width: auto;
-    object-fit: contain;
-    flex-shrink: 0;
+/* ══ TOP BAR ════════════════════════════════════════════════════
+   Mismo color que la barra lateral (#13131F) y un poco mas alta
+   (antes 64px, se veia "flaca" comparada con el ancho/peso visual
+   del sidebar) -- pedido explicito del usuario. Todos los textos e
+   iconos que antes asumian fondo blanco se reinvierten a claros. */
+[b-w5ifl9lb28] .mud-appbar.nexo-topbar {
+  background: #13131F !important;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25) !important;
+  color: #FFFFFF !important;
+  padding: 0 1.5rem !important;
+  height: 76px !important;
 }
 
-[b-w5ifl9lb28] .nexo-drawer-title {
-    color: #F7F3EC;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-size: 1rem;
-    white-space: nowrap;
+[b-w5ifl9lb28] .nexo-topbar__menu-btn {
+  color: #9B9BB4 !important;
+  margin-right: 0.5rem !important;
+}
+[b-w5ifl9lb28] .nexo-topbar__menu-btn:hover {
+  background: rgba(255,255,255,0.08) !important;
+  color: #FFFFFF !important;
 }
 
-[b-w5ifl9lb28] .nexo-drawer-divider {
-    border-color: rgba(232, 226, 217, 0.14) !important;
-    margin: 0 1.25rem 0.5rem;
+/* Título de página */
+[b-w5ifl9lb28] .nexo-topbar__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-/* ---------- Chip de usuario en el AppBar ---------- */
-[b-w5ifl9lb28] .nexo-appbar-user {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(247, 243, 236, 0.1);
-    border: 1px solid rgba(247, 243, 236, 0.16);
-    border-radius: 999px;
-    padding: 0.35rem 0.9rem 0.35rem 0.65rem;
-    margin-right: 1rem;
-    font-size: 0.875rem;
-    white-space: nowrap;
+/* Barra de búsqueda */
+[b-w5ifl9lb28] .nexo-topbar__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 12px;
+  padding: 0.5rem 1rem;
+  width: 100%;
+  max-width: 420px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+[b-w5ifl9lb28] .nexo-topbar__search:focus-within {
+  border-color: #9B7FFF;
+  box-shadow: 0 0 0 3px rgba(124,92,255,0.25);
+  background: rgba(255,255,255,0.12);
+}
+[b-w5ifl9lb28] .nexo-topbar__search-icon {
+  color: #9B9BB4 !important;
+  font-size: 1.1rem !important;
+  flex-shrink: 0;
+}
+[b-w5ifl9lb28] .nexo-topbar__search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.875rem;
+  color: #FFFFFF;
+  font-family: 'Mango Dream', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  min-width: 0;
+}
+[b-w5ifl9lb28] .nexo-topbar__search-input::placeholder { color: #7C7C96; }
+
+/* Dropdown de sugerencias -- flota sobre el contenido, no empuja layout */
+[b-w5ifl9lb28] .nexo-topbar__search-results {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.15);
+  max-height: 420px;
+  overflow-y: auto;
+  z-index: 20;
+  padding: 0.4rem 0;
+}
+[b-w5ifl9lb28] .nexo-topbar__search-status {
+  display: flex;
+  align-items: center;
+  padding: 0.9rem 1rem;
+  font-size: 0.82rem;
+  color: #9B9BB4;
+}
+[b-w5ifl9lb28] .nexo-topbar__search-group {
+  padding: 0.5rem 1rem 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #9B7FFF;
+}
+[b-w5ifl9lb28] .nexo-topbar__search-item {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+[b-w5ifl9lb28] .nexo-topbar__search-item:hover {
+  background: #F2EEFF;
+}
+[b-w5ifl9lb28] .nexo-topbar__search-item-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1A1C2E;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+[b-w5ifl9lb28] .nexo-topbar__search-item-sub {
+  font-size: 0.72rem;
+  color: #9B9BB4;
+  margin-top: 0.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-[b-w5ifl9lb28] .nexo-appbar-user__role {
-    opacity: 0.75;
-    font-weight: 400;
+/* Notificaciones */
+[b-w5ifl9lb28] .nexo-topbar__notif {
+  position: relative;
+  flex-shrink: 0;
+}
+[b-w5ifl9lb28] .nexo-topbar__notif-btn { color: #9B9BB4 !important; }
+[b-w5ifl9lb28] .nexo-topbar__notif-btn:hover {
+  background: rgba(255,255,255,0.08) !important;
+  color: #FFFFFF !important;
+}
+[b-w5ifl9lb28] .nexo-topbar__notif-dot {
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: #EF4444;
+  border: 2px solid #13131F;
+  pointer-events: none;
+  animation: nexoNotifPulse-b-w5ifl9lb28 2s ease-in-out infinite;
+}
+@keyframes nexoNotifPulse-b-w5ifl9lb28 {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35); }
+  50%       { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
 }
 
+/* Panel desplegable de notificaciones */
+[b-w5ifl9lb28] .nexo-topbar__notif-panel {
+  min-width: 300px;
+  max-width: 360px;
+}
+[b-w5ifl9lb28] .nexo-topbar__notif-panel-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #9B9BB4;
+  padding: 0.5rem 1rem 0.4rem;
+}
+[b-w5ifl9lb28] .nexo-topbar__notif-empty {
+  color: #9B9BB4;
+  font-size: 0.85rem;
+}
+[b-w5ifl9lb28] .nexo-topbar__notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.15rem 0;
+  white-space: normal;
+}
+[b-w5ifl9lb28] .nexo-topbar__notif-item-icon { margin-top: 2px; flex-shrink: 0; }
+[b-w5ifl9lb28] .nexo-topbar__notif-item-msg {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1A1C2E;
+  line-height: 1.3;
+}
+[b-w5ifl9lb28] .nexo-topbar__notif-item-detalle {
+  font-size: 0.75rem;
+  color: #9B9BB4;
+  line-height: 1.3;
+  margin-top: 0.1rem;
+}
+
+/* ── Avatar + nombre ──────────────────────────────────────────── */
+[b-w5ifl9lb28] .nexo-topbar__user {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+  flex-shrink: 0 !important;
+  margin-left: 0.25rem;
+  padding: 0.3rem 0.7rem 0.3rem 0.3rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.18s ease;
+}
+[b-w5ifl9lb28] .nexo-topbar__user:hover { background: rgba(255,255,255,0.08); }
+
+[b-w5ifl9lb28] .nexo-topbar__avatar {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #7C5CFF 0%, #5A3BFF 100%) !important;
+  color: #FFFFFF !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 8px rgba(124,92,255,0.30);
+  line-height: 1 !important;
+}
+
+[b-w5ifl9lb28] .nexo-topbar__user-info {
+  display: flex !important;
+  flex-direction: column !important;
+  line-height: 1.25 !important;
+  flex-shrink: 0;
+}
+[b-w5ifl9lb28] .nexo-topbar__user-name {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  white-space: nowrap;
+  display: block;
+}
+[b-w5ifl9lb28] .nexo-topbar__user-role {
+  font-size: 0.7rem;
+  color: #9B9BB4;
+  white-space: nowrap;
+  display: block;
+}
+[b-w5ifl9lb28] .nexo-topbar__chevron {
+  color: #9B9BB4 !important;
+  font-size: 1rem !important;
+  flex-shrink: 0;
+}
+
+/* ══ SIDEBAR ════════════════════════════════════════════════════ */
+[b-w5ifl9lb28] .mud-drawer.nexo-sidebar {
+  background: #13131F !important;
+  border-right: none !important;
+  box-shadow: 4px 0 32px rgba(0,0,0,0.25) !important;
+}
+
+[b-w5ifl9lb28] .nexo-sidebar .mud-drawer-content {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  position: relative;
+}
+
+/* ── Logo ──────────────────────────────────────────────────────── */
+[b-w5ifl9lb28] .nexo-sidebar__logo {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1.35rem 1.4rem 1.1rem;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 0.5rem;
+}
+
+[b-w5ifl9lb28] .nexo-sidebar__logo-img {
+  height: 34px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: brightness(1.05) drop-shadow(0 2px 6px rgba(124,92,255,0.3));
+}
+
+[b-w5ifl9lb28] .nexo-sidebar__logo-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  opacity: 0.92;
+}
+[b-w5ifl9lb28] .nexo-sidebar__logo-text strong { font-weight: 800; }
+
+/* ── Zona de navegación ─────────────────────────────────────── */
+[b-w5ifl9lb28] .nexo-sidebar__nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.25rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.07) transparent;
+}
+[b-w5ifl9lb28] .nexo-sidebar__nav::-webkit-scrollbar { width: 4px; }
+[b-w5ifl9lb28] .nexo-sidebar__nav::-webkit-scrollbar-track { background: transparent; }
+[b-w5ifl9lb28] .nexo-sidebar__nav::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.07);
+  border-radius: 4px;
+}
+
+/* ── Footer ─────────────────────────────────────────────────── */
+[b-w5ifl9lb28] .nexo-sidebar__footer {
+  flex-shrink: 0;
+  padding: 0 0 1rem;
+  position: relative;
+  z-index: 1;
+}
+[b-w5ifl9lb28] .nexo-sidebar__footer-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+  margin: 0 1rem 0.6rem;
+}
+[b-w5ifl9lb28] .nexo-sidebar__footer-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1px 10px;
+  padding: 0.52rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #9B9BB4;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+[b-w5ifl9lb28] .nexo-sidebar__footer-item:hover {
+  background: rgba(255,255,255,0.06);
+  color: #E0E0F0;
+}
+[b-w5ifl9lb28] .nexo-sidebar__footer-item--logout:hover {
+  background: rgba(239,68,68,0.1);
+  color: #F87171;
+}
+[b-w5ifl9lb28] .nexo-sidebar__footer-item--logout:hover .nexo-sidebar__footer-icon {
+  color: #F87171 !important;
+}
+[b-w5ifl9lb28] .nexo-sidebar__footer-icon {
+  font-size: 1.1rem !important;
+  color: #6B6B8A !important;
+  flex-shrink: 0;
+}
+
+/* ── Blobs decorativos animados ─────────────────────────────── */
+[b-w5ifl9lb28] .nexo-sidebar__blob {
+  position: absolute;
+  bottom: -50px; left: -40px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,92,255,0.40) 0%, rgba(90,59,255,0.15) 40%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  animation: blobFloat-b-w5ifl9lb28 9s ease-in-out infinite;
+}
+
+[b-w5ifl9lb28] .nexo-sidebar__blob-2 {
+  position: absolute;
+  top: 20%; right: -60px;
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,92,255,0.18) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+  animation: blobFloat2-b-w5ifl9lb28 12s ease-in-out infinite;
+}
+
+/* ══ CONTENIDO PRINCIPAL ════════════════════════════════════════ */
+[b-w5ifl9lb28] .mud-main-content.nexo-main-content {
+  background: #F4F5F9 !important;
+  padding: 1.75rem 2rem !important;
+  min-height: 100vh;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  [b-w5ifl9lb28] .mud-main-content.nexo-main-content { padding: 1.25rem 1rem !important; }
+  [b-w5ifl9lb28] .nexo-topbar__search { max-width: 200px; }
+  [b-w5ifl9lb28] .nexo-topbar__user-info { display: none !important; }
+}
+@media (max-width: 600px) {
+  [b-w5ifl9lb28] .nexo-topbar__search { display: none !important; }
+}
+
+/* Blazor error UI */
 #blazor-error-ui[b-w5ifl9lb28] {
-    color-scheme: light only;
-    background: lightyellow;
-    bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
-    box-sizing: border-box;
-    display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
-    position: fixed;
-    width: 100%;
-    z-index: 1000;
+  color-scheme: light only;
+  background: #FEF9C3;
+  border-top: 1px solid #FDE68A;
+  bottom: 0; left: 0;
+  padding: 0.65rem 1.25rem;
+  position: fixed;
+  width: 100%;
+  z-index: 1000;
+  display: none;
+  font-size: 0.875rem;
 }
-
-    #blazor-error-ui .dismiss[b-w5ifl9lb28] {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
-    }
+#blazor-error-ui .dismiss[b-w5ifl9lb28] {
+  cursor: pointer;
+  position: absolute;
+  right: 0.75rem;
+  top: 0.55rem;
+}

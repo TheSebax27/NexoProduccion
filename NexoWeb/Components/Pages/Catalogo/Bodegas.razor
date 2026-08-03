@@ -27,11 +27,15 @@
     Nueva Bodega
 </MudButton>
 
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar las bodegas: @_errorCarga</MudAlert>
+}
 @if (_cargando)
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
 }
-else
+else if (_errorCarga is null)
 {
     <MudTable Items="_bodegas" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
@@ -53,6 +57,9 @@ else
                 </MudChip>
             </MudTd>
             <MudTd DataLabel="Accion">
+                <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">
+                    Editar
+                </MudButton>
                 @if (context.Estado)
                 {
                     <MudButton Size="Size.Small" Color="Color.Error"
@@ -73,25 +80,43 @@ else
     private List<CentroCostoItem> _centrosCosto = new();
     private int? _filtroCentroCostoId;
     private bool _cargando = true;
+    private string? _errorCarga;
 
     protected override async Task OnInitializedAsync()
     {
-        // La API no expone "todos", solo activos por defecto en centros-costo;
-        // eso es correcto aqui porque solo se puede crear una bodega en un
-        // centro de costo activo.
-        _centrosCosto = await ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo") ?? new();
-        await CargarAsync();
+        try
+        {
+            _centrosCosto = await ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo") ?? new();
+            await CargarAsync();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+            _cargando = false;
+        }
     }
 
     private async Task CargarAsync()
     {
         _cargando = true;
-        var ruta = _filtroCentroCostoId.HasValue
-            ? $"api/catalogo/bodegas?centroCostoId={_filtroCentroCostoId}"
-            : "api/catalogo/bodegas";
+        _errorCarga = null;
 
-        _bodegas = await ApiClient.GetAsync<List<BodegaItem>>(ruta) ?? new();
-        _cargando = false;
+        try
+        {
+            var ruta = _filtroCentroCostoId.HasValue
+                ? $"api/catalogo/bodegas?centroCostoId={_filtroCentroCostoId}"
+                : "api/catalogo/bodegas";
+
+            _bodegas = await ApiClient.GetAsync<List<BodegaItem>>(ruta) ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
     }
 
     private async Task OnFiltroCambiadoAsync(int? nuevoValor)
@@ -118,6 +143,33 @@ else
             var request = (CrearBodegaRequest)resultado.Data!;
             await ApiClient.PostAsync<CrearBodegaRequest, object?>("api/catalogo/bodegas", request);
             Snackbar.Add("Bodega creada correctamente.", Severity.Success);
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AbrirEdicionAsync(BodegaItem bodega)
+    {
+        var parametros = new DialogParameters<BodegaDialog>
+        {
+            { x => x.CentrosCosto, _centrosCosto },
+            { x => x.Bodega, bodega }
+        };
+
+        var dialogo = await DialogService.ShowAsync<BodegaDialog>("Editar Bodega", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (ActualizarBodegaRequest)resultado.Data!;
+            await ApiClient.PutAsync<ActualizarBodegaRequest, object?>($"api/catalogo/bodegas/{bodega.BodegaID}", request);
+            Snackbar.Add("Bodega actualizada correctamente.", Severity.Success);
             await CargarAsync();
         }
         catch (HttpRequestException ex)

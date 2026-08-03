@@ -14,11 +14,15 @@
     Nuevo Traspaso
 </MudButton>
 
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar los traspasos: @_errorCarga</MudAlert>
+}
 @if (_cargando)
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
 }
-else
+else if (_errorCarga is null)
 {
     <MudTable Items="_traspasos" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
@@ -42,6 +46,9 @@ else
             <MudTd DataLabel="Envio">@(context.FechaEnvio?.ToString("dd/MM/yyyy HH:mm") ?? "-")</MudTd>
             <MudTd DataLabel="Recepcion">@(context.FechaRecepcion?.ToString("dd/MM/yyyy HH:mm") ?? "-")</MudTd>
             <MudTd DataLabel="Accion">
+                <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(context.TraspasoID))">
+                    Ver Detalle
+                </MudButton>
                 @if (context.EstadoTraspaso == "EN_TRANSITO")
                 {
                     <MudButton Size="Size.Small" Color="Color.Primary" OnClick="@(() => RecibirAsync(context.TraspasoID))">
@@ -61,6 +68,7 @@ else
     private List<BodegaItem> _bodegas = new();
     private List<ArticuloItem> _articulos = new();
     private bool _cargando = true;
+    private string? _errorCarga;
 
     protected override async Task OnInitializedAsync()
     {
@@ -70,8 +78,20 @@ else
     private async Task CargarAsync()
     {
         _cargando = true;
-        _traspasos = await ApiClient.GetAsync<List<TraspasoResumen>>("api/inventario/traspasos") ?? new();
-        _cargando = false;
+        _errorCarga = null;
+
+        try
+        {
+            _traspasos = await ApiClient.GetAsync<List<TraspasoResumen>>("api/inventario/traspasos") ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
     }
 
     private async Task AbrirCreacionAsync()
@@ -110,8 +130,58 @@ else
         }
     }
 
+    private async Task VerDetalleAsync(int traspasoId)
+    {
+        List<TraspasoDetalleItem> detalle;
+        try
+        {
+            detalle = await ApiClient.GetAsync<List<TraspasoDetalleItem>>(
+                $"api/inventario/traspasos/{traspasoId}/detalle") ?? new();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add($"No se pudo cargar el detalle: {ex.Message}", Severity.Error);
+            return;
+        }
+
+        var parametros = new DialogParameters<TraspasoDetalleDialog>
+        {
+            { x => x.Detalle, detalle },
+            { x => x.SoloLectura, true }
+        };
+
+        await DialogService.ShowAsync<TraspasoDetalleDialog>(
+            "Detalle del Traspaso", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+    }
+
     private async Task RecibirAsync(int traspasoId)
     {
+        List<TraspasoDetalleItem> detalle;
+        try
+        {
+            detalle = await ApiClient.GetAsync<List<TraspasoDetalleItem>>(
+                $"api/inventario/traspasos/{traspasoId}/detalle") ?? new();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add($"No se pudo cargar el detalle: {ex.Message}", Severity.Error);
+            return;
+        }
+
+        var parametros = new DialogParameters<TraspasoDetalleDialog>
+        {
+            { x => x.Detalle, detalle }
+        };
+
+        var dialogo = await DialogService.ShowAsync<TraspasoDetalleDialog>(
+            "Confirmar Recepcion de Traspaso", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled)
+            return;
+
         try
         {
             await ApiClient.PostAsync($"api/inventario/traspasos/{traspasoId}/recibir");

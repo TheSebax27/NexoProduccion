@@ -45,4 +45,13 @@ public class RecetasController : ControllerBase
         var nuevaId = await _service.CrearNuevaVersionAsync(id, request);
         return CreatedAtAction(nameof(ObtenerDetalle), new { id = nuevaId }, new { RecetaID = nuevaId });
     }
+
+    /// <summary>Desactiva la receta (no se borra fisicamente: ordenes de produccion pasadas quedan enlazadas a ella).</summary>
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    public async Task<ActionResult> Desactivar(int id)
+    {
+        await _service.DesactivarAsync(id);
+        return NoContent();
+    }
 }

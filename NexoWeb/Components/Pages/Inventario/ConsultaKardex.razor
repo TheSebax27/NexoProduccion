@@ -1,0 +1,143 @@
+@page "/inventario/kardex"
+@attribute [Authorize(Roles = "Administrador,SupervisorPlanta,Bodeguero")]
+@inject INexoApiClient ApiClient
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Kardex de Movimientos - NEXO</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Kardex de Movimientos</MudText>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="3">
+            <MudSelect T="int?" @bind-Value="_articuloId" Label="Articulo" Clearable="true">
+                @foreach (var a in _articulos)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)a.ArticuloID)">@a.SKU - @a.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudSelect T="int?" @bind-Value="_bodegaId" Label="Bodega" Clearable="true">
+                @foreach (var b in _bodegas)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)b.BodegaID)">@b.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="2">
+            <MudDatePicker @bind-Date="_desde" Label="Desde" DateFormat="dd/MM/yyyy" PickerVariant="PickerVariant.Dialog" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="2">
+            <MudDatePicker @bind-Date="_hasta" Label="Hasta" DateFormat="dd/MM/yyyy" PickerVariant="PickerVariant.Dialog" />
+        </MudItem>
+        <MudItem xs="12" md="2" Class="d-flex align-end">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConsultarAsync"
+                       Disabled="_cargando" StartIcon="@Icons.Material.Filled.Search" FullWidth="true">
+                @(_cargando ? "Consultando..." : "Consultar")
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@_errorCarga</MudAlert>
+}
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_movimientos.Count > 0)
+{
+    <MudText Typo="Typo.caption" Class="mb-2">
+        Mostrando @_movimientos.Count movimientos (maximo 500 por consulta)
+    </MudText>
+    <MudTable Items="_movimientos" Hover="true" Dense="true" Striped="true" FixedHeader="true" Height="500px">
+        <HeaderContent>
+            <MudTh>Fecha</MudTh>
+            <MudTh>Articulo</MudTh>
+            <MudTh>Bodega</MudTh>
+            <MudTh>Tipo</MudTh>
+            <MudTh Style="text-align:right">Cantidad</MudTh>
+            <MudTh Style="text-align:right">Costo Unit.</MudTh>
+            <MudTh Style="text-align:right">Saldo</MudTh>
+            <MudTh>Detalle</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yy HH:mm")</MudTd>
+            <MudTd DataLabel="Articulo">@context.Articulo</MudTd>
+            <MudTd DataLabel="Bodega">@context.Bodega</MudTd>
+            <MudTd DataLabel="Tipo">
+                <MudChip T="string" Size="Size.Small"
+                         Color="@(context.Cantidad >= 0 ? Color.Success : Color.Error)">
+                    @context.TipoMovimiento
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Cantidad" Style="text-align:right">@context.Cantidad.ToString("N2")</MudTd>
+            <MudTd DataLabel="Costo Unit." Style="text-align:right">@context.CostoUnitario.ToString("C2")</MudTd>
+            <MudTd DataLabel="Saldo" Style="text-align:right">@context.CantidadSaldo.ToString("N2")</MudTd>
+            <MudTd DataLabel="Detalle">@(context.ObservacionDetallada ?? "-")</MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No hay movimientos con estos filtros.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+}
+else if (_consultaEjecutada)
+{
+    <MudAlert Severity="Severity.Info">No se encontraron movimientos con los filtros indicados.</MudAlert>
+}
+
+@code {
+    private List<KardexMovimientoItem> _movimientos = new();
+    private List<ArticuloItem> _articulos = new();
+    private List<BodegaItem> _bodegas = new();
+    private int? _articuloId;
+    private int? _bodegaId;
+    private DateTime? _desde;
+    private DateTime? _hasta;
+    private bool _cargando;
+    private bool _consultaEjecutada;
+    private string? _errorCarga;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+            var tareaBodegas = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
+            await Task.WhenAll(tareaArticulos, tareaBodegas);
+            _articulos = await tareaArticulos ?? new();
+            _bodegas = await tareaBodegas ?? new();
+        }
+        catch { }
+    }
+
+    private async Task ConsultarAsync()
+    {
+        _cargando = true;
+        _errorCarga = null;
+        _consultaEjecutada = true;
+
+        try
+        {
+            var query = new List<string>();
+            if (_articuloId.HasValue) query.Add($"articuloId={_articuloId}");
+            if (_bodegaId.HasValue) query.Add($"bodegaId={_bodegaId}");
+            if (_desde.HasValue) query.Add($"desde={_desde.Value:yyyy-MM-dd}");
+            if (_hasta.HasValue) query.Add($"hasta={_hasta.Value:yyyy-MM-dd}");
+
+            var ruta = "api/inventario/kardex" + (query.Count > 0 ? "?" + string.Join("&", query) : "");
+            _movimientos = await ApiClient.GetAsync<List<KardexMovimientoItem>>(ruta) ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+}

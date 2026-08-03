@@ -6,11 +6,14 @@ using NexoApi.Common.Data;
 using NexoApi.Common.Middleware;
 using NexoApi.Common.Security;
 using NexoApi.Features.Auth;
+using NexoApi.Features.Busqueda;
 using NexoApi.Features.Catalogo;
 using NexoApi.Features.Compras;
 using NexoApi.Features.Dashboard;
 using NexoApi.Features.Integracion;
 using NexoApi.Features.Inventario;
+using NexoApi.Features.Notificaciones;
+using NexoApi.Features.Preferencias;
 using NexoApi.Features.Produccion;
 using NexoApi.Features.Recetas;
 using NexoApi.Features.Traspasos;
@@ -70,6 +73,9 @@ builder.Services.AddScoped<ICatalogoService, CatalogoService>();
 builder.Services.AddScoped<IRecetasService, RecetasService>();
 builder.Services.AddScoped<IIntegracionService, IntegracionService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<INotificacionesService, NotificacionesService>();
+builder.Services.AddScoped<IBusquedaService, BusquedaService>();
+builder.Services.AddScoped<IPreferenciasService, PreferenciasService>();
 
 // ----------------------------------------------------------------------------
 // AUTENTICACIÓN Y AUTORIZACIÓN (AQUÍ ESTÁ EL CAMBIO)

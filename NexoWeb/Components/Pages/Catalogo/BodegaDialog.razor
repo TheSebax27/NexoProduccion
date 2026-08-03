@@ -1,4 +1,4 @@
-﻿@using NexoWeb.Common.Dtos
+@using NexoWeb.Common.Dtos
 
 <MudDialog>
     <DialogContent>
@@ -6,13 +6,16 @@
             <MudTextField @bind-Value="_nombre" Label="Nombre" Required="true"
                           RequiredError="El nombre es obligatorio" Class="mb-3" />
 
-            <MudSelect T="int" @bind-Value="_centroCostoId" Label="Centro de Costo" Required="true"
-                       RequiredError="Selecciona un centro de costo" Class="mb-3">
-                @foreach (var centro in CentrosCosto)
-                {
-                    <MudSelectItem Value="@centro.CentroCostoID">@centro.Nombre</MudSelectItem>
-                }
-            </MudSelect>
+            @if (!EsEdicion)
+            {
+                <MudSelect T="int" @bind-Value="_centroCostoId" Label="Centro de Costo" Required="true"
+                           RequiredError="Selecciona un centro de costo" Class="mb-3">
+                    @foreach (var centro in CentrosCosto)
+                    {
+                        <MudSelectItem Value="@centro.CentroCostoID">@centro.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+            }
 
             <MudSelect T="string" @bind-Value="_tipoBodega" Label="Tipo de Bodega" Required="true"
                        RequiredError="Selecciona un tipo" Class="mb-3">
@@ -22,12 +25,19 @@
                 <MudSelectItem Value="@("TRANSITO")">Transito</MudSelectItem>
             </MudSelect>
 
-            <MudSwitch T="bool" @bind-Value="_esVirtual" Color="Color.Info" Label="Es Virtual (no fisica)" />
+            <MudSwitch T="bool" @bind-Value="_esVirtual" Color="Color.Info" Label="Es Virtual (no fisica)" Class="mb-2" />
+
+            @if (EsEdicion)
+            {
+                <MudSwitch T="bool" @bind-Value="_estado" Color="Color.Success" Label="Activa" />
+            }
         </MudForm>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancelar">Cancelar</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="GuardarAsync">Crear</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="GuardarAsync">
+            @(EsEdicion ? "Guardar Cambios" : "Crear")
+        </MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -38,11 +48,29 @@
     // que abre este dialogo, asi evitamos que el dialogo dependa de ApiClient.
     [Parameter] public List<CentroCostoItem> CentrosCosto { get; set; } = new();
 
+    // Si se pasa una Bodega existente, el dialogo entra en modo edicion (oculta
+    // Centro de Costo, que no es editable una vez creado el registro).
+    [Parameter] public BodegaItem? Bodega { get; set; }
+
+    private bool EsEdicion => Bodega is not null;
+
     private MudForm _form = default!;
     private string _nombre = string.Empty;
     private int _centroCostoId;
     private string _tipoBodega = "MATERIA_PRIMA";
     private bool _esVirtual;
+    private bool _estado = true;
+
+    protected override void OnInitialized()
+    {
+        if (Bodega is not null)
+        {
+            _nombre = Bodega.Nombre;
+            _tipoBodega = Bodega.TipoBodega;
+            _esVirtual = Bodega.EsVirtual;
+            _estado = Bodega.Estado;
+        }
+    }
 
     private async Task GuardarAsync()
     {
@@ -50,11 +78,19 @@
         if (!_form.IsValid)
             return;
 
-        if (_centroCostoId == 0)
-            return;
+        if (EsEdicion)
+        {
+            var request = new ActualizarBodegaRequest(_nombre, _tipoBodega, _esVirtual, _estado);
+            MudDialog.Close(DialogResult.Ok(request));
+        }
+        else
+        {
+            if (_centroCostoId == 0)
+                return;
 
-        var request = new CrearBodegaRequest(_nombre, _centroCostoId, _tipoBodega, _esVirtual);
-        MudDialog.Close(DialogResult.Ok(request));
+            var request = new CrearBodegaRequest(_nombre, _centroCostoId, _tipoBodega, _esVirtual);
+            MudDialog.Close(DialogResult.Ok(request));
+        }
     }
 
     private void Cancelar() => MudDialog.Cancel();

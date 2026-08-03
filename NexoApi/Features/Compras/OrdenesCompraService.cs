@@ -93,9 +93,11 @@ public class OrdenesCompraService : IOrdenesCompraService
 
         const string sql = @"
             SELECT d.OrdenCompraDetalleID, d.ArticuloID, a.Nombre AS Articulo,
-                   d.CantidadSolicitada, d.CantidadRecibida, d.CostoUnitario
+                   d.CantidadSolicitada, d.CantidadRecibida, d.CostoUnitario,
+                   u.Abreviatura AS Unidad, a.UnidadesPorEmbalaje
             FROM Compras.OrdenesCompraDetalle d
             JOIN Catalogo.Articulos a ON a.ArticuloID = d.ArticuloID
+            LEFT JOIN Catalogo.UnidadesMedida u ON u.UnidadID = a.UnidadID
             WHERE d.OrdenCompraID = @OrdenCompraId";
 
         return await connection.QueryAsync<OrdenCompraDetalleItem>(sql, new { OrdenCompraId = ordenCompraId });

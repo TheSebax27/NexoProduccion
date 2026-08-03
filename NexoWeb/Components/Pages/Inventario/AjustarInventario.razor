@@ -1,0 +1,135 @@
+@page "/inventario/ajustes"
+@attribute [Authorize(Roles = "Administrador,Bodeguero")]
+@inject INexoApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Ajuste de Inventario - NEXO</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Ajuste de Inventario</MudText>
+
+<MudAlert Severity="Severity.Info" Class="mb-4" Icon="@Icons.Material.Filled.Info">
+    Usa esta pantalla para cargar el stock inicial de un articulo (por ejemplo, al arrancar el sistema)
+    o para corregir la cantidad tras un conteo fisico. El movimiento queda registrado en el Kardex como
+    "Ajuste de Inventario" y afecta el costo promedio del articulo.
+</MudAlert>
+
+<MudPaper Class="pa-6" MaxWidth="600px">
+    <MudSelect T="int" @bind-Value="_articuloId" Label="Articulo" Class="mb-4" Required="true">
+        @foreach (var articulo in _articulos)
+        {
+            <MudSelectItem T="int" Value="@articulo.ArticuloID">@articulo.SKU - @articulo.Nombre (@articulo.TipoArticulo)</MudSelectItem>
+        }
+    </MudSelect>
+
+    <MudSelect T="int" @bind-Value="_bodegaId" Label="Bodega" Class="mb-4" Required="true">
+        @foreach (var bodega in _bodegas)
+        {
+            <MudSelectItem T="int" Value="@bodega.BodegaID">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
+        }
+    </MudSelect>
+
+    <MudNumericField @bind-Value="_cantidad" Label="Cantidad a agregar" Min="0.01m" Format="N2" Class="mb-1" Required="true" />
+    @if (PistaEmbalaje() is string pista)
+    {
+        <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">@pista</MudText>
+    }
+    else
+    {
+        <div class="mb-3"></div>
+    }
+
+    <MudMoneyField @bind-Value="_costoUnitario" Label="Costo Unitario" Required="true"
+                   HelperText="Se usa para recalcular el costo promedio del articulo." Class="mb-4" />
+
+    <MudTextField @bind-Value="_motivo" Label="Motivo del ajuste" Lines="3"
+                  HelperText="Minimo 5 caracteres. Ej: 'Carga inicial de stock al arrancar el sistema.'"
+                  Class="mb-4" Required="true" />
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="RegistrarAsync"
+               Disabled="@(!FormularioValido || _guardando)" StartIcon="@Icons.Material.Filled.AddCircle">
+        @(_guardando ? "Registrando..." : "Registrar Ajuste")
+    </MudButton>
+</MudPaper>
+
+@code {
+    private List<ArticuloItem> _articulos = new();
+    private List<BodegaItem> _bodegas = new();
+
+    private int _articuloId;
+    private int _bodegaId;
+    private decimal _cantidad;
+    private decimal _costoUnitario;
+    private string _motivo = "";
+    private bool _guardando;
+
+    private bool FormularioValido =>
+        _articuloId > 0 && _bodegaId > 0 && _cantidad > 0 &&
+        _costoUnitario >= 0 && _motivo.Trim().Length >= 5;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+        var tareaBodegas = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
+
+        await Task.WhenAll(tareaArticulos, tareaBodegas);
+
+        _articulos = await tareaArticulos ?? new();
+        _bodegas = await tareaBodegas ?? new();
+    }
+
+    // La Cantidad se captura en la unidad base del articulo. Si esa unidad
+    // es "Caja", esta pista ayuda a verificar cuantas unidades sueltas representa.
+    private string? PistaEmbalaje()
+    {
+        var articulo = _articulos.FirstOrDefault(a => a.ArticuloID == _articuloId);
+        if (articulo is null || articulo.Unidad != "cja" || articulo.UnidadesPorEmbalaje is not > 0 || _cantidad <= 0)
+            return null;
+
+        var totalUnidades = _cantidad * articulo.UnidadesPorEmbalaje.Value;
+        return $"{_cantidad:N2} cajas x {articulo.UnidadesPorEmbalaje:N0} und/caja = {totalUnidades:N0} unidades";
+    }
+
+    private async Task RegistrarAsync()
+    {
+        var articuloNombre = _articulos.FirstOrDefault(a => a.ArticuloID == _articuloId)?.Nombre ?? "?";
+        var bodegaNombre = _bodegas.FirstOrDefault(b => b.BodegaID == _bodegaId)?.Nombre ?? "?";
+
+        var confirmacion = await DialogService.ShowMessageBox(
+            "Confirmar Ajuste de Inventario",
+            $"Esta accion quedara registrada en el Kardex y no se puede deshacer directamente.\n\n" +
+            $"Articulo: {articuloNombre}\n" +
+            $"Bodega: {bodegaNombre}\n" +
+            $"Cantidad a agregar: {_cantidad:N2}\n" +
+            $"Costo unitario: {_costoUnitario:C2}\n\n" +
+            "¿Confirmar el ajuste?",
+            yesText: "Si, registrar ajuste",
+            noText: "Cancelar");
+
+        if (confirmacion != true)
+            return;
+
+        _guardando = true;
+
+        try
+        {
+            var request = new AjustarInventarioRequest(_articuloId, _bodegaId, _cantidad, _costoUnitario, _motivo.Trim());
+            var resultado = await ApiClient.PostAsync<AjustarInventarioRequest, AjustarInventarioResponse>("api/inventario/ajustes", request);
+
+            Snackbar.Add($"Ajuste registrado correctamente. Codigo: {resultado!.CodigoAjuste}. Nuevo saldo: {resultado.NuevoSaldo:N2}", Severity.Success);
+
+            _cantidad = 0;
+            _costoUnitario = 0;
+            _motivo = "";
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _guardando = false;
+        }
+    }
+}

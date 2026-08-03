@@ -1,14 +1,28 @@
 ﻿namespace NexoWeb.Common.Dtos;
 
 public record ClienteItem(
-    int ClienteID,
-    string Nombre
+    int ClienteID, string Nombre, string? NIT, string? Contacto,
+    string? Telefono, string? Email, string? Direccion, bool Estado
 );
+public record CrearClienteRequest(string Nombre, string? NIT, string? Contacto, string? Telefono, string? Email, string? Direccion);
+public record ActualizarClienteRequest(string Nombre, string? NIT, string? Contacto, string? Telefono, string? Email, string? Direccion, bool Estado);
 
 public record CentroTrabajoItem(
     int CentroTrabajoID,
     string Nombre,
-    int CentroCostoID
+    int CentroCostoID,
+    string CentroCosto,
+    decimal CostoHoraManoObra,
+    decimal CostoHoraCIF,
+    bool Estado
+);
+
+public record CrearCentroTrabajoRequest(
+    string Nombre, int CentroCostoID, decimal CostoHoraManoObra, decimal CostoHoraCIF
+);
+
+public record ActualizarCentroTrabajoRequest(
+    string Nombre, decimal CostoHoraManoObra, decimal CostoHoraCIF, bool Estado
 );
 
 public record CentroCostoItem(
@@ -63,6 +77,14 @@ public record CrearBodegaRequest(
     bool EsVirtual
 );
 
+// CentroCostoID no se puede cambiar una vez creada la bodega.
+public record ActualizarBodegaRequest(
+    string Nombre,
+    string TipoBodega,
+    bool EsVirtual,
+    bool Estado
+);
+
 // Reemplaza la version reducida anterior: ahora coincide exactamente con el
 // ArticuloItem que devuelve la API (antes solo traia ArticuloID, SKU y
 // Nombre). Se agregan al final para no romper el binding por nombre que ya
@@ -73,26 +95,31 @@ public record ArticuloItem(
     string Nombre,
     string? Descripcion,
     string TipoArticulo,
-    string Unidad,
+    string? Unidad,
     decimal CostoPromedio,
     decimal PrecioVenta,
     decimal StockMinimo,
     decimal PuntoReorden,
     bool Estado,
-    int? DiasVidaUtil
+    int? DiasVidaUtil,
+    decimal? UnidadesPorEmbalaje
 );
 
 // Agregado para la pantalla de administracion de Articulos (punto #2).
+// UnidadID es opcional: un Servicio no es tangible, no aplica una unidad fisica.
+// UnidadesPorEmbalaje: cuantas unidades base trae 1 caja/embalaje (solo
+// informativo/de conversion, el stock siempre se registra en UnidadID base).
 public record CrearArticuloRequest(
     string SKU,
     string Nombre,
     string? Descripcion,
     int TipoArticuloID,
-    int UnidadID,
+    int? UnidadID,
     decimal PrecioVenta,
     decimal StockMinimo,
     decimal PuntoReorden,
-    int? DiasVidaUtil
+    int? DiasVidaUtil,
+    decimal? UnidadesPorEmbalaje
 );
 
 public record ActualizarArticuloRequest(
@@ -102,8 +129,16 @@ public record ActualizarArticuloRequest(
     decimal StockMinimo,
     decimal PuntoReorden,
     int? DiasVidaUtil,
-    bool Estado
+    bool Estado,
+    decimal? UnidadesPorEmbalaje
 );
+
+public record ProveedorItem(
+    int ProveedorID, string RazonSocial, string NIT, string? Contacto,
+    string? Telefono, string? Email, string? Direccion, bool Estado
+);
+public record CrearProveedorRequest(string RazonSocial, string NIT, string? Contacto, string? Telefono, string? Email, string? Direccion);
+public record ActualizarProveedorRequest(string RazonSocial, string NIT, string? Contacto, string? Telefono, string? Email, string? Direccion, bool Estado);
 
 public record TipoArticuloItem(int TipoArticuloID, string Codigo, string Nombre);
 public record UnidadMedidaItem(int UnidadID, string Nombre, string Abreviatura, string Tipo);

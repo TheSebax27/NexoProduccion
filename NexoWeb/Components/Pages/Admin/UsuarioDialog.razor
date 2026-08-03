@@ -1,0 +1,112 @@
+@using NexoWeb.Common.Dtos
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" Model="@this">
+            <MudTextField @bind-Value="_nombres" Label="Nombres" Required="true"
+                          RequiredError="Los nombres son obligatorios" Class="mb-3" />
+
+            <MudTextField @bind-Value="_apellidos" Label="Apellidos" Required="true"
+                          RequiredError="Los apellidos son obligatorios" Class="mb-3" />
+
+            <MudTextField @bind-Value="_email" Label="Email" Required="true"
+                          RequiredError="El email es obligatorio" Class="mb-3" />
+
+            @if (!EsEdicion)
+            {
+                <MudTextField @bind-Value="_username" Label="Usuario" Required="true"
+                              RequiredError="El usuario es obligatorio" Class="mb-3" />
+
+                <MudTextField @bind-Value="_password" Label="Contrasena" InputType="InputType.Password"
+                              Required="true" RequiredError="La contrasena es obligatoria" Class="mb-3" />
+            }
+
+            <MudSelect T="int" @bind-Value="_rolId" Label="Rol" Required="true"
+                       RequiredError="Selecciona un rol" Class="mb-3">
+                @foreach (var rol in Roles)
+                {
+                    <MudSelectItem Value="@rol.RolID">@rol.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo (opcional)" Clearable="true" Class="mb-3">
+                @foreach (var centro in CentrosCosto)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)centro.CentroCostoID)">@centro.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+
+            @if (EsEdicion)
+            {
+                <MudSwitch T="bool" @bind-Value="_estado" Color="Color.Success" Label="Activo" />
+            }
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancelar">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="GuardarAsync">
+            @(EsEdicion ? "Guardar Cambios" : "Crear")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public List<RolItem> Roles { get; set; } = new();
+    [Parameter] public List<CentroCostoItem> CentrosCosto { get; set; } = new();
+
+    // Si se pasa un Usuario existente, el dialogo entra en modo edicion
+    // (oculta Usuario y Contrasena, que no se editan desde aqui; para
+    // cambiar la clave se usa el boton "Resetear clave" en la lista).
+    [Parameter] public UsuarioItem? Usuario { get; set; }
+
+    private bool EsEdicion => Usuario is not null;
+
+    private MudForm _form = default!;
+    private string _nombres = string.Empty;
+    private string _apellidos = string.Empty;
+    private string _email = string.Empty;
+    private string _username = string.Empty;
+    private string _password = string.Empty;
+    private int _rolId;
+    private int? _centroCostoId;
+    private bool _estado = true;
+
+    protected override void OnInitialized()
+    {
+        if (Usuario is not null)
+        {
+            _nombres = Usuario.Nombres;
+            _apellidos = Usuario.Apellidos;
+            _email = Usuario.Email;
+            _rolId = Usuario.RolID;
+            _centroCostoId = Usuario.CentroCostoID;
+            _estado = Usuario.Estado;
+        }
+        else if (Roles.Count > 0)
+        {
+            _rolId = Roles[0].RolID;
+        }
+    }
+
+    private async Task GuardarAsync()
+    {
+        await _form.Validate();
+        if (!_form.IsValid)
+            return;
+
+        if (EsEdicion)
+        {
+            var request = new ActualizarUsuarioRequest(_nombres, _apellidos, _email, _rolId, _centroCostoId, _estado);
+            MudDialog.Close(DialogResult.Ok(request));
+        }
+        else
+        {
+            var request = new CrearUsuarioRequest(_nombres, _apellidos, _email, _username, _password, _rolId, _centroCostoId);
+            MudDialog.Close(DialogResult.Ok(request));
+        }
+    }
+
+    private void Cancelar() => MudDialog.Cancel();
+}

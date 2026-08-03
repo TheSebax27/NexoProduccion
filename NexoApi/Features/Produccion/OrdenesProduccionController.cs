@@ -43,6 +43,33 @@ public class OrdenesProduccionController : ControllerBase
         return CreatedAtAction(nameof(Obtener), new { id }, new { OrdenProduccionID = id });
     }
 
+    /// <summary>Detalle con IDs crudos (no nombres), para precargar el formulario de edicion.</summary>
+    [HttpGet("{id:int}/editar")]
+    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    public async Task<ActionResult<OrdenProduccionDetalleEdicion>> ObtenerParaEdicion(int id)
+    {
+        var detalle = await _service.ObtenerParaEdicionAsync(id);
+        return detalle is null ? NotFound() : Ok(detalle);
+    }
+
+    /// <summary>Solo permitido mientras la orden esta en estado Planificada (aun no se descuenta stock).</summary>
+    [HttpPut("{id:int}")]
+    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    public async Task<ActionResult> Actualizar(int id, ActualizarOrdenProduccionRequest request)
+    {
+        await _service.ActualizarAsync(id, request);
+        return Ok(new { mensaje = "Orden de produccion actualizada correctamente." });
+    }
+
+    /// <summary>Solo permitido mientras la orden esta en estado Planificada. No se borra fisicamente, queda como Cancelada.</summary>
+    [HttpPost("{id:int}/cancelar")]
+    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    public async Task<ActionResult> Cancelar(int id)
+    {
+        await _service.CancelarAsync(id);
+        return Ok(new { mensaje = "Orden de produccion cancelada." });
+    }
+
     [HttpPost("{id:int}/liberar")]
     [Authorize(Roles = "Administrador,SupervisorPlanta")]
     public async Task<ActionResult> Liberar(int id)
@@ -63,7 +90,7 @@ public class OrdenesProduccionController : ControllerBase
     [Authorize(Roles = "Administrador,SupervisorPlanta,Operario")]
     public async Task<ActionResult> AjustarConsumo(long consumoId, AjustarConsumoRealRequest request)
     {
-        await _service.AjustarConsumoAsync(consumoId, request);
+        await _service.AjustarConsumoAsync(consumoId, request, UsuarioActualId);
         return Ok(new { mensaje = "Consumo actualizado." });
     }
 
@@ -74,6 +101,14 @@ public class OrdenesProduccionController : ControllerBase
         var (costoUnitarioReal, loteId) = await _service.CerrarAsync(id, request, UsuarioActualId);
         return Ok(new { mensaje = "Orden finalizada.", costoUnitarioReal, loteProductoTerminadoId = loteId });
     }
+
+    [HttpGet("{id:int}/consumos")]
+    public async Task<ActionResult<IEnumerable<ConsumoOpItem>>> ListarConsumos(int id)
+        => Ok(await _service.ListarConsumosAsync(id));
+
+    [HttpGet("motivos-exceso")]
+    public async Task<ActionResult<IEnumerable<MotivoExcesoItem>>> ListarMotivosExceso()
+        => Ok(await _service.ListarMotivosExcesoAsync());
 
     [HttpGet("tipos-produccion")]
     public async Task<ActionResult<IEnumerable<TipoProduccionItem>>> ListarTiposProduccion()

@@ -9,3 +9,9 @@ public record DistribucionCentroCostoItem(
 public record PerdidaPorMotivoItem(string Motivo, decimal CantidadTotalPerdida, decimal ValorTotalPerdido);
 
 public record TendenciaCostoPunto(DateTime Fecha, decimal CostoUnitarioReal);
+
+public record CumplimientoCentroCostoItem(
+    int CentroCostoID, string CentroCosto,
+    int TotalOrdenesFinalizadas, int OrdenesATiempo,
+    decimal PorcentajeCumplimiento
+);

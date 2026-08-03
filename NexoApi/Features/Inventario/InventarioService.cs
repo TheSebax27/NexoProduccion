@@ -9,7 +9,9 @@ public interface IInventarioService
 {
     Task<IEnumerable<StockConsolidadoItem>> ConsultarStockAsync(int? centroCostoId, int? bodegaId, string? sku);
     Task<RegistrarBajaResponse> RegistrarBajaAsync(RegistrarBajaRequest request, int usuarioId);
+    Task<AjustarInventarioResponse> AjustarInventarioAsync(AjustarInventarioRequest request, int usuarioId);
     Task<IEnumerable<MotivoPerdidaItem>> ListarMotivosPerdidaAsync();
+    Task<IEnumerable<KardexMovimientoItem>> ConsultarKardexAsync(int? articuloId, int? bodegaId, DateTime? desde, DateTime? hasta);
 }
 
 public class InventarioService : IInventarioService
@@ -26,7 +28,7 @@ public class InventarioService : IInventarioService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT ArticuloID, SKU, Articulo, TipoArticulo, BodegaID, Bodega,
+            SELECT ArticuloID, SKU, Articulo, TipoArticulo, Unidad, UnidadesPorEmbalaje, BodegaID, Bodega,
                    CentroCostoID, CentroCosto, LoteID, NumeroLote, FechaVencimiento,
                    CantidadActual, CostoUnitarioLote, ValorTotal, RequierePedido
             FROM Inventario.vw_StockConsolidado
@@ -64,13 +66,51 @@ public class InventarioService : IInventarioService
         return resultado;
     }
 
-    // Agregar a IInventarioService y InventarioService
+    public async Task<AjustarInventarioResponse> AjustarInventarioAsync(AjustarInventarioRequest r, int usuarioId)
+    {
+        using var connection = _db.CreateConnection();
 
+        var parametros = new DynamicParameters();
+        parametros.Add("ArticuloID", r.ArticuloID);
+        parametros.Add("BodegaID", r.BodegaID);
+        parametros.Add("Cantidad", r.Cantidad);
+        parametros.Add("CostoUnitario", r.CostoUnitario);
+        parametros.Add("Motivo", r.Motivo);
+        parametros.Add("UsuarioID", usuarioId);
+
+        var resultado = await connection.QuerySingleAsync<AjustarInventarioResponse>(
+            "Kardex.sp_AjustePositivoInventario",
+            parametros,
+            commandType: CommandType.StoredProcedure);
+
+        return resultado;
+    }
 
     public async Task<IEnumerable<MotivoPerdidaItem>> ListarMotivosPerdidaAsync()
     {
         using var connection = _db.CreateConnection();
         return await connection.QueryAsync<MotivoPerdidaItem>(
             "SELECT MotivoID, Nombre FROM Kardex.TiposMotivoLoss ORDER BY Nombre");
+    }
+
+    public async Task<IEnumerable<KardexMovimientoItem>> ConsultarKardexAsync(
+        int? articuloId, int? bodegaId, DateTime? desde, DateTime? hasta)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT TOP 500 k.KardexID, k.Fecha, a.Nombre AS Articulo, b.Nombre AS Bodega,
+                   tm.Nombre AS TipoMovimiento, k.Cantidad, k.CostoUnitario,
+                   k.CantidadSaldo, k.ObservacionDetallada
+            FROM Kardex.KardexMovimientos k
+            JOIN Catalogo.Articulos a ON a.ArticuloID = k.ArticuloID
+            JOIN Inventario.Bodegas b ON b.BodegaID = k.BodegaID
+            JOIN Kardex.TiposMovimientoKardex tm ON tm.TipoMovID = k.TipoMovID
+            WHERE (@ArticuloId IS NULL OR k.ArticuloID = @ArticuloId)
+              AND (@BodegaId IS NULL OR k.BodegaID = @BodegaId)
+              AND (@Desde IS NULL OR k.Fecha >= @Desde)
+              AND (@Hasta IS NULL OR k.Fecha < DATEADD(DAY,1,@Hasta))
+            ORDER BY k.Fecha DESC, k.KardexID DESC";
+        return await connection.QueryAsync<KardexMovimientoItem>(sql,
+            new { ArticuloId = articuloId, BodegaId = bodegaId, Desde = desde, Hasta = hasta });
     }
 }

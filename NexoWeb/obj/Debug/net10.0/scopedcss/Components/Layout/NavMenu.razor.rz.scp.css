@@ -1,35 +1,98 @@
-/* Los colores base (fondo del drawer, texto, iconos) vienen del tema
-   centralizado en NexoTheme.cs. Este archivo solo pule el estado hover/activo
-   de cada item del menu para que combine con la identidad Grafito + Beige.
+/* ================================================================
+   NavMenu — Navegación lateral
+   Morado degradado en activo, hover sutil, grupos con chevron
+   ================================================================ */
 
-   NOTA: las reglas que estaban aqui antes (.nav-item, .navbar-toggler,
-   .bi-*-nav-menu, .nav-scrollable) eran restos de la plantilla por defecto de
-   Blazor (NavLink + Bootstrap) y no le pegaban a ninguna clase presente en
-   este menu (que usa MudNavMenu/MudNavLink/MudNavGroup). Se eliminaron por
-   ser codigo muerto. */
-
-[b-vumnekz1w9] .mud-nav-link {
-    border-radius: 10px;
-    margin: 0.15rem 0.75rem;
-    color: #E8E2D9;
-    transition: background-color 0.15s ease, color 0.15s ease;
+[b-vumnekz1w9] .mud-nav-menu {
+  padding: 0.25rem 0 0.5rem !important;
 }
 
-    [b-vumnekz1w9] .mud-nav-link:hover {
-        background-color: rgba(37, 99, 235, 0.22);
-        color: #FFFFFF;
-    }
+/* ── Enlace base ──────────────────────────────────────────────── */
+[b-vumnekz1w9] .mud-nav-link {
+  display: flex;
+  align-items: center;
+  border-radius: 10px !important;
+  margin: 2px 10px !important;
+  padding: 0.58rem 0.9rem !important;
+  color: #9B9BB4 !important;
+  font-size: 0.875rem !important;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  transition: background-color 0.18s ease, color 0.18s ease !important;
+  position: relative;
+  text-decoration: none !important;
+}
 
-    [b-vumnekz1w9] .mud-nav-link.active {
-        background-color: #2563EB;
-        color: #FFFFFF;
-    }
+[b-vumnekz1w9] .mud-nav-link:hover {
+  background: rgba(255,255,255,0.06) !important;
+  color: #E0E0F0 !important;
+}
 
-        [b-vumnekz1w9] .mud-nav-link.active .mud-icon-root {
-            color: #FFFFFF;
-        }
+/* ── Estado activo — degradado morado ───────────────────────── */
+[b-vumnekz1w9] .mud-nav-link.active {
+  background: linear-gradient(135deg, #7C5CFF 0%, #5A3BFF 100%) !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 14px rgba(124,92,255,0.30) !important;
+}
 
-[b-vumnekz1w9] .mud-nav-group .mud-nav-link {
-    font-weight: 600;
-    letter-spacing: 0.01em;
+[b-vumnekz1w9] .mud-nav-link.active .mud-nav-link-icon-wrapper,
+[b-vumnekz1w9] .mud-nav-link.active .mud-icon-root {
+  color: #FFFFFF !important;
+}
+
+/* ── Iconos ──────────────────────────────────────────────────── */
+[b-vumnekz1w9] .mud-nav-link .mud-nav-link-icon-wrapper {
+  color: #6B6B8A !important;
+  margin-right: 0.15rem;
+  transition: color 0.15s ease !important;
+}
+[b-vumnekz1w9] .mud-nav-link:hover .mud-nav-link-icon-wrapper {
+  color: #9B9BB4 !important;
+}
+
+/* ── Grupos de navegación ───────────────────────────────────── */
+[b-vumnekz1w9] .mud-nav-group {
+  margin: 1px 0 !important;
+}
+
+/* Cabecera del grupo (toggle) */
+[b-vumnekz1w9] .mud-nav-group > .mud-nav-group-toggle.mud-nav-link {
+  color: #9B9BB4 !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  margin: 2px 10px !important;
+  padding: 0.58rem 0.9rem !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+[b-vumnekz1w9] .mud-nav-group > .mud-nav-group-toggle.mud-nav-link:hover {
+  background: rgba(255,255,255,0.06) !important;
+  color: #E0E0F0 !important;
+}
+
+/* Flecha del grupo */
+[b-vumnekz1w9] .mud-nav-group .mud-nav-link-expand-icon {
+  color: #6B6B8A !important;
+  font-size: 1.1rem !important;
+  transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), color 0.15s ease !important;
+}
+
+/* Sub-enlaces */
+[b-vumnekz1w9] .mud-nav-group-content {
+  padding: 0 !important;
+}
+[b-vumnekz1w9] .mud-nav-group-content .mud-nav-link {
+  padding-left: 2.75rem !important;
+  font-size: 0.845rem !important;
+  color: #7A7A96 !important;
+}
+[b-vumnekz1w9] .mud-nav-group-content .mud-nav-link:hover {
+  color: #C0C0D8 !important;
+}
+[b-vumnekz1w9] .mud-nav-group-content .mud-nav-link.active {
+  color: #FFFFFF !important;
+  background: linear-gradient(135deg, #7C5CFF 0%, #5A3BFF 100%) !important;
 }

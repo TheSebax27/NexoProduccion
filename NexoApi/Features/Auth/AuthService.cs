@@ -9,6 +9,13 @@ public interface IAuthService
 {
     Task<LoginResponse?> LoginAsync(LoginRequest request);
     Task<int> RegistrarPrimerAdminAsync(RegistrarUsuarioRequest request);
+
+    // Gestion de usuarios (Administrador)
+    Task<IEnumerable<UsuarioItem>> ListarUsuariosAsync();
+    Task<int> CrearUsuarioAsync(CrearUsuarioRequest request);
+    Task ActualizarUsuarioAsync(int usuarioId, ActualizarUsuarioRequest request);
+    Task ResetearPasswordAsync(int usuarioId, ResetearPasswordRequest request);
+    Task<IEnumerable<RolItem>> ListarRolesAsync();
 }
 
 public class AuthService : IAuthService
@@ -32,12 +39,15 @@ public class AuthService : IAuthService
     {
         using var connection = _db.CreateConnection();
 
+        // Se acepta Username O Email como credencial -- es comun que el usuario
+        // intente ingresar con su correo (asi lo ve en "Mi perfil"/tarjetas de
+        // usuario) sin recordar que el Username puede ser distinto.
         const string sql = @"
             SELECT u.UsuarioID, u.Nombres, u.Apellidos, u.Username,
                    u.PasswordHash, u.Salt, r.Nombre AS Rol, u.CentroCostoID, u.Estado
             FROM Seguridad.Usuarios u
             JOIN Seguridad.Roles r ON r.RolID = u.RolID
-            WHERE u.Username = @Username";
+            WHERE u.Username = @Username OR u.Email = @Username";
 
         var usuario = await connection.QuerySingleOrDefaultAsync<UsuarioAuthData>(sql, new { request.Username });
 
@@ -100,5 +110,107 @@ public class AuthService : IAuthService
             r.RolID,
             r.CentroCostoID
         });
+    }
+
+    // ================= Gestion de usuarios (Administrador) =================
+
+    public async Task<IEnumerable<UsuarioItem>> ListarUsuariosAsync()
+    {
+        using var connection = _db.CreateConnection();
+
+        const string sql = @"
+            SELECT u.UsuarioID, u.Nombres, u.Apellidos, u.Email, u.Username,
+                   u.RolID, r.Nombre AS Rol, u.CentroCostoID, cc.Nombre AS CentroCosto,
+                   u.Estado, u.UltimoAcceso
+            FROM Seguridad.Usuarios u
+            JOIN Seguridad.Roles r ON r.RolID = u.RolID
+            LEFT JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = u.CentroCostoID
+            ORDER BY u.Nombres, u.Apellidos";
+
+        return await connection.QueryAsync<UsuarioItem>(sql);
+    }
+
+    public async Task<int> CrearUsuarioAsync(CrearUsuarioRequest r)
+    {
+        using var connection = _db.CreateConnection();
+
+        var existe = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(1) FROM Seguridad.Usuarios WHERE Username = @Username OR Email = @Email",
+            new { r.Username, r.Email });
+
+        if (existe > 0)
+            throw new InvalidOperationException("Ya existe un usuario con ese nombre de usuario o correo.");
+
+        var (hash, salt) = PasswordHasher.HashPassword(r.Password);
+
+        const string sql = @"
+            INSERT INTO Seguridad.Usuarios
+                (Nombres, Apellidos, Email, Username, PasswordHash, Salt, RolID, CentroCostoID, Estado, FechaCreacion)
+            OUTPUT INSERTED.UsuarioID
+            VALUES
+                (@Nombres, @Apellidos, @Email, @Username, @Hash, @Salt, @RolID, @CentroCostoID, 1, SYSUTCDATETIME())";
+
+        return await connection.ExecuteScalarAsync<int>(sql, new
+        {
+            r.Nombres,
+            r.Apellidos,
+            r.Email,
+            r.Username,
+            Hash = hash,
+            Salt = salt,
+            r.RolID,
+            r.CentroCostoID
+        });
+    }
+
+    public async Task ActualizarUsuarioAsync(int usuarioId, ActualizarUsuarioRequest r)
+    {
+        using var connection = _db.CreateConnection();
+
+        const string sql = @"
+            UPDATE Seguridad.Usuarios
+            SET Nombres = @Nombres, Apellidos = @Apellidos, Email = @Email,
+                RolID = @RolID, CentroCostoID = @CentroCostoID, Estado = @Estado
+            WHERE UsuarioID = @UsuarioId";
+
+        var filas = await connection.ExecuteAsync(sql, new
+        {
+            UsuarioId = usuarioId,
+            r.Nombres,
+            r.Apellidos,
+            r.Email,
+            r.RolID,
+            r.CentroCostoID,
+            r.Estado
+        });
+
+        if (filas == 0)
+            throw new KeyNotFoundException($"No existe el usuario {usuarioId}.");
+    }
+
+    public async Task ResetearPasswordAsync(int usuarioId, ResetearPasswordRequest r)
+    {
+        using var connection = _db.CreateConnection();
+
+        var (hash, salt) = PasswordHasher.HashPassword(r.NuevaPassword);
+
+        var filas = await connection.ExecuteAsync(
+            "UPDATE Seguridad.Usuarios SET PasswordHash = @Hash, Salt = @Salt WHERE UsuarioID = @UsuarioId",
+            new { Hash = hash, Salt = salt, UsuarioId = usuarioId });
+
+        if (filas == 0)
+            throw new KeyNotFoundException($"No existe el usuario {usuarioId}.");
+
+        // Invalida las sesiones activas del usuario para que el cambio de clave surta efecto de inmediato.
+        await connection.ExecuteAsync(
+            "UPDATE Seguridad.SesionesUsuario SET Activa = 0 WHERE UsuarioID = @UsuarioId AND Activa = 1",
+            new { UsuarioId = usuarioId });
+    }
+
+    public async Task<IEnumerable<RolItem>> ListarRolesAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<RolItem>(
+            "SELECT RolID, Nombre FROM Seguridad.Roles WHERE Estado = 1 ORDER BY Nombre");
     }
 }

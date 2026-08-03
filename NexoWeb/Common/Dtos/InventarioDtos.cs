@@ -5,6 +5,8 @@ public record StockConsolidadoItem(
     string SKU,
     string Articulo,
     string TipoArticulo,
+    string? Unidad,
+    decimal? UnidadesPorEmbalaje,
     int BodegaID,
     string Bodega,
     int CentroCostoID,
@@ -18,8 +20,13 @@ public record StockConsolidadoItem(
     bool RequierePedido
 );
 
-// Agregar a Common/Dtos/InventarioDtos.cs
 public record MotivoPerdidaItem(int MotivoID, string Nombre);
+
+public record KardexMovimientoItem(
+    long KardexID, DateTime Fecha, string Articulo, string Bodega,
+    string TipoMovimiento, decimal Cantidad, decimal CostoUnitario,
+    decimal CantidadSaldo, string? ObservacionDetallada
+);
 
 public record RegistrarBajaRequest(
     int ArticuloID,
@@ -31,3 +38,13 @@ public record RegistrarBajaRequest(
 );
 
 public record RegistrarBajaResponse(string CodigoBaja, int BajaID);
+
+public record AjustarInventarioRequest(
+    int ArticuloID,
+    int BodegaID,
+    decimal Cantidad,
+    decimal CostoUnitario,
+    string Motivo
+);
+
+public record AjustarInventarioResponse(string CodigoAjuste, int AjusteID, decimal NuevoSaldo);
