@@ -3,11 +3,13 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Bodegas - NEXO</PageTitle>
 
 <MudText Typo="Typo.h5" Class="mb-4">Bodegas</MudText>
+<InfoAyuda Texto="Las bodegas almacenan el inventario físico (o virtual, ej. para tránsito) dentro de un Centro de Costo. Cada movimiento de inventario queda asociado a una bodega específica." />
 
 <MudGrid Class="mb-4">
     <MudItem xs="12" sm="6" md="4">
@@ -35,7 +37,37 @@
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
 }
-else if (_errorCarga is null)
+else if (_bodegas.Count == 0)
+{
+    <MudText>No hay bodegas registradas para este filtro.</MudText>
+}
+else if (Preferencias.VistaListado == "tarjetas")
+{
+    <div class="nexo-card-grid">
+        @foreach (var bodega in _bodegas)
+        {
+            <div class="nexo-item-card">
+                <div class="d-flex align-center justify-space-between">
+                    <div class="nexo-item-card__title">@bodega.Nombre</div>
+                    <MudChip T="string" Color="@(bodega.Estado ? Color.Success : Color.Error)" Size="Size.Small">
+                        @(bodega.Estado ? "Activa" : "Inactiva")
+                    </MudChip>
+                </div>
+                <div class="nexo-item-card__sub">@bodega.CentroCosto</div>
+                <div class="nexo-item-card__row"><span>Tipo</span><strong>@bodega.TipoBodega</strong></div>
+                <div class="nexo-item-card__row"><span>Virtual</span><strong>@(bodega.EsVirtual ? "Si" : "No")</strong></div>
+                <div class="nexo-item-card__actions">
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(bodega))">Editar</MudButton>
+                    @if (bodega.Estado)
+                    {
+                        <MudButton Size="Size.Small" Color="Color.Error" OnClick="@(() => DesactivarAsync(bodega))">Desactivar</MudButton>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+else
 {
     <MudTable Items="_bodegas" Hover="true" Dense="true" Striped="true">
         <HeaderContent>

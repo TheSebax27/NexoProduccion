@@ -158,6 +158,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm9kdWNjaW9uXFJlY2V0YXMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Produccion/NexoWeb/Components/Pages/Settings/Ayuda.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTZXR0aW5nc1xBeXVkYS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Produccion/NexoWeb/Components/Pages/Settings/Settings.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTZXR0aW5nc1xTZXR0aW5ncy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
@@ -178,6 +182,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xSb3V0ZXMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Produccion/NexoWeb/Components/Shared/InfoAyuda.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcSW5mb0F5dWRhLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Produccion/NexoWeb/Components/Shared/MudHorasField.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcTXVkSG9yYXNGaWVsZC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
@@ -186,8 +194,8 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcTXVkTW9uZXlGaWVsZC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Produccion/NexoWeb/Components/Shared/VistaToggle.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcVmlzdGFUb2dnbGUucmF6b3I=
+[C:/Produccion/NexoWeb/Components/Shared/PerfilMenu.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcUGVyZmlsTWVudS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/_Imports.razor]

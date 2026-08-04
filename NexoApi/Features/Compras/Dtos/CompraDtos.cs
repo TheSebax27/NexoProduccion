@@ -25,7 +25,8 @@ public record OrdenCompraResumen(
     string Proveedor,
     string EstadoOC,
     DateTime FechaEmision,
-    decimal Total
+    decimal Total,
+    DateTime? FechaRecepcion
 );
 
 public record OrdenCompraDetalleItem(
@@ -36,5 +37,6 @@ public record OrdenCompraDetalleItem(
     decimal CantidadRecibida,
     decimal CostoUnitario,
     string? Unidad,
-    decimal? UnidadesPorEmbalaje
+    decimal? UnidadesPorEmbalaje,
+    DateTime? FechaUltimaRecepcion
 );

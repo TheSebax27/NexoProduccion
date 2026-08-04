@@ -475,6 +475,95 @@
         }
       }
     },
+    "/api/auth/perfil": {
+      "put": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarPerfilRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarPerfilRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarPerfilRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilActualizadoResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilActualizadoResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilActualizadoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/perfil/foto": {
+      "put": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarFotoPerfilRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarFotoPerfilRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarFotoPerfilRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/catalogo/bodegas": {
       "get": {
         "tags": [
@@ -3004,6 +3093,20 @@
         },
         "additionalProperties": false
       },
+      "ActualizarFotoPerfilRequest": {
+        "type": "object",
+        "properties": {
+          "base64": {
+            "type": "string",
+            "nullable": true
+          },
+          "contentType": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ActualizarOrdenProduccionRequest": {
         "type": "object",
         "properties": {
@@ -3051,6 +3154,20 @@
             "nullable": true
           },
           "observaciones": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarPerfilRequest": {
+        "type": "object",
+        "properties": {
+          "nombres": {
+            "type": "string",
+            "nullable": true
+          },
+          "apellidos": {
             "type": "string",
             "nullable": true
           }
@@ -4074,6 +4191,14 @@
             "type": "integer",
             "format": "int32"
           },
+          "nombres": {
+            "type": "string",
+            "nullable": true
+          },
+          "apellidos": {
+            "type": "string",
+            "nullable": true
+          },
           "nombreCompleto": {
             "type": "string",
             "nullable": true
@@ -4085,6 +4210,14 @@
           "centroCostoId": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "fotoPerfilBase64": {
+            "type": "string",
+            "nullable": true
+          },
+          "fotoPerfilContentType": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -4179,6 +4312,11 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "fechaUltimaRecepcion": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -4209,6 +4347,11 @@
           "total": {
             "type": "number",
             "format": "double"
+          },
+          "fechaRecepcion": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -4347,6 +4490,16 @@
           "valorTotalPerdido": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PerfilActualizadoResponse": {
+        "type": "object",
+        "properties": {
+          "nombreCompleto": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

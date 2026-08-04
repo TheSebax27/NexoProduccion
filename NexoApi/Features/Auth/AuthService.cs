@@ -16,6 +16,11 @@ public interface IAuthService
     Task ActualizarUsuarioAsync(int usuarioId, ActualizarUsuarioRequest request);
     Task ResetearPasswordAsync(int usuarioId, ResetearPasswordRequest request);
     Task<IEnumerable<RolItem>> ListarRolesAsync();
+
+    // Mi perfil (el usuario sobre si mismo, sin importar el rol)
+    Task<string> ActualizarPerfilAsync(int usuarioId, ActualizarPerfilRequest request);
+    Task ActualizarFotoPerfilAsync(int usuarioId, ActualizarFotoPerfilRequest request);
+    Task EliminarFotoPerfilAsync(int usuarioId);
 }
 
 public class AuthService : IAuthService
@@ -33,7 +38,8 @@ public class AuthService : IAuthService
 
     private record UsuarioAuthData(
         int UsuarioID, string Nombres, string Apellidos, string Username,
-        byte[] PasswordHash, byte[] Salt, string Rol, int? CentroCostoID, bool Estado);
+        byte[] PasswordHash, byte[] Salt, string Rol, int? CentroCostoID, bool Estado,
+        byte[]? FotoPerfil, string? FotoPerfilContentType);
 
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
@@ -44,7 +50,8 @@ public class AuthService : IAuthService
         // usuario) sin recordar que el Username puede ser distinto.
         const string sql = @"
             SELECT u.UsuarioID, u.Nombres, u.Apellidos, u.Username,
-                   u.PasswordHash, u.Salt, r.Nombre AS Rol, u.CentroCostoID, u.Estado
+                   u.PasswordHash, u.Salt, r.Nombre AS Rol, u.CentroCostoID, u.Estado,
+                   u.FotoPerfil, u.FotoPerfilContentType
             FROM Seguridad.Usuarios u
             JOIN Seguridad.Roles r ON r.RolID = u.RolID
             WHERE u.Username = @Username OR u.Email = @Username";
@@ -80,7 +87,10 @@ public class AuthService : IAuthService
 
         return new LoginResponse(
             accessToken, refreshToken, expiraEn, usuario.UsuarioID,
-            $"{usuario.Nombres} {usuario.Apellidos}", usuario.Rol, usuario.CentroCostoID);
+            usuario.Nombres, usuario.Apellidos, $"{usuario.Nombres} {usuario.Apellidos}",
+            usuario.Rol, usuario.CentroCostoID,
+            usuario.FotoPerfil is null ? null : Convert.ToBase64String(usuario.FotoPerfil),
+            usuario.FotoPerfilContentType);
     }
     public async Task<int> RegistrarPrimerAdminAsync(RegistrarUsuarioRequest r)
     {
@@ -212,5 +222,53 @@ public class AuthService : IAuthService
         using var connection = _db.CreateConnection();
         return await connection.QueryAsync<RolItem>(
             "SELECT RolID, Nombre FROM Seguridad.Roles WHERE Estado = 1 ORDER BY Nombre");
+    }
+
+    // ================= Mi perfil (el usuario sobre si mismo) =================
+    // A proposito NO permite tocar RolID/CentroCostoID/Estado -- eso sigue
+    // siendo exclusivo de "Gestion de usuarios" (Administrador). Aqui solo
+    // nombre y foto, sobre el propio UsuarioID que viene del JWT.
+
+    public async Task<string> ActualizarPerfilAsync(int usuarioId, ActualizarPerfilRequest r)
+    {
+        using var connection = _db.CreateConnection();
+
+        var filas = await connection.ExecuteAsync(
+            "UPDATE Seguridad.Usuarios SET Nombres = @Nombres, Apellidos = @Apellidos WHERE UsuarioID = @UsuarioId",
+            new { UsuarioId = usuarioId, r.Nombres, r.Apellidos });
+
+        if (filas == 0)
+            throw new KeyNotFoundException($"No existe el usuario {usuarioId}.");
+
+        return $"{r.Nombres} {r.Apellidos}";
+    }
+
+    // El UPDATE sobrescribe FotoPerfil directamente -- no hace falta borrar
+    // "el archivo anterior" por separado, no es un archivo en disco, es una
+    // sola columna varbinary que sencillamente se reemplaza.
+    public async Task ActualizarFotoPerfilAsync(int usuarioId, ActualizarFotoPerfilRequest r)
+    {
+        using var connection = _db.CreateConnection();
+
+        var datos = Convert.FromBase64String(r.Base64);
+
+        var filas = await connection.ExecuteAsync(
+            "UPDATE Seguridad.Usuarios SET FotoPerfil = @Datos, FotoPerfilContentType = @ContentType WHERE UsuarioID = @UsuarioId",
+            new { UsuarioId = usuarioId, Datos = datos, r.ContentType });
+
+        if (filas == 0)
+            throw new KeyNotFoundException($"No existe el usuario {usuarioId}.");
+    }
+
+    public async Task EliminarFotoPerfilAsync(int usuarioId)
+    {
+        using var connection = _db.CreateConnection();
+
+        var filas = await connection.ExecuteAsync(
+            "UPDATE Seguridad.Usuarios SET FotoPerfil = NULL, FotoPerfilContentType = NULL WHERE UsuarioID = @UsuarioId",
+            new { UsuarioId = usuarioId });
+
+        if (filas == 0)
+            throw new KeyNotFoundException($"No existe el usuario {usuarioId}.");
     }
 }

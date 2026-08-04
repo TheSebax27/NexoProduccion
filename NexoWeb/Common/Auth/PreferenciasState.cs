@@ -23,8 +23,14 @@ public class PreferenciasState
 
     public bool TemaOscuro => ObtenerValor("TemaOscuro") == "true";
 
-    public string ObtenerVista(string pagina, string porDefecto = "lista") =>
-        ObtenerValor($"Vista:{pagina}", porDefecto);
+    // Vista Lista/Tarjetas: es un unico control global (Settings), no por
+    // pantalla -- antes era por pagina (clave "Vista:{pagina}"), se
+    // simplifico a pedido del usuario.
+    public string VistaListado => ObtenerValor("VistaListado", "lista");
+
+    // Icono de ayuda por pagina -- activado por defecto (util para usuarios
+    // nuevos desde el primer login, sin tener que descubrir el toggle antes).
+    public bool MostrarAyuda => ObtenerValor("MostrarAyuda", "true") == "true";
 
     public async Task CargarAsync()
     {
@@ -56,9 +62,14 @@ public class PreferenciasState
         await EstablecerAsync("TemaOscuro", valor ? "true" : "false");
     }
 
-    public async Task EstablecerVistaAsync(string pagina, string vista)
+    public async Task EstablecerVistaListadoAsync(string vista)
     {
-        await EstablecerAsync($"Vista:{pagina}", vista);
+        await EstablecerAsync("VistaListado", vista);
+    }
+
+    public async Task EstablecerMostrarAyudaAsync(bool valor)
+    {
+        await EstablecerAsync("MostrarAyuda", valor ? "true" : "false");
     }
 
     private async Task EstablecerAsync(string clave, string valor)

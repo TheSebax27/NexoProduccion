@@ -1,0 +1,54 @@
+@* Components/Pages/Settings/Ayuda.razor *@
+@page "/settings/ayuda"
+@attribute [Authorize]
+
+<PageTitle>Ayuda - NEXO</PageTitle>
+
+<div class="nexo-page-hero">
+    <div class="nexo-page-hero__left">
+        <div class="nexo-page-hero__accent"></div>
+        <div>
+            <p class="nexo-page-hero__module">Cuenta</p>
+            <h1 class="nexo-page-hero__title">Ayuda y Flujo de Trabajo</h1>
+        </div>
+    </div>
+</div>
+
+<MudPaper Class="pa-5 mb-4" Style="max-width: 800px;">
+    <div class="nexo-chart-header mb-4">
+        <MudIcon Icon="@Icons.Material.Outlined.AccountTree" Size="Size.Small" Class="nexo-chart-header__icon" />
+        <div>
+            <div class="nexo-chart-header__title">Flujo de trabajo</div>
+            <div class="nexo-chart-header__sub">Aquí se agregará el diagrama del proceso</div>
+        </div>
+    </div>
+
+    @* Placeholder a proposito -- el usuario va a insertar aqui su propio
+       diagrama/imagen del proceso mas adelante. *@
+    <div class="nexo-empty-state">
+        <MudIcon Icon="@Icons.Material.Outlined.Image" Class="nexo-empty-state__icon" />
+        <p class="nexo-empty-state__text">Próximamente: diagrama del flujo de trabajo.</p>
+    </div>
+</MudPaper>
+
+<MudPaper Class="pa-5" Style="max-width: 800px;">
+    <div class="nexo-chart-header mb-4">
+        <MudIcon Icon="@Icons.Material.Outlined.SupportAgent" Size="Size.Small" Class="nexo-chart-header__icon" />
+        <div>
+            <div class="nexo-chart-header__title">¿Necesitas ayuda?</div>
+            <div class="nexo-chart-header__sub">Escríbenos y te colaboramos</div>
+        </div>
+    </div>
+
+    <div class="d-flex" style="gap: 0.75rem; flex-wrap: wrap;">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Email"
+                   Href="mailto:visionscomercial@gmail.com">
+            Escribir correo
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Style="background:#25D366; color:#fff;" StartIcon="@Icons.Material.Filled.Chat"
+                   Href="https://api.whatsapp.com/send/?phone=573015324933&text=Hola%2C+quiero+informaci%C3%B3n+sobre+NexoERP&type=phone_number&app_absent=0"
+                   Target="_blank">
+            WhatsApp
+        </MudButton>
+    </div>
+</MudPaper>

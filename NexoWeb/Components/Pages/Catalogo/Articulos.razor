@@ -9,10 +9,8 @@
 
 <PageTitle>Articulos - NEXO</PageTitle>
 
-<div class="d-flex align-center justify-space-between mb-4">
-    <MudText Typo="Typo.h5" Class="mb-0">Articulos</MudText>
-    <VistaToggle Pagina="articulos" />
-</div>
+<MudText Typo="Typo.h5" Class="mb-4">Articulos</MudText>
+<InfoAyuda Texto="El catálogo maestro de artículos: materias primas, insumos y productos terminados. Cada artículo tiene un SKU único, una unidad de medida y su conversión de caja a unidad. Se usa en recetas, órdenes de compra y de producción." />
 
 <MudGrid Class="mb-4">
     <MudItem xs="12" sm="6" md="4">
@@ -49,7 +47,7 @@ else if (_articulos.Count == 0)
 {
     <MudText>No hay articulos que coincidan con el filtro.</MudText>
 }
-else if (Preferencias.ObtenerVista("articulos") == "tarjetas")
+else if (Preferencias.VistaListado == "tarjetas")
 {
     <div class="nexo-card-grid">
         @foreach (var articulo in _articulos)

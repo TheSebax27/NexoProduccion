@@ -76,12 +76,12 @@ public class OrdenesCompraService : IOrdenesCompraService
 
         const string sql = @"
             SELECT oc.OrdenCompraID, oc.Codigo, p.RazonSocial AS Proveedor, oc.EstadoOC,
-                   oc.FechaEmision, SUM(d.CantidadSolicitada * d.CostoUnitario) AS Total
+                   oc.FechaEmision, SUM(d.CantidadSolicitada * d.CostoUnitario) AS Total, oc.FechaRecepcion
             FROM Compras.OrdenesCompra oc
             JOIN Catalogo.Proveedores p ON p.ProveedorID = oc.ProveedorID
             JOIN Compras.OrdenesCompraDetalle d ON d.OrdenCompraID = oc.OrdenCompraID
             WHERE (@Estado IS NULL OR oc.EstadoOC = @Estado)
-            GROUP BY oc.OrdenCompraID, oc.Codigo, p.RazonSocial, oc.EstadoOC, oc.FechaEmision
+            GROUP BY oc.OrdenCompraID, oc.Codigo, p.RazonSocial, oc.EstadoOC, oc.FechaEmision, oc.FechaRecepcion
             ORDER BY oc.FechaEmision DESC";
 
         return await connection.QueryAsync<OrdenCompraResumen>(sql, new { Estado = estado });
@@ -94,7 +94,7 @@ public class OrdenesCompraService : IOrdenesCompraService
         const string sql = @"
             SELECT d.OrdenCompraDetalleID, d.ArticuloID, a.Nombre AS Articulo,
                    d.CantidadSolicitada, d.CantidadRecibida, d.CostoUnitario,
-                   u.Abreviatura AS Unidad, a.UnidadesPorEmbalaje
+                   u.Abreviatura AS Unidad, a.UnidadesPorEmbalaje, d.FechaUltimaRecepcion
             FROM Compras.OrdenesCompraDetalle d
             JOIN Catalogo.Articulos a ON a.ArticuloID = d.ArticuloID
             LEFT JOIN Catalogo.UnidadesMedida u ON u.UnidadID = a.UnidadID

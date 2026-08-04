@@ -3,11 +3,13 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Ordenes de Compra - NEXO</PageTitle>
 
 <MudText Typo="Typo.h5" Class="mb-4">Ordenes de Compra</MudText>
+<InfoAyuda Texto="Crea una Orden de Compra a un proveedor. Puedes recibirla en varias entregas parciales desde 'Ver / Recibir' — cada línea guarda cuánto se ha recibido y en qué fecha, hasta completarse." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => AbrirCreacionAsync(null))"
            StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
@@ -22,7 +24,34 @@
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
 }
-else if (_errorCarga is null)
+else if (_ordenes.Count == 0)
+{
+    <MudText>No hay ordenes de compra registradas.</MudText>
+}
+else if (Preferencias.VistaListado == "tarjetas")
+{
+    <div class="nexo-card-grid">
+        @foreach (var orden in _ordenes)
+        {
+            <div class="nexo-item-card">
+                <div class="d-flex align-center justify-space-between">
+                    <div class="nexo-item-card__title">@orden.Codigo</div>
+                    <MudChip T="string" Color="@(orden.EstadoOC == "RECIBIDA" ? Color.Success : Color.Warning)" Size="Size.Small">
+                        @orden.EstadoOC
+                    </MudChip>
+                </div>
+                <div class="nexo-item-card__sub">@orden.Proveedor</div>
+                <div class="nexo-item-card__row"><span>Emisión</span><strong>@orden.FechaEmision.ToString("dd/MM/yyyy")</strong></div>
+                <div class="nexo-item-card__row"><span>Recibido</span><strong>@(orden.FechaRecepcion?.ToString("dd/MM/yyyy") ?? "-")</strong></div>
+                <div class="nexo-item-card__row"><span>Total</span><strong>@orden.Total.ToString("C0")</strong></div>
+                <div class="nexo-item-card__actions">
+                    <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(orden.OrdenCompraID))">Ver / Recibir</MudButton>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
 {
     <MudTable Items="_ordenes" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
@@ -30,6 +59,7 @@ else if (_errorCarga is null)
             <MudTh>Proveedor</MudTh>
             <MudTh>Estado</MudTh>
             <MudTh>Emision</MudTh>
+            <MudTh>Recibido</MudTh>
             <MudTh>Total</MudTh>
             <MudTh>Detalle</MudTh>
         </HeaderContent>
@@ -42,6 +72,7 @@ else if (_errorCarga is null)
                 </MudChip>
             </MudTd>
             <MudTd DataLabel="Emision">@context.FechaEmision.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="Recibido">@(context.FechaRecepcion?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
             <MudTd DataLabel="Total">@context.Total.ToString("C0")</MudTd>
             <MudTd DataLabel="Detalle">
                 <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(context.OrdenCompraID))">
@@ -61,6 +92,7 @@ else if (_errorCarga is null)
                 <MudTh>Articulo</MudTh>
                 <MudTh>Solicitado</MudTh>
                 <MudTh>Recibido</MudTh>
+                <MudTh>Fecha Recibido</MudTh>
                 <MudTh>Costo Unit.</MudTh>
                 <MudTh>Accion</MudTh>
             </HeaderContent>
@@ -68,6 +100,7 @@ else if (_errorCarga is null)
                 <MudTd DataLabel="Articulo">@context.Articulo</MudTd>
                 <MudTd DataLabel="Solicitado">@context.CantidadSolicitada.ToString("N2")</MudTd>
                 <MudTd DataLabel="Recibido">@context.CantidadRecibida.ToString("N2")</MudTd>
+                <MudTd DataLabel="Fecha Recibido">@(context.FechaUltimaRecepcion?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
                 <MudTd DataLabel="Costo Unit.">@context.CostoUnitario.ToString("C2")</MudTd>
                 <MudTd DataLabel="Accion">
                     @if (context.CantidadRecibida < context.CantidadSolicitada)

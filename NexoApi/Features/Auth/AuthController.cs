@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexoApi.Features.Auth.Dtos;
 
@@ -14,6 +15,9 @@ public class AuthController : ControllerBase
     {
         _authService = authService;
     }
+
+    private int UsuarioActualId =>
+        int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     [HttpPost("login")]
     [AllowAnonymous]
@@ -97,4 +101,59 @@ public class AuthController : ControllerBase
     [Authorize(Roles = "Administrador")]
     public async Task<ActionResult<IEnumerable<RolItem>>> ListarRoles()
         => Ok(await _authService.ListarRolesAsync());
+
+    // ================= Mi perfil (cualquier usuario autenticado, sobre si mismo) =================
+    // Sin restriccion de rol a proposito: solo tocan Nombres/Apellidos/Foto del
+    // propio UsuarioID (del JWT), nunca RolID/CentroCostoID/Estado -- eso sigue
+    // siendo exclusivo de Administrador via /usuarios/{id}.
+
+    [HttpPut("perfil")]
+    [Authorize]
+    public async Task<ActionResult<PerfilActualizadoResponse>> ActualizarPerfil(ActualizarPerfilRequest request)
+    {
+        try
+        {
+            var nombreCompleto = await _authService.ActualizarPerfilAsync(UsuarioActualId, request);
+            return Ok(new PerfilActualizadoResponse(nombreCompleto));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    [HttpPut("perfil/foto")]
+    [Authorize]
+    public async Task<ActionResult> ActualizarFotoPerfil(ActualizarFotoPerfilRequest request)
+    {
+        // Limite generoso para un avatar pequeno (~1.3MB en base64 ~ 1MB real);
+        // suficiente para una foto de perfil sin abrir la puerta a archivos grandes.
+        if (Convert.FromBase64String(request.Base64).Length > 1_000_000)
+            return BadRequest(new { error = "La imagen es muy grande (máximo 1 MB)." });
+
+        try
+        {
+            await _authService.ActualizarFotoPerfilAsync(UsuarioActualId, request);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    [HttpDelete("perfil/foto")]
+    [Authorize]
+    public async Task<ActionResult> EliminarFotoPerfil()
+    {
+        try
+        {
+            await _authService.EliminarFotoPerfilAsync(UsuarioActualId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
 }

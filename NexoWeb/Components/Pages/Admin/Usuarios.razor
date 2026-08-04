@@ -3,11 +3,13 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Usuarios - NEXO</PageTitle>
 
 <MudText Typo="Typo.h5" Class="mb-4">Usuarios</MudText>
+<InfoAyuda Texto="Crea usuarios del sistema y asígnales un rol (Administrador, SupervisorPlanta, Operario o Bodeguero) y un Centro de Costo. El rol determina qué pantallas puede ver y qué acciones puede hacer." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
            StartIcon="@Icons.Material.Filled.PersonAdd" Class="mb-4">
@@ -22,7 +24,35 @@
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
 }
-else if (_errorCarga is null)
+else if (_usuarios.Count == 0)
+{
+    <MudText>No hay usuarios registrados.</MudText>
+}
+else if (Preferencias.VistaListado == "tarjetas")
+{
+    <div class="nexo-card-grid">
+        @foreach (var usuario in _usuarios)
+        {
+            <div class="nexo-item-card">
+                <div class="d-flex align-center justify-space-between">
+                    <div class="nexo-item-card__title">@usuario.Nombres @usuario.Apellidos</div>
+                    <MudChip T="string" Color="@(usuario.Estado ? Color.Success : Color.Error)" Size="Size.Small">
+                        @(usuario.Estado ? "Activo" : "Inactivo")
+                    </MudChip>
+                </div>
+                <div class="nexo-item-card__sub">@usuario.Username · @usuario.Email</div>
+                <div class="nexo-item-card__row"><span>Rol</span><strong>@usuario.Rol</strong></div>
+                <div class="nexo-item-card__row"><span>Centro de Costo</span><strong>@(usuario.CentroCosto ?? "-")</strong></div>
+                <div class="nexo-item-card__row"><span>Último Acceso</span><strong>@(usuario.UltimoAcceso?.ToString("dd/MM/yyyy HH:mm") ?? "Nunca")</strong></div>
+                <div class="nexo-item-card__actions">
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(usuario))">Editar</MudButton>
+                    <MudButton Size="Size.Small" Color="Color.Warning" OnClick="@(() => AbrirResetPasswordAsync(usuario))">Resetear clave</MudButton>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
 {
     <MudTable Items="_usuarios" Hover="true" Dense="true" Striped="true">
         <HeaderContent>

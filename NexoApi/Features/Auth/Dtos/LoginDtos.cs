@@ -7,9 +7,13 @@ public record LoginResponse(
     string RefreshToken,
     DateTime ExpiraEn,
     int UsuarioId,
+    string Nombres,
+    string Apellidos,
     string NombreCompleto,
     string Rol,
-    int? CentroCostoId
+    int? CentroCostoId,
+    string? FotoPerfilBase64,
+    string? FotoPerfilContentType
 );
 
 public record RegistrarUsuarioRequest(
@@ -50,3 +54,8 @@ public record ActualizarUsuarioRequest(
 );
 
 public record ResetearPasswordRequest(string NuevaPassword);
+
+// ---------- Mi perfil (cualquier usuario autenticado, sobre si mismo) ----------
+public record ActualizarPerfilRequest(string Nombres, string Apellidos);
+public record ActualizarFotoPerfilRequest(string Base64, string ContentType);
+public record PerfilActualizadoResponse(string NombreCompleto);

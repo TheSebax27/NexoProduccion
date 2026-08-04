@@ -406,20 +406,75 @@
   margin-top: 0.1rem;
 }
 
-/* ── Avatar + nombre ──────────────────────────────────────────── */
-[b-w5ifl9lb28] .nexo-topbar__user {
+/* Mini-panel de "Mi perfil" (PerfilMenu.razor) -- popover blanco igual que el de notificaciones */
+[b-w5ifl9lb28] .nexo-perfil-panel {
+  width: 280px;
+  padding: 0.9rem 1rem 1rem;
+}
+[b-w5ifl9lb28] .nexo-perfil-panel__avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+[b-w5ifl9lb28] .nexo-perfil-panel__avatar {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(124,92,255,0.30);
+}
+[b-w5ifl9lb28] .nexo-perfil-panel__avatar--iniciales {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #7C5CFF 0%, #5A3BFF 100%);
+  color: #FFFFFF;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+[b-w5ifl9lb28] .nexo-perfil-panel__avatar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+[b-w5ifl9lb28] .nexo-perfil-panel__btn-archivo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #7C5CFF;
+  border: 1.5px solid #7C5CFF;
+  border-radius: 8px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+[b-w5ifl9lb28] .nexo-perfil-panel__btn-archivo:hover {
+  background: #EDE9FF;
+}
+[b-w5ifl9lb28] .nexo-perfil-panel__hint {
+  font-size: 0.7rem;
+  color: #9B9BB4;
+  line-height: 1.35;
+  margin-top: 0.6rem;
+}
+
+/* ── Avatar + nombre (ahora dentro de un MudMenu, ver PerfilMenu.razor) ── */
+[b-w5ifl9lb28] .nexo-topbar__user { margin-left: 0.25rem; flex-shrink: 0 !important; }
+
+[b-w5ifl9lb28] .nexo-topbar__user-activator {
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
   gap: 0.65rem !important;
-  flex-shrink: 0 !important;
-  margin-left: 0.25rem;
   padding: 0.3rem 0.7rem 0.3rem 0.3rem;
   border-radius: 12px;
   cursor: pointer;
   transition: background-color 0.18s ease;
 }
-[b-w5ifl9lb28] .nexo-topbar__user:hover { background: rgba(255,255,255,0.08); }
+[b-w5ifl9lb28] .nexo-topbar__user-activator:hover { background: rgba(255,255,255,0.08); }
 
 [b-w5ifl9lb28] .nexo-topbar__avatar {
   width: 36px !important;
@@ -437,6 +492,9 @@
   letter-spacing: 0.03em;
   box-shadow: 0 2px 8px rgba(124,92,255,0.30);
   line-height: 1 !important;
+}
+[b-w5ifl9lb28] .nexo-topbar__avatar--img {
+  object-fit: cover !important;
 }
 
 [b-w5ifl9lb28] .nexo-topbar__user-info {

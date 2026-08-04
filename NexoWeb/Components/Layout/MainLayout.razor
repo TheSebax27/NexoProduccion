@@ -12,8 +12,15 @@
    renderizan fuera de MudLayout) en este div con la clase condicional, y
    el CSS de app.css solo agrega reglas para .mud-main-content/.mud-dialog/
    .mud-picker dentro de ella -- nunca para .nexo-topbar/.nexo-sidebar,
-   asi que aunque tecnicamente esten "adentro" no se ven afectados. *@
-<div class="@(Preferencias.TemaOscuro ? "nexo-tema-oscuro" : "")">
+   asi que aunque tecnicamente esten "adentro" no se ven afectados.
+   Usa id (no solo class) porque el CSS scoped de cada pagina (*.razor.css)
+   compila a la MISMA especificidad que ".nexo-tema-oscuro .algo" (clase+
+   atributo vs 2 clases) y carga DESPUES de app.css -- en un empate gana el
+   que carga ultimo, o sea el scoped, y el tema oscuro pierde. Un selector
+   con id (#nexo-app-root.nexo-tema-oscuro ...) tiene mas especificidad que
+   cualquier combinacion de clases/atributos y gana siempre, sin importar
+   el orden de carga. *@
+<div id="nexo-app-root" class="@(Preferencias.TemaOscuro ? "nexo-tema-oscuro" : "")">
     <MudThemeProvider Theme="@NexoTheme.Theme" />
     <MudPopoverProvider />
     <MudDialogProvider />
@@ -130,16 +137,9 @@
                 </ChildContent>
             </MudMenu>
 
-            @* Avatar + nombre + rol *@
-            <div class="nexo-topbar__user">
-                <div class="nexo-topbar__avatar" aria-hidden="true">@_iniciales</div>
-                <div class="nexo-topbar__user-info">
-                    <span class="nexo-topbar__user-name">@AuthState.NombreCompleto</span>
-                    <span class="nexo-topbar__user-role">@AuthState.Rol</span>
-                </div>
-                <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowDown"
-                         Class="nexo-topbar__chevron" />
-            </div>
+            @* Avatar + nombre + rol -- ahora es un menu con mini-ajustes (cambiar
+               nombre/foto), ver Components/Shared/PerfilMenu.razor *@
+            <PerfilMenu />
         }
 
     </MudAppBar>
@@ -216,7 +216,6 @@
     private bool _menuAbierto = true;
     private ErrorBoundary? _errorBoundary;
     private string _tituloPagina = "Dashboard";
-    private string _iniciales = "U";
 
     private ResumenNotificaciones _notificaciones = new(0, new());
     private System.Timers.Timer? _timerNotificaciones;
@@ -233,7 +232,6 @@
         Navegacion.LocationChanged += OnLocationChanged;
         Preferencias.OnCambio += OnPreferenciasCambiaronAsync;
         _tituloPagina = ObtenerTituloPagina();
-        _iniciales    = ObtenerIniciales();
 
         if (AuthState.EstaLogueado)
         {
@@ -320,14 +318,6 @@
         catch { return "NEXO ERP"; }
     }
 
-    private string ObtenerIniciales()
-    {
-        if (string.IsNullOrWhiteSpace(AuthState.NombreCompleto)) return "U";
-        var partes = AuthState.NombreCompleto.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return partes.Length >= 2
-            ? $"{partes[0][0]}{partes[1][0]}".ToUpper()
-            : partes[0][0].ToString().ToUpper();
-    }
 
     private async Task OnBusquedaInputAsync(ChangeEventArgs e)
     {

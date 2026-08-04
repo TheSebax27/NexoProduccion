@@ -408,9 +408,7 @@ html, body {
    ────────────────────────────────────────────────────────────── */
 .mud-picker {
   border-radius: var(--n-radius-lg) !important;
-  overflow: hidden !important;
   box-shadow: var(--n-shadow-lg) !important;
-  min-width: 340px !important;
 }
 
 /* Toolbar superior (año + fecha/rango grande) — mud-button-year y
@@ -491,7 +489,7 @@ html, body {
 
 /* Cuadrícula de días */
 .mud-picker-calendar-container {
-  padding: 0.5rem 1rem 1rem !important;
+  padding: 0.5rem 0.5rem 1rem !important;
 }
 .mud-picker .mud-day {
   border-radius: 50% !important;
@@ -624,127 +622,159 @@ a, .btn-link { color: var(--n-purple); }
    usuario). NUNCA toca .nexo-topbar ni .nexo-sidebar -- esos ya son
    oscuros de por si y quedan igual sin importar el tema.
    Se activa envolviendo MudLayout + MudDialogProvider/MudPopoverProvider
-   en <div class="nexo-tema-oscuro"> desde MainLayout.razor.
-   Todo usa !important porque el CSS scoped de cada pagina (*.razor.css)
-   se compila a la misma especificidad (clase + atributo) y carga
-   DESPUES de app.css en NexoWeb.styles.css -- sin !important, el CSS
-   scoped ganaria y el tema oscuro no se aplicaria en esas paginas.
+   en <div id="nexo-app-root" class="nexo-tema-oscuro"> desde MainLayout.razor.
+
+   Fondo de pagina vs. tarjetas: deben ser dos tonos CLARAMENTE distintos
+   (el fondo mas oscuro que las tarjetas) para que las tarjetas "floten"
+   con profundidad -- si fueran el mismo color todo se ve plano.
+
+   Todos los selectores descendientes usan el prefijo de ID
+   "#nexo-app-root.nexo-tema-oscuro" (no solo la clase) a proposito: el
+   CSS scoped de cada pagina (*.razor.css) se compila con un atributo
+   [b-xxxx] agregado al ULTIMO selector, lo que le da la MISMA
+   especificidad que una regla de N clases en app.css, y ese CSS scoped
+   carga DESPUES de app.css (via NexoWeb.styles.css) -- en un empate de
+   especificidad gana el que carga al final. Un selector con ID le gana
+   a cualquier combinacion de clases/atributos sin importar el orden de
+   carga, así que el tema oscuro no se puede "perder" contra el CSS
+   scoped de una pagina nueva.
    ================================================================ */
 .nexo-tema-oscuro {
-  --n-bg:      #15151F !important;
-  --n-card:    #1E1E2E !important;
+  --n-bg:      #0D0D14 !important;
+  --n-card:    #1C1C2C !important;
   --n-border:  rgba(255,255,255,0.09) !important;
-  --n-border-2:rgba(255,255,255,0.16) !important;
+  --n-border-2:rgba(255,255,255,0.18) !important;
   --n-text-1:  #F4F5F9 !important;
   --n-text-2:  #A9A9C0 !important;
   --n-text-3:  #7C7C96 !important;
-  --n-purple-xl: rgba(124,92,255,0.16) !important;
+  --n-purple-xl: rgba(124,92,255,0.18) !important;
 
   /* Variables propias de MudBlazor -- alcanzan tambien a los MudChart
      (eje X/Y usa fill: var(--mud-palette-text-primary)) y a los inputs. */
   --mud-palette-text-primary: #F4F5F9 !important;
   --mud-palette-text-secondary: #A9A9C0 !important;
-  --mud-palette-background: #15151F !important;
-  --mud-palette-background-grey: #1E1E2E !important;
-  --mud-palette-surface: #1E1E2E !important;
+  --mud-palette-background: #0D0D14 !important;
+  --mud-palette-background-grey: #1C1C2C !important;
+  --mud-palette-surface: #1C1C2C !important;
   --mud-palette-divider: rgba(255,255,255,0.09) !important;
   --mud-palette-lines-default: rgba(255,255,255,0.09) !important;
-  --mud-palette-lines-inputs: rgba(255,255,255,0.16) !important;
+  --mud-palette-lines-inputs: rgba(255,255,255,0.18) !important;
 }
 
-.nexo-tema-oscuro .mud-main-content.nexo-main-content {
+/* Fondo general -- incluye .mud-layout/.mud-drawer-container por si algun
+   navegador deja ver un borde detras de .mud-main-content al hacer scroll
+   elastico; el selector con ID le gana al hex fijo de MainLayout.razor.css. */
+#nexo-app-root.nexo-tema-oscuro,
+#nexo-app-root.nexo-tema-oscuro .mud-layout,
+#nexo-app-root.nexo-tema-oscuro .mud-drawer-container,
+#nexo-app-root.nexo-tema-oscuro .mud-main-content.nexo-main-content {
   background: var(--n-bg) !important;
 }
 
 /* Tablas -- las unicas reglas del sistema de diseño que usaban hex fijo
    en vez de las variables (F8F8FC, F2EEFF, FAFAFD) */
-.nexo-tema-oscuro .mud-table-container,
-.nexo-tema-oscuro .mud-table-head .mud-table-row,
-.nexo-tema-oscuro .mud-table-head .mud-table-cell,
-.nexo-tema-oscuro .mud-table-pagination {
+#nexo-app-root.nexo-tema-oscuro .mud-table-container,
+#nexo-app-root.nexo-tema-oscuro .mud-table-head .mud-table-row,
+#nexo-app-root.nexo-tema-oscuro .mud-table-head .mud-table-cell,
+#nexo-app-root.nexo-tema-oscuro .mud-table-pagination {
   background: var(--n-card) !important;
 }
-.nexo-tema-oscuro .mud-table-body .mud-table-row:hover {
-  background-color: rgba(124,92,255,0.14) !important;
+#nexo-app-root.nexo-tema-oscuro .mud-table-body .mud-table-row:hover {
+  background-color: rgba(124,92,255,0.16) !important;
 }
-.nexo-tema-oscuro .mud-table-striped .mud-table-body .mud-table-row:nth-child(odd) {
-  background-color: rgba(255,255,255,0.02) !important;
+#nexo-app-root.nexo-tema-oscuro .mud-table-striped .mud-table-body .mud-table-row:nth-child(odd) {
+  background-color: rgba(255,255,255,0.025) !important;
 }
-.nexo-tema-oscuro .mud-table-toolbar {
+#nexo-app-root.nexo-tema-oscuro .mud-table-toolbar {
   background: var(--n-card) !important;
 }
 
 /* Dialogs y pickers (portalados fuera de MudMainContent, pero dentro
-   del wrapper .nexo-tema-oscuro igual) */
-.nexo-tema-oscuro .mud-dialog,
-.nexo-tema-oscuro .mud-picker,
-.nexo-tema-oscuro .mud-popover-paper,
-.nexo-tema-oscuro .mud-list {
+   del wrapper #nexo-app-root.nexo-tema-oscuro igual) */
+#nexo-app-root.nexo-tema-oscuro .mud-dialog,
+#nexo-app-root.nexo-tema-oscuro .mud-picker,
+#nexo-app-root.nexo-tema-oscuro .mud-popover-paper,
+#nexo-app-root.nexo-tema-oscuro .mud-list {
   background: var(--n-card) !important;
   color: var(--n-text-1) !important;
 }
-.nexo-tema-oscuro .mud-list-item-text,
-.nexo-tema-oscuro .mud-list-item-icon {
+#nexo-app-root.nexo-tema-oscuro .mud-list-item-text,
+#nexo-app-root.nexo-tema-oscuro .mud-list-item-icon {
   color: var(--n-text-1) !important;
 }
-.nexo-tema-oscuro .mud-list-item:hover {
+#nexo-app-root.nexo-tema-oscuro .mud-list-item:hover {
   background: rgba(255,255,255,0.06) !important;
 }
 
 /* Excepcion: el panel de notificaciones cuelga del Top Bar (chrome, no
    pagina) -- se mantiene blanco siempre, sin importar el tema. */
-.nexo-tema-oscuro .nexo-topbar__notif-panel {
+#nexo-app-root.nexo-tema-oscuro .nexo-topbar__notif-panel {
   background: #FFFFFF !important;
   color: #1A1C2E !important;
 }
-.nexo-tema-oscuro .nexo-topbar__notif-panel .mud-list-item-text,
-.nexo-tema-oscuro .nexo-topbar__notif-panel-title {
+#nexo-app-root.nexo-tema-oscuro .nexo-topbar__notif-panel .mud-list-item-text,
+#nexo-app-root.nexo-tema-oscuro .nexo-topbar__notif-panel-title {
   color: inherit !important;
 }
 
 /* KPIs, encabezados de grafico y estados vacios (Dashboard.razor.css y
    similares) -- viven como CSS scoped por pagina con hex fijo. */
-.nexo-tema-oscuro .nexo-kpi {
+#nexo-app-root.nexo-tema-oscuro .nexo-kpi {
   background: var(--n-card) !important;
   border-color: var(--n-border) !important;
 }
-.nexo-tema-oscuro .nexo-kpi__value,
-.nexo-tema-oscuro .nexo-page-hero__title {
+#nexo-app-root.nexo-tema-oscuro .nexo-kpi__value,
+#nexo-app-root.nexo-tema-oscuro .nexo-page-hero__title {
   color: var(--n-text-1) !important;
 }
-.nexo-tema-oscuro .nexo-chart-header {
+#nexo-app-root.nexo-tema-oscuro .nexo-chart-header {
   border-bottom-color: var(--n-border) !important;
 }
-.nexo-tema-oscuro .nexo-chart-header__title {
+#nexo-app-root.nexo-tema-oscuro .nexo-chart-header__title {
   color: var(--n-text-1) !important;
 }
-.nexo-tema-oscuro .nexo-empty-state__text {
+#nexo-app-root.nexo-tema-oscuro .nexo-empty-state__text {
   color: var(--n-text-3) !important;
 }
-.nexo-tema-oscuro .nexo-variacion-chart__zero {
-  stroke: rgba(255,255,255,0.16) !important;
+#nexo-app-root.nexo-tema-oscuro .nexo-variacion-chart__zero {
+  stroke: rgba(255,255,255,0.18) !important;
 }
-.nexo-tema-oscuro .nexo-variacion-chart__label {
+#nexo-app-root.nexo-tema-oscuro .nexo-variacion-chart__label {
   fill: var(--n-text-1) !important;
 }
-.nexo-tema-oscuro .nexo-variacion-chart__axis span {
+#nexo-app-root.nexo-tema-oscuro .nexo-variacion-chart__axis span {
   color: var(--n-text-3) !important;
+}
+
+/* Toggle Lista/Tarjetas y tarjetas de items -- mismo fix de contraste */
+#nexo-app-root.nexo-tema-oscuro .nexo-vista-toggle__btn {
+  background: var(--n-card) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .nexo-item-card {
+  background: var(--n-card) !important;
+  border-color: var(--n-border) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .nexo-item-card__title {
+  color: var(--n-text-1) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .nexo-item-card__row {
+  border-top-color: var(--n-border) !important;
 }
 
 /* Inputs / selects -- fondo transparente sobre --n-card ya cubre la
    mayoria via variables, esto ajusta el borde por defecto (no enfocado) */
-.nexo-tema-oscuro .mud-input-outlined .mud-input-outlined-border {
+#nexo-app-root.nexo-tema-oscuro .mud-input-outlined .mud-input-outlined-border {
   border-color: var(--n-border-2) !important;
 }
-.nexo-tema-oscuro .mud-input-slot,
-.nexo-tema-oscuro .mud-select-input,
-.nexo-tema-oscuro .mud-input-input {
+#nexo-app-root.nexo-tema-oscuro .mud-input-slot,
+#nexo-app-root.nexo-tema-oscuro .mud-select-input,
+#nexo-app-root.nexo-tema-oscuro .mud-input-input {
   color: var(--n-text-1) !important;
 }
 
 /* Overlay de dialogo -- un poco mas oscuro para que el card resalte */
-.nexo-tema-oscuro .mud-overlay {
-  background: rgba(0,0,0,0.65) !important;
+#nexo-app-root.nexo-tema-oscuro .mud-overlay {
+  background: rgba(0,0,0,0.7) !important;
 }
 
 /* ================================================================

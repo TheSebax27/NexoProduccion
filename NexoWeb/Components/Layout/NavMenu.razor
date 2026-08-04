@@ -1,21 +1,35 @@
-﻿<MudNavMenu>
-    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
-        Dashboard
-    </MudNavLink>
+<MudNavMenu>
+    <AuthorizeView Roles="Administrador,SupervisorPlanta,Bodeguero">
+        <Authorized>
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
+                Dashboard
+            </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
 
-    <MudNavGroup Title="Produccion" Icon="@Icons.Material.Filled.Factory" Expanded="true">
-        <AuthorizeView Roles="Administrador,SupervisorPlanta,Operario">
-            <Authorized>
-                <MudNavLink Href="/produccion/ordenes">Ordenes de Produccion</MudNavLink>
-            </Authorized>
-        </AuthorizeView>
-        <AuthorizeView Roles="Administrador,SupervisorPlanta">
-            <Authorized>
-                <MudNavLink Href="/produccion/recetas">Recetas (BOM)</MudNavLink>
-            </Authorized>
-        </AuthorizeView>
-    </MudNavGroup>
+    @* El grupo entero debe ocultarse si el rol no tiene acceso a NINGUNA
+       subpagina de adentro -- antes el MudNavGroup se mostraba siempre,
+       vacio, para roles sin acceso a ningun hijo (ej. Bodeguero veia
+       "Produccion" sin ninguna opcion debajo). *@
+    <AuthorizeView Roles="Administrador,SupervisorPlanta,Operario" Context="grupoProduccion">
+        <Authorized>
+            <MudNavGroup Title="Produccion" Icon="@Icons.Material.Filled.Factory" Expanded="true">
+                <AuthorizeView Roles="Administrador,SupervisorPlanta,Operario">
+                    <Authorized>
+                        <MudNavLink Href="/produccion/ordenes">Ordenes de Produccion</MudNavLink>
+                    </Authorized>
+                </AuthorizeView>
+                <AuthorizeView Roles="Administrador,SupervisorPlanta">
+                    <Authorized>
+                        <MudNavLink Href="/produccion/recetas">Recetas (BOM)</MudNavLink>
+                    </Authorized>
+                </AuthorizeView>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
 
+    @* Inventario siempre tiene al menos "Consulta de Stock" (todos los
+       roles autenticados), asi que el grupo no necesita AuthorizeView propio. *@
     <MudNavGroup Title="Inventario" Icon="@Icons.Material.Filled.Inventory2" Expanded="false">
         <MudNavLink Href="/inventario/stock">Consulta de Stock</MudNavLink>
         <AuthorizeView Roles="Administrador,SupervisorPlanta,Bodeguero">
@@ -32,26 +46,37 @@
         </AuthorizeView>
     </MudNavGroup>
 
-    <MudNavGroup Title="Compras" Icon="@Icons.Material.Filled.ShoppingCart" Expanded="false">
-        <AuthorizeView Roles="Administrador,Bodeguero">
-            <Authorized>
+    <AuthorizeView Roles="Administrador,Bodeguero">
+        <Authorized>
+            <MudNavGroup Title="Compras" Icon="@Icons.Material.Filled.ShoppingCart" Expanded="false">
                 <MudNavLink Href="/compras/ordenes">Ordenes de Compra</MudNavLink>
-            </Authorized>
-        </AuthorizeView>
-    </MudNavGroup>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
 
-    <MudNavGroup Title="Catalogo" Icon="@Icons.Material.Filled.Category" Expanded="false">
-        <MudNavLink Href="/catalogo/articulos">Articulos</MudNavLink>
-        <AuthorizeView Roles="Administrador">
-            <Authorized>
-                <MudNavLink Href="/catalogo/centros-costo">Centros de Costo</MudNavLink>
-                <MudNavLink Href="/catalogo/centros-trabajo">Centros de Trabajo</MudNavLink>
-                <MudNavLink Href="/catalogo/bodegas">Bodegas</MudNavLink>
-                <MudNavLink Href="/catalogo/clientes">Clientes</MudNavLink>
-                <MudNavLink Href="/catalogo/proveedores">Proveedores</MudNavLink>
-            </Authorized>
-        </AuthorizeView>
-    </MudNavGroup>
+    <AuthorizeView Roles="Administrador,SupervisorPlanta" Context="grupoCatalogo">
+        <Authorized>
+            <MudNavGroup Title="Catalogo" Icon="@Icons.Material.Filled.Category" Expanded="false">
+                @* Articulos.razor exige Administrador,SupervisorPlanta -- antes este
+                   link no tenia AuthorizeView y aparecia para cualquiera (ej.
+                   Bodeguero), pero al entrar la pagina lo rechazaba (pantalla en blanco). *@
+                <AuthorizeView Roles="Administrador,SupervisorPlanta">
+                    <Authorized>
+                        <MudNavLink Href="/catalogo/articulos">Articulos</MudNavLink>
+                    </Authorized>
+                </AuthorizeView>
+                <AuthorizeView Roles="Administrador">
+                    <Authorized>
+                        <MudNavLink Href="/catalogo/centros-costo">Centros de Costo</MudNavLink>
+                        <MudNavLink Href="/catalogo/centros-trabajo">Centros de Trabajo</MudNavLink>
+                        <MudNavLink Href="/catalogo/bodegas">Bodegas</MudNavLink>
+                        <MudNavLink Href="/catalogo/clientes">Clientes</MudNavLink>
+                        <MudNavLink Href="/catalogo/proveedores">Proveedores</MudNavLink>
+                    </Authorized>
+                </AuthorizeView>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
 
     <AuthorizeView Roles="Administrador">
         <Authorized>

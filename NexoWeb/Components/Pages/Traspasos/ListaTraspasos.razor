@@ -3,11 +3,13 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Traspasos - NEXO</PageTitle>
 
 <MudText Typo="Typo.h5" Class="mb-4">Traspasos entre Bodegas</MudText>
+<InfoAyuda Texto="Envía stock de una bodega a otra. El stock se descuenta de la bodega origen al enviar, y se suma en la bodega destino recién cuando se confirma la recepción." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
            StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
@@ -22,7 +24,37 @@
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
 }
-else if (_errorCarga is null)
+else if (_traspasos.Count == 0)
+{
+    <MudText>No hay traspasos registrados.</MudText>
+}
+else if (Preferencias.VistaListado == "tarjetas")
+{
+    <div class="nexo-card-grid">
+        @foreach (var traspaso in _traspasos)
+        {
+            <div class="nexo-item-card">
+                <div class="d-flex align-center justify-space-between">
+                    <div class="nexo-item-card__title">@traspaso.Codigo</div>
+                    <MudChip T="string" Color="@ColorSegunEstado(traspaso.EstadoTraspaso)" Size="Size.Small">
+                        @traspaso.EstadoTraspaso
+                    </MudChip>
+                </div>
+                <div class="nexo-item-card__sub">@traspaso.BodegaOrigen → @traspaso.BodegaDestino</div>
+                <div class="nexo-item-card__row"><span>Envío</span><strong>@(traspaso.FechaEnvio?.ToString("dd/MM/yyyy HH:mm") ?? "-")</strong></div>
+                <div class="nexo-item-card__row"><span>Recepción</span><strong>@(traspaso.FechaRecepcion?.ToString("dd/MM/yyyy HH:mm") ?? "-")</strong></div>
+                <div class="nexo-item-card__actions">
+                    <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(traspaso.TraspasoID))">Ver Detalle</MudButton>
+                    @if (traspaso.EstadoTraspaso == "EN_TRANSITO")
+                    {
+                        <MudButton Size="Size.Small" Color="Color.Primary" OnClick="@(() => RecibirAsync(traspaso.TraspasoID))">Recibir</MudButton>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+else
 {
     <MudTable Items="_traspasos" Hover="true" Dense="true" Striped="true">
         <HeaderContent>

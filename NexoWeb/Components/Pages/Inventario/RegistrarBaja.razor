@@ -3,22 +3,26 @@
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Registrar Baja - NEXO</PageTitle>
 
 <MudText Typo="Typo.h5" Class="mb-4">Registrar Baja por Merma o Dano</MudText>
+<InfoAyuda Texto="Descuenta stock definitivamente por daño o pérdida (no por venta ni traspaso). Solo se listan las bodegas donde el artículo elegido tiene stock. El movimiento queda registrado en el Kardex y no se puede deshacer." />
 
 <MudPaper Class="pa-6" MaxWidth="600px">
-    <MudSelect T="int" @bind-Value="_articuloId" Label="Articulo" Class="mb-4" Required="true">
+    <MudSelect T="int" Value="_articuloId" ValueChanged="OnArticuloCambiadoAsync" Label="Articulo" Class="mb-4" Required="true">
         @foreach (var articulo in _articulos)
         {
             <MudSelectItem T="int" Value="@articulo.ArticuloID">@articulo.SKU - @articulo.Nombre</MudSelectItem>
         }
     </MudSelect>
 
-    <MudSelect T="int" @bind-Value="_bodegaId" Label="Bodega" Class="mb-4" Required="true">
-        @foreach (var bodega in _bodegas)
+    <MudSelect T="int" @bind-Value="_bodegaId" Label="Bodega" Class="mb-4" Required="true"
+               Disabled="@(_articuloId == 0)"
+               HelperText="@(_articuloId != 0 && _bodegasConStock.Count == 0 ? "Este articulo no tiene stock en ninguna bodega." : null)">
+        @foreach (var bodega in _bodegasConStock)
         {
             <MudSelectItem T="int" Value="@bodega.BodegaID">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
         }
@@ -46,10 +50,19 @@
 @code {
     private List<ArticuloItem> _articulos = new();
     private List<BodegaItem> _bodegas = new();
+    private List<StockConsolidadoItem> _stock = new();
     private List<MotivoPerdidaItem> _motivos = new();
 
     private int _articuloId;
     private int _bodegaId;
+
+    // Solo las bodegas donde el articulo elegido realmente tiene stock --
+    // evita que el usuario seleccione por error una bodega donde no hay
+    // nada que dar de baja.
+    private List<BodegaItem> _bodegasConStock =>
+        _articuloId == 0
+            ? new()
+            : _bodegas.Where(b => _stock.Any(s => s.ArticuloID == _articuloId && s.BodegaID == b.BodegaID && s.CantidadActual > 0)).ToList();
     private decimal _cantidadPerdida;
     private int _motivoId;
     private string _observacion = "";
@@ -67,13 +80,23 @@
         // para empezar la siguiente.
         var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
         var tareaBodegas = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
+        var tareaStock = ApiClient.GetAsync<List<StockConsolidadoItem>>("api/inventario/stock");
         var tareaMotivos = ApiClient.GetAsync<List<MotivoPerdidaItem>>("api/inventario/motivos-perdida");
 
-        await Task.WhenAll(tareaArticulos, tareaBodegas, tareaMotivos);
+        await Task.WhenAll(tareaArticulos, tareaBodegas, tareaStock, tareaMotivos);
 
         _articulos = await tareaArticulos ?? new();
         _bodegas = await tareaBodegas ?? new();
+        _stock = await tareaStock ?? new();
         _motivos = await tareaMotivos ?? new();
+    }
+
+    private void OnArticuloCambiadoAsync(int nuevoArticuloId)
+    {
+        _articuloId = nuevoArticuloId;
+        // La bodega elegida antes puede ya no tener stock de este articulo
+        if (_bodegaId != 0 && _bodegasConStock.All(b => b.BodegaID != _bodegaId))
+            _bodegaId = 0;
     }
 
     private async Task RegistrarAsync()

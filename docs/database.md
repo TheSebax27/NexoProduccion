@@ -749,4 +749,21 @@ CREATE TABLE Seguridad.PreferenciasUsuario (
     CONSTRAINT FK_PreferenciasUsuario_Usuario FOREIGN KEY (UsuarioID) REFERENCES Seguridad.Usuarios(UsuarioID)
 );
 ```
-Claves usadas hasta ahora: `TemaOscuro` (`"true"`/`"false"`), `Vista:articulos`, `Vista:consulta-stock`, `Vista:ordenes-produccion` (`"lista"`/`"tarjetas"`). Ver `CLAUDE.md` sección 20.20. **Ya aplicado en la base de datos** — no requiere ejecución manual.
+Claves usadas hasta ahora: `TemaOscuro` (`"true"`/`"false"`), `VistaListado` (`"lista"`/`"tarjetas"` — control único y global, ya no es por pantalla). Ver `CLAUDE.md` sección 20.20. **Ya aplicado en la base de datos** — no requiere ejecución manual.
+
+### 9.12 — Columna nueva: `Compras.OrdenesCompraDetalle.FechaUltimaRecepcion`
+Guarda la fecha del último `sp_RecibirOrdenCompra` sobre esa línea (una orden puede recibirse en partes, en días distintos, línea por línea). `Compras.OrdenesCompra.FechaRecepcion` (cabecera) ya existía y solo se setea cuando **todas** las líneas quedan completas — eso no cambió.
+```sql
+ALTER TABLE Compras.OrdenesCompraDetalle ADD FechaUltimaRecepcion DATETIME2 NULL;
+```
+`Compras.sp_RecibirOrdenCompra` (`CREATE OR ALTER`) ahora hace `SET FechaUltimaRecepcion = SYSUTCDATETIME()` junto con el `UPDATE` que suma `CantidadRecibida`. Ver `CLAUDE.md` sección 20.21. **Ya aplicado en la base de datos** — no requiere ejecución manual.
+
+### 9.13 — `Produccion.vw_ProduccionPlanVsReal` — excluye órdenes Canceladas (bug real de datos)
+La vista sumaba `CantidadProgramada` de **todas** las órdenes con esa `FechaPlanificada`, sin importar el estado — una OP cancelada seguía contando en "Planificado" para siempre, aunque nunca se fuera a producir (0 en "Real"), inflando artificialmente el desfase Plan vs Real de ese día. Se agregó `JOIN Produccion.EstadosOP e ON e.EstadoOPID = op.EstadoOPID WHERE e.Nombre <> 'Cancelada'`. Ver `CLAUDE.md` sección 20.22. **Ya aplicado en la base de datos** (`CREATE OR ALTER VIEW`) — no requiere ejecución manual.
+
+### 9.14 — Columnas nuevas: `Seguridad.Usuarios.FotoPerfil` / `FotoPerfilContentType`
+Foto de perfil opcional, editable por el propio usuario (cualquier rol) desde el menú del avatar en el Top Bar. Se guarda como blob en la misma fila del usuario — un `UPDATE` simplemente sobrescribe el valor anterior, así que "reemplazar la foto" no requiere borrar nada aparte, el valor viejo deja de existir en cuanto se pisa.
+```sql
+ALTER TABLE Seguridad.Usuarios ADD FotoPerfil VARBINARY(MAX) NULL, FotoPerfilContentType NVARCHAR(50) NULL;
+```
+Límite de 1 MB validado tanto en el cliente (`PerfilMenu.razor`) como en el servidor (`AuthController.ActualizarFotoPerfil`). Ver `CLAUDE.md` sección 20.28. **Ya aplicado en la base de datos** — no requiere ejecución manual.

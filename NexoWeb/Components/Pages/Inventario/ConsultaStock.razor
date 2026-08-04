@@ -8,10 +8,8 @@
 
 <PageTitle>Consulta de Stock - NEXO</PageTitle>
 
-<div class="d-flex align-center justify-space-between mb-4">
-    <MudText Typo="Typo.h5" Class="mb-0">Consulta de Stock</MudText>
-    <VistaToggle Pagina="consulta-stock" />
-</div>
+<MudText Typo="Typo.h5" Class="mb-4">Consulta de Stock</MudText>
+<InfoAyuda Texto="Consulta cuánto stock tienes de cada artículo, en qué bodega y a qué costo. Filtra por Centro de Costo o Bodega para acotar la búsqueda. El chip 'Requiere pedido' te lleva directo a crear una Orden de Compra." />
 
 <MudGrid Class="mb-4">
     <MudItem xs="12" sm="3">
@@ -55,7 +53,7 @@ else if (_stock.Count == 0)
 {
     <MudText>No hay stock que coincida con el filtro.</MudText>
 }
-else if (Preferencias.ObtenerVista("consulta-stock") == "tarjetas")
+else if (Preferencias.VistaListado == "tarjetas")
 {
     <div class="nexo-card-grid">
         @foreach (var item in _stock)

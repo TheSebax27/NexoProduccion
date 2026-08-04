@@ -2,6 +2,8 @@
 @page "/settings"
 @attribute [Authorize]
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
+@inject ISnackbar Snackbar
+@inject NavigationManager Navegacion
 
 <PageTitle>Configuración - NEXO</PageTitle>
 
@@ -36,14 +38,79 @@
     </div>
 </MudPaper>
 
-<MudAlert Severity="Severity.Info" Density="Density.Compact" Style="max-width: 640px;">
-    Más opciones de configuración personal (vista de lista/tarjetas por pantalla, densidad de tablas, etc.)
-    se irán agregando aquí.
-</MudAlert>
+<MudPaper Class="pa-5" Style="max-width: 640px;">
+    <div class="nexo-chart-header mb-4">
+        <MudIcon Icon="@Icons.Material.Outlined.ViewModule" Size="Size.Small" Class="nexo-chart-header__icon" />
+        <div>
+            <div class="nexo-chart-header__title">Vista de listados</div>
+            <div class="nexo-chart-header__sub">Aplica a todas las pantallas con listas (Artículos, Órdenes, Stock, etc.)</div>
+        </div>
+    </div>
+
+    <div class="d-flex align-center justify-space-between py-2">
+        <div>
+            <div style="font-weight:600; font-size:0.9rem;">Mostrar como</div>
+            <div style="font-size:0.78rem; color:var(--n-text-3);">Se guarda para tu usuario y no cambia hasta que lo vuelvas a cambiar.</div>
+        </div>
+        <MudButtonGroup OverrideStyles="false">
+            <MudButton Variant="@(Preferencias.VistaListado == "lista" ? Variant.Filled : Variant.Outlined)"
+                       Color="@(Preferencias.VistaListado == "lista" ? Color.Primary : Color.Default)"
+                       StartIcon="@(Preferencias.VistaListado == "lista" ? Icons.Material.Filled.Check : Icons.Material.Filled.ViewList)"
+                       OnClick="@(() => OnVistaCambiadaAsync("lista"))">
+                Lista
+            </MudButton>
+            <MudButton Variant="@(Preferencias.VistaListado == "tarjetas" ? Variant.Filled : Variant.Outlined)"
+                       Color="@(Preferencias.VistaListado == "tarjetas" ? Color.Primary : Color.Default)"
+                       StartIcon="@(Preferencias.VistaListado == "tarjetas" ? Icons.Material.Filled.Check : Icons.Material.Filled.ViewModule)"
+                       OnClick="@(() => OnVistaCambiadaAsync("tarjetas"))">
+                Tarjetas
+            </MudButton>
+        </MudButtonGroup>
+    </div>
+</MudPaper>
+
+<MudPaper Class="pa-5 mt-4" Style="max-width: 640px;">
+    <div class="nexo-chart-header mb-4">
+        <MudIcon Icon="@Icons.Material.Outlined.HelpOutline" Size="Size.Small" Class="nexo-chart-header__icon" />
+        <div>
+            <div class="nexo-chart-header__title">Ayuda</div>
+            <div class="nexo-chart-header__sub">Guía para nuevos usuarios del sistema</div>
+        </div>
+    </div>
+
+    <div class="d-flex align-center justify-space-between py-2">
+        <div>
+            <div style="font-weight:600; font-size:0.9rem;">Mostrar información en cada página</div>
+            <div style="font-size:0.78rem; color:var(--n-text-3);">Muestra un ícono ⓘ con una breve explicación arriba de cada pantalla.</div>
+        </div>
+        <MudSwitch T="bool" Value="Preferencias.MostrarAyuda" ValueChanged="OnMostrarAyudaCambiadoAsync" Color="Color.Primary" />
+    </div>
+
+    <div class="d-flex align-center justify-space-between py-2">
+        <div>
+            <div style="font-weight:600; font-size:0.9rem;">Flujo de trabajo y contacto</div>
+            <div style="font-size:0.78rem; color:var(--n-text-3);">Cómo funciona el sistema, y cómo escribirnos si necesitas ayuda.</div>
+        </div>
+        <MudIconButton Icon="@Icons.Material.Outlined.Info" Color="Color.Primary" OnClick="@(() => Navegacion.NavigateTo("/settings/ayuda"))" />
+    </div>
+</MudPaper>
 
 @code {
     private async Task OnTemaOscuroCambiadoAsync(bool nuevoValor)
     {
         await Preferencias.EstablecerTemaOscuroAsync(nuevoValor);
+    }
+
+    private async Task OnVistaCambiadaAsync(string nuevaVista)
+    {
+        if (Preferencias.VistaListado == nuevaVista) return;
+
+        await Preferencias.EstablecerVistaListadoAsync(nuevaVista);
+        Snackbar.Add("Nuevo formato de listado aplicado.", Severity.Success);
+    }
+
+    private async Task OnMostrarAyudaCambiadoAsync(bool nuevoValor)
+    {
+        await Preferencias.EstablecerMostrarAyudaAsync(nuevoValor);
     }
 }

@@ -3,17 +3,13 @@
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Ajuste de Inventario - NEXO</PageTitle>
 
 <MudText Typo="Typo.h5" Class="mb-4">Ajuste de Inventario</MudText>
-
-<MudAlert Severity="Severity.Info" Class="mb-4" Icon="@Icons.Material.Filled.Info">
-    Usa esta pantalla para cargar el stock inicial de un articulo (por ejemplo, al arrancar el sistema)
-    o para corregir la cantidad tras un conteo fisico. El movimiento queda registrado en el Kardex como
-    "Ajuste de Inventario" y afecta el costo promedio del articulo.
-</MudAlert>
+<InfoAyuda Texto="Usa esta pantalla para cargar el stock inicial de un artículo (por ejemplo, al arrancar el sistema) o para corregir la cantidad tras un conteo físico. El movimiento queda registrado en el Kardex como 'Ajuste de Inventario' y afecta el costo promedio del artículo." />
 
 <MudPaper Class="pa-6" MaxWidth="600px">
     <MudSelect T="int" @bind-Value="_articuloId" Label="Articulo" Class="mb-4" Required="true">

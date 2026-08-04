@@ -27,6 +27,58 @@
   },
   {
     "ContainingType": "NexoApi.Features.Auth.AuthController",
+    "Method": "ActualizarPerfil",
+    "RelativePath": "api/auth/perfil",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Auth.Dtos.ActualizarPerfilRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Auth.Dtos.PerfilActualizadoResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Auth.AuthController",
+    "Method": "ActualizarFotoPerfil",
+    "RelativePath": "api/auth/perfil/foto",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Auth.Dtos.ActualizarFotoPerfilRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Auth.AuthController",
+    "Method": "EliminarFotoPerfil",
+    "RelativePath": "api/auth/perfil/foto",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Auth.AuthController",
     "Method": "RegistrarPrimerAdmin",
     "RelativePath": "api/auth/registrar",
     "HttpMethod": "POST",

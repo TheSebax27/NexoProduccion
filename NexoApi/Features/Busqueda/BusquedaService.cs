@@ -34,6 +34,38 @@ public class BusquedaService : IBusquedaService
         var patron = $"%{texto.Trim()}%";
         using var connection = _db.CreateConnection();
 
+        // Stock: sin restriccion de rol porque /inventario/stock es [Authorize]
+        // sin roles especificos (todos los autenticados pueden verla) -- a
+        // diferencia del catalogo de Articulos, que si esta restringido.
+        {
+            const string sqlStock = @"
+                SELECT DISTINCT TOP (@Max) s.SKU, s.Articulo, s.Bodega
+                FROM Inventario.vw_StockConsolidado s
+                WHERE s.Articulo LIKE @Patron OR s.SKU LIKE @Patron
+                ORDER BY s.Articulo";
+            var stock = await connection.QueryAsync<(string SKU, string Articulo, string Bodega)>(
+                sqlStock, new { Patron = patron, Max = MaxPorCategoria });
+            resultados.AddRange(stock.Select(s => new ResultadoBusqueda(
+                "Stock", s.Articulo, $"SKU {s.SKU} · {s.Bodega}",
+                "/inventario/stock")));
+        }
+
+        if (usuario.IsInRole("Administrador") || usuario.IsInRole("Bodeguero"))
+        {
+            const string sqlTraspasos = @"
+                SELECT TOP (@Max) t.Codigo, bo.Nombre AS Origen, bd.Nombre AS Destino, t.EstadoTraspaso
+                FROM Inventario.TraspasosBodega t
+                JOIN Inventario.Bodegas bo ON bo.BodegaID = t.BodegaOrigenID
+                JOIN Inventario.Bodegas bd ON bd.BodegaID = t.BodegaDestinoID
+                WHERE t.Codigo LIKE @Patron
+                ORDER BY t.TraspasoID DESC";
+            var traspasos = await connection.QueryAsync<(string Codigo, string Origen, string Destino, string EstadoTraspaso)>(
+                sqlTraspasos, new { Patron = patron, Max = MaxPorCategoria });
+            resultados.AddRange(traspasos.Select(t => new ResultadoBusqueda(
+                "Traspaso", t.Codigo, $"{t.Origen} → {t.Destino} · {t.EstadoTraspaso}",
+                "/inventario/traspasos")));
+        }
+
         if (usuario.IsInRole("Administrador") || usuario.IsInRole("SupervisorPlanta"))
         {
             const string sqlArticulos = @"

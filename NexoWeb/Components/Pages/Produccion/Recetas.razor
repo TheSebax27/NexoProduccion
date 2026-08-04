@@ -4,11 +4,13 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject NavigationManager Navegacion
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Recetas (BOM) - NEXO</PageTitle>
 
 <MudText Typo="Typo.h5" Class="mb-4">Recetas (BOM)</MudText>
+<InfoAyuda Texto="Define los insumos y cantidades necesarias para producir un artículo (BOM). Cada cambio importante crea una nueva versión, sin borrar ni afectar el historial de órdenes que usaron versiones anteriores." />
 
 <MudGrid Class="mb-4" Justify="Justify.SpaceBetween">
     <MudItem xs="12" sm="6" md="4">
@@ -39,7 +41,37 @@
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
 }
-else if (_errorCarga is null)
+else if (_recetas.Count == 0)
+{
+    <MudText>No hay recetas registradas para este filtro.</MudText>
+}
+else if (Preferencias.VistaListado == "tarjetas")
+{
+    <div class="nexo-card-grid">
+        @foreach (var receta in _recetas)
+        {
+            <div class="nexo-item-card">
+                <div class="d-flex align-center justify-space-between">
+                    <div class="nexo-item-card__title">@receta.ProductoTerminado</div>
+                    <MudChip T="string" Color="@(receta.Estado ? Color.Success : Color.Default)" Size="Size.Small">
+                        @(receta.Estado ? "Activa" : "Reemplazada")
+                    </MudChip>
+                </div>
+                <div class="nexo-item-card__sub">@receta.NombreReceta · v@(receta.Version)</div>
+                <div class="nexo-item-card__row"><span>Rendimiento</span><strong>@receta.CantidadRendimientoBase.ToString("N2") @receta.UnidadRendimiento</strong></div>
+                <div class="nexo-item-card__actions">
+                    <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(receta))">Ver Insumos</MudButton>
+                    @if (receta.Estado)
+                    {
+                        <MudButton Size="Size.Small" Color="Color.Primary" Href="@($"/produccion/recetas/{receta.RecetaID}/nueva-version")">Nueva Versión</MudButton>
+                        <MudButton Size="Size.Small" Color="Color.Error" OnClick="@(() => DesactivarAsync(receta))">Desactivar</MudButton>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+else
 {
     <MudTable Items="_recetas" Hover="true" Dense="true" Striped="true">
         <HeaderContent>

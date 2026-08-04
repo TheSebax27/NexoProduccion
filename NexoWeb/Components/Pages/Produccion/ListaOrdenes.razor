@@ -9,10 +9,8 @@
 
 <PageTitle>Ordenes de Produccion - NEXO</PageTitle>
 
-<div class="d-flex align-center justify-space-between mb-4">
-    <MudText Typo="Typo.h5" Class="mb-0">Ordenes de Produccion</MudText>
-    <VistaToggle Pagina="ordenes-produccion" />
-</div>
+<MudText Typo="Typo.h5" Class="mb-4">Ordenes de Produccion</MudText>
+<InfoAyuda Texto="Una orden pasa por 4 etapas: Planificada (aún no descuenta nada) → Liberada (descuenta la materia prima de la receta) → En Proceso → Cerrada (registra cuánto se produjo y su costo). Solo se puede cancelar mientras está Planificada." />
 @if (_puedeGestionar)
 {
     <MudButton Variant="Variant.Filled" Color="Color.Success" Href="/produccion/ordenes/crear"
@@ -45,7 +43,7 @@ else if (_ordenes.Count == 0)
 {
     <MudText>No hay ordenes de produccion con este filtro.</MudText>
 }
-else if (Preferencias.ObtenerVista("ordenes-produccion") == "tarjetas")
+else if (Preferencias.VistaListado == "tarjetas")
 {
     <div class="nexo-card-grid">
         @foreach (var orden in _ordenes)

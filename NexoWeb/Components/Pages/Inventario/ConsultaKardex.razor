@@ -1,11 +1,13 @@
 @page "/inventario/kardex"
 @attribute [Authorize(Roles = "Administrador,SupervisorPlanta,Bodeguero")]
 @inject INexoApiClient ApiClient
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Kardex de Movimientos - NEXO</PageTitle>
 
 <MudText Typo="Typo.h5" Class="mb-4">Kardex de Movimientos</MudText>
+<InfoAyuda Texto="Historial completo de movimientos de inventario (entradas, salidas, ajustes, traspasos) por artículo y bodega, con el saldo después de cada movimiento. Usa los filtros para acotar por artículo, bodega o rango de fechas." />
 
 <MudPaper Class="pa-4 mb-4">
     <MudGrid>
@@ -53,36 +55,63 @@ else if (_movimientos.Count > 0)
     <MudText Typo="Typo.caption" Class="mb-2">
         Mostrando @_movimientos.Count movimientos (maximo 500 por consulta)
     </MudText>
-    <MudTable Items="_movimientos" Hover="true" Dense="true" Striped="true" FixedHeader="true" Height="500px">
-        <HeaderContent>
-            <MudTh>Fecha</MudTh>
-            <MudTh>Articulo</MudTh>
-            <MudTh>Bodega</MudTh>
-            <MudTh>Tipo</MudTh>
-            <MudTh Style="text-align:right">Cantidad</MudTh>
-            <MudTh Style="text-align:right">Costo Unit.</MudTh>
-            <MudTh Style="text-align:right">Saldo</MudTh>
-            <MudTh>Detalle</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yy HH:mm")</MudTd>
-            <MudTd DataLabel="Articulo">@context.Articulo</MudTd>
-            <MudTd DataLabel="Bodega">@context.Bodega</MudTd>
-            <MudTd DataLabel="Tipo">
-                <MudChip T="string" Size="Size.Small"
-                         Color="@(context.Cantidad >= 0 ? Color.Success : Color.Error)">
-                    @context.TipoMovimiento
-                </MudChip>
-            </MudTd>
-            <MudTd DataLabel="Cantidad" Style="text-align:right">@context.Cantidad.ToString("N2")</MudTd>
-            <MudTd DataLabel="Costo Unit." Style="text-align:right">@context.CostoUnitario.ToString("C2")</MudTd>
-            <MudTd DataLabel="Saldo" Style="text-align:right">@context.CantidadSaldo.ToString("N2")</MudTd>
-            <MudTd DataLabel="Detalle">@(context.ObservacionDetallada ?? "-")</MudTd>
-        </RowTemplate>
-        <NoRecordsContent>
-            <MudText>No hay movimientos con estos filtros.</MudText>
-        </NoRecordsContent>
-    </MudTable>
+    @if (Preferencias.VistaListado == "tarjetas")
+    {
+        <div class="nexo-card-grid">
+            @foreach (var mov in _movimientos)
+            {
+                <div class="nexo-item-card">
+                    <div class="d-flex align-center justify-space-between">
+                        <div class="nexo-item-card__title">@mov.Articulo</div>
+                        <MudChip T="string" Size="Size.Small" Color="@(mov.Cantidad >= 0 ? Color.Success : Color.Error)">
+                            @mov.TipoMovimiento
+                        </MudChip>
+                    </div>
+                    <div class="nexo-item-card__sub">@mov.Bodega · @mov.Fecha.ToString("dd/MM/yy HH:mm")</div>
+                    <div class="nexo-item-card__row"><span>Cantidad</span><strong>@mov.Cantidad.ToString("N2")</strong></div>
+                    <div class="nexo-item-card__row"><span>Costo Unit.</span><strong>@mov.CostoUnitario.ToString("C2")</strong></div>
+                    <div class="nexo-item-card__row"><span>Saldo</span><strong>@mov.CantidadSaldo.ToString("N2")</strong></div>
+                    @if (mov.ObservacionDetallada is not null)
+                    {
+                        <div class="nexo-item-card__sub">@mov.ObservacionDetallada</div>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <MudTable Items="_movimientos" Hover="true" Dense="true" Striped="true" FixedHeader="true" Height="500px">
+            <HeaderContent>
+                <MudTh>Fecha</MudTh>
+                <MudTh>Articulo</MudTh>
+                <MudTh>Bodega</MudTh>
+                <MudTh>Tipo</MudTh>
+                <MudTh Style="text-align:right">Cantidad</MudTh>
+                <MudTh Style="text-align:right">Costo Unit.</MudTh>
+                <MudTh Style="text-align:right">Saldo</MudTh>
+                <MudTh>Detalle</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yy HH:mm")</MudTd>
+                <MudTd DataLabel="Articulo">@context.Articulo</MudTd>
+                <MudTd DataLabel="Bodega">@context.Bodega</MudTd>
+                <MudTd DataLabel="Tipo">
+                    <MudChip T="string" Size="Size.Small"
+                             Color="@(context.Cantidad >= 0 ? Color.Success : Color.Error)">
+                        @context.TipoMovimiento
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Cantidad" Style="text-align:right">@context.Cantidad.ToString("N2")</MudTd>
+                <MudTd DataLabel="Costo Unit." Style="text-align:right">@context.CostoUnitario.ToString("C2")</MudTd>
+                <MudTd DataLabel="Saldo" Style="text-align:right">@context.CantidadSaldo.ToString("N2")</MudTd>
+                <MudTd DataLabel="Detalle">@(context.ObservacionDetallada ?? "-")</MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText>No hay movimientos con estos filtros.</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    }
 }
 else if (_consultaEjecutada)
 {

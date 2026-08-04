@@ -3,11 +3,13 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Proveedores - NEXO</PageTitle>
 
 <MudText Typo="Typo.h5" Class="mb-4">Proveedores</MudText>
+<InfoAyuda Texto="Registra los proveedores que usas al crear una Orden de Compra. El NIT y los datos de contacto quedan disponibles para referencia rápida." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
            StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
@@ -22,7 +24,34 @@
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
 }
-else if (_errorCarga is null)
+else if (_proveedores.Count == 0)
+{
+    <MudText>No hay proveedores registrados.</MudText>
+}
+else if (Preferencias.VistaListado == "tarjetas")
+{
+    <div class="nexo-card-grid">
+        @foreach (var proveedor in _proveedores)
+        {
+            <div class="nexo-item-card">
+                <div class="d-flex align-center justify-space-between">
+                    <div class="nexo-item-card__title">@proveedor.RazonSocial</div>
+                    <MudChip T="string" Color="@(proveedor.Estado ? Color.Success : Color.Error)" Size="Size.Small">
+                        @(proveedor.Estado ? "Activo" : "Inactivo")
+                    </MudChip>
+                </div>
+                <div class="nexo-item-card__sub">@proveedor.NIT</div>
+                <div class="nexo-item-card__row"><span>Contacto</span><strong>@(proveedor.Contacto ?? "-")</strong></div>
+                <div class="nexo-item-card__row"><span>Teléfono</span><strong>@(proveedor.Telefono ?? "-")</strong></div>
+                <div class="nexo-item-card__row"><span>Email</span><strong>@(proveedor.Email ?? "-")</strong></div>
+                <div class="nexo-item-card__actions">
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(proveedor))">Editar</MudButton>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
 {
     <MudTable Items="_proveedores" Hover="true" Dense="true" Striped="true">
         <HeaderContent>

@@ -3,11 +3,13 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Centros de Costo - NEXO</PageTitle>
 
 <MudText Typo="Typo.h5" Class="mb-4">Centros de Costo</MudText>
+<InfoAyuda Texto="Un Centro de Costo representa una planta, sede u operación. Agrupa Bodegas, Centros de Trabajo y Usuarios, y sirve para separar el costo e inventario de cada operación." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
            StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
@@ -22,7 +24,38 @@
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
 }
-else if (_errorCarga is null)
+else if (_centrosCosto.Count == 0)
+{
+    <MudText>No hay centros de costo registrados.</MudText>
+}
+else if (Preferencias.VistaListado == "tarjetas")
+{
+    <div class="nexo-card-grid">
+        @foreach (var cc in _centrosCosto)
+        {
+            <div class="nexo-item-card">
+                <div class="d-flex align-center justify-space-between">
+                    <div class="nexo-item-card__title">@cc.Nombre</div>
+                    <MudChip T="string" Color="@(cc.Estado ? Color.Success : Color.Error)" Size="Size.Small">
+                        @(cc.Estado ? "Activo" : "Inactivo")
+                    </MudChip>
+                </div>
+                <div class="nexo-item-card__sub">@cc.Codigo · @cc.TipoCentro</div>
+                <div class="nexo-item-card__row"><span>Dirección</span><strong>@cc.Direccion</strong></div>
+                <div class="nexo-item-card__row">
+                    <span>Visions</span>
+                    <MudChip T="string" Color="@(cc.TieneVisions ? Color.Info : Color.Default)" Size="Size.Small">
+                        @(cc.TieneVisions ? "Conectado" : "Independiente")
+                    </MudChip>
+                </div>
+                <div class="nexo-item-card__actions">
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(cc))">Editar</MudButton>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
 {
     <MudTable Items="_centrosCosto" Hover="true" Dense="true" Striped="true">
         <HeaderContent>

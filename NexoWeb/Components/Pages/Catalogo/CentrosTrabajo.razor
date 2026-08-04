@@ -3,18 +3,13 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Centros de Trabajo - NEXO</PageTitle>
 
 <MudText Typo="Typo.h5" Class="mb-4">Centros de Trabajo</MudText>
-
-<MudAlert Severity="Severity.Info" Class="mb-4" Icon="@Icons.Material.Filled.Info">
-    Un Centro de Trabajo es una linea, maquina o estacion especifica dentro de un Centro de Costo
-    (por ejemplo "Linea de Ensamble 1" dentro de la planta). Se usa para asociar una receta o una
-    orden de produccion al lugar exacto donde se ejecuta, y para calcular el costo de mano de obra
-    y CIF por hora de ese punto de trabajo.
-</MudAlert>
+<InfoAyuda Texto="Un Centro de Trabajo es una línea, máquina o estación específica dentro de un Centro de Costo (ej. 'Línea de Ensamble 1'). Se usa para asociar una receta o una orden de producción al lugar exacto donde se ejecuta, y para calcular el costo de mano de obra y CIF por hora." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
            StartIcon="@Icons.Material.Filled.Add" Class="mb-4"
@@ -30,7 +25,33 @@
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
 }
-else if (_errorCarga is null)
+else if (_centrosTrabajo.Count == 0)
+{
+    <MudText>No hay centros de trabajo registrados.</MudText>
+}
+else if (Preferencias.VistaListado == "tarjetas")
+{
+    <div class="nexo-card-grid">
+        @foreach (var ct in _centrosTrabajo)
+        {
+            <div class="nexo-item-card">
+                <div class="d-flex align-center justify-space-between">
+                    <div class="nexo-item-card__title">@ct.Nombre</div>
+                    <MudChip T="string" Color="@(ct.Estado ? Color.Success : Color.Error)" Size="Size.Small">
+                        @(ct.Estado ? "Activo" : "Inactivo")
+                    </MudChip>
+                </div>
+                <div class="nexo-item-card__sub">@ct.CentroCosto</div>
+                <div class="nexo-item-card__row"><span>Costo Hora M.O.</span><strong>@ct.CostoHoraManoObra.ToString("C2")</strong></div>
+                <div class="nexo-item-card__row"><span>Costo Hora CIF</span><strong>@ct.CostoHoraCIF.ToString("C2")</strong></div>
+                <div class="nexo-item-card__actions">
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(ct))">Editar</MudButton>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
 {
     <MudTable Items="_centrosTrabajo" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
