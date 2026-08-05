@@ -1,0 +1,217 @@
+@page "/catalogo/mapeo-articulos-visions"
+@attribute [Authorize(Roles = "Administrador")]
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Mapeo de Articulos con Visions - NEXO</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Mapeo de Articulos con Visions</MudText>
+<InfoAyuda Texto="Vincula cada Producto Terminado de NEXO con su referencia en Visions. Solo se sincroniza Producto Terminado -- Materia Prima, Insumos y Servicios nunca se venden en Visions." />
+
+<MudSelect T="int?" Value="_centroCostoId" ValueChanged="OnCentroCostoCambiadoAsync"
+           Label="Centro de Costo" Class="mb-4" Style="max-width: 400px;">
+    @foreach (var cc in _centrosCostoConVisions)
+    {
+        <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
+    }
+</MudSelect>
+
+@if (_centrosCostoConVisions.Count == 0 && !_cargando)
+{
+    <MudAlert Severity="Severity.Info">Ningun Centro de Costo tiene Visions activado todavia.</MudAlert>
+}
+else if (_centroCostoId is not null)
+{
+    @if (_pendientes.Count > 0)
+    {
+        <MudText Typo="Typo.subtitle1" Class="mb-2 mt-4">Articulos pendientes por revisar</MudText>
+        <MudText Typo="Typo.caption" Class="mb-2 mud-text-secondary">
+            Visions reporto ventas de estos articulos, pero todavia no tienen mapeo en NEXO -- la venta se reintenta
+            sola cada ronda hasta que se resuelvan.
+        </MudText>
+        <MudTable Items="_pendientes" Hover="true" Dense="true" Striped="true" Class="mb-4">
+            <HeaderContent>
+                <MudTh>Referencia Visions</MudTh>
+                <MudTh>Nombre en Visions</MudTh>
+                <MudTh>Costo</MudTh>
+                <MudTh>Precio</MudTh>
+                <MudTh>Cantidad detectada</MudTh>
+                <MudTh>Detectado</MudTh>
+                <MudTh>Accion</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Referencia">@context.CodigoArticuloVisions</MudTd>
+                <MudTd DataLabel="Nombre">@(context.NombreVisions ?? "-")</MudTd>
+                <MudTd DataLabel="Costo">@(context.CostoVisions?.ToString("N2") ?? "-")</MudTd>
+                <MudTd DataLabel="Precio">@(context.PrecioVisions?.ToString("N2") ?? "-")</MudTd>
+                <MudTd DataLabel="Cantidad">@context.CantidadDetectada</MudTd>
+                <MudTd DataLabel="Detectado">@context.FechaDetectado.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</MudTd>
+                <MudTd DataLabel="Accion">
+                    <MudButton Size="Size.Small" Color="Color.Primary" OnClick="@(() => ResolverPendienteAsync(context))">
+                        Vincular
+                    </MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+
+    <div class="d-flex align-center justify-space-between mb-2 mt-4">
+        <MudText Typo="Typo.subtitle1">Articulos mapeados</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionMapeoAsync"
+                    StartIcon="@Icons.Material.Filled.Add" Disabled="_articulosProductoTerminado.Count == 0">
+            Nuevo Mapeo
+        </MudButton>
+    </div>
+
+    @if (_cargando)
+    {
+        <MudProgressCircular Indeterminate="true" Class="ma-4" />
+    }
+    else if (_mapeos.Count == 0)
+    {
+        <MudText>No hay articulos mapeados para este Centro de Costo.</MudText>
+    }
+    else
+    {
+        <MudTable Items="_mapeos" Hover="true" Dense="true" Striped="true">
+            <HeaderContent>
+                <MudTh>SKU</MudTh>
+                <MudTh>Nombre</MudTh>
+                <MudTh>Referencia Visions</MudTh>
+                <MudTh>Estado</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="SKU">@context.SkuArticulo</MudTd>
+                <MudTd DataLabel="Nombre">@context.NombreArticulo</MudTd>
+                <MudTd DataLabel="Referencia">@context.CodigoArticuloVisions</MudTd>
+                <MudTd DataLabel="Estado">
+                    <MudChip T="string" Color="@(context.Estado ? Color.Success : Color.Error)" Size="Size.Small">
+                        @(context.Estado ? "Activo" : "Inactivo")
+                    </MudChip>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+}
+
+@code {
+    private List<CentroCostoItem> _centrosCostoConVisions = new();
+    private List<ArticuloItem> _articulosProductoTerminado = new();
+    private List<MapeoArticuloItem> _mapeos = new();
+    private List<ArticuloPendienteMapeoItem> _pendientes = new();
+    private int? _centroCostoId;
+    private bool _cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var centros = await ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true") ?? new();
+            _centrosCostoConVisions = centros.Where(c => c.TieneVisions).ToList();
+
+            var articulos = await ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos") ?? new();
+            _articulosProductoTerminado = articulos.Where(a => a.TipoArticulo == "Producto Terminado" && a.Estado).ToList();
+
+            if (_centrosCostoConVisions.Count > 0)
+            {
+                _centroCostoId = _centrosCostoConVisions[0].CentroCostoID;
+                await CargarDatosCentroCostoAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task OnCentroCostoCambiadoAsync(int? centroCostoId)
+    {
+        _centroCostoId = centroCostoId;
+        await CargarDatosCentroCostoAsync();
+    }
+
+    private async Task CargarDatosCentroCostoAsync()
+    {
+        if (_centroCostoId is null)
+            return;
+
+        _cargando = true;
+        try
+        {
+            _mapeos = await ApiClient.GetAsync<List<MapeoArticuloItem>>($"api/integracion/mapeos?centroCostoId={_centroCostoId}") ?? new();
+            _pendientes = await ApiClient.GetAsync<List<ArticuloPendienteMapeoItem>>($"api/integracion/articulos-pendientes?centroCostoId={_centroCostoId}") ?? new();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task AbrirCreacionMapeoAsync()
+    {
+        if (_centroCostoId is null)
+            return;
+
+        var parametros = new DialogParameters<CrearMapeoDialog>
+        {
+            { x => x.ArticulosDisponibles, _articulosProductoTerminado },
+            { x => x.CentroCostoID, _centroCostoId.Value }
+        };
+
+        var dialogo = await DialogService.ShowAsync<CrearMapeoDialog>("Nuevo Mapeo", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (CrearMapeoArticuloRequest)resultado.Data!;
+            await ApiClient.PostAsync<CrearMapeoArticuloRequest, object?>("api/integracion/mapeos", request);
+            Snackbar.Add("Articulo mapeado. Se encolo para crear/actualizar en Visions.", Severity.Success);
+            await CargarDatosCentroCostoAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task ResolverPendienteAsync(ArticuloPendienteMapeoItem pendiente)
+    {
+        var parametros = new DialogParameters<ResolverPendienteDialog>
+        {
+            { x => x.Pendiente, pendiente },
+            { x => x.ArticulosDisponibles, _articulosProductoTerminado }
+        };
+
+        var dialogo = await DialogService.ShowAsync<ResolverPendienteDialog>("Vincular Articulo", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (ResolverArticuloPendienteRequest)resultado.Data!;
+            await ApiClient.PostAsync<ResolverArticuloPendienteRequest, object?>(
+                $"api/integracion/articulos-pendientes/{pendiente.PendienteID}/resolver", request);
+            Snackbar.Add("Articulo vinculado correctamente.", Severity.Success);
+            await CargarDatosCentroCostoAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

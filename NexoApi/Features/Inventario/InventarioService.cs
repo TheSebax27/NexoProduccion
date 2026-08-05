@@ -28,14 +28,16 @@ public class InventarioService : IInventarioService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT ArticuloID, SKU, Articulo, TipoArticulo, Unidad, UnidadesPorEmbalaje, BodegaID, Bodega,
-                   CentroCostoID, CentroCosto, LoteID, NumeroLote, FechaVencimiento,
-                   CantidadActual, CostoUnitarioLote, ValorTotal, RequierePedido
-            FROM Inventario.vw_StockConsolidado
-            WHERE (@CentroCostoId IS NULL OR CentroCostoID = @CentroCostoId)
-              AND (@BodegaId IS NULL OR BodegaID = @BodegaId)
-              AND (@Sku IS NULL OR SKU = @Sku)
-            ORDER BY Articulo, Bodega";
+            SELECT s.ArticuloID, s.SKU, s.Articulo, s.TipoArticulo, s.Unidad, s.UnidadesPorEmbalaje, s.BodegaID, s.Bodega,
+                   s.CentroCostoID, s.CentroCosto, s.LoteID, s.NumeroLote, s.FechaVencimiento,
+                   s.CantidadActual, s.CostoUnitarioLote, s.ValorTotal, s.RequierePedido,
+                   CAST(CASE WHEN a.Imagen IS NULL THEN 0 ELSE 1 END AS BIT) AS TieneImagen
+            FROM Inventario.vw_StockConsolidado s
+            JOIN Catalogo.Articulos a ON a.ArticuloID = s.ArticuloID
+            WHERE (@CentroCostoId IS NULL OR s.CentroCostoID = @CentroCostoId)
+              AND (@BodegaId IS NULL OR s.BodegaID = @BodegaId)
+              AND (@Sku IS NULL OR s.SKU = @Sku)
+            ORDER BY s.Articulo, s.Bodega";
 
         return await connection.QueryAsync<StockConsolidadoItem>(sql, new
         {

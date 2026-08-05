@@ -2,8 +2,23 @@
 
 // ---------- Centros de Costo ----------
 public record CrearCentroCostoRequest(string Codigo, string Nombre, string TipoCentro, string? Direccion, string? Telefono);
-public record ActualizarCentroCostoRequest(string Nombre, string? Direccion, string? Telefono, bool Estado);
-public record CentroCostoItem(int CentroCostoID, string Codigo, string Nombre, string TipoCentro, string? Direccion, bool Estado, bool TieneVisions);
+// TieneVisions/IdentificadorClienteVisions/BodegaVentaVisionsID solo se
+// editan en modo edicion (ver ArticuloDialog): al crear el centro de costo
+// todavia no existen sus bodegas, asi que no hay nada que seleccionar como
+// "bodega de venta" hasta despues.
+// PrefijosDocumentoVentaVisions: lista de codigos TIPDOC (Visions) separados
+// por coma, ej. "POS,FV" -- solo esos tipos de documento se exportan como
+// venta hacia NEXO. Solo tiene sentido si TieneVisions=true.
+public record ActualizarCentroCostoRequest(
+    string Nombre, string? Direccion, string? Telefono, bool Estado,
+    bool TieneVisions, string? IdentificadorClienteVisions, int? BodegaVentaVisionsID,
+    string? PrefijosDocumentoVentaVisions
+);
+public record CentroCostoItem(
+    int CentroCostoID, string Codigo, string Nombre, string TipoCentro, string? Direccion, bool Estado,
+    bool TieneVisions, string? IdentificadorClienteVisions, int? BodegaVentaVisionsID,
+    string? PrefijosDocumentoVentaVisions
+);
 
 // ---------- Bodegas ----------
 public record CrearBodegaRequest(string Nombre, int CentroCostoID, string TipoBodega, bool EsVirtual);
@@ -33,8 +48,11 @@ public record ActualizarArticuloRequest(
 public record ArticuloItem(
     int ArticuloID, string SKU, string Nombre, string? Descripcion, string TipoArticulo, string? Unidad,
     decimal CostoPromedio, decimal PrecioVenta, decimal StockMinimo, decimal PuntoReorden, bool Estado,
-    int? DiasVidaUtil, decimal? UnidadesPorEmbalaje
+    int? DiasVidaUtil, decimal? UnidadesPorEmbalaje, bool TieneImagen
 );
+
+// ---------- Imagen de articulo (opcional, una sola por articulo) ----------
+public record ActualizarImagenRequest(string Base64, string ContentType);
 
 // Agregado para el punto #2 (pantalla de Articulos): no existia forma de listar
 // estos dos catalogos, por lo que el formulario de creacion no podia poblar

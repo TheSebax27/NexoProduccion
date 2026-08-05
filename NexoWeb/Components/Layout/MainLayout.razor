@@ -2,6 +2,7 @@
 @implements IDisposable
 @inject NexoWeb.Common.Auth.AuthStateService AuthState
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
+@inject NexoWeb.Common.Auth.ConfiguracionEmpresaState ConfiguracionEmpresa
 @inject NavigationManager Navegacion
 @inject NexoWeb.Common.ApiClient.INexoApiClient ApiClient
 @using NexoWeb.Common.Dtos
@@ -150,10 +151,14 @@
                Variant="DrawerVariant.Responsive"
                Class="nexo-sidebar">
 
-        @* Logo *@
+        @* Logo -- nombre/imagen editables por un Administrador en Settings >
+           Mi Negocio (ConfiguracionEmpresaState). Se mantiene el mismo alto
+           (34px, ver .nexo-sidebar__logo-img) sin importar el tamano real de
+           la imagen subida, para que el logo nuevo respete "las mismas
+           dimensiones" que el original. *@
         <div class="nexo-sidebar__logo">
-            <img src="/images/LogoV.png" alt="NEXO" class="nexo-sidebar__logo-img" />
-            <span class="nexo-sidebar__logo-text">NEXO <strong>ERP</strong></span>
+            <img src="@(ConfiguracionEmpresa.LogoDataUri ?? "/images/LogoV.png")" alt="@ConfiguracionEmpresa.NombreEmpresa" class="nexo-sidebar__logo-img" />
+            <span class="nexo-sidebar__logo-text">@ConfiguracionEmpresa.NombreEmpresa</span>
         </div>
 
         @* Navegación principal *@
@@ -231,6 +236,7 @@
     {
         Navegacion.LocationChanged += OnLocationChanged;
         Preferencias.OnCambio += OnPreferenciasCambiaronAsync;
+        ConfiguracionEmpresa.OnCambio += OnPreferenciasCambiaronAsync;
         _tituloPagina = ObtenerTituloPagina();
 
         if (AuthState.EstaLogueado)
@@ -249,6 +255,7 @@
         if (AuthState.EstaLogueado)
         {
             await Preferencias.CargarAsync();
+            await ConfiguracionEmpresa.CargarAsync();
             await CargarNotificacionesAsync();
         }
     }
@@ -384,6 +391,7 @@
     {
         Navegacion.LocationChanged -= OnLocationChanged;
         Preferencias.OnCambio -= OnPreferenciasCambiaronAsync;
+        ConfiguracionEmpresa.OnCambio -= OnPreferenciasCambiaronAsync;
         _timerNotificaciones?.Stop();
         _timerNotificaciones?.Dispose();
     }

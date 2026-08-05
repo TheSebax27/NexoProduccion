@@ -26,7 +26,38 @@
 
             @if (EsEdicion)
             {
-                <MudSwitch T="bool" @bind-Value="_estado" Color="Color.Success" Label="Activo" />
+                <MudSwitch T="bool" @bind-Value="_estado" Color="Color.Success" Label="Activo" Class="mb-3" />
+
+                <MudDivider Class="mb-3" />
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Integracion con Visions</MudText>
+
+                <MudSwitch T="bool" @bind-Value="_tieneVisions" Color="Color.Primary" Label="Este cliente tiene Visions" Class="mb-3" />
+
+                @if (_tieneVisions)
+                {
+                    <MudNumericField T="int?" @bind-Value="_centroCostoVisions" Label="Codigo CENTROCOSTO en Visions"
+                                      HelperText="El numero que identifica ESTA sucursal dentro de la base de datos de Visions de este cliente (columna CENTROCOSTO en dbo.TARJETA / dbo.MOVDETALLES / dbo.CENTROSDECOSTO de Visions). Cada cliente tiene su propia base -- si solo tiene una sucursal, casi siempre es 1."
+                                      Min="0" Class="mb-3" />
+
+                    <MudSelect T="int?" @bind-Value="_bodegaVentaVisionsId" Label="Bodega de Venta Visions"
+                               HelperText="Bodega desde donde se descuenta el stock cuando se registra una venta en Visions" Class="mb-3">
+                        @foreach (var bodega in Bodegas)
+                        {
+                            <MudSelectItem T="int?" Value="@bodega.BodegaID">@bodega.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudText Typo="Typo.body2" Class="mb-1">Tipos de documento que cuentan como venta</MudText>
+                    <MudText Typo="Typo.caption" Class="mb-2 mud-text-secondary">
+                        No todos los clientes facturan igual en Visions -- marca solo los que este cliente usa realmente.
+                    </MudText>
+                    @foreach (var prefijo in PrefijosVisionsDisponibles)
+                    {
+                        <MudCheckBox T="bool" Value="@_prefijosSeleccionados.Contains(prefijo.Codigo)"
+                                     ValueChanged="@((bool v) => AlternarPrefijo(prefijo.Codigo, v))"
+                                     Label="@($"{prefijo.Codigo} - {prefijo.Descripcion}")" Dense="true" />
+                    }
+                }
             }
         </MudForm>
     </DialogContent>
@@ -45,6 +76,10 @@
     // (oculta Codigo y Tipo, que no son editables una vez creado el registro).
     [Parameter] public CentroCostoItem? CentroCosto { get; set; }
 
+    // Bodegas de este Centro de Costo, para elegir la Bodega de Venta Visions.
+    // Se pasa filtrada desde CentrosCosto.razor (aun no existen bodegas al crear).
+    [Parameter] public List<BodegaItem> Bodegas { get; set; } = new();
+
     private bool EsEdicion => CentroCosto is not null;
 
     private MudForm _form = default!;
@@ -54,6 +89,25 @@
     private string? _direccion;
     private string? _telefono;
     private bool _estado = true;
+    private bool _tieneVisions;
+    // Se guarda como texto en la BD (IdentificadorClienteVisions es nvarchar
+    // por flexibilidad), pero en Visions SIEMPRE es el codigo numerico
+    // CENTROCOSTO (smallint) de esa sucursal -- ver TareaAplicarEntradasInventario
+    // en NexoSyncAgent, que lo usa directo como parametro contra dbo.TARJETA.CENTROCOSTO.
+    private int? _centroCostoVisions;
+    private int? _bodegaVentaVisionsId;
+    private readonly HashSet<string> _prefijosSeleccionados = new();
+
+    // Lista fija de tipos de documento de venta que puede manejar Visions.
+    // Si aparece un cliente con un tipo distinto, agregarlo aqui.
+    private static readonly (string Codigo, string Descripcion)[] PrefijosVisionsDisponibles =
+    {
+        ("POS", "Factura POS"),
+        ("FV", "Factura de Venta"),
+        ("FE", "Factura Electronica"),
+        ("NC", "Nota Credito"),
+        ("ND", "Nota Debito"),
+    };
 
     protected override void OnInitialized()
     {
@@ -62,7 +116,24 @@
             _nombre = CentroCosto.Nombre;
             _direccion = CentroCosto.Direccion;
             _estado = CentroCosto.Estado;
+            _tieneVisions = CentroCosto.TieneVisions;
+            _centroCostoVisions = int.TryParse(CentroCosto.IdentificadorClienteVisions, out var centroCostoVisionsParseado) ? centroCostoVisionsParseado : null;
+            _bodegaVentaVisionsId = CentroCosto.BodegaVentaVisionsID;
+
+            if (!string.IsNullOrWhiteSpace(CentroCosto.PrefijosDocumentoVentaVisions))
+            {
+                foreach (var codigo in CentroCosto.PrefijosDocumentoVentaVisions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    _prefijosSeleccionados.Add(codigo);
+            }
         }
+    }
+
+    private void AlternarPrefijo(string codigo, bool seleccionado)
+    {
+        if (seleccionado)
+            _prefijosSeleccionados.Add(codigo);
+        else
+            _prefijosSeleccionados.Remove(codigo);
     }
 
     private async Task GuardarAsync()
@@ -73,7 +144,11 @@
 
         if (EsEdicion)
         {
-            var request = new ActualizarCentroCostoRequest(_nombre, _direccion, _telefono, _estado);
+            var prefijos = _prefijosSeleccionados.Count > 0 ? string.Join(",", _prefijosSeleccionados) : null;
+            var request = new ActualizarCentroCostoRequest(
+                _nombre, _direccion, _telefono, _estado,
+                _tieneVisions, _tieneVisions ? _centroCostoVisions?.ToString() : null, _tieneVisions ? _bodegaVentaVisionsId : null,
+                _tieneVisions ? prefijos : null);
             MudDialog.Close(DialogResult.Ok(request));
         }
         else

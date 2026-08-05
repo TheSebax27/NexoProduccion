@@ -2,6 +2,7 @@
 @page "/settings"
 @attribute [Authorize]
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
+@inject NexoWeb.Common.Auth.ConfiguracionEmpresaState ConfiguracionEmpresa
 @inject ISnackbar Snackbar
 @inject NavigationManager Navegacion
 
@@ -95,6 +96,49 @@
     </div>
 </MudPaper>
 
+@* Solo Administrador -- afecta a TODOS los usuarios (nombre/logo del sidebar), no es una preferencia personal. *@
+<AuthorizeView Roles="Administrador">
+    <Authorized>
+        <MudPaper Class="pa-5 mt-4" Style="max-width: 640px;">
+            <div class="nexo-chart-header mb-4">
+                <MudIcon Icon="@Icons.Material.Outlined.Storefront" Size="Size.Small" Class="nexo-chart-header__icon" />
+                <div>
+                    <div class="nexo-chart-header__title">Mi Negocio</div>
+                    <div class="nexo-chart-header__sub">Nombre y logo que ven todos los usuarios en el menú lateral</div>
+                </div>
+            </div>
+
+            <div class="d-flex align-center" style="gap: 1rem;">
+                <img src="@(ConfiguracionEmpresa.LogoDataUri ?? "/images/LogoV.png")" alt="Logo"
+                     style="height: 40px; width: auto; object-fit: contain; border-radius: 6px;" />
+                <div class="d-flex" style="gap: 0.5rem;">
+                    <InputFile id="nexo-logo-input" OnChange="OnLogoSeleccionadoAsync"
+                               accept="image/png,image/jpeg,image/webp" style="display:none;" />
+                    <label for="nexo-logo-input" class="nexo-perfil-panel__btn-archivo">
+                        @(ConfiguracionEmpresa.LogoDataUri is null ? "Subir logo" : "Cambiar logo")
+                    </label>
+                    @if (ConfiguracionEmpresa.LogoDataUri is not null)
+                    {
+                        <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" OnClick="QuitarLogoAsync" Disabled="_procesandoLogo">
+                            Quitar
+                        </MudButton>
+                    }
+                </div>
+            </div>
+            <div style="font-size:0.7rem; color:var(--n-text-3); margin-top:0.5rem;">
+                Máximo 1 MB. Se muestra siempre al mismo tamaño (40px de alto) sin importar las dimensiones originales de la imagen.
+            </div>
+
+            <MudTextField T="string" @bind-Value="_nombreEmpresa" Label="Nombre del negocio" Variant="Variant.Outlined"
+                          Margin="Margin.Dense" Class="mt-4" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-3"
+                       OnClick="GuardarNombreEmpresaAsync" Disabled="@(_procesandoLogo || string.IsNullOrWhiteSpace(_nombreEmpresa))">
+                Guardar nombre
+            </MudButton>
+        </MudPaper>
+    </Authorized>
+</AuthorizeView>
+
 @code {
     private async Task OnTemaOscuroCambiadoAsync(bool nuevoValor)
     {
@@ -112,5 +156,76 @@
     private async Task OnMostrarAyudaCambiadoAsync(bool nuevoValor)
     {
         await Preferencias.EstablecerMostrarAyudaAsync(nuevoValor);
+    }
+
+    // ── Mi Negocio (Administrador) ──────────────────────────────────
+    private string _nombreEmpresa = "";
+    private bool _procesandoLogo;
+
+    protected override void OnInitialized()
+    {
+        _nombreEmpresa = ConfiguracionEmpresa.NombreEmpresa;
+    }
+
+    private async Task GuardarNombreEmpresaAsync()
+    {
+        try
+        {
+            await ConfiguracionEmpresa.ActualizarNombreAsync(_nombreEmpresa.Trim());
+            Snackbar.Add("Nombre del negocio actualizado.", Severity.Success);
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task OnLogoSeleccionadoAsync(InputFileChangeEventArgs e)
+    {
+        const long maxBytes = 1_000_000;
+
+        if (e.File.Size > maxBytes)
+        {
+            Snackbar.Add("La imagen es muy grande (máximo 1 MB).", Severity.Warning);
+            return;
+        }
+
+        _procesandoLogo = true;
+        try
+        {
+            using var stream = e.File.OpenReadStream(maxBytes);
+            using var memoria = new MemoryStream();
+            await stream.CopyToAsync(memoria);
+            var base64 = Convert.ToBase64String(memoria.ToArray());
+
+            await ConfiguracionEmpresa.ActualizarLogoAsync(base64, e.File.ContentType);
+            Snackbar.Add("Logo actualizado.", Severity.Success);
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _procesandoLogo = false;
+        }
+    }
+
+    private async Task QuitarLogoAsync()
+    {
+        _procesandoLogo = true;
+        try
+        {
+            await ConfiguracionEmpresa.EliminarLogoAsync();
+            Snackbar.Add("Logo eliminado.", Severity.Success);
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _procesandoLogo = false;
+        }
     }
 }

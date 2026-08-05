@@ -2,6 +2,7 @@ wwwroot\app.css
 wwwroot\favicon.png
 wwwroot\images\login-hero.png
 wwwroot\images\LogoV.png
+wwwroot\js\descargas.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css
@@ -52,6 +53,7 @@ Components\Layout\ReconnectModal.razor.js
 C:\Users\ASROCK\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.10\build\..\_framework\blazor.web.js
 C:\Users\ASROCK\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.10\build\..\_framework\blazor.server.js
 C:\Produccion\NexoWeb\wwwroot\app.css
+C:\Produccion\NexoWeb\wwwroot\js\descargas.js
 C:\Produccion\NexoWeb\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 C:\Produccion\NexoWeb\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
 C:\Produccion\NexoWeb\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css

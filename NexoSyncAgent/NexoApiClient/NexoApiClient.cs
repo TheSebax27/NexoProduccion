@@ -38,4 +38,13 @@ public class NexoApiClient : INexoApiClient
         // tratarlo distinto aqui.
         respuesta.EnsureSuccessStatusCode();
     }
+
+    public async Task<ConfiguracionAgenteResponse> ObtenerConfiguracionAsync(CancellationToken ct)
+    {
+        var respuesta = await _http.GetAsync("api/integracion/configuracion", ct);
+        respuesta.EnsureSuccessStatusCode();
+
+        var configuracion = await respuesta.Content.ReadFromJsonAsync<ConfiguracionAgenteResponse>(cancellationToken: ct);
+        return configuracion ?? throw new InvalidOperationException("La API no devolvio configuracion para este agente.");
+    }
 }

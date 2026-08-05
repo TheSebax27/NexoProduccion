@@ -149,8 +149,7 @@
               "RelativeToolTip": "Common\\Security\\ApiKeyAuthenticationHandler.cs",
               "ViewState": "AgIAACIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-04T15:14:54.602Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-04T15:14:54.602Z"
             },
             {
               "$type": "Document",
@@ -160,7 +159,7 @@
               "RelativeDocumentMoniker": "Common\\Middleware\\ExceptionHandlingMiddleware.cs",
               "ToolTip": "C:\\Produccion\\NexoApi\\Common\\Middleware\\ExceptionHandlingMiddleware.cs",
               "RelativeToolTip": "Common\\Middleware\\ExceptionHandlingMiddleware.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAADMAAACBAAAAAAAAAA==",
+              "ViewState": "AgIAACsAAAAAAAAAAAAAADcAAABJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-08-04T15:14:30.792Z",
               "EditorCaption": ""
@@ -175,8 +174,7 @@
               "RelativeToolTip": "Common\\Data\\IDbConnectionFactory.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-04T15:14:19.642Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-04T15:14:19.642Z"
             },
             {
               "$type": "Document",
@@ -236,8 +234,7 @@
               "RelativeToolTip": "Common\\Data\\SqlConnectionFactory.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-30T16:40:44.104Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-30T16:40:44.104Z"
             },
             {
               "$type": "Document",
@@ -249,8 +246,7 @@
               "RelativeToolTip": "appsettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-07-30T19:53:27.982Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-30T19:53:27.982Z"
             },
             {
               "$type": "Document",
@@ -262,8 +258,7 @@
               "RelativeToolTip": "Features\\Inventario\\InventarioService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAADwAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-30T16:28:23.16Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-30T16:28:23.16Z"
             },
             {
               "$type": "Document",

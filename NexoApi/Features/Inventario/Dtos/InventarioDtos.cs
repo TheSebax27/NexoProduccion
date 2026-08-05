@@ -17,7 +17,8 @@ public record StockConsolidadoItem(
     decimal CantidadActual,
     decimal CostoUnitarioLote,
     decimal ValorTotal,
-    bool RequierePedido
+    bool RequierePedido,
+    bool TieneImagen
 );
 
 public record RegistrarBajaRequest(

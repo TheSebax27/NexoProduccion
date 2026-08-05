@@ -47,6 +47,46 @@ public class TareaAplicarEntradasInventario
 
     private void AplicarEnVisions(NexoApiClient.Dtos.EventoPendienteItem evento)
     {
+        if (evento.TipoEvento == "SINCRONIZAR_ARTICULO")
+        {
+            SincronizarArticulo(evento);
+            return;
+        }
+
+        AplicarEntradaInventario(evento);
+    }
+
+    // Crea o actualiza el articulo en dbo.TARJETA (nombre, costo, precio
+    // publico, existencias minimas). A proposito NUNCA toca EXISTENCIAS aqui
+    // -- el stock se mueve solo por los eventos de entrada de inventario
+    // (AplicarEntradaInventario), para no pisar cantidades reales de Visions
+    // con un 0 cada vez que se resincroniza el nombre o el precio.
+    private void SincronizarArticulo(NexoApiClient.Dtos.EventoPendienteItem evento)
+    {
+        using var connection = _visionsDb.CreateConnection();
+
+        connection.Execute(
+            @"MERGE dbo.TARJETA AS destino
+              USING (SELECT @CentroCosto AS CENTROCOSTO, @Referencia AS REFERENCIA) AS origen
+              ON destino.CENTROCOSTO = origen.CENTROCOSTO AND destino.REFERENCIA = origen.REFERENCIA
+              WHEN MATCHED THEN UPDATE SET
+                  DETALLE = @Detalle, COSTO = @Costo, PPUBLICO = @PPublico, EXISTENCIASMINIMAS = @ExistenciasMinimas
+              WHEN NOT MATCHED THEN
+                  INSERT (CENTROCOSTO, REFERENCIA, DETALLE, COSTO, PPUBLICO, EXISTENCIASMINIMAS, EXISTENCIAS)
+                  VALUES (@CentroCosto, @Referencia, @Detalle, @Costo, @PPublico, @ExistenciasMinimas, 0);",
+            new
+            {
+                CentroCosto = evento.CentroCostoVisions,
+                Referencia = evento.ReferenciaVisions,
+                Detalle = evento.NombreArticulo,
+                Costo = evento.CostoUnitario,
+                PPublico = evento.PrecioVentaArticulo,
+                ExistenciasMinimas = evento.StockMinimoArticulo
+            });
+    }
+
+    private void AplicarEntradaInventario(NexoApiClient.Dtos.EventoPendienteItem evento)
+    {
         using var connection = _visionsDb.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();

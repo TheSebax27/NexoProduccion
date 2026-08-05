@@ -56,6 +56,8 @@ public class RecetasService : IRecetasService
         }
     }
 
+    private record RecetaBaseInfo(int ProductoTerminadoID, int VersionActual);
+
     public async Task<int> CrearNuevaVersionAsync(int recetaBaseId, CrearNuevaVersionRequest r)
     {
         using var connection = _db.CreateConnection();
@@ -64,11 +66,13 @@ public class RecetasService : IRecetasService
 
         try
         {
-            var baseInfo = await connection.QuerySingleOrDefaultAsync<(int ProductoTerminadoID, int VersionActual)>(
-                "SELECT ProductoTerminadoID, Version FROM Produccion.RecetaBOM WHERE RecetaID = @RecetaBaseId",
+            // Dapper no soporta mapear una fila directo a ValueTuple -- con
+            // (int,int) esto fallaba con 500 en TODA llamada a este endpoint.
+            var baseInfo = await connection.QuerySingleOrDefaultAsync<RecetaBaseInfo>(
+                "SELECT ProductoTerminadoID, Version AS VersionActual FROM Produccion.RecetaBOM WHERE RecetaID = @RecetaBaseId",
                 new { RecetaBaseId = recetaBaseId }, transaction);
 
-            if (baseInfo.ProductoTerminadoID == 0)
+            if (baseInfo is null)
                 throw new KeyNotFoundException($"No existe la receta {recetaBaseId} para versionar.");
 
             const string sqlHeader = @"

@@ -44,6 +44,14 @@ public class NexoApiClient : INexoApiClient
         return await respuesta.Content.ReadFromJsonAsync<T>(_jsonOpts);
     }
 
+    public async Task<byte[]> GetBytesAsync(string ruta)
+    {
+        await AgregarTokenAsync();
+        var respuesta = await _http.GetAsync(ruta);
+        await ValidarRespuestaAsync(respuesta);
+        return await respuesta.Content.ReadAsByteArrayAsync();
+    }
+
     public async Task<TResponse?> PostAsync<TRequest, TResponse>(string ruta, TRequest body)
     {
         await AgregarTokenAsync();

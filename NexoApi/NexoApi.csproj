@@ -15,11 +15,13 @@
 
 	<ItemGroup>
 		<!-- Acceso a Datos -->
+		<PackageReference Include="ClosedXML" Version="0.105.1" />
 		<PackageReference Include="Dapper" Version="2.1.79" />
 		<PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
 
 		<!-- Autenticación y JWT -->
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
+		<PackageReference Include="QuestPDF" Version="2026.7.2" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
 
 		<!-- OpenAPI y Swagger alineados para soportar tu código actual sin cambios -->

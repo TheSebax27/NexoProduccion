@@ -86,12 +86,24 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xDbGllbnRlcy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Produccion/NexoWeb/Components/Pages/Catalogo/CrearMapeoDialog.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xDcmVhck1hcGVvRGlhbG9nLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Catalogo/MapeoArticulosVisions.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xNYXBlb0FydGljdWxvc1Zpc2lvbnMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Produccion/NexoWeb/Components/Pages/Catalogo/ProveedorDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xQcm92ZWVkb3JEaWFsb2cucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Pages/Catalogo/Proveedores.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xQcm92ZWVkb3Jlcy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Catalogo/ResolverPendienteDialog.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xSZXNvbHZlclBlbmRpZW50ZURpYWxvZy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Pages/Compras/CrearOrdenCompraDialog.razor]

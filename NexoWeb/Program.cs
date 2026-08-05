@@ -32,6 +32,7 @@ builder.Services.AddAuthorizationCore(); // el "motor" de autorizacion de Blazor
 builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 builder.Services.AddScoped<PreferenciasState>();
+builder.Services.AddScoped<ConfiguracionEmpresaState>();
 
 var app = builder.Build();
 

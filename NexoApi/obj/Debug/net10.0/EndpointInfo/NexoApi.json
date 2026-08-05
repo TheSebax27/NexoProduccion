@@ -207,6 +207,90 @@
         }
       }
     },
+    "/api/catalogo/articulos/{id}/imagen": {
+      "get": {
+        "tags": [
+          "Articulos"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Articulos"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarImagenRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarImagenRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarImagenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Articulos"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/auth/login": {
       "post": {
         "tags": [
@@ -1207,6 +1291,105 @@
         }
       }
     },
+    "/api/configuracion/empresa": {
+      "get": {
+        "tags": [
+          "Configuracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracionEmpresaResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracionEmpresaResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracionEmpresaResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Configuracion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarNombreEmpresaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarNombreEmpresaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarNombreEmpresaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/configuracion/empresa/logo": {
+      "put": {
+        "tags": [
+          "Configuracion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarLogoEmpresaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarLogoEmpresaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarLogoEmpresaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Configuracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/dashboard/plan-vs-real": {
       "get": {
         "tags": [
@@ -1443,6 +1626,66 @@
         }
       }
     },
+    "/api/dashboard/exportar/excel": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "parameters": [
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/dashboard/exportar/pdf": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "parameters": [
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/integracion/eventos-pendientes": {
       "get": {
         "tags": [
@@ -1579,6 +1822,202 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/integracion/configuracion": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracionAgenteResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracionAgenteResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracionAgenteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integracion/mapeos": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "parameters": [
+          {
+            "name": "centroCostoId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MapeoArticuloItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MapeoArticuloItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MapeoArticuloItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Integracion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearMapeoArticuloRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearMapeoArticuloRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearMapeoArticuloRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/articulos-pendientes": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "parameters": [
+          {
+            "name": "centroCostoId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ArticuloPendienteMapeoItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ArticuloPendienteMapeoItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ArticuloPendienteMapeoItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integracion/articulos-pendientes/{id}/resolver": {
+      "post": {
+        "tags": [
+          "Integracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolverArticuloPendienteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolverArticuloPendienteRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolverArticuloPendienteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -3035,6 +3474,22 @@
           },
           "estado": {
             "type": "boolean"
+          },
+          "tieneVisions": {
+            "type": "boolean"
+          },
+          "identificadorClienteVisions": {
+            "type": "string",
+            "nullable": true
+          },
+          "bodegaVentaVisionsID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "prefijosDocumentoVentaVisions": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -3101,6 +3556,44 @@
             "nullable": true
           },
           "contentType": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarImagenRequest": {
+        "type": "object",
+        "properties": {
+          "base64": {
+            "type": "string",
+            "nullable": true
+          },
+          "contentType": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarLogoEmpresaRequest": {
+        "type": "object",
+        "properties": {
+          "base64": {
+            "type": "string",
+            "nullable": true
+          },
+          "contentType": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarNombreEmpresaRequest": {
+        "type": "object",
+        "properties": {
+          "nombreEmpresa": {
             "type": "string",
             "nullable": true
           }
@@ -3355,6 +3848,49 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "tieneImagen": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ArticuloPendienteMapeoItem": {
+        "type": "object",
+        "properties": {
+          "pendienteID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "codigoArticuloVisions": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreVisions": {
+            "type": "string",
+            "nullable": true
+          },
+          "costoVisions": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "precioVisions": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "cantidadDetectada": {
+            "type": "number",
+            "format": "double"
+          },
+          "fechaDetectado": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -3419,6 +3955,19 @@
           },
           "tieneVisions": {
             "type": "boolean"
+          },
+          "identificadorClienteVisions": {
+            "type": "string",
+            "nullable": true
+          },
+          "bodegaVentaVisionsID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "prefijosDocumentoVentaVisions": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -3516,6 +4065,42 @@
           },
           "estado": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConfiguracionAgenteResponse": {
+        "type": "object",
+        "properties": {
+          "centroCostoVisions": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "prefijosDocumentoVenta": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConfiguracionEmpresaResponse": {
+        "type": "object",
+        "properties": {
+          "nombreEmpresa": {
+            "type": "string",
+            "nullable": true
+          },
+          "logoBase64": {
+            "type": "string",
+            "nullable": true
+          },
+          "logoContentType": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -3696,6 +4281,24 @@
             "nullable": true
           },
           "direccion": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CrearMapeoArticuloRequest": {
+        "type": "object",
+        "properties": {
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "codigoArticuloVisions": {
             "type": "string",
             "nullable": true
           }
@@ -4074,6 +4677,20 @@
           "referenciaVisions": {
             "type": "string",
             "nullable": true
+          },
+          "nombreArticulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "precioVentaArticulo": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "stockMinimoArticulo": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -4219,6 +4836,43 @@
           "fotoPerfilContentType": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MapeoArticuloItem": {
+        "type": "object",
+        "properties": {
+          "mapeoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "skuArticulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreArticulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "codigoArticuloVisions": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "boolean"
+          },
+          "fechaCreacion": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -4717,6 +5371,20 @@
           "fechaEventoOrigen": {
             "type": "string",
             "format": "date-time"
+          },
+          "nombreArticuloVisions": {
+            "type": "string",
+            "nullable": true
+          },
+          "costoArticuloVisions": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "precioArticuloVisions": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -4761,6 +5429,35 @@
         "properties": {
           "nuevaPassword": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResolverArticuloPendienteRequest": {
+        "type": "object",
+        "properties": {
+          "articuloIDExistente": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "skuNuevo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreNuevo": {
+            "type": "string",
+            "nullable": true
+          },
+          "precioVentaNuevo": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "stockMinimoNuevo": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           }
         },
@@ -4890,6 +5587,9 @@
             "format": "double"
           },
           "requierePedido": {
+            "type": "boolean"
+          },
+          "tieneImagen": {
             "type": "boolean"
           }
         },

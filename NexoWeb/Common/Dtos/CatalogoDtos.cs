@@ -32,7 +32,10 @@ public record CentroCostoItem(
     string TipoCentro,
     string? Direccion,
     bool Estado,
-    bool TieneVisions
+    bool TieneVisions,
+    string? IdentificadorClienteVisions,
+    int? BodegaVentaVisionsID,
+    string? PrefijosDocumentoVentaVisions
 );
 
 // Agregado para la pantalla de administracion de Centros de Costo (punto #2).
@@ -48,8 +51,16 @@ public record ActualizarCentroCostoRequest(
     string Nombre,
     string? Direccion,
     string? Telefono,
-    bool Estado
+    bool Estado,
+    bool TieneVisions,
+    string? IdentificadorClienteVisions,
+    int? BodegaVentaVisionsID,
+    string? PrefijosDocumentoVentaVisions
 );
+
+// ---------- Integracion Visions ----------
+public record GenerarApiKeyRequest(int CentroCostoID, string Descripcion);
+public record GenerarApiKeyResponse(int AgenteSyncID, string ApiKey);
 
 // Agregado: faltaba este DTO y se usaba en Dashboard, Compras, Inventario,
 // Traspasos y Produccion (ArticuloID, SKU, Nombre).
@@ -102,8 +113,20 @@ public record ArticuloItem(
     decimal PuntoReorden,
     bool Estado,
     int? DiasVidaUtil,
-    decimal? UnidadesPorEmbalaje
+    decimal? UnidadesPorEmbalaje,
+    bool TieneImagen
 );
+
+// Imagen opcional, una sola por articulo. CrearArticuloResponse solo se usa
+// para leer el ArticuloID nuevo y poder subir la imagen justo despues de crear.
+public record ActualizarImagenRequest(string Base64, string ContentType);
+public record CrearArticuloResponse(int ArticuloId);
+
+// Lo que cierra ArticuloDialog: la solicitud de crear/actualizar de siempre,
+// mas la imagen opcional seleccionada (si el usuario eligio una). Articulos.razor
+// primero hace el Crear/Actualizar de siempre y, si hay imagen, la sube
+// aparte con el ArticuloID resultante.
+public record ArticuloDialogResultado(object Datos, string? ImagenBase64, string? ImagenContentType);
 
 // Agregado para la pantalla de administracion de Articulos (punto #2).
 // UnidadID es opcional: un Servicio no es tangible, no aplica una unidad fisica.

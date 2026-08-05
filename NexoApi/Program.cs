@@ -9,6 +9,7 @@ using NexoApi.Features.Auth;
 using NexoApi.Features.Busqueda;
 using NexoApi.Features.Catalogo;
 using NexoApi.Features.Compras;
+using NexoApi.Features.Configuracion;
 using NexoApi.Features.Dashboard;
 using NexoApi.Features.Integracion;
 using NexoApi.Features.Inventario;
@@ -18,6 +19,12 @@ using NexoApi.Features.Produccion;
 using NexoApi.Features.Recetas;
 using NexoApi.Features.Traspasos;
 using System.Text;
+
+// QuestPDF exige declarar el tipo de licencia antes de generar cualquier PDF.
+// Community es gratuita para empresas con ingresos anuales menores a 1M USD
+// (ver https://www.questpdf.com/license/) -- si el negocio crece mas alla de
+// ese umbral, hay que comprar la licencia comercial de QuestPDF.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -73,9 +80,11 @@ builder.Services.AddScoped<ICatalogoService, CatalogoService>();
 builder.Services.AddScoped<IRecetasService, RecetasService>();
 builder.Services.AddScoped<IIntegracionService, IntegracionService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IDashboardExportService, DashboardExportService>();
 builder.Services.AddScoped<INotificacionesService, NotificacionesService>();
 builder.Services.AddScoped<IBusquedaService, BusquedaService>();
 builder.Services.AddScoped<IPreferenciasService, PreferenciasService>();
+builder.Services.AddScoped<IConfiguracionService, ConfiguracionService>();
 
 // ----------------------------------------------------------------------------
 // AUTENTICACIÓN Y AUTORIZACIÓN (AQUÍ ESTÁ EL CAMBIO)

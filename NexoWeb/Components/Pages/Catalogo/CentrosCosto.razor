@@ -50,6 +50,10 @@ else if (Preferencias.VistaListado == "tarjetas")
                 </div>
                 <div class="nexo-item-card__actions">
                     <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(cc))">Editar</MudButton>
+                    @if (cc.TieneVisions)
+                    {
+                        <MudButton Size="Size.Small" Color="Color.Info" OnClick="@(() => GenerarApiKeyAsync(cc))">API Key</MudButton>
+                    }
                 </div>
             </div>
         }
@@ -86,6 +90,12 @@ else
                 <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">
                     Editar
                 </MudButton>
+                @if (context.TieneVisions)
+                {
+                    <MudButton Size="Size.Small" Color="Color.Info" OnClick="@(() => GenerarApiKeyAsync(context))">
+                        API Key
+                    </MudButton>
+                }
             </MudTd>
         </RowTemplate>
     </MudTable>
@@ -93,6 +103,7 @@ else
 
 @code {
     private List<CentroCostoItem> _centrosCosto = new();
+    private List<BodegaItem> _bodegas = new();
     private bool _cargando = true;
     private string? _errorCarga;
 
@@ -110,6 +121,7 @@ else
         {
             // soloActivos=false para que el administrador tambien vea los inactivos
             _centrosCosto = await ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=false") ?? new();
+            _bodegas = await ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas") ?? new();
         }
         catch (Exception ex)
         {
@@ -146,7 +158,8 @@ else
     {
         var parametros = new DialogParameters<CentroCostoDialog>
         {
-            { x => x.CentroCosto, centroCosto }
+            { x => x.CentroCosto, centroCosto },
+            { x => x.Bodegas, _bodegas.Where(b => b.CentroCostoID == centroCosto.CentroCostoID).ToList() }
         };
 
         var dialogo = await DialogService.ShowAsync<CentroCostoDialog>("Editar Centro de Costo", parametros);
@@ -162,6 +175,37 @@ else
                 $"api/catalogo/centros-costo/{centroCosto.CentroCostoID}", request);
             Snackbar.Add("Centro de costo actualizado correctamente.", Severity.Success);
             await CargarAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task GenerarApiKeyAsync(CentroCostoItem centroCosto)
+    {
+        var confirmar = await DialogService.ShowMessageBox(
+            "Generar API Key",
+            $"Se generara una nueva API Key para el Agente de Sincronizacion de \"{centroCosto.Nombre}\". " +
+            "Si ya existia una clave para este Centro de Costo, quedara reemplazada. Continuar?",
+            yesText: "Generar", cancelText: "Cancelar");
+
+        if (confirmar != true)
+            return;
+
+        try
+        {
+            var request = new GenerarApiKeyRequest(centroCosto.CentroCostoID, $"Agente Sync - {centroCosto.Nombre}");
+            var respuesta = await ApiClient.PostAsync<GenerarApiKeyRequest, GenerarApiKeyResponse>("api/integracion/agentes/api-key", request);
+
+            if (respuesta is not null)
+            {
+                await DialogService.ShowMessageBox(
+                    "API Key generada",
+                    $"Copia esta clave ahora, no se volvera a mostrar completa:\n\n{respuesta.ApiKey}\n\n" +
+                    "Pegala en la configuracion del Agente de Sincronizacion (NexoSyncAgent) de este cliente.",
+                    yesText: "Listo");
+            }
         }
         catch (HttpRequestException ex)
         {

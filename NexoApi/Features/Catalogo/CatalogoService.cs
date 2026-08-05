@@ -22,6 +22,9 @@ public interface ICatalogoService
     Task<int> CrearArticuloAsync(CrearArticuloRequest request);
     Task<IEnumerable<ArticuloItem>> ListarArticulosAsync(int? tipoArticuloId, string? texto);
     Task ActualizarArticuloAsync(int articuloId, ActualizarArticuloRequest request);
+    Task<(byte[] Datos, string ContentType)?> ObtenerImagenArticuloAsync(int articuloId);
+    Task ActualizarImagenArticuloAsync(int articuloId, ActualizarImagenRequest request);
+    Task EliminarImagenArticuloAsync(int articuloId);
 
     Task<IEnumerable<ClienteItem>> ListarClientesAsync();
     Task<int> CrearClienteAsync(CrearClienteRequest request);
@@ -68,7 +71,9 @@ public class CatalogoService : ICatalogoService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT CentroCostoID, Codigo, Nombre, TipoCentro, Direccion, Estado, TieneVisions
+            SELECT CentroCostoID, Codigo, Nombre, TipoCentro, Direccion, Estado,
+                   TieneVisions, IdentificadorClienteVisions, BodegaVentaVisionsID,
+                   PrefijosDocumentoVentaVisions
             FROM Organizacion.CentrosCosto
             WHERE (@SoloActivos = 0 OR Estado = 1)
             ORDER BY Nombre";
@@ -82,7 +87,10 @@ public class CatalogoService : ICatalogoService
 
         const string sql = @"
             UPDATE Organizacion.CentrosCosto
-            SET Nombre = @Nombre, Direccion = @Direccion, Telefono = @Telefono, Estado = @Estado
+            SET Nombre = @Nombre, Direccion = @Direccion, Telefono = @Telefono, Estado = @Estado,
+                TieneVisions = @TieneVisions, IdentificadorClienteVisions = @IdentificadorClienteVisions,
+                BodegaVentaVisionsID = @BodegaVentaVisionsID,
+                PrefijosDocumentoVentaVisions = @PrefijosDocumentoVentaVisions
             WHERE CentroCostoID = @CentroCostoId";
 
         var filas = await connection.ExecuteAsync(sql, new
@@ -91,7 +99,11 @@ public class CatalogoService : ICatalogoService
             r.Nombre,
             r.Direccion,
             r.Telefono,
-            r.Estado
+            r.Estado,
+            r.TieneVisions,
+            r.IdentificadorClienteVisions,
+            r.BodegaVentaVisionsID,
+            r.PrefijosDocumentoVentaVisions
         });
 
         if (filas == 0)
@@ -184,7 +196,8 @@ public class CatalogoService : ICatalogoService
         const string sql = @"
             SELECT a.ArticuloID, a.SKU, a.Nombre, a.Descripcion, ta.Nombre AS TipoArticulo, u.Abreviatura AS Unidad,
                    a.CostoPromedio, a.PrecioVenta, a.StockMinimo, a.PuntoReorden, a.Estado, a.DiasVidaUtil,
-                   a.UnidadesPorEmbalaje
+                   a.UnidadesPorEmbalaje,
+                   CAST(CASE WHEN a.Imagen IS NULL THEN 0 ELSE 1 END AS BIT) AS TieneImagen
             FROM Catalogo.Articulos a
             JOIN Catalogo.TiposArticulo ta ON ta.TipoArticuloID = a.TipoArticuloID
             LEFT JOIN Catalogo.UnidadesMedida u ON u.UnidadID = a.UnidadID
@@ -223,7 +236,50 @@ public class CatalogoService : ICatalogoService
             throw new KeyNotFoundException($"No existe el articulo {articuloId}.");
     }
 
-    
+    private record ImagenArticulo(byte[] Imagen, string ImagenContentType);
+
+    // Imagen opcional, una sola por articulo -- el UPDATE reemplaza cualquier
+    // imagen anterior sin necesidad de borrarla aparte (no es un archivo en
+    // disco, es una columna varbinary que se sobrescribe).
+    public async Task<(byte[] Datos, string ContentType)?> ObtenerImagenArticuloAsync(int articuloId)
+    {
+        using var connection = _db.CreateConnection();
+
+        // Dapper NO soporta mapear una fila directo a ValueTuple (solo QuerySingleOrDefaultAsync<(T1,T2)>
+        // funciona en escenarios de multi-mapping con splitOn, no en un SELECT plano como este) -- usar
+        // ValueTuple aqui causaba que el endpoint fallara con 500 CADA VEZ que un articulo SI tenia imagen
+        // guardada (el caso sin imagen no llegaba a mapear ninguna fila, por eso pasaba desapercibido).
+        var resultado = await connection.QuerySingleOrDefaultAsync<ImagenArticulo>(
+            "SELECT Imagen, ImagenContentType FROM Catalogo.Articulos WHERE ArticuloID = @ArticuloId AND Imagen IS NOT NULL",
+            new { ArticuloId = articuloId });
+
+        return resultado is null ? null : (resultado.Imagen, resultado.ImagenContentType);
+    }
+
+    public async Task ActualizarImagenArticuloAsync(int articuloId, ActualizarImagenRequest r)
+    {
+        using var connection = _db.CreateConnection();
+        var datos = Convert.FromBase64String(r.Base64);
+
+        var filas = await connection.ExecuteAsync(
+            "UPDATE Catalogo.Articulos SET Imagen = @Datos, ImagenContentType = @ContentType WHERE ArticuloID = @ArticuloId",
+            new { ArticuloId = articuloId, Datos = datos, r.ContentType });
+
+        if (filas == 0)
+            throw new KeyNotFoundException($"No existe el articulo {articuloId}.");
+    }
+
+    public async Task EliminarImagenArticuloAsync(int articuloId)
+    {
+        using var connection = _db.CreateConnection();
+
+        var filas = await connection.ExecuteAsync(
+            "UPDATE Catalogo.Articulos SET Imagen = NULL, ImagenContentType = NULL WHERE ArticuloID = @ArticuloId",
+            new { ArticuloId = articuloId });
+
+        if (filas == 0)
+            throw new KeyNotFoundException($"No existe el articulo {articuloId}.");
+    }
 
     public async Task<IEnumerable<ClienteItem>> ListarClientesAsync()
     {

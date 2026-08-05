@@ -26,11 +26,20 @@ public class Worker : BackgroundService
                 // Cada tarea necesita su propio "scope" -- explicado abajo.
                 using var scope = _serviceProvider.CreateScope();
 
+                var tareaConfiguracion = scope.ServiceProvider.GetRequiredService<TareaSincronizarConfiguracion>();
+                var centroCostoVisions = await tareaConfiguracion.EjecutarAsync(stoppingToken);
+
                 var tareaEntradas = scope.ServiceProvider.GetRequiredService<TareaAplicarEntradasInventario>();
                 await tareaEntradas.EjecutarAsync(stoppingToken);
 
-                var tareaVentas = scope.ServiceProvider.GetRequiredService<TareaExportarVentas>();
-                await tareaVentas.EjecutarAsync(stoppingToken);
+                // Sin el codigo CENTROCOSTO configurado en NEXO Web todavia no hay
+                // forma segura de saber que ventas de Visions le pertenecen a esta
+                // sucursal -- se salta la exportacion de ventas esta ronda.
+                if (centroCostoVisions is not null)
+                {
+                    var tareaVentas = scope.ServiceProvider.GetRequiredService<TareaExportarVentas>();
+                    await tareaVentas.EjecutarAsync(centroCostoVisions.Value, stoppingToken);
+                }
             }
             catch (Exception ex)
             {

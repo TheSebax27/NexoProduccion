@@ -216,9 +216,14 @@ Eventos recibidos de Visions (ventas que deben descontar inventario en NEXO).
 | `Procesado` | bit |
 | `FechaRecepcion` | datetime2(7) |
 | `FechaProcesado` | datetime2(7) NULL |
+| `NombreArticuloVisions` | nvarchar(255) NULL | Agregado agosto 2026 — nombre del artículo tal como lo tenía Visions (`dbo.TARJETA.DETALLE`) al momento de la venta, viaja desde `TareaExportarVentas` |
+| `CostoArticuloVisions` | decimal(18,4) NULL | Agregado agosto 2026 — `dbo.TARJETA.COSTO` al momento de la venta |
+| `PrecioArticuloVisions` | decimal(18,4) NULL | Agregado agosto 2026 — `dbo.TARJETA.PPUBLICO` al momento de la venta |
+
+Estas 3 columnas nuevas solo se usan si el artículo no está mapeado todavía (ver `Integracion.ArticulosPendientesMapeo` abajo) — sirven de sugerencia para que el Administrador no tenga que ir a consultar Visions manualmente.
 
 #### `MapeoArticulos`
-Mapeo entre artículos de NEXO y códigos de Visions.
+Mapeo entre artículos de NEXO y códigos de Visions. Solo aplica a `Catalogo.Articulos` con `TipoArticulo = 'Producto Terminado'` (validado en `IntegracionService.CrearMapeoAsync`) — Visions es un sistema de punto de venta, Materia Prima/Insumos/Servicios nunca se venden ahí.
 
 | Columna | Tipo | Restricciones |
 |---|---|---|
@@ -228,6 +233,24 @@ Mapeo entre artículos de NEXO y códigos de Visions.
 | `CodigoArticuloVisions` | nvarchar(30) | |
 | `Estado` | bit | |
 | `FechaCreacion` | datetime2(7) | |
+
+Crear una fila aquí (vía `POST api/integracion/mapeos`, pantalla `catalogo/mapeo-articulos-visions`) encola automáticamente un `Integracion.EventosSalientes` con `TipoEvento='SINCRONIZAR_ARTICULO'` para que el agente cree/actualice el artículo en `dbo.TARJETA` de Visions.
+
+#### `ArticulosPendientesMapeo` (agosto 2026)
+Cola de revisión: artículos que Visions reportó vendidos pero que todavía no tienen fila en `MapeoArticulos`. Se llena desde `Integracion.sp_ProcesarEventoEntrante` cuando no encuentra el mapeo (en vez de fallar con `THROW`). El Administrador los revisa en `catalogo/mapeo-articulos-visions` y decide vincularlos a un Producto Terminado existente o crear uno nuevo con los datos sugeridos.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `PendienteID` | int PK IDENTITY | |
+| `CentroCostoID` | int FK | UNIQUE(CentroCostoID, CodigoArticuloVisions) |
+| `CodigoArticuloVisions` | nvarchar(30) | |
+| `NombreVisions` | nvarchar(255) NULL | |
+| `CostoVisions` | decimal(18,4) NULL | |
+| `PrecioVisions` | decimal(18,4) NULL | |
+| `CantidadDetectada` | decimal(18,4) | Última cantidad vendida detectada (informativo, no acumula) |
+| `FechaDetectado` | datetime2(7) | |
+| `Resuelto` | bit | |
+| `FechaResuelto` | datetime2(7) NULL | |
 
 #### `InventarioReportadoVisions`
 Control de cantidades vendidas reportadas a Visions.
@@ -346,6 +369,8 @@ Registro histórico e inmutable de cada movimiento de inventario.
 | `Nombre` | nvarchar(80) |
 | `Signo` | smallint — 1=entrada, -1=salida |
 
+Fila agregada agosto 2026: `Codigo='SALIDA_VENTA_VISIONS'`, `Signo=-1` — usada por `Integracion.sp_ProcesarEventoEntrante` al descontar stock por una venta reportada desde Visions.
+
 #### `TiposMotivoLoss`
 Catálogo de motivos de baja de inventario.
 
@@ -390,7 +415,9 @@ Representa una planta, bodega central o punto de distribución.
 | `Estado` | bit | |
 | `FechaCreacion` | datetime2(7) | |
 | `TieneVisions` | bit | Si está integrado con Visions ERP |
-| `IdentificadorClienteVisions` | nvarchar(50) NULL | Código de cliente en Visions |
+| `IdentificadorClienteVisions` | nvarchar(50) NULL | **NO es un identificador de cliente pese al nombre** — es el código `CENTROCOSTO` (smallint) que identifica esta sucursal dentro de la base de datos de Visions de este cliente (columna `CENTROCOSTO` en `dbo.TARJETA`/`dbo.MOVDETALLES` de Visions). nvarchar por flexibilidad histórica, pero siempre debe contener un número (agosto 2026, ver `Integracion.sp_ProcesarEventoEntrante`/`TareaSincronizarConfiguracion` que hacen `TRY_CAST(... AS INT)`) |
+| `BodegaVentaVisionsID` | int NULL FK → `Inventario.Bodegas` | Bodega fija desde la que se descuenta stock cuando llega una venta reportada por Visions (agosto 2026, ver `Integracion.sp_ProcesarEventoEntrante`) |
+| `PrefijosDocumentoVentaVisions` | nvarchar(200) NULL | Códigos TIPDOC de Visions (separados por coma, ej. `"POS,FV"`) que cuentan como venta a exportar. Editable solo por Administrador en NEXO Web; el `NexoSyncAgent` lo replica en `dbo.NEXO_ConfiguracionSync.TiposDocumentoVenta` de la base de Visions en cada ronda (agosto 2026) |
 
 #### `CentrosTrabajo`
 Líneas de producción o puestos de trabajo dentro de un centro de costo.
@@ -516,6 +543,8 @@ Catálogo de tipos: Estándar, Envasado, Reproceso, etc.
 | `FechaCreacion` | datetime2(7) | |
 | `UltimoAcceso` | datetime2(7) NULL | Se actualiza en cada login |
 
+Fila especial agregada agosto 2026: `Username='sistema.sync'`, `Estado=0` (nunca puede iniciar sesión, password aleatorio via `CRYPT_GEN_RANDOM`) — existe solo como FK de auditoría en `Kardex.KardexMovimientos.UsuarioID` para los movimientos generados automáticamente por `Integracion.sp_ProcesarEventoEntrante`.
+
 #### `Roles`
 Roles del sistema: Administrador, SupervisorPlanta, Bodeguero, Operario.
 
@@ -575,11 +604,15 @@ Recibe una línea de orden de compra.
 - **Errores**: 52001 (OC ya recibida), 52000 (cantidad inválida)
 
 ### `Integracion.sp_ProcesarEventoEntrante`
-Procesa un evento de venta recibido de Visions.
-- Busca el mapeo de artículo
-- Descuenta del inventario de ventas (`InventarioReportadoVisions`)
-- Genera evento saliente si aplica
-- Marca el evento como procesado
+Procesa un evento de venta recibido de Visions. Reescrito agosto 2026 (dos veces) — primero para descontar stock real (antes solo acumulaba en `InventarioReportadoVisions`); después para dejar de fallar con `THROW` cuando el artículo no está mapeado.
+- Si el evento ya estaba `Procesado=1`, no hace nada (idempotente)
+- Busca el mapeo de artículo (`Integracion.MapeoArticulos`); **si no existe, YA NO hace `THROW`** — registra/actualiza una fila en `Integracion.ArticulosPendientesMapeo` (con `NombreArticuloVisions`/`CostoArticuloVisions`/`PrecioArticuloVisions` que trae el evento, como sugerencia) y hace `RETURN` dejando el evento `Procesado=0` — se reintenta solo la próxima ronda, y en cuanto el Administrador cree el mapeo (`catalogo/mapeo-articulos-visions`) la venta se procesa normal
+- Resuelve `Organizacion.CentrosCosto.BodegaVentaVisionsID`; si es NULL, `THROW 54001` (falta configurar la bodega en Catálogo > Centros de Costo)
+- Actualiza `InventarioReportadoVisions` (MERGE, acumulador de seguimiento, no cambia)
+- Descuenta `Inventario.InventarioStock` con cursor FEFO (mismo patrón que `sp_CrearYEnviarTraspaso`/`sp_IniciarOrdenProduccion`) sobre la bodega de venta Visions del Centro de Costo, generando `Kardex.KardexMovimientos` (tipo `SALIDA_VENTA_VISIONS`) por cada lote tocado
+- A propósito **no bloquea por stock insuficiente**: si el pendiente no se cubre con los lotes disponibles, se aplica igual y el stock queda en negativo (la venta en Visions ya es un hecho consumado, no se puede revertir)
+- Los movimientos de Kardex se atribuyen al usuario de sistema `Seguridad.Usuarios.Username = 'sistema.sync'` (`Estado=0`, no puede iniciar sesión, es solo un FK de auditoría para procesos automáticos)
+- Marca el evento como procesado (`Procesado=1`, `FechaProcesado`)
 
 ### `Inventario.sp_CrearYEnviarTraspaso`
 Crea el traspaso y lo envía inmediatamente.
@@ -652,7 +685,7 @@ Estos valores son los únicos aceptados por la BD. Usar cualquier otro valor pro
 | `Catalogo.UnidadesMedida` | `Tipo` | `'PESO'`, `'VOLUMEN'`, `'UNIDAD'`, `'LONGITUD'` |
 | `Inventario.Bodegas` | `TipoBodega` | `'MATERIA_PRIMA'`, `'PRODUCTO_TERMINADO'`, `'WIP'`, `'TRANSITO'` |
 | `Organizacion.CentrosCosto` | `TipoCentro` | `'PLANTA_CENTRAL'`, `'SUCURSAL'`, `'PUNTO_VENTA'`, `'FRANQUICIA'` |
-| `Integracion.EventosSalientes` | `TipoEvento` | `'ENTRADA_PRODUCTO_TERMINADO'`, `'TRASPASO_RECIBIDO'` |
+| `Integracion.EventosSalientes` | `TipoEvento` | `'ENTRADA_PRODUCTO_TERMINADO'`, `'TRASPASO_RECIBIDO'`, `'SINCRONIZAR_ARTICULO'` (agosto 2026 — crea/actualiza el maestro del artículo en `dbo.TARJETA` de Visions, nunca toca `EXISTENCIAS`) |
 | `Integracion.EventosEntrantes` | `TipoEvento` | `'VENTA'`, `'AJUSTE_INVENTARIO'` |
 | `Kardex.TiposMovimientoKardex` | `Signo` | `1` (entrada), `-1` (salida) |
 | `Auditoria.LogAuditoria` | `Accion` | `'INSERT'`, `'UPDATE'`, `'DELETE'` |
@@ -767,3 +800,24 @@ Foto de perfil opcional, editable por el propio usuario (cualquier rol) desde el
 ALTER TABLE Seguridad.Usuarios ADD FotoPerfil VARBINARY(MAX) NULL, FotoPerfilContentType NVARCHAR(50) NULL;
 ```
 Límite de 1 MB validado tanto en el cliente (`PerfilMenu.razor`) como en el servidor (`AuthController.ActualizarFotoPerfil`). Ver `CLAUDE.md` sección 20.28. **Ya aplicado en la base de datos** — no requiere ejecución manual.
+
+### 9.15 — Columnas nuevas: `Catalogo.Articulos.Imagen` / `ImagenContentType`
+Imagen opcional (una sola por artículo), editable desde `ArticuloDialog.razor` al crear o editar. Mismo patrón que la foto de perfil: `UPDATE` reemplaza la anterior, límite 1 MB.
+```sql
+ALTER TABLE Catalogo.Articulos ADD Imagen VARBINARY(MAX) NULL, ImagenContentType NVARCHAR(50) NULL;
+```
+Ver `CLAUDE.md` sección 20.29. **Ya aplicado en la base de datos** — no requiere ejecución manual.
+
+### 9.16 — Tabla nueva: `Organizacion.ConfiguracionEmpresa`
+Fila única (`ConfiguracionID = 1`) con el nombre y logo de la empresa que ve **todo el mundo** en el sidebar — a diferencia de `Seguridad.PreferenciasUsuario` (por usuario) y `Catalogo.Articulos.Imagen` (por artículo), esto es una configuración global, editable solo por Administrador desde Settings > "Mi Negocio".
+```sql
+CREATE TABLE Organizacion.ConfiguracionEmpresa (
+    ConfiguracionID INT NOT NULL PRIMARY KEY,
+    NombreEmpresa NVARCHAR(100) NOT NULL,
+    Logo VARBINARY(MAX) NULL,
+    LogoContentType NVARCHAR(50) NULL,
+    CONSTRAINT CK_ConfiguracionEmpresa_Singleton CHECK (ConfiguracionID = 1)
+);
+INSERT INTO Organizacion.ConfiguracionEmpresa (ConfiguracionID, NombreEmpresa) VALUES (1, 'NEXO ERP');
+```
+Ver `CLAUDE.md` sección 20.29. **Ya aplicado en la base de datos** — no requiere ejecución manual.

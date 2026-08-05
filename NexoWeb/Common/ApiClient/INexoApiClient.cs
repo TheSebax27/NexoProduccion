@@ -10,6 +10,10 @@ public interface INexoApiClient
     // cualquier endpoint de NexoApi, sin que este cliente tenga que
     // conocer cada modulo de negocio uno por uno.
     Task<T?> GetAsync<T>(string ruta);
+
+    // Para descargas (Excel, PDF): trae los bytes crudos ya autenticados con
+    // el JWT -- un <a href> plano no puede mandar ese header.
+    Task<byte[]> GetBytesAsync(string ruta);
     Task<TResponse?> PostAsync<TRequest, TResponse>(string ruta, TRequest body);
     Task PostAsync<TRequest>(string ruta, TRequest body);
     Task<TResponse?> PutAsync<TRequest, TResponse>(string ruta, TRequest body);

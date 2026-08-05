@@ -53,6 +53,11 @@ else if (Preferencias.VistaListado == "tarjetas")
         @foreach (var articulo in _articulos)
         {
             <div class="nexo-item-card">
+                @if (articulo.TieneImagen)
+                {
+                    <img src="@($"api/catalogo/articulos/{articulo.ArticuloID}/imagen")" alt=""
+                         style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:0.5rem;" />
+                }
                 <div class="nexo-item-card__title">@articulo.Nombre</div>
                 <div class="nexo-item-card__sub">
                     @articulo.SKU · @articulo.TipoArticulo
@@ -96,6 +101,7 @@ else
 {
     <MudTable Items="_articulos" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
+            <MudTh></MudTh>
             <MudTh>SKU</MudTh>
             <MudTh>Nombre</MudTh>
             <MudTh>Tipo</MudTh>
@@ -107,6 +113,13 @@ else
             <MudTh>Accion</MudTh>
         </HeaderContent>
         <RowTemplate>
+            <MudTd DataLabel="">
+                @if (context.TieneImagen)
+                {
+                    <img src="@($"api/catalogo/articulos/{context.ArticuloID}/imagen")" alt=""
+                         style="width:32px; height:32px; object-fit:cover; border-radius:6px;" />
+                }
+            </MudTd>
             <MudTd DataLabel="SKU">@context.SKU</MudTd>
             <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
             <MudTd DataLabel="Tipo">@context.TipoArticulo</MudTd>
@@ -236,8 +249,17 @@ else
 
         try
         {
-            var request = (CrearArticuloRequest)resultado.Data!;
-            await ApiClient.PostAsync<CrearArticuloRequest, object?>("api/catalogo/articulos", request);
+            var dialogoResultado = (ArticuloDialogResultado)resultado.Data!;
+            var request = (CrearArticuloRequest)dialogoResultado.Datos;
+            var creado = await ApiClient.PostAsync<CrearArticuloRequest, CrearArticuloResponse>("api/catalogo/articulos", request);
+
+            if (dialogoResultado.ImagenBase64 is not null && creado is not null)
+            {
+                await ApiClient.PutAsync<ActualizarImagenRequest, object?>(
+                    $"api/catalogo/articulos/{creado.ArticuloId}/imagen",
+                    new ActualizarImagenRequest(dialogoResultado.ImagenBase64, dialogoResultado.ImagenContentType!));
+            }
+
             Snackbar.Add("Articulo creado correctamente.", Severity.Success);
             await CargarAsync();
         }
@@ -262,9 +284,18 @@ else
 
         try
         {
-            var request = (ActualizarArticuloRequest)resultado.Data!;
+            var dialogoResultado = (ArticuloDialogResultado)resultado.Data!;
+            var request = (ActualizarArticuloRequest)dialogoResultado.Datos;
             await ApiClient.PutAsync<ActualizarArticuloRequest, object?>(
                 $"api/catalogo/articulos/{articulo.ArticuloID}", request);
+
+            if (dialogoResultado.ImagenBase64 is not null)
+            {
+                await ApiClient.PutAsync<ActualizarImagenRequest, object?>(
+                    $"api/catalogo/articulos/{articulo.ArticuloID}/imagen",
+                    new ActualizarImagenRequest(dialogoResultado.ImagenBase64, dialogoResultado.ImagenContentType!));
+            }
+
             Snackbar.Add("Articulo actualizado correctamente.", Severity.Success);
             await CargarAsync();
         }

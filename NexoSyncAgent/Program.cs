@@ -11,6 +11,7 @@ builder.Services.AddWindowsService();
 
 builder.Services.AddSingleton<IVisionsConnectionFactory, VisionsConnectionFactory>();
 
+builder.Services.AddScoped<TareaSincronizarConfiguracion>();
 builder.Services.AddScoped<TareaAplicarEntradasInventario>();
 builder.Services.AddScoped<TareaExportarVentas>();
 

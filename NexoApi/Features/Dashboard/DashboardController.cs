@@ -10,10 +10,12 @@ namespace NexoApi.Features.Dashboard;
 public class DashboardController : ControllerBase
 {
     private readonly IDashboardService _service;
+    private readonly IDashboardExportService _exportService;
 
-    public DashboardController(IDashboardService service)
+    public DashboardController(IDashboardService service, IDashboardExportService exportService)
     {
         _service = service;
+        _exportService = exportService;
     }
 
     [HttpGet("plan-vs-real")]
@@ -45,4 +47,25 @@ public class DashboardController : ControllerBase
     [HttpGet("cumplimiento-planificacion")]
     public async Task<ActionResult<IEnumerable<CumplimientoCentroCostoItem>>> CumplimientoPlanificacion()
         => Ok(await _service.ObtenerCumplimientoAsync());
+
+    [HttpGet("exportar/excel")]
+    public async Task<IActionResult> ExportarExcel([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
+    {
+        var hastaFinal = hasta ?? DateTime.Today;
+        var desdeFinal = desde ?? hastaFinal.AddDays(-30);
+        var archivo = await _exportService.GenerarExcelAsync(desdeFinal, hastaFinal);
+
+        return File(archivo, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"NEXO-Reporte-{DateTime.Now:yyyyMMdd-HHmm}.xlsx");
+    }
+
+    [HttpGet("exportar/pdf")]
+    public async Task<IActionResult> ExportarPdf([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
+    {
+        var hastaFinal = hasta ?? DateTime.Today;
+        var desdeFinal = desde ?? hastaFinal.AddDays(-30);
+        var archivo = await _exportService.GenerarPdfAsync(desdeFinal, hastaFinal);
+
+        return File(archivo, "application/pdf", $"NEXO-Reporte-{DateTime.Now:yyyyMMdd-HHmm}.pdf");
+    }
 }

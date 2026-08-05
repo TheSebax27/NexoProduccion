@@ -59,6 +59,11 @@ else if (Preferencias.VistaListado == "tarjetas")
         @foreach (var item in _stock)
         {
             <div class="nexo-item-card">
+                @if (item.TieneImagen)
+                {
+                    <img src="@($"api/catalogo/articulos/{item.ArticuloID}/imagen")" alt=""
+                         style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:0.5rem;" />
+                }
                 <div class="nexo-item-card__title">@item.Articulo</div>
                 <div class="nexo-item-card__sub">@item.SKU · @item.Bodega · @item.CentroCosto</div>
                 <div class="nexo-item-card__row">
@@ -103,6 +108,7 @@ else
 {
     <MudTable Items="_stock" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
+            <MudTh></MudTh>
             <MudTh>SKU</MudTh>
             <MudTh>Articulo</MudTh>
             <MudTh>Bodega</MudTh>
@@ -112,6 +118,13 @@ else
             <MudTh>Alerta</MudTh>
         </HeaderContent>
         <RowTemplate>
+            <MudTd DataLabel="">
+                @if (context.TieneImagen)
+                {
+                    <img src="@($"api/catalogo/articulos/{context.ArticuloID}/imagen")" alt=""
+                         style="width:32px; height:32px; object-fit:cover; border-radius:6px;" />
+                }
+            </MudTd>
             <MudTd DataLabel="SKU">@context.SKU</MudTd>
             <MudTd DataLabel="Articulo">@context.Articulo</MudTd>
             <MudTd DataLabel="Bodega">@context.Bodega</MudTd>

@@ -2,6 +2,8 @@
 @page "/"
 @attribute [Authorize(Roles = "Administrador,SupervisorPlanta,Bodeguero")]
 @inject INexoApiClient ApiClient
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
 @using NexoWeb.Common.Dtos
 @using System.Globalization
 
@@ -16,10 +18,20 @@
             <h1 class="nexo-page-hero__title">Dashboard</h1>
         </div>
     </div>
-    <span class="nexo-page-hero__timestamp">
-        <MudIcon Icon="@Icons.Material.Outlined.Schedule" Size="Size.Small" Class="mr-1" Style="vertical-align: middle; font-size: 14px;" />
-        Actualizado @DateTime.Now.ToString("dd MMM, HH:mm")
-    </span>
+    <div class="d-flex align-center" style="gap: 0.5rem;">
+        <span class="nexo-page-hero__timestamp">
+            <MudIcon Icon="@Icons.Material.Outlined.Schedule" Size="Size.Small" Class="mr-1" Style="vertical-align: middle; font-size: 14px;" />
+            Actualizado @DateTime.Now.ToString("dd MMM, HH:mm")
+        </span>
+        <MudButton Variant="Variant.Outlined" Color="Color.Success" Size="Size.Small" StartIcon="@Icons.Material.Filled.GridOn"
+                   OnClick="ExportarExcelAsync" Disabled="_exportando">
+            Excel
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                   OnClick="ExportarPdfAsync" Disabled="_exportando">
+            PDF
+        </MudButton>
+    </div>
 </div>
 <InfoAyuda Texto="Resumen de producción: cumplimiento de planes, unidades producidas, distribución por centro de costo y pérdidas. Usa el selector de fechas de cada gráfico para ajustar el período que quieres analizar." />
 
@@ -510,7 +522,7 @@ else
             var x = i * slot + (slot - anchoBarra) / 2;
             var y = punto.Porcentaje >= 0 ? zeroY - altura : zeroY;
             var color = punto.Porcentaje >= 0 ? "#10B981" : "#EF4444";
-            var esPico = (i == indiceMax || i == indiceMin) && punto.Porcentaje != 0;
+            var esPico = i == indiceMax || i == indiceMin;
 
             resultado.Add(new BarraVariacion(x, y, anchoBarra, altura, color, punto.Fecha.ToString("dd MMM"), punto.Porcentaje, esPico));
         }
@@ -596,5 +608,39 @@ else
         {
             new() { Name = "Costo Unitario", Data = _tendencia.Select(t => (double)t.CostoUnitarioReal).ToArray() }
         };
+    }
+
+    private bool _exportando;
+
+    private async Task ExportarExcelAsync() =>
+        await ExportarAsync("api/dashboard/exportar/excel", "xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+    private async Task ExportarPdfAsync() =>
+        await ExportarAsync("api/dashboard/exportar/pdf", "pdf", "application/pdf");
+
+    // El navegador no puede pedir directo la URL con un <a href> porque el
+    // endpoint exige el JWT -- se trae el archivo ya autenticado por la API y
+    // se entrega al JS de descargas.js como un stream (DotNetStreamReference).
+    private async Task ExportarAsync(string ruta, string extension, string tipoContenido)
+    {
+        _exportando = true;
+        try
+        {
+            var bytes = await ApiClient.GetBytesAsync(ruta);
+            var nombreArchivo = $"NEXO-Reporte-{DateTime.Now:yyyyMMdd-HHmm}.{extension}";
+
+            using var stream = new MemoryStream(bytes);
+            using var streamRef = new DotNetStreamReference(stream);
+            await JS.InvokeVoidAsync("nexoDescargarArchivo", nombreArchivo, tipoContenido, streamRef);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"No se pudo generar el reporte: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _exportando = false;
+        }
     }
 }
