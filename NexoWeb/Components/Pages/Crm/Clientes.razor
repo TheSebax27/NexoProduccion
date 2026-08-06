@@ -1,0 +1,209 @@
+@page "/crm/clientes"
+@attribute [Authorize(Roles = "Administrador")]
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Clientes - NEXO</PageTitle>
+
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Clientes</MudText>
+    <BotonFavorito Href="/crm/clientes" Etiqueta="Clientes" />
+</div>
+<InfoAyuda Texto="Registra los clientes de la empresa, con seguimiento comercial: de dónde vinieron, qué tipo de cliente son y quién los atiende. Usa 'Gestionar' para ver contactos, bitácora, historial completo y documentos de cada uno." />
+
+<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
+           StartIcon="@Icons.Material.Filled.PersonAdd" Class="mb-4">
+    Nuevo Cliente
+</MudButton>
+
+<MudGrid Class="mb-4">
+    <MudItem xs="12" sm="4">
+        <MudSelect T="int?" Value="_filtroResponsableId" ValueChanged="OnFiltroCambiadoAsync" Label="Responsable" Clearable="true">
+            @foreach (var e in _empleados)
+            {
+                <MudSelectItem T="int?" Value="@e.EmpleadoID">@e.Nombres @e.Apellidos</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudSelect T="string" @bind-Value="_filtroTipoCliente" Label="Tipo de Cliente" Clearable="true">
+            <MudSelectItem Value="@("Empresa")">Empresa</MudSelectItem>
+            <MudSelectItem Value="@("Persona Natural")">Persona Natural</MudSelectItem>
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudSelect T="string" @bind-Value="_filtroFuenteContacto" Label="Fuente del Contacto" Clearable="true">
+            <MudSelectItem Value="@("Referido")">Referido</MudSelectItem>
+            <MudSelectItem Value="@("Redes Sociales")">Redes Sociales</MudSelectItem>
+            <MudSelectItem Value="@("Llamada en Frio")">Llamada en Frío</MudSelectItem>
+            <MudSelectItem Value="@("Pagina Web")">Página Web</MudSelectItem>
+            <MudSelectItem Value="@("Otro")">Otro</MudSelectItem>
+        </MudSelect>
+    </MudItem>
+</MudGrid>
+
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar los clientes: @_errorCarga</MudAlert>
+}
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (!_clientesFiltrados.Any())
+{
+    <MudText>No hay clientes que coincidan con el filtro.</MudText>
+}
+else if (Preferencias.VistaListado == "tarjetas")
+{
+    <div class="nexo-card-grid">
+        @foreach (var cliente in _clientesFiltrados)
+        {
+            <div class="nexo-item-card">
+                <div class="d-flex align-center justify-space-between">
+                    <div class="nexo-item-card__title">@cliente.Nombre</div>
+                    <MudChip T="string" Color="@(cliente.Estado ? Color.Success : Color.Error)" Size="Size.Small">
+                        @(cliente.Estado ? "Activo" : "Inactivo")
+                    </MudChip>
+                </div>
+                <div class="nexo-item-card__sub">@(cliente.NIT ?? "Sin NIT") @(cliente.TipoCliente is not null ? $"· {cliente.TipoCliente}" : "")</div>
+                <div class="nexo-item-card__row"><span>Responsable</span><strong>@(cliente.Responsable ?? "-")</strong></div>
+                <div class="nexo-item-card__row"><span>Contactos</span><strong>@cliente.TotalContactos</strong></div>
+                <div class="nexo-item-card__row"><span>Teléfono</span><strong>@(cliente.Telefono ?? "-")</strong></div>
+                <div class="nexo-item-card__row"><span>Última interacción</span><strong>@(cliente.UltimaInteraccion?.ToLocalTime().ToString("dd/MM/yyyy") ?? "-")</strong></div>
+                <div class="nexo-item-card__actions">
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(cliente))">Gestionar</MudButton>
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(cliente))">Editar</MudButton>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <MudTable Items="_clientesFiltrados" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Nombre</MudTh>
+            <MudTh>NIT</MudTh>
+            <MudTh>Tipo</MudTh>
+            <MudTh>Responsable</MudTh>
+            <MudTh>Contactos</MudTh>
+            <MudTh>Última Interacción</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Accion</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+            <MudTd DataLabel="NIT">@(context.NIT ?? "-")</MudTd>
+            <MudTd DataLabel="Tipo">@(context.TipoCliente ?? "-")</MudTd>
+            <MudTd DataLabel="Responsable">@(context.Responsable ?? "-")</MudTd>
+            <MudTd DataLabel="Contactos">@context.TotalContactos</MudTd>
+            <MudTd DataLabel="Última Interacción">@(context.UltimaInteraccion?.ToLocalTime().ToString("dd/MM/yyyy") ?? "-")</MudTd>
+            <MudTd DataLabel="Estado">
+                <MudChip T="string" Color="@(context.Estado ? Color.Success : Color.Error)" Size="Size.Small">
+                    @(context.Estado ? "Activo" : "Inactivo")
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Accion">
+                <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
+                <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">Editar</MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No hay clientes registrados.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+}
+
+@code {
+    private List<ClienteItem> _clientes = new();
+    private List<EmpleadoItem> _empleados = new();
+    private bool _cargando = true;
+    private string? _errorCarga;
+
+    private int? _filtroResponsableId;
+    private string? _filtroTipoCliente;
+    private string? _filtroFuenteContacto;
+
+    private IEnumerable<ClienteItem> _clientesFiltrados => _clientes
+        .Where(c => _filtroResponsableId is null || c.ResponsableID == _filtroResponsableId)
+        .Where(c => _filtroTipoCliente is null || c.TipoCliente == _filtroTipoCliente)
+        .Where(c => _filtroFuenteContacto is null || c.FuenteContacto == _filtroFuenteContacto);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
+            var tareaEmpleados = ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados?soloActivos=true");
+
+            await Task.WhenAll(tareaClientes, tareaEmpleados);
+
+            _clientes = await tareaClientes ?? new();
+            _empleados = await tareaEmpleados ?? new();
+        }
+        catch (Exception ex) { _errorCarga = ex.Message; }
+        finally { _cargando = false; }
+    }
+
+    private void OnFiltroCambiadoAsync(int? nuevoValor) => _filtroResponsableId = nuevoValor;
+
+    private async Task CargarAsync()
+    {
+        try
+        {
+            _clientes = await ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes") ?? new();
+        }
+        catch (Exception ex) { _errorCarga = ex.Message; }
+    }
+
+    private async Task AbrirCreacionAsync()
+    {
+        var parametros = new DialogParameters<ClienteDialog> { { x => x.Empleados, _empleados } };
+        var dialogo = await DialogService.ShowAsync<ClienteDialog>("Nuevo Cliente", parametros);
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled) return;
+        try
+        {
+            var request = (CrearClienteRequest)resultado.Data!;
+            await ApiClient.PostAsync<CrearClienteRequest, object?>("api/crm/clientes", request);
+            Snackbar.Add("Cliente creado correctamente.", Severity.Success);
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+    }
+
+    private async Task AbrirEdicionAsync(ClienteItem cliente)
+    {
+        var parametros = new DialogParameters<ClienteDialog>
+        {
+            { x => x.Cliente, cliente },
+            { x => x.Empleados, _empleados }
+        };
+        var dialogo = await DialogService.ShowAsync<ClienteDialog>("Editar Cliente", parametros);
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled) return;
+        try
+        {
+            var request = (ActualizarClienteRequest)resultado.Data!;
+            await ApiClient.PutAsync<ActualizarClienteRequest, object?>($"api/crm/clientes/{cliente.ClienteID}", request);
+            Snackbar.Add("Cliente actualizado correctamente.", Severity.Success);
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+    }
+
+    private async Task AbrirGestionAsync(ClienteItem cliente)
+    {
+        var parametros = new DialogParameters<GestionClienteDialog> { { x => x.Cliente, cliente } };
+        // OJO: ShowAsync resuelve apenas el dialogo se ABRE, no cuando se
+        // CIERRA -- hay que esperar su .Result para refrescar con los cambios reales.
+        var dialogo = await DialogService.ShowAsync<GestionClienteDialog>("Gestionar Cliente", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        await dialogo.Result;
+        await CargarAsync();
+    }
+}

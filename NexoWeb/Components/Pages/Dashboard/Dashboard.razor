@@ -4,37 +4,38 @@
 @inject INexoApiClient ApiClient
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
+@inject NavigationManager Navigation
 @using NexoWeb.Common.Dtos
 @using System.Globalization
 
-<PageTitle>Dashboard - NEXO</PageTitle>
+<PageTitle>Business Intelligence - NEXO</PageTitle>
 
 @* ── Encabezado de página ─────────────────────────────────── *@
 <div class="nexo-page-hero">
     <div class="nexo-page-hero__left">
         <div class="nexo-page-hero__accent"></div>
         <div>
-            <p class="nexo-page-hero__module">Producción</p>
-            <h1 class="nexo-page-hero__title">Dashboard</h1>
+            <p class="nexo-page-hero__module">BI</p>
+            <h1 class="nexo-page-hero__title">Business Intelligence</h1>
         </div>
     </div>
-    <div class="d-flex align-center" style="gap: 0.5rem;">
-        <span class="nexo-page-hero__timestamp">
-            <MudIcon Icon="@Icons.Material.Outlined.Schedule" Size="Size.Small" Class="mr-1" Style="vertical-align: middle; font-size: 14px;" />
-            Actualizado @DateTime.Now.ToString("dd MMM, HH:mm")
-        </span>
-        <MudButton Variant="Variant.Outlined" Color="Color.Success" Size="Size.Small" StartIcon="@Icons.Material.Filled.GridOn"
-                   OnClick="ExportarExcelAsync" Disabled="_exportando">
-            Excel
-        </MudButton>
-        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.PictureAsPdf"
-                   OnClick="ExportarPdfAsync" Disabled="_exportando">
-            PDF
-        </MudButton>
-    </div>
+    
 </div>
-<InfoAyuda Texto="Resumen de producción: cumplimiento de planes, unidades producidas, distribución por centro de costo y pérdidas. Usa el selector de fechas de cada gráfico para ajustar el período que quieres analizar." />
-
+<InfoAyuda Texto="Análisis transversal de todo el negocio: producción, CRM, RRHH, planificación e inventario. Usa el selector de fechas de cada gráfico para ajustar el período que quieres analizar." />
+<div class="d-flex align-center" style="gap: 0.5rem;">
+    <span class="nexo-page-hero__timestamp">
+        <MudIcon Icon="@Icons.Material.Outlined.Schedule" Size="Size.Small" Class="mr-1" Style="vertical-align: middle; font-size: 14px;" />
+        Actualizado @DateTime.Now.ToString("dd MMM, HH:mm")
+    </span>
+    <MudButton Variant="Variant.Outlined" Color="Color.Success" Size="Size.Small" StartIcon="@Icons.Material.Filled.GridOn"
+               OnClick="ExportarExcelAsync" Disabled="_exportando">
+        Excel
+    </MudButton>
+    <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.PictureAsPdf"
+               OnClick="ExportarPdfAsync" Disabled="_exportando">
+        PDF
+    </MudButton>
+</div>
 @if (_errorCarga is not null)
 {
     <MudAlert Severity="Severity.Error" Class="mb-6">No se pudo cargar el dashboard: @_errorCarga</MudAlert>
@@ -90,6 +91,158 @@ else
         </div>
 
     </div>
+
+    @* ── Resumen General (transversal a todos los modulos) ──────── *@
+    <MudText Typo="Typo.subtitle1" Class="mb-2 mt-2">Resumen General</MudText>
+    <div class="nexo-kpi-grid mb-6">
+
+        <div class="nexo-kpi nexo-kpi--indigo">
+            <div class="nexo-kpi__icon">
+                <MudIcon Icon="@Icons.Material.Filled.Handshake" Size="Size.Small" />
+            </div>
+            <div class="nexo-kpi__value">@_resumenCrm.ClientesNuevos</div>
+            <div class="nexo-kpi__label">Clientes Nuevos (CRM)</div>
+            <div class="nexo-kpi__sub">@_resumenCrm.Interacciones interacciones · Últimos 30 días</div>
+        </div>
+
+        <div class="nexo-kpi nexo-kpi--blue">
+            <div class="nexo-kpi__icon">
+                <MudIcon Icon="@Icons.Material.Filled.Badge" Size="Size.Small" />
+            </div>
+            <div class="nexo-kpi__value">@_totalEmpleadosActivos</div>
+            <div class="nexo-kpi__label">Empleados Activos (RRHH)</div>
+            <div class="nexo-kpi__sub">@_empleadosPorCentroCosto.Count centro(s)</div>
+        </div>
+
+        <div class="nexo-kpi nexo-kpi--@(_resumenPlanificacion.CumplimientoDemandaPromedio >= 80 ? "green" : _resumenPlanificacion.CumplimientoDemandaPromedio >= 50 ? "amber" : "red")">
+            <div class="nexo-kpi__icon">
+                <MudIcon Icon="@Icons.Material.Filled.Timeline" Size="Size.Small" />
+            </div>
+            <div class="nexo-kpi__value">@_resumenPlanificacion.CumplimientoDemandaPromedio.ToString("N0")%</div>
+            <div class="nexo-kpi__label">Cumplimiento Demanda</div>
+            <div class="nexo-kpi__sub">Venta: @_resumenPlanificacion.CumplimientoVentaPromedio.ToString("N0")% · Mes actual</div>
+        </div>
+
+        <div class="nexo-kpi nexo-kpi--teal">
+            <div class="nexo-kpi__icon">
+                <MudIcon Icon="@Icons.Material.Filled.Inventory2" Size="Size.Small" />
+            </div>
+            <div class="nexo-kpi__value">@_resumenInventario.ValorTotalStock.ToString("C0")</div>
+            <div class="nexo-kpi__label">Valor de Stock</div>
+            <div class="nexo-kpi__sub">@_resumenInventario.ArticulosConAlerta artículo(s) con alerta</div>
+        </div>
+
+    </div>
+
+    @if (_alertasProyectos.Count > 0)
+    {
+        <MudPaper Class="pa-5 mb-6">
+            <div class="nexo-chart-header">
+                <MudIcon Icon="@Icons.Material.Outlined.ReportProblem" Size="Size.Small" Class="nexo-chart-header__icon" />
+                <div class="flex-grow-1">
+                    <div class="nexo-chart-header__title">Alertas de Proyectos</div>
+                    <div class="nexo-chart-header__sub">Atrasados o con costo por encima del presupuesto</div>
+                </div>
+                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => Navigation.NavigateTo("/proyectos"))">
+                    Ver Proyectos
+                </MudButton>
+            </div>
+
+            <MudTable Items="_alertasProyectos" Dense="true" Hover="true" Elevation="0" Class="mt-4">
+                <HeaderContent>
+                    <MudTh>Proyecto</MudTh>
+                    <MudTh>Fecha Fin</MudTh>
+                    <MudTh Style="text-align:right">Presupuesto</MudTh>
+                    <MudTh Style="text-align:right">Costo Actual</MudTh>
+                    <MudTh>Alerta</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Proyecto">@context.Nombre</MudTd>
+                    <MudTd DataLabel="Fecha Fin">@(context.FechaFin?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
+                    <MudTd DataLabel="Presupuesto" Style="text-align:right">@context.Presupuesto.ToString("C0")</MudTd>
+                    <MudTd DataLabel="Costo Actual" Style="text-align:right">@context.CostoTotal.ToString("C0")</MudTd>
+                    <MudTd DataLabel="Alerta">
+                        @if (context.Atrasado)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Error">Atrasado</MudChip>
+                        }
+                        @if (context.ConSobrecosto)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Warning">Sobrecosto</MudChip>
+                        }
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    }
+
+    @if (_desviaciones.Count > 0)
+    {
+        <MudPaper Class="pa-5 mb-6">
+            <div class="nexo-chart-header">
+                <MudIcon Icon="@Icons.Material.Outlined.TrendingDown" Size="Size.Small" Class="nexo-chart-header__icon" />
+                <div class="flex-grow-1">
+                    <div class="nexo-chart-header__title">Desviaciones de Planificación</div>
+                    <div class="nexo-chart-header__sub">Centros de Costo por debajo del 70% de cumplimiento este mes</div>
+                </div>
+                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => Navigation.NavigateTo("/planificacion/demanda"))">
+                    Ver en Planificación
+                </MudButton>
+            </div>
+
+            <MudTable Items="_desviaciones" Dense="true" Hover="true" Elevation="0" Class="mt-4">
+                <HeaderContent>
+                    <MudTh>Centro de Costo</MudTh>
+                    <MudTh Style="text-align:right">Cumplimiento Demanda</MudTh>
+                    <MudTh Style="text-align:right">Cumplimiento Venta</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Centro de Costo">@context.CentroCosto</MudTd>
+                    <MudTd DataLabel="Cumplimiento Demanda" Style="text-align:right">
+                        <MudChip T="string" Size="Size.Small" Color="@(context.CumplimientoDemanda < 70 ? Color.Error : Color.Default)">
+                            @context.CumplimientoDemanda.ToString("N0")%
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Cumplimiento Venta" Style="text-align:right">
+                        <MudChip T="string" Size="Size.Small" Color="@(context.CumplimientoVenta < 70 ? Color.Error : Color.Default)">
+                            @context.CumplimientoVenta.ToString("N0")%
+                        </MudChip>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    }
+
+    @if (_clientesFrios.Count > 0)
+    {
+        <MudPaper Class="pa-5 mb-6">
+            <div class="nexo-chart-header">
+                <MudIcon Icon="@Icons.Material.Outlined.AcUnit" Size="Size.Small" Class="nexo-chart-header__icon" />
+                <div class="flex-grow-1">
+                    <div class="nexo-chart-header__title">Clientes Fríos (CRM)</div>
+                    <div class="nexo-chart-header__sub">Sin interacción hace más de 30 días</div>
+                </div>
+                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => Navigation.NavigateTo("/crm/clientes"))">
+                    Ver en CRM
+                </MudButton>
+            </div>
+
+            <MudTable Items="_clientesFrios" Dense="true" Hover="true" Elevation="0" Class="mt-4">
+                <HeaderContent>
+                    <MudTh>Cliente</MudTh>
+                    <MudTh>Responsable</MudTh>
+                    <MudTh>Última Interacción</MudTh>
+                    <MudTh>Próximo Contacto</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Cliente">@context.Nombre</MudTd>
+                    <MudTd DataLabel="Responsable">@(context.Responsable ?? "-")</MudTd>
+                    <MudTd DataLabel="Última Interacción">@(context.UltimaInteraccion?.ToLocalTime().ToString("dd/MM/yyyy") ?? "Nunca")</MudTd>
+                    <MudTd DataLabel="Próximo Contacto">@(context.ProximoContacto?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    }
 
     @* ── Gráficos principales ──────────────────────────────────── *@
     <MudGrid>
@@ -161,12 +314,18 @@ else
                 }
                 else
                 {
-                    <div class="nexo-variacion-chart">
-                        <svg viewBox="0 0 1000 240" preserveAspectRatio="none" class="nexo-variacion-chart__svg">
-                            <line x1="0" y1="120" x2="1000" y2="120" class="nexo-variacion-chart__zero" />
+                    @* Ancho dinamico: con todo el historico (sin limite de fecha) las
+                       barras se irian apretando cada vez mas -- en vez de eso el SVG
+                       crece horizontalmente y el contenedor se vuelve scrolleable, asi
+                       cada barra mantiene un ancho minimo legible sin importar cuantos
+                       dias haya. *@
+                    <div class="nexo-variacion-chart" style="overflow-x: auto;">
+                        <svg viewBox="@($"0 0 {AnchoSvgVariacion} 240")" preserveAspectRatio="none"
+                             class="nexo-variacion-chart__svg" style="min-width: @(AnchoSvgVariacion)px; width: @(AnchoSvgVariacion)px;">
+                            <line x1="0" y1="120" x2="@AnchoSvgVariacion" y2="120" class="nexo-variacion-chart__zero" />
                             @((MarkupString)ConstruirSvgVariacion())
                         </svg>
-                        <div class="nexo-variacion-chart__axis">
+                        <div class="nexo-variacion-chart__axis" style="min-width: @(AnchoSvgVariacion)px;">
                             @foreach (var p in _variacionProduccion)
                             {
                                 <span>@p.Fecha.ToString("dd/MM")</span>
@@ -416,12 +575,31 @@ else
     private double _cumplimientoPromedio;
     private double _totalRealProducido;
 
+    // Resumen General (BI, agosto 2026) -- CRM y RRHH son Admin-only en el
+    // backend, asi que SupervisorPlanta/Bodeguero recibirian 403 ahi. Se
+    // cargan aparte del Task.WhenAll principal para que ese 403 no tumbe el
+    // resto del Dashboard para esos roles (quedan en 0, sin error visible).
+    private ResumenCrmItem _resumenCrm = new(0, 0);
+    private List<ClienteFrioItem> _clientesFrios = new();
+    private List<DesviacionItem> _desviaciones = new();
+    private List<ProyectoAlertaItem> _alertasProyectos = new();
+    private List<EmpleadosPorCentroCostoItem> _empleadosPorCentroCosto = new();
+    private int _totalEmpleadosActivos;
+    private ResumenPlanificacionItem _resumenPlanificacion = new(0, 0);
+    private ResumenInventarioItem _resumenInventario = new(0, 0);
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
             var tareaPlanVsReal    = ApiClient.GetAsync<List<PlanVsRealPunto>>(
                 $"api/dashboard/plan-vs-real?desde={_rangoPlanVsReal.Start:yyyy-MM-dd}&hasta={_rangoPlanVsReal.End:yyyy-MM-dd}");
+            // El grafico de Variacion es independiente del selector de fecha de arriba
+            // (pedido explicito: "que se muestre todo siempre") -- trae TODO el
+            // historico, sin limite, para que un dia con variacion grande no
+            // desaparezca solo porque quedo fuera del rango de Plan vs Real.
+            var tareaVariacionHistorico = ApiClient.GetAsync<List<PlanVsRealPunto>>(
+                $"api/dashboard/plan-vs-real?desde=2000-01-01&hasta={DateTime.Today:yyyy-MM-dd}");
             var tareaDistribucion  = ApiClient.GetAsync<List<DistribucionCentroCostoItem>>("api/dashboard/distribucion-centro-costo");
             var tareaPerdidas      = ApiClient.GetAsync<List<PerdidaPorMotivoItem>>(
                 $"api/dashboard/perdidas-por-motivo?desde={_rangoPerdidas.Start:yyyy-MM-dd}&hasta={_rangoPerdidas.End:yyyy-MM-dd}");
@@ -431,10 +609,17 @@ else
             var tareaProductos     = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
             var tareaCumplimiento  = ApiClient.GetAsync<List<CumplimientoCentroCostoItem>>("api/dashboard/cumplimiento-planificacion");
 
-            await Task.WhenAll(tareaPlanVsReal, tareaDistribucion, tareaPerdidas, tareaProductos, tareaCumplimiento);
+            await Task.WhenAll(tareaPlanVsReal, tareaVariacionHistorico, tareaDistribucion, tareaPerdidas, tareaProductos, tareaCumplimiento);
 
             _planVsReal = await tareaPlanVsReal ?? new();
             ActualizarGraficoPlanVsReal();
+
+            var variacionHistorico = await tareaVariacionHistorico ?? new();
+            _variacionProduccion = variacionHistorico
+                .Select(p => (p.Fecha, Porcentaje: p.TotalPlanificado > 0
+                    ? (double)((p.TotalReal - p.TotalPlanificado) / p.TotalPlanificado * 100)
+                    : 0d))
+                .ToList();
 
             _distribucion = await tareaDistribucion ?? new();
             _labelsDistribucion = _distribucion.Select(d => d.CentroCosto).ToArray();
@@ -464,6 +649,36 @@ else
         {
             _cargando = false;
         }
+
+        await CargarResumenGeneralAsync();
+    }
+
+    private async Task CargarResumenGeneralAsync()
+    {
+        try
+        {
+            _resumenCrm = await ApiClient.GetAsync<ResumenCrmItem>(
+                $"api/dashboard/resumen-crm?desde={DateTime.Today.AddDays(-30):yyyy-MM-dd}&hasta={DateTime.Today:yyyy-MM-dd}") ?? new(0, 0);
+            _clientesFrios = await ApiClient.GetAsync<List<ClienteFrioItem>>("api/crm/clientes-frios?diasSinContacto=30") ?? new();
+            _empleadosPorCentroCosto = await ApiClient.GetAsync<List<EmpleadosPorCentroCostoItem>>("api/dashboard/empleados-por-centro-costo") ?? new();
+            _totalEmpleadosActivos = _empleadosPorCentroCosto.Sum(e => e.TotalEmpleados);
+        }
+        catch (HttpRequestException)
+        {
+            // 403 esperado para SupervisorPlanta/Bodeguero (CRM/RRHH son Admin-only) -- se queda en 0.
+        }
+
+        try
+        {
+            _resumenPlanificacion = await ApiClient.GetAsync<ResumenPlanificacionItem>("api/dashboard/resumen-planificacion") ?? new(0, 0);
+            _resumenInventario = await ApiClient.GetAsync<ResumenInventarioItem>("api/dashboard/resumen-inventario") ?? new(0, 0);
+            _desviaciones = await ApiClient.GetAsync<List<DesviacionItem>>("api/planificacion/desviaciones?umbral=70") ?? new();
+            _alertasProyectos = await ApiClient.GetAsync<List<ProyectoAlertaItem>>("api/proyectos/alertas") ?? new();
+        }
+        catch (HttpRequestException)
+        {
+            // Estos dos si son visibles para todos los roles del Dashboard -- si fallan, se queda en 0.
+        }
     }
 
     private void ActualizarGraficoPlanVsReal()
@@ -474,11 +689,6 @@ else
             new() { Name = "Planificado", Data = _planVsReal.Select(p => (double)p.TotalPlanificado).ToArray() },
             new() { Name = "Real",        Data = _planVsReal.Select(p => (double)p.TotalReal).ToArray() }
         };
-        _variacionProduccion = _planVsReal
-            .Select(p => (p.Fecha, Porcentaje: p.TotalPlanificado > 0
-                ? (double)((p.TotalReal - p.TotalPlanificado) / p.TotalPlanificado * 100)
-                : 0d))
-            .ToList();
     }
 
     // Convierte a texto SVG con punto decimal -- la app fuerza cultura es-CO
@@ -486,6 +696,12 @@ else
     private static string Inv(double valor) => valor.ToString("0.##", CultureInfo.InvariantCulture);
 
     private sealed record BarraVariacion(double X, double Y, double Width, double Height, string Color, string FechaLabel, double Porcentaje, bool EsPico);
+
+    // Ancho minimo por barra (con su separacion) para que la fecha y el % no se
+    // amontonen cuando hay muchos dias -- el SVG crece y el contenedor scrollea
+    // en vez de aplastar las barras (ver "todo el historico" en OnInitializedAsync).
+    private const double AnchoMinimoPorBarra = 32;
+    private double AnchoSvgVariacion => Math.Max(1000, _variacionProduccion.Count * AnchoMinimoPorBarra);
 
     // Barras estilo "Índice de producción industrial": centradas en una línea
     // de cero, verdes cuando lo real cumple/supera el plan, rojas cuando queda
@@ -497,7 +713,7 @@ else
         var n = _variacionProduccion.Count;
         if (n == 0) return resultado;
 
-        const double svgWidth = 1000;
+        var svgWidth = AnchoSvgVariacion;
         const double zeroY = 120;
         const double amplitud = 95;
 

@@ -1,0 +1,213 @@
+@page "/rrhh/empleados"
+@attribute [Authorize(Roles = "Administrador")]
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Empleados - NEXO</PageTitle>
+
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Empleados</MudText>
+    <BotonFavorito Href="/rrhh/empleados" Etiqueta="Empleados" />
+</div>
+<InfoAyuda Texto="Directorio básico de personal: nombre, cargo, Centro de Costo y datos de contacto. No maneja nómina ni contabilidad -- solo saber quién trabaja dónde." />
+
+<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
+           StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
+    Nuevo Empleado
+</MudButton>
+
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar los empleados: @_errorCarga</MudAlert>
+}
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_empleados.Count == 0)
+{
+    <MudText>No hay empleados registrados.</MudText>
+}
+else
+{
+    <MudTable Items="_empleados" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh></MudTh>
+            <MudTh>Nombre</MudTh>
+            <MudTh>Cargo</MudTh>
+            <MudTh>Departamento</MudTh>
+            <MudTh>Centro de Costo</MudTh>
+            <MudTh>Fecha Ingreso</MudTh>
+            <MudTh>Contacto</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Accion</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="">
+                @if (context.TieneFoto)
+                {
+                    <img src="@($"api/rrhh/empleados/{context.EmpleadoID}/foto?v={_cacheBust}")" alt=""
+                         style="width:32px; height:32px; object-fit:cover; border-radius:50%;" />
+                }
+                else
+                {
+                    <MudAvatar Size="Size.Small" Color="Color.Secondary">@context.Nombres[0]@context.Apellidos[0]</MudAvatar>
+                }
+            </MudTd>
+            <MudTd DataLabel="Nombre">@context.Nombres @context.Apellidos</MudTd>
+            <MudTd DataLabel="Cargo">@(context.Cargo ?? "-")</MudTd>
+            <MudTd DataLabel="Departamento">@(context.Departamento ?? "-")</MudTd>
+            <MudTd DataLabel="Centro de Costo">@(context.CentroCosto ?? "-")</MudTd>
+            <MudTd DataLabel="Fecha Ingreso">@(context.FechaIngreso?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
+            <MudTd DataLabel="Contacto">
+                @if (!string.IsNullOrWhiteSpace(context.Telefono)) { <div>@context.Telefono</div> }
+                @if (!string.IsNullOrWhiteSpace(context.Email)) { <div>@context.Email</div> }
+            </MudTd>
+            <MudTd DataLabel="Estado">
+                <MudChip T="string" Color="@(context.Estado ? Color.Success : Color.Error)" Size="Size.Small">
+                    @(context.Estado ? "Activo" : "Inactivo")
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Accion">
+                <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
+                <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">Editar</MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<EmpleadoItem> _empleados = new();
+    private List<CentroCostoItem> _centrosCosto = new();
+    private List<CargoItem> _cargos = new();
+    private bool _cargando = true;
+    private string? _errorCarga;
+    private long _cacheBust = DateTime.UtcNow.Ticks;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true");
+            var tareaEmpleados = ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados?soloActivos=false");
+            var tareaCargos = ApiClient.GetAsync<List<CargoItem>>("api/rrhh/cargos");
+
+            await Task.WhenAll(tareaCentrosCosto, tareaEmpleados, tareaCargos);
+
+            _centrosCosto = await tareaCentrosCosto ?? new();
+            _empleados = await tareaEmpleados ?? new();
+            _cargos = await tareaCargos ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task CargarEmpleadosAsync()
+    {
+        try
+        {
+            _empleados = await ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados?soloActivos=false") ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+    }
+
+    private async Task AbrirCreacionAsync()
+    {
+        var parametros = new DialogParameters<EmpleadoDialog>
+        {
+            { x => x.CentrosCosto, _centrosCosto },
+            { x => x.Cargos, _cargos },
+            { x => x.Empleados, _empleados }
+        };
+
+        var dialogo = await DialogService.ShowAsync<EmpleadoDialog>("Nuevo Empleado", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var dialogoResultado = (EmpleadoDialogResultado)resultado.Data!;
+            var request = (CrearEmpleadoRequest)dialogoResultado.Datos;
+            var creado = await ApiClient.PostAsync<CrearEmpleadoRequest, CrearEmpleadoResponse>("api/rrhh/empleados", request);
+
+            if (dialogoResultado.FotoBase64 is not null && creado is not null)
+            {
+                await ApiClient.PutAsync<ActualizarFotoEmpleadoRequest, object?>(
+                    $"api/rrhh/empleados/{creado.EmpleadoId}/foto",
+                    new ActualizarFotoEmpleadoRequest(dialogoResultado.FotoBase64, dialogoResultado.FotoContentType!));
+                _cacheBust = DateTime.UtcNow.Ticks;
+            }
+
+            Snackbar.Add("Empleado creado correctamente.", Severity.Success);
+            await CargarEmpleadosAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AbrirEdicionAsync(EmpleadoItem empleado)
+    {
+        var parametros = new DialogParameters<EmpleadoDialog>
+        {
+            { x => x.Empleado, empleado },
+            { x => x.CentrosCosto, _centrosCosto },
+            { x => x.Cargos, _cargos },
+            { x => x.Empleados, _empleados }
+        };
+
+        var dialogo = await DialogService.ShowAsync<EmpleadoDialog>("Editar Empleado", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var dialogoResultado = (EmpleadoDialogResultado)resultado.Data!;
+            var request = (ActualizarEmpleadoRequest)dialogoResultado.Datos;
+            await ApiClient.PutAsync<ActualizarEmpleadoRequest, object?>(
+                $"api/rrhh/empleados/{empleado.EmpleadoID}", request);
+
+            if (dialogoResultado.FotoBase64 is not null)
+            {
+                await ApiClient.PutAsync<ActualizarFotoEmpleadoRequest, object?>(
+                    $"api/rrhh/empleados/{empleado.EmpleadoID}/foto",
+                    new ActualizarFotoEmpleadoRequest(dialogoResultado.FotoBase64, dialogoResultado.FotoContentType!));
+                _cacheBust = DateTime.UtcNow.Ticks;
+            }
+
+            Snackbar.Add("Empleado actualizado correctamente.", Severity.Success);
+            await CargarEmpleadosAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AbrirGestionAsync(EmpleadoItem empleado)
+    {
+        var parametros = new DialogParameters<GestionEmpleadoDialog> { { x => x.Empleado, empleado } };
+        // OJO: ShowAsync resuelve apenas el dialogo se ABRE, no cuando se
+        // CIERRA -- hay que esperar su .Result para refrescar con los cambios reales.
+        var dialogo = await DialogService.ShowAsync<GestionEmpleadoDialog>("Gestionar Empleado", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        await dialogo.Result;
+        await CargarEmpleadosAsync();
+    }
+}

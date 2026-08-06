@@ -1,0 +1,107 @@
+@using NexoWeb.Common.Dtos
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" Model="@this">
+            <MudSelect T="int?" @bind-Value="_clienteId" Label="Cliente" Required="true"
+                       RequiredError="Selecciona un cliente" Class="mb-3">
+                @foreach (var c in Clientes)
+                {
+                    <MudSelectItem T="int?" Value="@c.ClienteID">@c.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudDatePicker @bind-Date="_fecha" Label="Fecha" Required="true" Class="mb-3" />
+            <MudTextField @bind-Value="_notas" Label="Notas (opcional)" Lines="2" Class="mb-3" />
+
+            <MudDivider Class="mb-3" />
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Artículos Vendidos</MudText>
+
+            @foreach (var linea in _lineas)
+            {
+                <div class="d-flex align-center mb-2" style="gap: 0.5rem;">
+                    <MudSelect T="int?" Value="linea.ArticuloID" ValueChanged="@((int? v) => OnArticuloCambiado(linea, v))"
+                               Label="Articulo" Style="flex: 3;">
+                        @foreach (var a in Articulos)
+                        {
+                            <MudSelectItem T="int?" Value="@a.ArticuloID">@a.SKU - @a.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudNumericField T="decimal" @bind-Value="linea.Cantidad" Label="Cantidad" Style="flex: 1;" Min="0.01m" Format="N2" />
+                    <MudNumericField T="decimal" @bind-Value="linea.PrecioUnitario" Label="Precio Unit." Style="flex: 1;" Min="0m" Format="N0" />
+                    <MudText Typo="Typo.body2" Style="flex: 1; text-align: right;">@((linea.Cantidad * linea.PrecioUnitario).ToString("C0"))</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => _lineas.Remove(linea))" />
+                </div>
+            }
+
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="@(() => _lineas.Add(new LineaEditable()))" Class="mt-2 mb-3">
+                Agregar Articulo
+            </MudButton>
+
+            <MudText Typo="Typo.subtitle1" Class="d-block" Style="text-align: right;">
+                Total: @_lineas.Sum(l => l.Cantidad * l.PrecioUnitario).ToString("C0")
+            </MudText>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancelar">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="GuardarAsync">
+            Crear Factura
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public List<ClienteItem> Clientes { get; set; } = new();
+    [Parameter] public List<ArticuloItem> Articulos { get; set; } = new();
+
+    private class LineaEditable
+    {
+        public int? ArticuloID { get; set; }
+        public decimal Cantidad { get; set; } = 1;
+        public decimal PrecioUnitario { get; set; }
+    }
+
+    private MudForm _form = default!;
+    private int? _clienteId;
+    private DateTime? _fecha = DateTime.Today;
+    private string? _notas;
+    private List<LineaEditable> _lineas = new() { new LineaEditable() };
+
+    // Prellena el precio con el precio de venta actual del articulo -- el
+    // usuario puede editarlo despues si la venta fue con un precio distinto.
+    private void OnArticuloCambiado(LineaEditable linea, int? articuloId)
+    {
+        linea.ArticuloID = articuloId;
+        var articulo = Articulos.FirstOrDefault(a => a.ArticuloID == articuloId);
+        if (articulo is not null)
+            linea.PrecioUnitario = articulo.PrecioVenta;
+    }
+
+    private async Task GuardarAsync()
+    {
+        await _form.Validate();
+        if (!_form.IsValid || _clienteId is null || _fecha is null)
+            return;
+
+        var lineasValidas = _lineas
+            .Where(l => l.ArticuloID is not null && l.Cantidad > 0)
+            .Select(l => new LineaFacturaInput(l.ArticuloID!.Value, l.Cantidad, l.PrecioUnitario))
+            .ToList();
+
+        if (lineasValidas.Count == 0)
+        {
+            Snackbar.Add("Agrega al menos un artículo con cantidad mayor a cero.", Severity.Warning);
+            return;
+        }
+
+        var request = new CrearFacturaRequest(_clienteId.Value, _fecha.Value, _notas, lineasValidas);
+        MudDialog.Close(DialogResult.Ok(request));
+    }
+
+    private void Cancelar() => MudDialog.Cancel();
+}

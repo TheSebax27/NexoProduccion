@@ -9,7 +9,10 @@
 
 <PageTitle>Articulos - NEXO</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">Articulos</MudText>
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Articulos</MudText>
+    <BotonFavorito Href="/catalogo/articulos" Etiqueta="Articulos" />
+</div>
 <InfoAyuda Texto="El catálogo maestro de artículos: materias primas, insumos y productos terminados. Cada artículo tiene un SKU único, una unidad de medida y su conversión de caja a unidad. Se usa en recetas, órdenes de compra y de producción." />
 
 <MudGrid Class="mb-4">
@@ -55,7 +58,7 @@ else if (Preferencias.VistaListado == "tarjetas")
             <div class="nexo-item-card">
                 @if (articulo.TieneImagen)
                 {
-                    <img src="@($"api/catalogo/articulos/{articulo.ArticuloID}/imagen")" alt=""
+                    <img src="@($"api/catalogo/articulos/{articulo.ArticuloID}/imagen?v={_cacheBust}")" alt=""
                          style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:0.5rem;" />
                 }
                 <div class="nexo-item-card__title">@articulo.Nombre</div>
@@ -116,7 +119,7 @@ else
             <MudTd DataLabel="">
                 @if (context.TieneImagen)
                 {
-                    <img src="@($"api/catalogo/articulos/{context.ArticuloID}/imagen")" alt=""
+                    <img src="@($"api/catalogo/articulos/{context.ArticuloID}/imagen?v={_cacheBust}")" alt=""
                          style="width:32px; height:32px; object-fit:cover; border-radius:6px;" />
                 }
             </MudTd>
@@ -172,6 +175,13 @@ else
     {
         Preferencias.OnCambio += OnPreferenciasCambiaron;
     }
+
+    // "Rompe" el cache del navegador para las imagenes de articulo -- sin esto,
+    // si el navegador llego a cachear una respuesta rota (o la imagen de un
+    // articulo cambia), el <img> puede seguir mostrando lo viejo indefinidamente
+    // porque la URL es siempre la misma. Se recalcula cada vez que se sube una
+    // imagen nueva para forzar el refetch inmediato.
+    private long _cacheBust = DateTime.UtcNow.Ticks;
 
     private void OnPreferenciasCambiaron() => InvokeAsync(StateHasChanged);
 
@@ -258,6 +268,7 @@ else
                 await ApiClient.PutAsync<ActualizarImagenRequest, object?>(
                     $"api/catalogo/articulos/{creado.ArticuloId}/imagen",
                     new ActualizarImagenRequest(dialogoResultado.ImagenBase64, dialogoResultado.ImagenContentType!));
+                _cacheBust = DateTime.UtcNow.Ticks;
             }
 
             Snackbar.Add("Articulo creado correctamente.", Severity.Success);
@@ -294,6 +305,7 @@ else
                 await ApiClient.PutAsync<ActualizarImagenRequest, object?>(
                     $"api/catalogo/articulos/{articulo.ArticuloID}/imagen",
                     new ActualizarImagenRequest(dialogoResultado.ImagenBase64, dialogoResultado.ImagenContentType!));
+                _cacheBust = DateTime.UtcNow.Ticks;
             }
 
             Snackbar.Add("Articulo actualizado correctamente.", Severity.Success);

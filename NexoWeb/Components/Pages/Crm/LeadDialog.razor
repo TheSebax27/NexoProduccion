@@ -1,0 +1,86 @@
+@using NexoWeb.Common.Dtos
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="_nombre" Label="Nombre" Required="true" Class="mb-3" />
+        <MudTextField @bind-Value="_empresa" Label="Empresa" Class="mb-3" />
+        <MudTextField @bind-Value="_telefono" Label="Telefono" Class="mb-3" />
+        <MudTextField @bind-Value="_email" Label="Email" InputType="InputType.Email" Class="mb-3" />
+
+        <MudSelect T="string" @bind-Value="_fuenteContacto" Label="Fuente del Contacto" Clearable="true" Class="mb-3">
+            <MudSelectItem Value="@("Referido")">Referido</MudSelectItem>
+            <MudSelectItem Value="@("Redes Sociales")">Redes Sociales</MudSelectItem>
+            <MudSelectItem Value="@("Llamada en Frio")">Llamada en Frío</MudSelectItem>
+            <MudSelectItem Value="@("Pagina Web")">Página Web</MudSelectItem>
+            <MudSelectItem Value="@("Otro")">Otro</MudSelectItem>
+        </MudSelect>
+
+        <MudSelect T="int?" @bind-Value="_responsableId" Label="Responsable" Clearable="true" Class="mb-3">
+            @foreach (var e in Empleados)
+            {
+                <MudSelectItem T="int?" Value="@e.EmpleadoID">@e.Nombres @e.Apellidos</MudSelectItem>
+            }
+        </MudSelect>
+
+        @if (EsEdicion)
+        {
+            <MudSelect T="string" @bind-Value="_etapa" Label="Etapa" Class="mb-3">
+                <MudSelectItem Value="@("NUEVO")">Nuevo</MudSelectItem>
+                <MudSelectItem Value="@("CONTACTADO")">Contactado</MudSelectItem>
+                <MudSelectItem Value="@("CALIFICADO")">Calificado</MudSelectItem>
+                <MudSelectItem Value="@("DESCARTADO")">Descartado</MudSelectItem>
+            </MudSelect>
+        }
+
+        <MudTextField @bind-Value="_notas" Label="Notas" Lines="2" Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancelar">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled"
+                   Disabled="@(string.IsNullOrWhiteSpace(_nombre))" OnClick="Guardar">
+            Guardar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public LeadItem? Lead { get; set; }
+    [Parameter] public List<EmpleadoItem> Empleados { get; set; } = new();
+
+    private bool EsEdicion => Lead is not null;
+
+    private string _nombre = string.Empty;
+    private string? _empresa;
+    private string? _telefono;
+    private string? _email;
+    private string? _fuenteContacto;
+    private int? _responsableId;
+    private string _etapa = "NUEVO";
+    private string? _notas;
+
+    protected override void OnInitialized()
+    {
+        if (Lead is not null)
+        {
+            _nombre = Lead.Nombre;
+            _empresa = Lead.Empresa;
+            _telefono = Lead.Telefono;
+            _email = Lead.Email;
+            _fuenteContacto = Lead.FuenteContacto;
+            _responsableId = Lead.ResponsableID;
+            _etapa = Lead.Etapa;
+            _notas = Lead.Notas;
+        }
+    }
+
+    private void Guardar()
+    {
+        object resultado = EsEdicion
+            ? new ActualizarLeadRequest(_nombre.Trim(), _empresa, _telefono, _email, _fuenteContacto, _etapa, _notas, _responsableId)
+            : new CrearLeadRequest(_nombre.Trim(), _empresa, _telefono, _email, _fuenteContacto, _notas, _responsableId);
+        MudDialog.Close(DialogResult.Ok(resultado));
+    }
+
+    private void Cancelar() => MudDialog.Cancel();
+}

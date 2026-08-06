@@ -1,0 +1,76 @@
+/* Tablero Kanban de tareas -- 3 columnas, sin drag&drop (botones de mover
+   para no depender de eventos HTML5 dragstart/dragover no probados visualmente). */
+.nexo-kanban[b-qd8h25l662] {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.nexo-kanban__columna[b-qd8h25l662] {
+  background: var(--n-bg-2, #F4F5F9);
+  border-radius: 10px;
+  padding: 0.6rem;
+  min-height: 80px;
+}
+
+.nexo-kanban__columna-titulo[b-qd8h25l662] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--n-text-3, #9B9BB4);
+  margin-bottom: 0.5rem;
+  padding: 0 0.15rem;
+}
+
+.nexo-kanban__contador[b-qd8h25l662] {
+  background: rgba(124,92,255,0.15);
+  color: #7C5CFF;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  padding: 0.05rem 0.45rem;
+  font-weight: 700;
+}
+
+.nexo-kanban__tarjeta[b-qd8h25l662] {
+  background: var(--n-bg-1, #FFFFFF);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  padding: 0.55rem 0.65rem;
+  margin-bottom: 0.5rem;
+}
+
+.nexo-kanban__tarjeta-titulo[b-qd8h25l662] {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.nexo-kanban__tarjeta-meta[b-qd8h25l662] {
+  font-size: 0.72rem;
+  color: var(--n-text-3, #9B9BB4);
+  line-height: 1.4;
+}
+
+.nexo-kanban__tarjeta-dependencia[b-qd8h25l662] {
+  font-size: 0.7rem;
+  color: #E29A00;
+  margin-top: 0.2rem;
+  line-height: 1.35;
+}
+
+.nexo-kanban__tarjeta-acciones[b-qd8h25l662] {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.2rem;
+}
+
+@media (max-width: 700px) {
+  .nexo-kanban[b-qd8h25l662] {
+    grid-template-columns: 1fr;
+  }
+}

@@ -60,12 +60,7 @@ public record ActualizarImagenRequest(string Base64, string ContentType);
 public record TipoArticuloItem(int TipoArticuloID, string Codigo, string Nombre);
 public record UnidadMedidaItem(int UnidadID, string Nombre, string Abreviatura, string Tipo);
 
-public record ClienteItem(
-    int ClienteID, string Nombre, string? NIT, string? Contacto,
-    string? Telefono, string? Email, string? Direccion, bool Estado
-);
-public record CrearClienteRequest(string Nombre, string? NIT, string? Contacto, string? Telefono, string? Email, string? Direccion);
-public record ActualizarClienteRequest(string Nombre, string? NIT, string? Contacto, string? Telefono, string? Email, string? Direccion, bool Estado);
+// Clientes se movio a Features/Crm (agosto 2026) -- ver Features/Crm/Dtos/CrmDtos.cs.
 
 public record CentroTrabajoItem(
     int CentroTrabajoID, string Nombre, int CentroCostoID, string CentroCosto,

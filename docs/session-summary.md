@@ -1,5 +1,7 @@
 # Resumen de Sesión de Desarrollo — NEXO ERP
 
+> ⚠️ **HISTÓRICO / SUPERADO (agosto 2026)**: este archivo documenta una sesión puntual del 2026-08-01, previa a la mayoría de los módulos que existen hoy (CRM, RRHH, Planificación v2, Logística, Proyectos, Facturación, etc.). Varios de sus "Pendientes" ya se resolvieron (ej. los índices de Kardex del punto 7) y otros siguen abiertos (ej. refresh token). **Para el estado real y actualizado del proyecto, usar `CLAUDE.md`** (bitácora viva de decisiones, sección por sección) y `docs/AUDITORIA_2026.md` (auditoría crítica con prioridades). Se conserva este archivo como referencia histórica, no como fuente de verdad.
+
 **Fecha**: 2026-08-01
 **Objetivo**: Revisión completa del proyecto (BD → API → Web) y corrección de inconsistencias (Fase 1) + implementación de funcionalidades faltantes (Fase 2).
 

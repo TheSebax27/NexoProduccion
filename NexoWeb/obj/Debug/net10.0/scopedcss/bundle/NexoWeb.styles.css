@@ -649,15 +649,23 @@
 }
 
 /* ══ CONTENIDO PRINCIPAL ════════════════════════════════════════ */
+/* BUG REAL (agosto 2026): MudAppBar es "Fixed" por defecto (position:fixed,
+   sacado del flujo normal) -- MudBlazor compensa eso agregando
+   padding-top:var(--mud-appbar-height) a .mud-main-content, pero esta regla
+   pisaba el padding COMPLETO con un valor fijo de 1.75rem (28px) sin relacion
+   con la altura REAL de la barra (76px, ver .nexo-topbar arriba), dejando los
+   primeros ~48px de cada pagina tapados detras de la barra fija. Fix: el
+   padding-top ahora suma la altura de la barra + el aire original.
+   Si se cambia la altura de .nexo-topbar, hay que actualizar este valor tambien. */
 [b-w5ifl9lb28] .mud-main-content.nexo-main-content {
   background: #F4F5F9 !important;
-  padding: 1.75rem 2rem !important;
+  padding: calc(76px + 1.75rem) 2rem 1.75rem !important;
   min-height: 100vh;
 }
 
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 960px) {
-  [b-w5ifl9lb28] .mud-main-content.nexo-main-content { padding: 1.25rem 1rem !important; }
+  [b-w5ifl9lb28] .mud-main-content.nexo-main-content { padding: calc(76px + 1.25rem) 1rem 1.25rem !important; }
   [b-w5ifl9lb28] .nexo-topbar__search { max-width: 200px; }
   [b-w5ifl9lb28] .nexo-topbar__user-info { display: none !important; }
 }
@@ -1180,6 +1188,87 @@
     .login-card__submit[b-tcjkolkcds]  .login-card__spinner {
         color: #FFFFFF;
     }
+/* /Components/Pages/Crm/Oportunidades.razor.rz.scp.css */
+/* Embudo de ventas -- mismo espiritu que el Kanban de Tareas de Proyectos
+   (GestionProyectoDialog.razor.css), sin drag&drop, con botones de mover. */
+.nexo-embudo[b-gvrdtdo5pd] {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.nexo-embudo__columna[b-gvrdtdo5pd] {
+  background: var(--n-bg-2, #F4F5F9);
+  border-radius: 10px;
+  padding: 0.6rem;
+  min-height: 80px;
+}
+
+.nexo-embudo__columna-titulo[b-gvrdtdo5pd] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--n-text-3, #9B9BB4);
+  padding: 0 0.15rem;
+}
+
+.nexo-embudo__contador[b-gvrdtdo5pd] {
+  background: rgba(124,92,255,0.15);
+  color: #7C5CFF;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  padding: 0.05rem 0.45rem;
+  font-weight: 700;
+}
+
+.nexo-embudo__columna-valor[b-gvrdtdo5pd] {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--n-text-2, #5B5B72);
+  padding: 0.1rem 0.15rem 0.5rem;
+}
+
+.nexo-embudo__tarjeta[b-gvrdtdo5pd] {
+  background: var(--n-bg-1, #FFFFFF);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  padding: 0.55rem 0.65rem;
+  margin-bottom: 0.5rem;
+}
+
+.nexo-embudo__tarjeta-titulo[b-gvrdtdo5pd] {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.nexo-embudo__tarjeta-meta[b-gvrdtdo5pd] {
+  font-size: 0.72rem;
+  color: var(--n-text-3, #9B9BB4);
+  line-height: 1.4;
+}
+
+.nexo-embudo__tarjeta-acciones[b-gvrdtdo5pd] {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.2rem;
+}
+
+@media (max-width: 900px) {
+  .nexo-embudo[b-gvrdtdo5pd] {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 500px) {
+  .nexo-embudo[b-gvrdtdo5pd] {
+    grid-template-columns: 1fr;
+  }
+}
 /* /Components/Pages/Dashboard/Dashboard.razor.rz.scp.css */
 /* ================================================================
    Dashboard — Estilos de página
@@ -1435,3 +1524,80 @@
 .nexo-variacion-chart__legend-dot:first-child[b-p6pn72qmbn] { margin-left: 0; }
 .nexo-variacion-chart__legend-dot--up[b-p6pn72qmbn]   { background: #10B981; }
 .nexo-variacion-chart__legend-dot--down[b-p6pn72qmbn] { background: #EF4444; }
+/* /Components/Pages/Proyectos/GestionProyectoDialog.razor.rz.scp.css */
+/* Tablero Kanban de tareas -- 3 columnas, sin drag&drop (botones de mover
+   para no depender de eventos HTML5 dragstart/dragover no probados visualmente). */
+.nexo-kanban[b-qd8h25l662] {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.nexo-kanban__columna[b-qd8h25l662] {
+  background: var(--n-bg-2, #F4F5F9);
+  border-radius: 10px;
+  padding: 0.6rem;
+  min-height: 80px;
+}
+
+.nexo-kanban__columna-titulo[b-qd8h25l662] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--n-text-3, #9B9BB4);
+  margin-bottom: 0.5rem;
+  padding: 0 0.15rem;
+}
+
+.nexo-kanban__contador[b-qd8h25l662] {
+  background: rgba(124,92,255,0.15);
+  color: #7C5CFF;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  padding: 0.05rem 0.45rem;
+  font-weight: 700;
+}
+
+.nexo-kanban__tarjeta[b-qd8h25l662] {
+  background: var(--n-bg-1, #FFFFFF);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  padding: 0.55rem 0.65rem;
+  margin-bottom: 0.5rem;
+}
+
+.nexo-kanban__tarjeta-titulo[b-qd8h25l662] {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.nexo-kanban__tarjeta-meta[b-qd8h25l662] {
+  font-size: 0.72rem;
+  color: var(--n-text-3, #9B9BB4);
+  line-height: 1.4;
+}
+
+.nexo-kanban__tarjeta-dependencia[b-qd8h25l662] {
+  font-size: 0.7rem;
+  color: #E29A00;
+  margin-top: 0.2rem;
+  line-height: 1.35;
+}
+
+.nexo-kanban__tarjeta-acciones[b-qd8h25l662] {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.2rem;
+}
+
+@media (max-width: 700px) {
+  .nexo-kanban[b-qd8h25l662] {
+    grid-template-columns: 1fr;
+  }
+}

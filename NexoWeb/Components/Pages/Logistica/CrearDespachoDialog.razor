@@ -1,0 +1,133 @@
+@using NexoWeb.Common.Dtos
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" Model="@this">
+            <MudSelect T="int?" @bind-Value="_clienteId" Label="Cliente" Required="true"
+                       RequiredError="Selecciona un cliente" Class="mb-3">
+                @foreach (var c in Clientes)
+                {
+                    <MudSelectItem T="int?" Value="@c.ClienteID">@c.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="int?" Value="_centroCostoId" ValueChanged="OnCentroCostoCambiado" Label="Centro de Costo" Required="true"
+                       RequiredError="Selecciona un centro de costo" Class="mb-3">
+                @foreach (var cc in CentrosCosto)
+                {
+                    <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="int?" @bind-Value="_bodegaOrigenId" Label="Bodega de Origen" Required="true"
+                       RequiredError="Selecciona una bodega" Class="mb-3">
+                @foreach (var b in BodegasFiltradas)
+                {
+                    <MudSelectItem T="int?" Value="@b.BodegaID">@b.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField @bind-Value="_direccion" Label="Direccion de Entrega" Class="mb-3" />
+            <MudTextField @bind-Value="_observaciones" Label="Observaciones" Lines="2" Class="mb-3" />
+
+            <MudDivider Class="mb-3" />
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Articulos a Despachar</MudText>
+
+            @foreach (var linea in _lineas)
+            {
+                <div class="d-flex align-center mb-2" style="gap: 0.5rem;">
+                    <MudSelect T="int?" Value="linea.ArticuloID" ValueChanged="@((int? v) => linea.ArticuloID = v)"
+                               Label="Articulo" Style="flex: 3;">
+                        @foreach (var a in ArticulosDisponibles)
+                        {
+                            <MudSelectItem T="int?" Value="@a.ArticuloID">@a.SKU - @a.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudNumericField T="decimal" @bind-Value="linea.Cantidad" Label="Cantidad" Style="flex: 1;" Min="0.01m" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => _lineas.Remove(linea))" />
+                </div>
+            }
+
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="@(() => _lineas.Add(new LineaEditable()))" Class="mt-2">
+                Agregar Articulo
+            </MudButton>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancelar">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="GuardarAsync">
+            Crear Despacho
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public List<ClienteItem> Clientes { get; set; } = new();
+    [Parameter] public List<CentroCostoItem> CentrosCosto { get; set; } = new();
+    [Parameter] public List<BodegaItem> Bodegas { get; set; } = new();
+    [Parameter] public List<ArticuloItem> ArticulosDisponibles { get; set; } = new();
+
+    private class LineaEditable
+    {
+        public int? ArticuloID { get; set; }
+        public decimal Cantidad { get; set; } = 1;
+    }
+
+    private MudForm _form = default!;
+    private int? _clienteId;
+    private int? _centroCostoId;
+    private int? _bodegaOrigenId;
+    private string? _direccion;
+    private string? _observaciones;
+    private List<LineaEditable> _lineas = new() { new LineaEditable() };
+
+    private IEnumerable<BodegaItem> BodegasFiltradas =>
+        _centroCostoId is null ? Bodegas : Bodegas.Where(b => b.CentroCostoID == _centroCostoId);
+
+    private void OnCentroCostoCambiado(int? nuevoValor)
+    {
+        _centroCostoId = nuevoValor;
+        if (_bodegaOrigenId is not null && BodegasFiltradas.All(b => b.BodegaID != _bodegaOrigenId))
+            _bodegaOrigenId = null;
+    }
+
+    private async Task GuardarAsync()
+    {
+        await _form.Validate();
+        if (!_form.IsValid)
+            return;
+
+        if (_clienteId is null || _centroCostoId is null || _bodegaOrigenId is null)
+            return;
+
+        var lineasValidas = _lineas
+            .Where(l => l.ArticuloID is not null && l.Cantidad > 0)
+            .Select(l => new LineaDespachoRequest(l.ArticuloID!.Value, l.Cantidad))
+            .ToList();
+
+        if (lineasValidas.Count == 0)
+        {
+            Snackbar.Add("Agrega al menos un artículo con cantidad mayor a cero.", Severity.Warning);
+            return;
+        }
+
+        // El SP tambien lo valida, pero avisar aqui antes de mandar la
+        // llamada da feedback inmediato sin esperar el viaje al servidor.
+        var articulosRepetidos = lineasValidas.GroupBy(l => l.ArticuloID).Any(g => g.Count() > 1);
+        if (articulosRepetidos)
+        {
+            Snackbar.Add("No repitas el mismo artículo en dos líneas -- suma la cantidad en una sola línea.", Severity.Warning);
+            return;
+        }
+
+        var request = new CrearDespachoRequest(
+            _clienteId.Value, _centroCostoId.Value, _bodegaOrigenId.Value, _direccion, _observaciones, lineasValidas);
+        MudDialog.Close(DialogResult.Ok(request));
+    }
+
+    private void Cancelar() => MudDialog.Cancel();
+}

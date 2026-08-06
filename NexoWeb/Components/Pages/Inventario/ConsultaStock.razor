@@ -8,7 +8,10 @@
 
 <PageTitle>Consulta de Stock - NEXO</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">Consulta de Stock</MudText>
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Consulta de Stock</MudText>
+    <BotonFavorito Href="/inventario/stock" Etiqueta="Consulta de Stock" />
+</div>
 <InfoAyuda Texto="Consulta cuánto stock tienes de cada artículo, en qué bodega y a qué costo. Filtra por Centro de Costo o Bodega para acotar la búsqueda. El chip 'Requiere pedido' te lleva directo a crear una Orden de Compra." />
 
 <MudGrid Class="mb-4">
@@ -61,7 +64,7 @@ else if (Preferencias.VistaListado == "tarjetas")
             <div class="nexo-item-card">
                 @if (item.TieneImagen)
                 {
-                    <img src="@($"api/catalogo/articulos/{item.ArticuloID}/imagen")" alt=""
+                    <img src="@($"api/catalogo/articulos/{item.ArticuloID}/imagen?v={_cacheBust}")" alt=""
                          style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:0.5rem;" />
                 }
                 <div class="nexo-item-card__title">@item.Articulo</div>
@@ -121,7 +124,7 @@ else
             <MudTd DataLabel="">
                 @if (context.TieneImagen)
                 {
-                    <img src="@($"api/catalogo/articulos/{context.ArticuloID}/imagen")" alt=""
+                    <img src="@($"api/catalogo/articulos/{context.ArticuloID}/imagen?v={_cacheBust}")" alt=""
                          style="width:32px; height:32px; object-fit:cover; border-radius:6px;" />
                 }
             </MudTd>
@@ -169,6 +172,9 @@ else
     private int? _filtroBodegaId;
     private bool _cargando = true;
     private string? _error;
+    // Rompe el cache del navegador para las imagenes de articulo -- ver mismo
+    // patron en Articulos.razor.
+    private readonly long _cacheBust = DateTime.UtcNow.Ticks;
 
     private List<CentroCostoItem> _centrosCosto = new();
     private List<BodegaItem> _bodegas = new();

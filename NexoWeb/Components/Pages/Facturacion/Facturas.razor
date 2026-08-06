@@ -1,0 +1,199 @@
+@page "/facturacion"
+@attribute [Authorize(Roles = "Administrador,Bodeguero")]
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Facturación - NEXO</PageTitle>
+
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Facturación</MudText>
+    <BotonFavorito Href="/facturacion" Etiqueta="Facturación" />
+</div>
+<InfoAyuda Texto="Registro de ventas: qué artículo se vendió, a quién, cuándo y el estado de pago. Es un registro guardado, independiente de Despachos e Inventario -- no descuenta stock ni genera movimiento de Kardex." />
+
+<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
+           StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
+    Nueva Factura
+</MudButton>
+
+<MudGrid Class="mb-4">
+    <MudItem xs="12" sm="4">
+        <MudSelect T="int?" Value="_filtroClienteId" ValueChanged="OnFiltroClienteCambiadoAsync" Label="Cliente" Clearable="true">
+            @foreach (var c in _clientes)
+            {
+                <MudSelectItem T="int?" Value="@c.ClienteID">@c.Nombre</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudSelect T="string" Value="_filtroEstado" ValueChanged="OnFiltroEstadoCambiadoAsync" Label="Estado de pago" Clearable="true">
+            <MudSelectItem Value="@("PENDIENTE")">Pendiente</MudSelectItem>
+            <MudSelectItem Value="@("PARCIAL")">Pago por partes</MudSelectItem>
+            <MudSelectItem Value="@("PAGADA")">Pagada</MudSelectItem>
+        </MudSelect>
+    </MudItem>
+</MudGrid>
+
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar las facturas: @_errorCarga</MudAlert>
+}
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_facturas.Count == 0)
+{
+    <MudText>No hay facturas registradas.</MudText>
+}
+else
+{
+    <MudTable Items="_facturas" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Fecha</MudTh>
+            <MudTh>Cliente</MudTh>
+            <MudTh Style="text-align:right">Total</MudTh>
+            <MudTh Style="text-align:right">Pagado</MudTh>
+            <MudTh Style="text-align:right">Saldo</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Accion</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="Cliente">@context.Cliente</MudTd>
+            <MudTd DataLabel="Total" Style="text-align:right">@context.Total.ToString("C0")</MudTd>
+            <MudTd DataLabel="Pagado" Style="text-align:right">@context.TotalPagado.ToString("C0")</MudTd>
+            <MudTd DataLabel="Saldo" Style="text-align:right">@context.SaldoPendiente.ToString("C0")</MudTd>
+            <MudTd DataLabel="Estado">
+                <MudChip T="string" Size="Size.Small" Color="@ColorEstado(context.Estado)">@EtiquetaEstado(context.Estado)</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Accion">
+                <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No hay facturas registradas.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+}
+
+@code {
+    private List<FacturaItem> _facturas = new();
+    private List<ClienteItem> _clientes = new();
+    private List<ArticuloItem> _articulos = new();
+    private bool _cargando = true;
+    private string? _errorCarga;
+    private int? _filtroClienteId;
+    private string? _filtroEstado;
+
+    private Color ColorEstado(string estado) => estado switch
+    {
+        "PAGADA" => Color.Success,
+        "PARCIAL" => Color.Warning,
+        _ => Color.Error
+    };
+
+    private string EtiquetaEstado(string estado) => estado switch
+    {
+        "PAGADA" => "Pagada",
+        "PARCIAL" => "Pago por partes",
+        _ => "Pendiente"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
+            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+            var tareaFacturas = ApiClient.GetAsync<List<FacturaItem>>("api/facturacion/facturas");
+
+            await Task.WhenAll(tareaClientes, tareaArticulos, tareaFacturas);
+
+            _clientes = (await tareaClientes ?? new()).Where(c => c.Estado).ToList();
+            _articulos = (await tareaArticulos ?? new()).Where(a => a.Estado).ToList();
+            _facturas = await tareaFacturas ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task CargarFacturasAsync()
+    {
+        try
+        {
+            var ruta = "api/facturacion/facturas";
+            var query = new List<string>();
+            if (_filtroClienteId is not null) query.Add($"clienteId={_filtroClienteId}");
+            if (_filtroEstado is not null) query.Add($"estado={_filtroEstado}");
+            if (query.Count > 0) ruta += "?" + string.Join("&", query);
+
+            _facturas = await ApiClient.GetAsync<List<FacturaItem>>(ruta) ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+    }
+
+    private async Task OnFiltroClienteCambiadoAsync(int? nuevoValor)
+    {
+        _filtroClienteId = nuevoValor;
+        await CargarFacturasAsync();
+    }
+
+    private async Task OnFiltroEstadoCambiadoAsync(string? nuevoValor)
+    {
+        _filtroEstado = nuevoValor;
+        await CargarFacturasAsync();
+    }
+
+    private async Task AbrirCreacionAsync()
+    {
+        var parametros = new DialogParameters<FacturaDialog>
+        {
+            { x => x.Clientes, _clientes },
+            { x => x.Articulos, _articulos }
+        };
+
+        var dialogo = await DialogService.ShowAsync<FacturaDialog>("Nueva Factura", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (CrearFacturaRequest)resultado.Data!;
+            await ApiClient.PostAsync<CrearFacturaRequest, object?>("api/facturacion/facturas", request);
+            Snackbar.Add("Factura creada correctamente.", Severity.Success);
+            await CargarFacturasAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AbrirGestionAsync(FacturaItem factura)
+    {
+        var parametros = new DialogParameters<GestionFacturaDialog> { { x => x.Factura, factura } };
+        // OJO: ShowAsync resuelve apenas el dialogo se ABRE, no cuando se
+        // CIERRA -- hay que esperar su .Result para refrescar la lista con
+        // los cambios reales, si no el refresh corre antes de que el usuario
+        // alcance a hacer nada (bug real reportado: "se demoro en actualizar").
+        var dialogo = await DialogService.ShowAsync<GestionFacturaDialog>("Gestionar Factura", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        await dialogo.Result;
+        await CargarFacturasAsync();
+    }
+}

@@ -18,13 +18,18 @@
 | Esquema | Propósito |
 |---|---|
 | `Auditoria` | Trazabilidad de cambios en registros críticos |
-| `catalogo` | Catálogos maestros (artículos, clientes, proveedores, unidades) — minúscula por legacy |
+| `catalogo` | Catálogos maestros (artículos, proveedores, unidades) — minúscula por legacy. **Clientes ya NO vive aquí, se movió a `Crm`** (agosto 2026) |
 | `Compras` | Órdenes de compra y recepción |
+| `Crm` | Clientes (contactos comerciales) y bitácora de interacciones (agosto 2026) — movido desde `Catalogo.Clientes` vía `ALTER SCHEMA TRANSFER` |
 | `Integracion` | Eventos de sincronización con Visions ERP |
 | `Inventario` | Stock, bodegas, lotes, traspasos, bajas |
 | `Kardex` | Registro histórico de todos los movimientos de inventario |
+| `Logistica` | Despachos a clientes y guías (TMS, agosto 2026) — sin vehículos ni rutas todavía. Descuenta stock real vía `sp_CrearDespacho` |
 | `Organizacion` | Centros de costo y centros de trabajo |
+| `Planificacion` | Demanda proyectada de producción y metas de venta (agosto 2026) — comparado contra lo real vía subquery a Kardex, sin tabla de snapshot |
 | `Produccion` | Órdenes de producción, recetas BOM, consumos |
+| `Proyectos` | Proyectos, tareas y costos imputados (agosto 2026) — costos son valor $ manual, no automático desde RRHH/Inventario |
+| `Rrhh` | Directorio de personal (agosto 2026) — sin nómina/contabilidad, eso vive en otro sistema del cliente |
 | `Seguridad` | Usuarios, roles, permisos, sesiones |
 
 ---
@@ -99,19 +104,6 @@ Factores de conversión entre unidades de medida.
 | `UnidadOrigenID` | int PK FK |
 | `UnidadDestinoID` | int PK FK |
 | `Factor` | decimal(18,8) |
-
-#### `Clientes`
-
-| Columna | Tipo |
-|---|---|
-| `ClienteID` | int PK IDENTITY |
-| `Nombre` | nvarchar(150) NOT NULL |
-| `NIT` | nvarchar(30) NULL |
-| `Contacto` | nvarchar(100) NULL |
-| `Telefono` | nvarchar(30) NULL |
-| `Email` | nvarchar(150) NULL |
-| `Direccion` | nvarchar(200) NULL |
-| `Estado` | bit |
 
 #### `Proveedores`
 
@@ -371,6 +363,10 @@ Registro histórico e inmutable de cada movimiento de inventario.
 
 Fila agregada agosto 2026: `Codigo='SALIDA_VENTA_VISIONS'`, `Signo=-1` — usada por `Integracion.sp_ProcesarEventoEntrante` al descontar stock por una venta reportada desde Visions.
 
+Otra fila agregada agosto 2026: `Codigo='SALIDA_DESPACHO'`, `Signo=-1` — usada por `Logistica.sp_CrearDespacho` al descontar stock por un despacho a cliente.
+
+Otra fila agregada agosto 2026: `Codigo='ENTRADA_ANULACION_DESPACHO'`, `Signo=1` — usada por `Logistica.sp_AnularDespacho` al devolver el stock de un despacho anulado.
+
 #### `TiposMotivoLoss`
 Catálogo de motivos de baja de inventario.
 
@@ -396,6 +392,423 @@ Catálogo de motivos de baja de inventario.
 | `ObservacionDetallada` | nvarchar(500) NOT NULL | |
 | `UsuarioRegistraID` | int FK | |
 | `Estado` | nvarchar(20) | CONFIRMADA / ANULADA |
+
+---
+
+### `Crm` (agosto 2026)
+
+#### `Clientes`
+Movida desde `Catalogo.Clientes` vía `ALTER SCHEMA Crm TRANSFER Catalogo.Clientes` (preserva el FK existente desde `Produccion.OrdenesProduccion.ClienteID` automáticamente, sin tocar esa tabla). Ganó 2 columnas de seguimiento comercial.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `ClienteID` | int PK IDENTITY | |
+| `Nombre` | nvarchar(150) NOT NULL | |
+| `NIT` | nvarchar(30) NULL | |
+| `Contacto` | nvarchar(100) NULL | |
+| `Telefono` | nvarchar(30) NULL | |
+| `Email` | nvarchar(150) NULL | |
+| `Direccion` | nvarchar(200) NULL | |
+| `Estado` | bit | |
+| `FuenteContacto` | nvarchar(50) NULL | Agregada agosto 2026 — Referido / Redes Sociales / Llamada en Frío / Página Web / Otro |
+| `TipoCliente` | nvarchar(30) NULL | Agregada agosto 2026 — Empresa / Persona Natural |
+| `FechaCreacion` | datetime2 NULL | Agregada agosto 2026 (para BI, "clientes nuevos" por período) — filas migradas desde `Catalogo.Clientes` quedaron en `NULL`, solo los clientes creados después de este cambio la tienen |
+| `ResponsableID` | int NULL FK → `Rrhh.Empleados` | Agregada agosto 2026 (CRM v2) — responsable comercial asignado |
+| `ProximoContacto` | date NULL | Agregada agosto 2026 (CRM v2) — se agenda desde la pestaña "Bitácora" al registrar una interacción; usada por `sp`/query de clientes fríos |
+
+**`UQ_Clientes_NIT`** (agosto 2026, CRM v2) — índice único filtrado: `CREATE UNIQUE INDEX UQ_Clientes_NIT ON Crm.Clientes(NIT) WHERE NIT IS NOT NULL AND NIT <> ''`. Permite muchos `NULL` pero rechaza NIT duplicado no vacío. Requirió `SET QUOTED_IDENTIFIER ON` explícito antes del `CREATE` (el default de `sqlcmd` lo tiene OFF, falla con error 1934 en índices filtrados).
+
+**Nota**: la columna `Contacto` (texto libre) ya no se usa desde el código — reemplazada por la tabla `Crm.Contactos` (ver abajo). Se dejó en la tabla sin eliminar, pero no se lee/escribe.
+
+#### `Interacciones`
+Bitácora de llamadas/correos/reuniones por cliente.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `InteraccionID` | bigint PK IDENTITY | |
+| `ClienteID` | int NOT NULL FK → `Crm.Clientes` | |
+| `Tipo` | nvarchar(30) NOT NULL | Llamada / Correo / Reunion / Otro |
+| `Notas` | nvarchar(1000) NOT NULL | |
+| `Fecha` | datetime2(7) | |
+| `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | Quién la registró |
+
+#### `Contactos` (agosto 2026, CRM v2)
+Múltiples contactos por cliente (antes solo existía el campo suelto `Clientes.Contacto`). Migrado: 1 fila por cliente existente con `EsPrincipal=1`, tomando el valor de `Clientes.Contacto`.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `ContactoID` | int PK IDENTITY | |
+| `ClienteID` | int NOT NULL FK → `Crm.Clientes` | |
+| `Nombres` | nvarchar(150) NOT NULL | |
+| `Cargo` | nvarchar(100) NULL | |
+| `Telefono` | nvarchar(30) NULL | |
+| `Email` | nvarchar(150) NULL | |
+| `EsPrincipal` | bit | Máximo un principal por cliente — garantizado a nivel de aplicación (transacción en `CrmService`), no hay constraint en BD |
+| `Estado` | bit | |
+| `FechaCreacion` | datetime2 | |
+
+#### `ClienteDocumentos` (agosto 2026, CRM v2)
+Documentos adjuntos por cliente (RUT, Cámara de Comercio, Contrato, Otro). Límite 5MB validado en el controller. Descarga vía endpoint autenticado (no `[AllowAnonymous]`), a diferencia de imágenes de artículo/empleado.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `DocumentoID` | int PK IDENTITY | |
+| `ClienteID` | int NOT NULL FK → `Crm.Clientes` | |
+| `TipoDocumento` | nvarchar(30) NOT NULL | RUT / CAMARA_COMERCIO / CONTRATO / OTRO |
+| `NombreArchivo` | nvarchar(255) NOT NULL | |
+| `ContentType` | nvarchar(100) NOT NULL | |
+| `Archivo` | varbinary(max) NOT NULL | |
+| `FechaSubida` | datetime2 | |
+| `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | |
+
+#### `Leads` (agosto 2026, CRM v2)
+Pipeline de prospectos, previo a convertirse en `Clientes`.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `LeadID` | int PK IDENTITY | |
+| `Nombre` | nvarchar(150) NOT NULL | |
+| `Empresa` | nvarchar(150) NULL | |
+| `Telefono` | nvarchar(30) NULL | |
+| `Email` | nvarchar(150) NULL | |
+| `FuenteContacto` | nvarchar(50) NULL | |
+| `Etapa` | nvarchar(20) NOT NULL DEFAULT 'NUEVO' | NUEVO / CONTACTADO / CALIFICADO / CONVERTIDO / DESCARTADO |
+| `Notas` | nvarchar(1000) NULL | |
+| `ResponsableID` | int NULL FK → `Rrhh.Empleados` | |
+| `ClienteIDConvertido` | int NULL FK → `Crm.Clientes` | Se llena solo al convertir |
+| `FechaCreacion` | datetime2 | |
+| `FechaConversion` | datetime2 NULL | |
+
+Un Lead en Etapa `CONVERTIDO` no se puede editar (bloqueado en `CrmService.ActualizarLeadAsync`). La conversión (`ConvertirLeadAsync`) es una transacción: crea el `Cliente` con los datos del Lead + marca el Lead como `CONVERTIDO`.
+
+---
+
+### `Logistica` (agosto 2026)
+
+#### `Despachos`
+Despacho de Producto Terminado a un cliente. Descuenta stock real (FEFO) vía `Logistica.sp_CrearDespacho` — no es solo un registro documental. `NumeroGuia` no es columna, se genera en el `SELECT` (`'GUIA-' + DespachoID con ceros a la izquierda`).
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `DespachoID` | int PK IDENTITY | |
+| `ClienteID` | int NOT NULL FK → `Crm.Clientes` | |
+| `CentroCostoID` | int NOT NULL FK → `Organizacion.CentrosCosto` | |
+| `BodegaOrigenID` | int NOT NULL FK → `Inventario.Bodegas` | |
+| `Direccion` | nvarchar(200) NULL | |
+| `Observaciones` | nvarchar(500) NULL | |
+| `Estado` | nvarchar(20) | `DESPACHADO` (default, stock ya descontado) / `ENTREGADO` / `ANULADO` |
+| `FechaDespacho` | datetime2(7) | |
+| `FechaEntrega` | datetime2(7) NULL | Se llena al confirmar entrega |
+| `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | |
+| `MotivoAnulacion` | nvarchar(300) NULL | Agregada agosto 2026 |
+| `FechaAnulacion` | datetime2(7) NULL | Agregada agosto 2026 |
+| `UsuarioAnulaID` | int NULL FK → `Seguridad.Usuarios` | Agregada agosto 2026 — quién anuló, puede ser distinto de quién despachó
+
+#### `DespachoDetalle`
+Líneas del despacho (artículos y cantidades).
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `DetalleID` | int PK IDENTITY | |
+| `DespachoID` | int NOT NULL FK → `Logistica.Despachos` | |
+| `ArticuloID` | int NOT NULL FK → `Catalogo.Articulos` | |
+| `Cantidad` | decimal(18,4) NOT NULL | |
+
+---
+
+### `Proyectos` (agosto 2026)
+
+#### `Proyectos`
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `ProyectoID` | int PK IDENTITY | |
+| `Nombre` | nvarchar(150) NOT NULL | |
+| `ClienteID` | int NULL FK → `Crm.Clientes` | |
+| `CentroCostoID` | int NULL FK → `Organizacion.CentrosCosto` | |
+| `Descripcion` | nvarchar(500) NULL | |
+| `FechaInicio` | date NOT NULL | |
+| `FechaFin` | date NULL | |
+| `Estado` | nvarchar(20) | `PLANEADO` / `EN_CURSO` / `FINALIZADO` / `CANCELADO` |
+| `Presupuesto` | decimal(18,2) | |
+| `FechaCreacion` | datetime2(7) | |
+| `Prioridad` | nvarchar(10) NOT NULL DEFAULT 'MEDIA' | Agregada agosto 2026 (Proyectos v2) — `ALTA` / `MEDIA` / `BAJA` |
+
+#### `Tareas`
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `TareaID` | int PK IDENTITY | |
+| `ProyectoID` | int NOT NULL FK → `Proyectos.Proyectos` | |
+| `Titulo` | nvarchar(200) NOT NULL | |
+| `ResponsableID` | int NULL FK → `Rrhh.Empleados` | |
+| `Estado` | nvarchar(20) | `PENDIENTE` / `EN_CURSO` / `COMPLETADA` |
+| `FechaLimite` | date NULL | |
+| `FechaCreacion` | datetime2(7) | |
+
+#### `TareaDependencias` (agosto 2026, Proyectos v2)
+Una tarea no puede salir de `PENDIENTE` si alguna tarea de la que depende no está `COMPLETADA` — validado en `ProyectosService.ActualizarTareaAsync` (no hay trigger ni constraint que lo fuerce en BD).
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `TareaID` | int NOT NULL FK → `Proyectos.Tareas` | PK compuesta con `DependeDeTareaID` |
+| `DependeDeTareaID` | int NOT NULL FK → `Proyectos.Tareas` | |
+
+`CHECK (TareaID <> DependeDeTareaID)` — evita que una tarea dependa de sí misma. No hay prevención de ciclos multi-tarea a nivel de BD (a diferencia del organigrama de RRHH que sí usa CTE recursivo) — alcance acotado a validar solo la dependencia directa al cambiar de estado.
+
+#### `Hitos` (agosto 2026, Proyectos v2)
+Fases/etapas del proyecto, con fecha objetivo — distinto del % de tareas completadas.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `HitoID` | int PK IDENTITY | |
+| `ProyectoID` | int NOT NULL FK → `Proyectos.Proyectos` | |
+| `Nombre` | nvarchar(150) NOT NULL | |
+| `FechaObjetivo` | date NOT NULL | |
+| `FechaCompletado` | date NULL | Se rellena solo la primera vez que el hito pasa a `COMPLETADO` (no se pisa si ya tenía valor) |
+| `Estado` | nvarchar(20) NOT NULL DEFAULT 'PENDIENTE' | `PENDIENTE` / `EN_PROGRESO` / `COMPLETADO` |
+| `Orden` | int NOT NULL DEFAULT 0 | |
+| `FechaCreacion` | datetime2 | |
+
+#### `ProyectoDocumentos` (agosto 2026, Proyectos v2)
+Mismo patrón que `Crm.ClienteDocumentos`/`Rrhh.EmpleadoDocumentos` — descarga autenticada, límite 5MB.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `DocumentoID` | int PK IDENTITY | |
+| `ProyectoID` | int NOT NULL FK → `Proyectos.Proyectos` | |
+| `TipoDocumento` | nvarchar(30) NOT NULL | `CONTRATO` / `PLANO` / `COTIZACION` / `OTRO` |
+| `NombreArchivo` | nvarchar(255) NOT NULL | |
+| `ContentType` | nvarchar(100) NOT NULL | |
+| `Archivo` | varbinary(max) NOT NULL | |
+| `FechaSubida` | datetime2 | |
+| `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | |
+
+#### `Comentarios` (agosto 2026, Proyectos v2)
+Bitácora simple de notas del proyecto.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `ComentarioID` | int PK IDENTITY | |
+| `ProyectoID` | int NOT NULL FK → `Proyectos.Proyectos` | |
+| `Texto` | nvarchar(1000) NOT NULL | |
+| `Fecha` | datetime2 | |
+| `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | |
+
+#### `Costos`
+Imputación de costos al proyecto. **`Valor` es ingresado manualmente por el usuario** — no se calcula automático desde horas de RRHH ni consumo de Inventario. `EmpleadoID`/`ArticuloID` son solo de trazabilidad, no disparan movimientos de Kardex ni afectan nómina.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `CostoID` | int PK IDENTITY | |
+| `ProyectoID` | int NOT NULL FK → `Proyectos.Proyectos` | |
+| `Tipo` | nvarchar(20) NOT NULL | `MANO_OBRA` / `MATERIAL` / `OTRO` |
+| `Descripcion` | nvarchar(300) NOT NULL | |
+| `Valor` | decimal(18,2) NOT NULL | |
+| `EmpleadoID` | int NULL FK → `Rrhh.Empleados` | Solo si Tipo=MANO_OBRA |
+| `ArticuloID` | int NULL FK → `Catalogo.Articulos` | Solo si Tipo=MATERIAL |
+| `Fecha` | datetime2(7) | |
+| `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | |
+
+---
+
+### `Planificacion` (agosto 2026)
+
+#### `DemandaProyectada`
+Forecast de producción a futuro, por artículo y mes — distinto de las Órdenes de Producción ya creadas. `Periodo` siempre es el primer día del mes.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `DemandaID` | int PK IDENTITY | |
+| `ArticuloID` | int NOT NULL FK → `Catalogo.Articulos` | |
+| `CentroCostoID` | int NOT NULL FK → `Organizacion.CentrosCosto` | |
+| `Periodo` | date NOT NULL | Primer día del mes |
+| `CantidadProyectada` | decimal(18,4) NOT NULL | |
+| `Notas` | nvarchar(300) NULL | |
+| `FechaCreacion` | datetime2(7) | |
+
+UNIQUE(ArticuloID, CentroCostoID, Periodo). Comparación contra lo real (`CantidadReal`) se calcula al vuelo en `PlanificacionService.ListarDemandaAsync`: suma de `Kardex.KardexMovimientos` con tipo `ENTRADA_PT` para el mismo Articulo+CentroCosto+mes.
+
+#### `MetasVenta`
+Objetivo comercial por Centro de Costo y mes.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `MetaID` | int PK IDENTITY | |
+| `CentroCostoID` | int NOT NULL FK → `Organizacion.CentrosCosto` | |
+| `Periodo` | date NOT NULL | Primer día del mes |
+| `MetaValor` | decimal(18,2) NOT NULL | |
+| `Notas` | nvarchar(300) NULL | |
+| `FechaCreacion` | datetime2(7) | |
+
+UNIQUE(CentroCostoID, Periodo). `VentaReal` se calcula al vuelo: `Cantidad * PrecioVenta` (precio **actual** del artículo, no histórico) sumado sobre `Kardex.KardexMovimientos` tipo `SALIDA_VENTA_VISIONS` del mismo CentroCosto+mes.
+
+#### `MetasVentaHistorial` (agosto 2026, Planificación v2)
+Versionado de metas — se inserta automático en `PlanificacionService.ActualizarMetaVentaAsync`, con el valor ANTERIOR, antes de sobrescribir. No hay endpoint para crear entradas a mano.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `HistorialID` | int PK IDENTITY | |
+| `MetaID` | int NOT NULL FK → `Planificacion.MetasVenta` | |
+| `MetaValorAnterior` | decimal(18,2) NOT NULL | |
+| `NotasAnterior` | nvarchar(500) NULL | |
+| `FechaCambio` | datetime2 | |
+| `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | |
+
+**Nota de patrón SQL (agosto 2026)**: las consultas de cumplimiento (`DemandaProyectada`/`MetasVenta`) que promedian un porcentaje calculado a partir de una subconsulta con `SUM` **no pueden envolver el `AVG()` directamente alrededor de esa expresión** — SQL Server lo rechaza con error 130 ("Cannot perform an aggregate function on an expression containing an aggregate or a subquery"), incluso si la subconsulta está correlacionada dentro de un `CASE`. Hay que materializar el porcentaje por fila en una tabla derivada primero (`SELECT CASE ... AS Cumplimiento FROM ...) x`) y recién ahí aplicar `AVG()`/`GROUP BY` en la consulta externa. Bug real encontrado en `DashboardService.ObtenerResumenPlanificacionAsync` (ya corregido) — cualquier consulta nueva con este patrón debe usar la tabla derivada desde el inicio.
+
+---
+
+### `Facturacion` (agosto 2026)
+Registro de ventas simple ("tipo guardado") — **independiente de Despachos/Inventario, no descuenta stock ni genera movimiento de Kardex**. Si en el futuro se necesita que Facturación sí afecte inventario, es un cambio de alcance explícito, no algo implícito en este schema.
+
+#### `Facturas`
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `FacturaID` | int PK IDENTITY | |
+| `ClienteID` | int NOT NULL FK → `Crm.Clientes` | |
+| `Fecha` | date NOT NULL | |
+| `Notas` | nvarchar(500) NULL | |
+| `FechaCreacion` | datetime2 | |
+| `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | |
+
+#### `FacturaLineas`
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `LineaID` | int PK IDENTITY | |
+| `FacturaID` | int NOT NULL FK → `Facturacion.Facturas` | |
+| `ArticuloID` | int NOT NULL FK → `Catalogo.Articulos` | |
+| `Cantidad` | decimal(18,4) NOT NULL | |
+| `PrecioUnitario` | decimal(18,2) NOT NULL | |
+
+#### `Pagos`
+Abonos/pagos parciales de una factura. **El estado (Pagada/Parcial/Pendiente) NO se guarda como columna** — se calcula en `FacturacionService.ListarFacturasAsync` comparando `SUM(Pagos.Monto)` contra `SUM(FacturaLineas.Cantidad * PrecioUnitario)`, así nunca queda desincronizado.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `PagoID` | int PK IDENTITY | |
+| `FacturaID` | int NOT NULL FK → `Facturacion.Facturas` | |
+| `Monto` | decimal(18,2) NOT NULL | |
+| `FechaPago` | date NOT NULL | |
+| `Notas` | nvarchar(300) NULL | |
+| `FechaCreacion` | datetime2 | |
+| `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | |
+
+---
+
+### `Rrhh` (agosto 2026)
+
+#### `Empleados`
+Directorio básico de personal. **Deliberadamente separada de `Seguridad.Usuarios`** — un empleado no necesariamente tiene login al sistema, y un usuario de sistema no necesariamente es empleado formal. Sin nómina, sin cálculo de salario/horas, sin documentos adjuntos, sin asistencia — el cliente ya tiene nómina y contabilidad en otro sistema aparte.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `EmpleadoID` | int PK IDENTITY | |
+| `Nombres` | nvarchar(100) NOT NULL | |
+| `Apellidos` | nvarchar(100) NOT NULL | |
+| `Cargo` | nvarchar(100) NULL | |
+| `CentroCostoID` | int NULL FK → `Organizacion.CentrosCosto` | |
+| `FechaIngreso` | date NULL | |
+| `Telefono` | nvarchar(30) NULL | |
+| `Email` | nvarchar(150) NULL | |
+| `Estado` | bit | |
+| `FechaCreacion` | datetime2(7) | |
+| `Foto` | varbinary(max) NULL | Agregada agosto 2026 — opcional, mismo patrón que `Catalogo.Articulos.Imagen` |
+| `FotoContentType` | nvarchar(50) NULL | Agregada agosto 2026 |
+| `CargoID` | int NULL FK → `Rrhh.Cargos` | Agregada agosto 2026 (RRHH v2) — reemplaza a `Cargo` (texto libre) |
+| `JefeDirectoID` | int NULL FK → `Rrhh.Empleados` (auto-FK) | Agregada agosto 2026 (RRHH v2) — usado para el Organigrama; validado contra ciclos en `RrhhService.ActualizarEmpleadoAsync` |
+
+**Nota**: la columna `Cargo` (texto libre) ya no se usa desde el código — reemplazada por `CargoID` → `Rrhh.Cargos`. Se dejó en la tabla sin eliminar (mismo criterio que `Crm.Clientes.Contacto`).
+
+#### `Departamentos` (agosto 2026, RRHH v2)
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `DepartamentoID` | int PK IDENTITY | |
+| `Nombre` | nvarchar(100) NOT NULL | |
+| `Estado` | bit | |
+| `FechaCreacion` | datetime2 | |
+
+#### `Cargos` (agosto 2026, RRHH v2)
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `CargoID` | int PK IDENTITY | |
+| `Nombre` | nvarchar(100) NOT NULL | |
+| `DepartamentoID` | int NULL FK → `Rrhh.Departamentos` | |
+| `Estado` | bit | |
+| `FechaCreacion` | datetime2 | |
+
+#### `HistorialLaboral` (agosto 2026, RRHH v2)
+Se genera automático desde `RrhhService.ActualizarEmpleadoAsync` al detectar un cambio de `CargoID`/`CentroCostoID` — no hay endpoint para crear entradas a mano.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `HistorialID` | int PK IDENTITY | |
+| `EmpleadoID` | int NOT NULL FK → `Rrhh.Empleados` | |
+| `TipoEvento` | nvarchar(30) NOT NULL | CAMBIO_CARGO / CAMBIO_CENTRO_COSTO / OTRO |
+| `ValorAnterior` | nvarchar(200) NULL | |
+| `ValorNuevo` | nvarchar(200) NULL | |
+| `Fecha` | datetime2 | |
+| `Notas` | nvarchar(500) NULL | |
+| `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | |
+
+#### `EmpleadoDocumentos` (agosto 2026, RRHH v2)
+Mismo patrón que `Crm.ClienteDocumentos` — descarga autenticada (no `[AllowAnonymous]`), límite 5MB.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `DocumentoID` | int PK IDENTITY | |
+| `EmpleadoID` | int NOT NULL FK → `Rrhh.Empleados` | |
+| `TipoDocumento` | nvarchar(30) NOT NULL | CEDULA / HOJA_VIDA / CONTRATO / CERTIFICADO / OTRO |
+| `NombreArchivo` | nvarchar(255) NOT NULL | |
+| `ContentType` | nvarchar(100) NOT NULL | |
+| `Archivo` | varbinary(max) NOT NULL | |
+| `FechaSubida` | datetime2 | |
+| `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | |
+
+#### `Ausencias` (agosto 2026, RRHH v2)
+Solo control de disponibilidad — **sin ningún cálculo de nómina**.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `AusenciaID` | int PK IDENTITY | |
+| `EmpleadoID` | int NOT NULL FK → `Rrhh.Empleados` | |
+| `Tipo` | nvarchar(30) NOT NULL | VACACIONES / INCAPACIDAD / PERMISO / OTRO |
+| `FechaInicio` | date NOT NULL | |
+| `FechaFin` | date NOT NULL | |
+| `Motivo` | nvarchar(300) NULL | |
+| `Estado` | nvarchar(20) NOT NULL DEFAULT 'PENDIENTE' | PENDIENTE / APROBADA / RECHAZADA |
+| `FechaCreacion` | datetime2 | |
+| `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | |
+
+#### `Evaluaciones` (agosto 2026, RRHH v2)
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `EvaluacionID` | int PK IDENTITY | |
+| `EmpleadoID` | int NOT NULL FK → `Rrhh.Empleados` | |
+| `ResponsableID` | int NULL FK → `Rrhh.Empleados` | |
+| `Fecha` | date NOT NULL | |
+| `Calificacion` | decimal(3,1) NOT NULL | 1.0 a 5.0, validado en el backend |
+| `Comentarios` | nvarchar(1000) NULL | |
+| `FechaCreacion` | datetime2 | |
+| `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | |
+
+#### `Capacitaciones` (agosto 2026, RRHH v2)
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `CapacitacionID` | int PK IDENTITY | |
+| `EmpleadoID` | int NOT NULL FK → `Rrhh.Empleados` | |
+| `Nombre` | nvarchar(200) NOT NULL | |
+| `Institucion` | nvarchar(150) NULL | |
+| `FechaRealizacion` | date NOT NULL | |
+| `FechaVencimiento` | date NULL | La UI resalta en rojo si ya venció |
+| `FechaCreacion` | datetime2 | |
+| `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | |
 
 ---
 
@@ -594,6 +1007,24 @@ Registro de sesiones activas para control de RefreshToken.
 
 ## 5. Stored Procedures
 
+### `Logistica.sp_CrearDespacho` (agosto 2026, ampliado el mismo día)
+Crea un despacho a cliente y descuenta stock real (FEFO), todo en una transacción.
+- Recibe las líneas del despacho como **JSON** (`@LineasJson`, parseado con `OPENJSON` — no hay un tipo de tabla (TVP) registrado, se eligió JSON por ser más simple de mandar desde C#)
+- Valida, en orden, ANTES de insertar nada: líneas no vacías, cantidades > 0, sin artículo repetido entre líneas, cliente existe y está activo, la bodega de origen pertenece al Centro de Costo elegido, y stock suficiente de TODAS las líneas (el mensaje de este último **nombra el SKU y nombre exacto** del/los artículo(s) que faltan, vía `STRING_AGG` + JOIN a `Catalogo.Articulos`) — si algo falla, `THROW` y no se crea el despacho (a diferencia de `sp_ProcesarEventoEntrante`, aquí SÍ se bloquea: es un despacho creado por un usuario interno, no una venta externa ya consumada)
+- Inserta el encabezado (`Logistica.Despachos`, `Estado='DESPACHADO'`) y cada línea (`Logistica.DespachoDetalle`)
+- Por cada línea, descuenta stock FEFO de la bodega de origen (cursor anidado: uno por línea, uno por lote — mismo patrón que `sp_ProcesarEventoEntrante`/`sp_CrearYEnviarTraspaso`) y genera `Kardex.KardexMovimientos` tipo `SALIDA_DESPACHO`
+- Devuelve el `DespachoID` generado
+- **Errores**: 56000 (sin líneas), 56001 (stock insuficiente, nombra artículos), 56004 (cliente inválido/inactivo), 56005 (bodega no pertenece al CC), 56006 (artículo repetido), 56007 (cantidad ≤ 0)
+- Verificado con una prueba real dentro de una transacción con `ROLLBACK` (agosto 2026) antes de darlo por terminado, incluyendo las 5 validaciones nuevas una por una
+
+### `Logistica.sp_AnularDespacho` (agosto 2026)
+Revierte un despacho `DESPACHADO` (no `ENTREGADO` ni ya `ANULADO`) — devuelve el stock exacto a los mismos lotes/bodega de donde salió.
+- Recorre `Kardex.KardexMovimientos` con tipo `SALIDA_DESPACHO` y `ObservacionDetallada = 'Despacho #N'` (no hay FK directa Kardex→Despacho, se identifican por texto — mismo patrón usado al crearlos)
+- Por cada movimiento encontrado, suma la cantidad de vuelta a `Inventario.InventarioStock` (mismo `ArticuloID`+`BodegaID`+`LoteID`) y genera un movimiento compensatorio `ENTRADA_ANULACION_DESPACHO`
+- Marca `Logistica.Despachos.Estado = 'ANULADO'`, `MotivoAnulacion`, `FechaAnulacion`, `UsuarioAnulaID`
+- **Errores**: 56002 (despacho no existe), 56003 (no está en estado `DESPACHADO`)
+- Verificado con una prueba real de ciclo completo (crear → anular → comparar stock final vs inicial) dentro de una transacción con `ROLLBACK`, confirmó coincidencia exacta
+
 ### `Compras.sp_RecibirOrdenCompra`
 Recibe una línea de orden de compra.
 - Actualiza `CantidadRecibida` en `OrdenesCompraDetalle`
@@ -771,17 +1202,18 @@ Antes solo buscaba stock con `LoteID IS NULL` cuando el detalle no especificaba 
 `WHERE Username = @Username OR Email = @Username`. Ver `CLAUDE.md` sección 20.11.
 
 ### 9.11 — Tabla nueva: `Seguridad.PreferenciasUsuario`
-Guarda preferencias personales por usuario (tema oscuro, vista lista/tarjetas por pantalla) como pares Clave/Valor genéricos, para no migrar el esquema cada vez que se agregue una nueva preferencia.
+Guarda preferencias personales por usuario (tema oscuro, vista lista/tarjetas por pantalla, favoritos del menú) como pares Clave/Valor genéricos, para no migrar el esquema cada vez que se agregue una nueva preferencia.
 ```sql
 CREATE TABLE Seguridad.PreferenciasUsuario (
     UsuarioID INT NOT NULL,
     Clave NVARCHAR(50) NOT NULL,
-    Valor NVARCHAR(50) NOT NULL,
+    Valor NVARCHAR(MAX) NOT NULL,
     FechaModificacion DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
     CONSTRAINT PK_PreferenciasUsuario PRIMARY KEY (UsuarioID, Clave),
     CONSTRAINT FK_PreferenciasUsuario_Usuario FOREIGN KEY (UsuarioID) REFERENCES Seguridad.Usuarios(UsuarioID)
 );
 ```
+**`Valor` se amplió de `NVARCHAR(50)` a `NVARCHAR(MAX)` en agosto 2026** (sección 27 de `CLAUDE.md`) — la clave `"Favoritos"` guarda un array JSON (`[{"Href":"...","Etiqueta":"..."}]`) de páginas marcadas en el menú lateral, que no cabía en 50 caracteres. Los valores simples anteriores (`"true"`/`"false"`, `"lista"`/`"tarjetas"`) siguen funcionando igual, `NVARCHAR(MAX)` es compatible hacia atrás.
 Claves usadas hasta ahora: `TemaOscuro` (`"true"`/`"false"`), `VistaListado` (`"lista"`/`"tarjetas"` — control único y global, ya no es por pantalla). Ver `CLAUDE.md` sección 20.20. **Ya aplicado en la base de datos** — no requiere ejecución manual.
 
 ### 9.12 — Columna nueva: `Compras.OrdenesCompraDetalle.FechaUltimaRecepcion`

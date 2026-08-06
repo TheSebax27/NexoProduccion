@@ -1,0 +1,54 @@
+@page "/rrhh/organigrama"
+@attribute [Authorize(Roles = "Administrador")]
+@inject INexoApiClient ApiClient
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Organigrama - NEXO</PageTitle>
+
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Organigrama</MudText>
+    <BotonFavorito Href="/rrhh/organigrama" Etiqueta="Organigrama" />
+</div>
+<InfoAyuda Texto="Jerarquía basada en el campo 'Jefe Directo' de cada empleado. Se edita desde Empleados." />
+
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudo cargar el organigrama: @_errorCarga</MudAlert>
+}
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_nodos.Count == 0)
+{
+    <MudText>No hay empleados activos.</MudText>
+}
+else
+{
+    @foreach (var raiz in _nodos.Where(n => n.JefeDirectoID is null || !_nodos.Any(p => p.EmpleadoID == n.JefeDirectoID)))
+    {
+        <OrganigramaRama Nodo="raiz" Todos="_nodos" Nivel="0" />
+    }
+}
+
+@code {
+    private List<OrganigramaNodo> _nodos = new();
+    private bool _cargando = true;
+    private string? _errorCarga;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _nodos = await ApiClient.GetAsync<List<OrganigramaNodo>>("api/rrhh/empleados/organigrama") ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+}

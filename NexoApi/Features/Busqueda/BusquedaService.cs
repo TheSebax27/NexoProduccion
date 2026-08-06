@@ -84,14 +84,14 @@ public class BusquedaService : IBusquedaService
         {
             const string sqlClientes = @"
                 SELECT TOP (@Max) Nombre, NIT
-                FROM Catalogo.Clientes
+                FROM Crm.Clientes
                 WHERE Nombre LIKE @Patron OR NIT LIKE @Patron
                 ORDER BY Nombre";
             var clientes = await connection.QueryAsync<(string Nombre, string? NIT)>(
                 sqlClientes, new { Patron = patron, Max = MaxPorCategoria });
             resultados.AddRange(clientes.Select(c => new ResultadoBusqueda(
-                "Cliente", c.Nombre, c.NIT is null ? "Catálogo" : $"NIT {c.NIT} · Catálogo",
-                "/catalogo/clientes")));
+                "Cliente", c.Nombre, c.NIT is null ? "CRM" : $"NIT {c.NIT} · CRM",
+                "/crm/clientes")));
 
             const string sqlProveedores = @"
                 SELECT TOP (@Max) RazonSocial, NIT

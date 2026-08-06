@@ -26,9 +26,6 @@ public interface ICatalogoService
     Task ActualizarImagenArticuloAsync(int articuloId, ActualizarImagenRequest request);
     Task EliminarImagenArticuloAsync(int articuloId);
 
-    Task<IEnumerable<ClienteItem>> ListarClientesAsync();
-    Task<int> CrearClienteAsync(CrearClienteRequest request);
-    Task ActualizarClienteAsync(int clienteId, ActualizarClienteRequest request);
     Task<IEnumerable<CentroTrabajoItem>> ListarCentrosTrabajoAsync(bool soloActivos);
     Task<int> CrearCentroTrabajoAsync(CrearCentroTrabajoRequest request);
     Task ActualizarCentroTrabajoAsync(int centroTrabajoId, ActualizarCentroTrabajoRequest request);
@@ -279,35 +276,6 @@ public class CatalogoService : ICatalogoService
 
         if (filas == 0)
             throw new KeyNotFoundException($"No existe el articulo {articuloId}.");
-    }
-
-    public async Task<IEnumerable<ClienteItem>> ListarClientesAsync()
-    {
-        using var connection = _db.CreateConnection();
-        return await connection.QueryAsync<ClienteItem>(
-            "SELECT ClienteID, Nombre, NIT, Contacto, Telefono, Email, Direccion, Estado FROM Catalogo.Clientes ORDER BY Nombre");
-    }
-
-    public async Task<int> CrearClienteAsync(CrearClienteRequest r)
-    {
-        using var connection = _db.CreateConnection();
-        const string sql = @"
-            INSERT INTO Catalogo.Clientes (Nombre, NIT, Contacto, Telefono, Email, Direccion)
-            OUTPUT INSERTED.ClienteID
-            VALUES (@Nombre, @NIT, @Contacto, @Telefono, @Email, @Direccion)";
-        return await connection.ExecuteScalarAsync<int>(sql, r);
-    }
-
-    public async Task ActualizarClienteAsync(int clienteId, ActualizarClienteRequest r)
-    {
-        using var connection = _db.CreateConnection();
-        const string sql = @"
-            UPDATE Catalogo.Clientes
-            SET Nombre = @Nombre, NIT = @NIT, Contacto = @Contacto, Telefono = @Telefono,
-                Email = @Email, Direccion = @Direccion, Estado = @Estado
-            WHERE ClienteID = @ClienteId";
-        var filas = await connection.ExecuteAsync(sql, new { ClienteId = clienteId, r.Nombre, r.NIT, r.Contacto, r.Telefono, r.Email, r.Direccion, r.Estado });
-        if (filas == 0) throw new KeyNotFoundException($"No existe el cliente {clienteId}.");
     }
 
     public async Task<IEnumerable<CentroTrabajoItem>> ListarCentrosTrabajoAsync(bool soloActivos)

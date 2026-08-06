@@ -1,0 +1,202 @@
+@page "/proyectos"
+@attribute [Authorize(Roles = "Administrador,SupervisorPlanta")]
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Proyectos - NEXO</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Proyectos</MudText>
+<InfoAyuda Texto="Gestión básica de proyectos: tareas con responsable y fecha límite, y costos imputados (mano de obra, materiales u otros) comparados contra el presupuesto." />
+
+<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
+           StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
+    Nuevo Proyecto
+</MudButton>
+
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar los proyectos: @_errorCarga</MudAlert>
+}
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_proyectos.Count == 0)
+{
+    <MudText>No hay proyectos registrados.</MudText>
+}
+else
+{
+    <div class="nexo-card-grid">
+        @foreach (var p in _proyectos)
+        {
+            <div class="nexo-item-card">
+                <div class="d-flex align-center justify-space-between">
+                    <div class="nexo-item-card__title">@p.Nombre</div>
+                    <div class="d-flex" style="gap: 0.3rem;">
+                        <MudChip T="string" Size="Size.Small" Color="@ColorPrioridad(p.Prioridad)">@p.Prioridad</MudChip>
+                        <MudChip T="string" Size="Size.Small" Color="@ColorEstado(p.Estado)">@p.Estado</MudChip>
+                    </div>
+                </div>
+                <div class="nexo-item-card__sub">@(p.Cliente ?? "Sin cliente") @(p.CentroCosto is not null ? $"· {p.CentroCosto}" : "")</div>
+                <div class="nexo-item-card__row"><span>Tareas</span><strong>@p.TareasCompletadas / @p.TotalTareas</strong></div>
+                @if (p.TotalHitos > 0)
+                {
+                    <div class="nexo-item-card__row"><span>Hitos</span><strong>@p.HitosCompletados / @p.TotalHitos</strong></div>
+                }
+                <div class="nexo-item-card__row"><span>Presupuesto</span><strong>@p.Presupuesto.ToString("C0")</strong></div>
+                <div class="nexo-item-card__row">
+                    <span>Costo Actual</span>
+                    <strong style="color: @(p.CostoTotal > p.Presupuesto ? "var(--n-error, #EF4444)" : "inherit")">
+                        @p.CostoTotal.ToString("C0")
+                    </strong>
+                </div>
+                <div class="nexo-item-card__actions">
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(p))">Gestionar</MudButton>
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(p))">Editar</MudButton>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<ProyectoItem> _proyectos = new();
+    private List<ClienteItem> _clientes = new();
+    private List<CentroCostoItem> _centrosCosto = new();
+    private List<EmpleadoItem> _empleados = new();
+    private List<ArticuloItem> _articulos = new();
+    private bool _cargando = true;
+    private string? _errorCarga;
+
+    private Color ColorEstado(string estado) => estado switch
+    {
+        "FINALIZADO" => Color.Success,
+        "EN_CURSO" => Color.Info,
+        "CANCELADO" => Color.Error,
+        _ => Color.Default
+    };
+
+    private Color ColorPrioridad(string prioridad) => prioridad switch
+    {
+        "ALTA" => Color.Error,
+        "MEDIA" => Color.Warning,
+        _ => Color.Default
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var tareaProyectos = ApiClient.GetAsync<List<ProyectoItem>>("api/proyectos");
+            var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
+            var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true");
+            var tareaEmpleados = ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados?soloActivos=true");
+            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+
+            await Task.WhenAll(tareaProyectos, tareaClientes, tareaCentrosCosto, tareaEmpleados, tareaArticulos);
+
+            _proyectos = await tareaProyectos ?? new();
+            _clientes = (await tareaClientes ?? new()).Where(c => c.Estado).ToList();
+            _centrosCosto = await tareaCentrosCosto ?? new();
+            _empleados = await tareaEmpleados ?? new();
+            _articulos = await tareaArticulos ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task CargarProyectosAsync()
+    {
+        try
+        {
+            _proyectos = await ApiClient.GetAsync<List<ProyectoItem>>("api/proyectos") ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+    }
+
+    private async Task AbrirCreacionAsync()
+    {
+        var parametros = new DialogParameters<ProyectoDialog>
+        {
+            { x => x.Clientes, _clientes },
+            { x => x.CentrosCosto, _centrosCosto }
+        };
+
+        var dialogo = await DialogService.ShowAsync<ProyectoDialog>("Nuevo Proyecto", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (CrearProyectoRequest)resultado.Data!;
+            await ApiClient.PostAsync<CrearProyectoRequest, object?>("api/proyectos", request);
+            Snackbar.Add("Proyecto creado correctamente.", Severity.Success);
+            await CargarProyectosAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AbrirEdicionAsync(ProyectoItem proyecto)
+    {
+        var parametros = new DialogParameters<ProyectoDialog>
+        {
+            { x => x.Proyecto, proyecto },
+            { x => x.Clientes, _clientes },
+            { x => x.CentrosCosto, _centrosCosto }
+        };
+
+        var dialogo = await DialogService.ShowAsync<ProyectoDialog>("Editar Proyecto", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (ActualizarProyectoRequest)resultado.Data!;
+            await ApiClient.PutAsync<ActualizarProyectoRequest, object?>($"api/proyectos/{proyecto.ProyectoID}", request);
+            Snackbar.Add("Proyecto actualizado correctamente.", Severity.Success);
+            await CargarProyectosAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AbrirGestionAsync(ProyectoItem proyecto)
+    {
+        var parametros = new DialogParameters<GestionProyectoDialog>
+        {
+            { x => x.Proyecto, proyecto },
+            { x => x.Empleados, _empleados },
+            { x => x.Articulos, _articulos }
+        };
+
+        // OJO: ShowAsync resuelve apenas el dialogo se ABRE, no cuando se
+        // CIERRA -- hay que esperar su .Result para refrescar la lista con
+        // los cambios reales (tareas/hitos/costos agregados adentro).
+        var dialogo = await DialogService.ShowAsync<GestionProyectoDialog>("Gestionar Proyecto", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        await dialogo.Result;
+
+        await CargarProyectosAsync();
+    }
+}

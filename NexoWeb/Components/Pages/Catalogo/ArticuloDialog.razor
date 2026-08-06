@@ -115,7 +115,7 @@
                     }
                     else if (EsEdicion && Articulo!.TieneImagen)
                     {
-                        <img src="@($"api/catalogo/articulos/{Articulo!.ArticuloID}/imagen")" alt="" style="width:48px; height:48px; object-fit:cover; border-radius:8px;" />
+                        <img src="@($"api/catalogo/articulos/{Articulo!.ArticuloID}/imagen?v={_cacheBust}")" alt="" style="width:48px; height:48px; object-fit:cover; border-radius:8px;" />
                     }
                     <InputFile id="nexo-articulo-imagen-input" OnChange="OnImagenSeleccionadaAsync"
                                accept="image/png,image/jpeg,image/webp" style="display:none;" />
@@ -176,6 +176,9 @@
     private string? _imagenBase64;
     private string? _imagenContentType;
     private string? _imagenPreviewUrl;
+    // Rompe el cache del navegador para la imagen existente -- ver mismo
+    // patron en Articulos.razor.
+    private readonly long _cacheBust = DateTime.UtcNow.Ticks;
 
     protected override void OnInitialized()
     {

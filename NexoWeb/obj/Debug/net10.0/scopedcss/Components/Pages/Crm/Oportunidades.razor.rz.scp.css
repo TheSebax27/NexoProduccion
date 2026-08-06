@@ -1,0 +1,80 @@
+/* Embudo de ventas -- mismo espiritu que el Kanban de Tareas de Proyectos
+   (GestionProyectoDialog.razor.css), sin drag&drop, con botones de mover. */
+.nexo-embudo[b-gvrdtdo5pd] {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.nexo-embudo__columna[b-gvrdtdo5pd] {
+  background: var(--n-bg-2, #F4F5F9);
+  border-radius: 10px;
+  padding: 0.6rem;
+  min-height: 80px;
+}
+
+.nexo-embudo__columna-titulo[b-gvrdtdo5pd] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--n-text-3, #9B9BB4);
+  padding: 0 0.15rem;
+}
+
+.nexo-embudo__contador[b-gvrdtdo5pd] {
+  background: rgba(124,92,255,0.15);
+  color: #7C5CFF;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  padding: 0.05rem 0.45rem;
+  font-weight: 700;
+}
+
+.nexo-embudo__columna-valor[b-gvrdtdo5pd] {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--n-text-2, #5B5B72);
+  padding: 0.1rem 0.15rem 0.5rem;
+}
+
+.nexo-embudo__tarjeta[b-gvrdtdo5pd] {
+  background: var(--n-bg-1, #FFFFFF);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  padding: 0.55rem 0.65rem;
+  margin-bottom: 0.5rem;
+}
+
+.nexo-embudo__tarjeta-titulo[b-gvrdtdo5pd] {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.nexo-embudo__tarjeta-meta[b-gvrdtdo5pd] {
+  font-size: 0.72rem;
+  color: var(--n-text-3, #9B9BB4);
+  line-height: 1.4;
+}
+
+.nexo-embudo__tarjeta-acciones[b-gvrdtdo5pd] {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.2rem;
+}
+
+@media (max-width: 900px) {
+  .nexo-embudo[b-gvrdtdo5pd] {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 500px) {
+  .nexo-embudo[b-gvrdtdo5pd] {
+    grid-template-columns: 1fr;
+  }
+}

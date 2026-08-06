@@ -15,3 +15,8 @@ public record CumplimientoCentroCostoItem(
     int TotalOrdenesFinalizadas, int OrdenesATiempo,
     decimal PorcentajeCumplimiento
 );
+
+public record ResumenCrmItem(int ClientesNuevos, int Interacciones);
+public record EmpleadosPorCentroCostoItem(string CentroCosto, int TotalEmpleados);
+public record ResumenPlanificacionItem(decimal CumplimientoDemandaPromedio, decimal CumplimientoVentaPromedio);
+public record ResumenInventarioItem(decimal ValorTotalStock, int ArticulosConAlerta);

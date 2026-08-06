@@ -8,7 +8,10 @@
 
 <PageTitle>Ordenes de Compra - NEXO</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">Ordenes de Compra</MudText>
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Ordenes de Compra</MudText>
+    <BotonFavorito Href="/compras/ordenes" Etiqueta="Ordenes de Compra" />
+</div>
 <InfoAyuda Texto="Crea una Orden de Compra a un proveedor. Puedes recibirla en varias entregas parciales desde 'Ver / Recibir' — cada línea guarda cuánto se ha recibido y en qué fecha, hasta completarse." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => AbrirCreacionAsync(null))"

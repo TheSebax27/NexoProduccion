@@ -1,5 +1,7 @@
 # Arquitectura del Sistema NEXO ERP
 
+> **Actualizado agosto 2026** para reflejar los 19 módulos existentes (antes solo documentaba los 6 originales). Para un análisis crítico (qué falta, qué mejorar, prioridades) ver `docs/AUDITORIA_2026.md` — este archivo es solo el mapa de "qué existe y cómo se conecta", no una evaluación.
+
 ## 1. Visión General
 
 NEXO ERP está construido en tres capas bien diferenciadas que se comunican de forma unidireccional:
@@ -16,7 +18,9 @@ NEXO ERP está construido en tres capas bien diferenciadas que se comunican de f
 │                    Capa de Negocio / API                     │
 │   NexoApi — .NET 10 ASP.NET Core Web API                    │
 │   JWT Bearer · ApiKey · ExceptionHandlingMiddleware          │
-│   Features: Auth, Catalogo, Produccion, Inventario ...      │
+│   Features: Auth, Catalogo, Produccion, Inventario, Compras, │
+│   Crm, Rrhh, Planificacion, Logistica, Proyectos,             │
+│   Facturacion, Dashboard, Notificaciones, Busqueda ...        │
 └───────────────┬─────────────────────────────────────────────┘
                 │ HTTP + JSON (Bearer token)
                 │ HttpClient tipado (NexoApiClient)
@@ -286,15 +290,106 @@ NexoSyncAgent
 | POST | `/ordenes` | Admin, Bodeguero | Crea OC |
 | POST | `/ordenes/{id}/recibir-linea` | Admin, Bodeguero | Recibe una línea de OC |
 
-### Dashboard (`/api/dashboard`)
+### Dashboard / Business Intelligence (`/api/dashboard`)
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| GET | `/plan-vs-real?dias=14` | Serie planificado vs real |
-| GET | `/distribucion-centro-costo` | Distribución de producción por CC |
-| GET | `/perdidas-por-motivo?dias=30` | Pérdidas agrupadas por motivo |
-| GET | `/tendencia-costo?articuloId=X` | Tendencia de costo unitario por producto |
-| GET | `/cumplimiento-planificacion` | % cumplimiento por centro de costo |
+| Método | Ruta | Rol | Descripción |
+|---|---|---|---|
+| GET | `/plan-vs-real?dias=14` | Admin, Supervisor, Bodeguero | Serie planificado vs real |
+| GET | `/distribucion-centro-costo` | Admin, Supervisor, Bodeguero | Distribución de producción por CC |
+| GET | `/perdidas-por-motivo?dias=30` | Admin, Supervisor, Bodeguero | Pérdidas agrupadas por motivo |
+| GET | `/tendencia-costo?articuloId=X` | Admin, Supervisor, Bodeguero | Tendencia de costo unitario por producto |
+| GET | `/cumplimiento-planificacion` | Admin, Supervisor, Bodeguero | % cumplimiento por centro de costo |
+| GET | `/resumen-crm?desde=&hasta=` | Administrador | Clientes nuevos + interacciones (agosto 2026) |
+| GET | `/empleados-por-centro-costo` | Administrador | Conteo de empleados activos por CC (agosto 2026) |
+| GET | `/resumen-planificacion` | Admin, Supervisor, Bodeguero | % cumplimiento Demanda/Venta del mes actual (agosto 2026) |
+| GET | `/resumen-inventario` | Admin, Supervisor, Bodeguero | Valor total de stock + artículos con alerta (agosto 2026) |
+| POST | `/exportar/excel`, `/exportar/pdf` | Admin, Supervisor, Bodeguero | Exportación del Dashboard (`DashboardExportService`) |
+
+### Traspasos (`/api/inventario/traspasos` — nota: comparte controller con Inventario)
+
+Ver tabla de Inventario arriba — Traspasos vive como feature slice propio (`Features/Traspasos/`) pero expone rutas bajo `/api/inventario/traspasos` por historia del proyecto.
+
+### CRM (`/api/crm`) — agosto 2026
+
+| Método | Ruta | Rol | Descripción |
+|---|---|---|---|
+| GET | `/clientes` | Admin, Bodeguero, Supervisor | Lista clientes (filtros: responsable, tipo, fuente, activos) |
+| POST/PUT | `/clientes[/{id}]` | Administrador | Crear/editar cliente |
+| GET/POST | `/clientes/{id}/interacciones`, `/interacciones` | Administrador | Bitácora de interacciones |
+| GET/POST/PUT | `/clientes/{id}/contactos`, `/contactos[/{id}]` | Administrador | Múltiples contactos por cliente |
+| GET | `/clientes/{id}/historial` | Administrador | Timeline unificado (interacciones + pedidos + despachos) |
+| GET/POST/DELETE | `/clientes/{id}/documentos`, `/documentos/{id}` | Administrador | Documentos adjuntos (descarga autenticada) |
+| GET/POST/PUT | `/leads[/{id}]` | Administrador | Pipeline de prospectos |
+| POST | `/leads/{id}/convertir` | Administrador | Convierte Lead → Cliente (transacción) |
+| GET | `/clientes-frios?diasSinContacto=30` | Administrador | Alerta interna de clientes sin contacto reciente |
+
+### RRHH (`/api/rrhh`) — agosto 2026
+
+| Método | Ruta | Rol | Descripción |
+|---|---|---|---|
+| GET | `/empleados` | Admin, Supervisor | Lista empleados |
+| POST/PUT | `/empleados[/{id}]` | Administrador | Crear/editar empleado (dispara Historial Laboral automático) |
+| GET/PUT/DELETE | `/empleados/{id}/foto`, `/documentos`, `/historial`, `/evaluaciones`, `/capacitaciones`, `/organigrama` | Administrador | Sub-recursos del empleado |
+| GET/POST/PUT | `/departamentos[/{id}]`, `/cargos[/{id}]` | Admin (lectura: +Supervisor) | Estructura organizacional |
+| GET/POST/PUT | `/ausencias[/{id}/estado]` | Administrador | Vacaciones/incapacidades/permisos, sin cálculo de nómina |
+
+### Planificación (`/api/planificacion`) — ampliado agosto 2026
+
+| Método | Ruta | Rol | Descripción |
+|---|---|---|---|
+| GET/POST/PUT | `/demanda[/{id}]` | Admin, Supervisor | Demanda proyectada vs real (Kardex ENTRADA_PT) |
+| GET | `/demanda/sugerencia` | Admin, Supervisor | Promedio de los últimos 3 meses reales |
+| GET/POST/PUT | `/metas-venta[/{id}]` | Admin, Supervisor | Meta comercial vs venta real (Kardex SALIDA_VENTA_VISIONS) |
+| GET | `/metas-venta/{id}/historial` | Admin, Supervisor | Versionado de metas (valor anterior antes de cada cambio) |
+| GET | `/desviaciones?umbral=70` | Admin, Supervisor | Alerta interna de Centros de Costo por debajo del umbral |
+| GET | `/historico-cumplimiento?meses=12` | Admin, Supervisor | Serie histórica de cumplimiento Demanda/Venta |
+
+### Logística (`/api/logistica`) — agosto 2026
+
+| Método | Ruta | Rol | Descripción |
+|---|---|---|---|
+| GET/POST | `/despachos` | Admin, Bodeguero | Despachos a cliente — **descuenta stock real** (FEFO), a diferencia de un registro documental |
+| POST | `/despachos/{id}/confirmar-entrega` | Admin, Bodeguero | Marca DESPACHADO → ENTREGADO |
+| POST | `/despachos/{id}/anular` | Admin, Bodeguero | Revierte stock del despacho (SP `sp_AnularDespacho`) |
+
+### Proyectos (`/api/proyectos`) — ampliado agosto 2026
+
+| Método | Ruta | Rol | Descripción |
+|---|---|---|---|
+| GET/POST/PUT | `/[{id}]` | Admin, Supervisor | Proyectos (con Prioridad, % Hitos/Tareas) |
+| GET/POST/PUT | `/{proyectoId}/tareas`, `/tareas[/{id}]` | Admin, Supervisor | Tareas (Kanban), con dependencias entre tareas |
+| GET/POST/PUT | `/{proyectoId}/hitos`, `/hitos[/{id}]` | Admin, Supervisor | Fases/hitos del proyecto |
+| GET/POST | `/{proyectoId}/costos`, `/costos` | Admin, Supervisor | Costos manuales (mano de obra/material/otro) — sin cálculo automático |
+| GET/POST/DELETE | `/{proyectoId}/documentos`, `/documentos/{id}` | Admin, Supervisor | Documentos adjuntos |
+| GET/POST | `/{proyectoId}/comentarios`, `/comentarios` | Admin, Supervisor | Bitácora del proyecto |
+| GET | `/alertas` | Admin, Supervisor | Proyectos atrasados o con sobrecosto |
+
+### Facturación (`/api/facturacion`) — nuevo, agosto 2026
+
+| Método | Ruta | Rol | Descripción |
+|---|---|---|---|
+| GET/POST | `/facturas` | Admin, Bodeguero | Registro de ventas — **no descuenta stock ni toca Kardex**, independiente de Logística |
+| GET | `/facturas/{id}/lineas`, `/{id}/pagos` | Admin, Bodeguero | Detalle de una factura |
+| POST | `/pagos` | Admin, Bodeguero | Registra abono — Estado (Pagada/Parcial/Pendiente) se calcula, nunca se guarda fijo |
+
+### Notificaciones (`/api/notificaciones`)
+
+| Método | Ruta | Rol | Descripción |
+|---|---|---|---|
+| GET | `/resumen` | Autenticado | Resumen agregado por categoría — **hoy solo cubre Sin Stock/Bajo Stock/Órdenes en Proceso**, ver auditoría (`docs/AUDITORIA_2026.md` sección 5.5) para el gap de módulos nuevos sin conectar |
+
+### Búsqueda (`/api/busqueda`)
+
+| Método | Ruta | Rol | Descripción |
+|---|---|---|---|
+| GET | `?q=texto` | Autenticado | Búsqueda global — **hoy solo cubre Stock, Traspasos, Artículos, Clientes, Proveedores, Centros de Costo, Bodegas, Órdenes de Producción/Compra**, ver auditoría sección 5.2 para el gap |
+
+### Preferencias (`/api/preferencias`) y Configuración (`/api/configuracion`)
+
+| Método | Ruta | Rol | Descripción |
+|---|---|---|---|
+| GET/PUT | `/preferencias[/{clave}]` | Autenticado | Preferencias por usuario, clave/valor genérico (tema, vista, favoritos) |
+| GET/PUT | `/configuracion/empresa` | Administrador | Nombre/logo de empresa (fila única, global) |
 
 ---
 

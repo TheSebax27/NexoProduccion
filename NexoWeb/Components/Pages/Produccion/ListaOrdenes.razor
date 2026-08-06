@@ -9,7 +9,10 @@
 
 <PageTitle>Ordenes de Produccion - NEXO</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">Ordenes de Produccion</MudText>
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Ordenes de Produccion</MudText>
+    <BotonFavorito Href="/produccion/ordenes" Etiqueta="Ordenes de Produccion" />
+</div>
 <InfoAyuda Texto="Una orden pasa por 4 etapas: Planificada (aún no descuenta nada) → Liberada (descuenta la materia prima de la receta) → En Proceso → Cerrada (registra cuánto se produjo y su costo). Solo se puede cancelar mientras está Planificada." />
 @if (_puedeGestionar)
 {

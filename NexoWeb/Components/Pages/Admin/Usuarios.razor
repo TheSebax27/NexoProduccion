@@ -8,7 +8,10 @@
 
 <PageTitle>Usuarios - NEXO</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">Usuarios</MudText>
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Usuarios</MudText>
+    <BotonFavorito Href="/admin/usuarios" Etiqueta="Usuarios" />
+</div>
 <InfoAyuda Texto="Crea usuarios del sistema y asígnales un rol (Administrador, SupervisorPlanta, Operario o Bodeguero) y un Centro de Costo. El rol determina qué pantallas puede ver y qué acciones puede hacer." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"

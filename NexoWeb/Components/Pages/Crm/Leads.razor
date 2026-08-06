@@ -1,0 +1,201 @@
+@page "/crm/leads"
+@attribute [Authorize(Roles = "Administrador")]
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Leads - NEXO</PageTitle>
+
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Leads</MudText>
+    <BotonFavorito Href="/crm/leads" Etiqueta="Leads" />
+</div>
+<InfoAyuda Texto="Un Lead es un prospecto que todavía no es cliente. Sigue su propio embudo (Nuevo → Contactado → Calificado → Convertido/Descartado). Al convertirlo se crea el Cliente automáticamente, con la misma información." />
+
+<div class="d-flex align-center flex-wrap mb-4" style="gap: 1rem;">
+    <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync" StartIcon="@Icons.Material.Filled.PersonAddAlt">
+        Nuevo Lead
+    </MudButton>
+    <MudSelect T="string" Value="_filtroEtapa" ValueChanged="OnFiltroEtapaCambiadoAsync" Label="Etapa" Clearable="true" Style="max-width: 200px;">
+        <MudSelectItem Value="@("NUEVO")">Nuevo</MudSelectItem>
+        <MudSelectItem Value="@("CONTACTADO")">Contactado</MudSelectItem>
+        <MudSelectItem Value="@("CALIFICADO")">Calificado</MudSelectItem>
+        <MudSelectItem Value="@("CONVERTIDO")">Convertido</MudSelectItem>
+        <MudSelectItem Value="@("DESCARTADO")">Descartado</MudSelectItem>
+    </MudSelect>
+</div>
+
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar los leads: @_errorCarga</MudAlert>
+}
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_leads.Count == 0)
+{
+    <MudText>No hay leads registrados.</MudText>
+}
+else
+{
+    <MudTable Items="_leads" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Nombre</MudTh>
+            <MudTh>Empresa</MudTh>
+            <MudTh>Fuente</MudTh>
+            <MudTh>Responsable</MudTh>
+            <MudTh>Etapa</MudTh>
+            <MudTh>Fecha</MudTh>
+            <MudTh>Accion</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+            <MudTd DataLabel="Empresa">@(context.Empresa ?? "-")</MudTd>
+            <MudTd DataLabel="Fuente">@(context.FuenteContacto ?? "-")</MudTd>
+            <MudTd DataLabel="Responsable">@(context.Responsable ?? "-")</MudTd>
+            <MudTd DataLabel="Etapa">
+                <MudChip T="string" Size="Size.Small" Color="@ColorEtapa(context.Etapa)">@context.Etapa</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Fecha">@context.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="Accion">
+                @if (context.Etapa != "CONVERTIDO")
+                {
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">Editar</MudButton>
+                    @if (context.Etapa == "CALIFICADO")
+                    {
+                        <MudButton Size="Size.Small" Color="Color.Success" OnClick="@(() => ConvertirAsync(context))">
+                            Convertir a Cliente
+                        </MudButton>
+                    }
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption" Style="color: var(--n-text-3, #9B9BB4);">
+                        Convertido @context.FechaConversion?.ToLocalTime().ToString("dd/MM/yyyy")
+                    </MudText>
+                }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<LeadItem> _leads = new();
+    private List<EmpleadoItem> _empleados = new();
+    private bool _cargando = true;
+    private string? _errorCarga;
+    private string? _filtroEtapa;
+
+    private Color ColorEtapa(string etapa) => etapa switch
+    {
+        "CONVERTIDO" => Color.Success,
+        "DESCARTADO" => Color.Error,
+        "CALIFICADO" => Color.Info,
+        _ => Color.Default
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var tareaLeads = ApiClient.GetAsync<List<LeadItem>>("api/crm/leads");
+            var tareaEmpleados = ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados?soloActivos=true");
+
+            await Task.WhenAll(tareaLeads, tareaEmpleados);
+
+            _leads = await tareaLeads ?? new();
+            _empleados = await tareaEmpleados ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task OnFiltroEtapaCambiadoAsync(string? nuevoValor)
+    {
+        _filtroEtapa = nuevoValor;
+        await CargarLeadsAsync();
+    }
+
+    private async Task CargarLeadsAsync()
+    {
+        try
+        {
+            var ruta = "api/crm/leads" + (_filtroEtapa is not null ? $"?etapa={_filtroEtapa}" : "");
+            _leads = await ApiClient.GetAsync<List<LeadItem>>(ruta) ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+    }
+
+    private async Task AbrirCreacionAsync()
+    {
+        var parametros = new DialogParameters<LeadDialog> { { x => x.Empleados, _empleados } };
+        var dialogo = await DialogService.ShowAsync<LeadDialog>("Nuevo Lead", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (CrearLeadRequest)resultado.Data!;
+            await ApiClient.PostAsync<CrearLeadRequest, object?>("api/crm/leads", request);
+            Snackbar.Add("Lead creado correctamente.", Severity.Success);
+            await CargarLeadsAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AbrirEdicionAsync(LeadItem lead)
+    {
+        var parametros = new DialogParameters<LeadDialog>
+        {
+            { x => x.Lead, lead },
+            { x => x.Empleados, _empleados }
+        };
+        var dialogo = await DialogService.ShowAsync<LeadDialog>("Editar Lead", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (ActualizarLeadRequest)resultado.Data!;
+            await ApiClient.PutAsync<ActualizarLeadRequest, object?>($"api/crm/leads/{lead.LeadID}", request);
+            Snackbar.Add("Lead actualizado correctamente.", Severity.Success);
+            await CargarLeadsAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task ConvertirAsync(LeadItem lead)
+    {
+        try
+        {
+            await ApiClient.PostAsync($"api/crm/leads/{lead.LeadID}/convertir");
+            Snackbar.Add("Lead convertido a cliente correctamente.", Severity.Success);
+            await CargarLeadsAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

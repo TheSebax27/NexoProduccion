@@ -3,6 +3,8 @@ using NexoWeb.Common.Dtos;
 
 namespace NexoWeb.Common.Auth;
 
+public record PaginaFavorita(string Href, string Etiqueta);
+
 // Estado de preferencias del usuario actual (tema oscuro, vista lista/tarjetas
 // por pantalla, etc.), cacheado en memoria por circuito de Blazor Server y
 // respaldado en Seguridad.PreferenciasUsuario via la API. Se carga una sola
@@ -31,6 +33,31 @@ public class PreferenciasState
     // Icono de ayuda por pagina -- activado por defecto (util para usuarios
     // nuevos desde el primer login, sin tener que descubrir el toggle antes).
     public bool MostrarAyuda => ObtenerValor("MostrarAyuda", "true") == "true";
+
+    // Paginas marcadas como favoritas (menu lateral) -- se guardan como JSON
+    // bajo la clave generica "Favoritos". Requiere que Seguridad.PreferenciasUsuario.Valor
+    // sea NVARCHAR(MAX) (ampliado agosto 2026 -- antes era nvarchar(50), muy chico para una lista).
+    public List<PaginaFavorita> Favoritos
+    {
+        get
+        {
+            var json = ObtenerValor("Favoritos", "[]");
+            try { return System.Text.Json.JsonSerializer.Deserialize<List<PaginaFavorita>>(json) ?? new(); }
+            catch { return new(); }
+        }
+    }
+
+    public bool EsFavorito(string href) => Favoritos.Any(f => f.Href == href);
+
+    public async Task ToggleFavoritoAsync(string href, string etiqueta)
+    {
+        var lista = Favoritos;
+        var existente = lista.FirstOrDefault(f => f.Href == href);
+        if (existente is not null) lista.Remove(existente);
+        else lista.Add(new PaginaFavorita(href, etiqueta));
+
+        await EstablecerAsync("Favoritos", System.Text.Json.JsonSerializer.Serialize(lista));
+    }
 
     public async Task CargarAsync()
     {

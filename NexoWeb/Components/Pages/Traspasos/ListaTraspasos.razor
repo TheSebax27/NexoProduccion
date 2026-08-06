@@ -8,7 +8,10 @@
 
 <PageTitle>Traspasos - NEXO</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">Traspasos entre Bodegas</MudText>
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Traspasos entre Bodegas</MudText>
+    <BotonFavorito Href="/inventario/traspasos" Etiqueta="Traspasos" />
+</div>
 <InfoAyuda Texto="Envía stock de una bodega a otra. El stock se descuenta de la bodega origen al enviar, y se suma en la bodega destino recién cuando se confirma la recepción." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"

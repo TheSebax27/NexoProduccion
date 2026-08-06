@@ -1,8 +1,28 @@
 <MudNavMenu>
+    @* Favoritos: paginas marcadas desde el boton de marcador de cada
+       subpagina (ver BotonFavorito.razor) -- grupo vacio si no hay ninguna. *@
+    @if (Preferencias.Favoritos.Count > 0)
+    {
+        <MudNavGroup Title="Favoritos" Icon="@Icons.Material.Filled.Bookmark" Expanded="false">
+            @foreach (var favorito in Preferencias.Favoritos)
+            {
+                <MudNavLink Href="@favorito.Href">@favorito.Etiqueta</MudNavLink>
+            }
+        </MudNavGroup>
+    }
+
     <AuthorizeView Roles="Administrador,SupervisorPlanta,Bodeguero">
         <Authorized>
-            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
-                Dashboard
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Insights">
+                Business Intelligence
+            </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="Administrador,SupervisorPlanta">
+        <Authorized>
+            <MudNavLink Href="/proyectos" Icon="@Icons.Material.Filled.Assignment">
+                Proyectos
             </MudNavLink>
         </Authorized>
     </AuthorizeView>
@@ -54,6 +74,22 @@
         </Authorized>
     </AuthorizeView>
 
+    <AuthorizeView Roles="Administrador,Bodeguero">
+        <Authorized>
+            <MudNavGroup Title="Logistica" Icon="@Icons.Material.Filled.LocalShipping" Expanded="false">
+                <MudNavLink Href="/logistica/despachos">Despachos</MudNavLink>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="Administrador,Bodeguero">
+        <Authorized>
+            <MudNavLink Href="/facturacion" Icon="@Icons.Material.Filled.Receipt">
+                Facturación
+            </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
     <AuthorizeView Roles="Administrador,SupervisorPlanta" Context="grupoCatalogo">
         <Authorized>
             <MudNavGroup Title="Catalogo" Icon="@Icons.Material.Filled.Category" Expanded="false">
@@ -70,11 +106,39 @@
                         <MudNavLink Href="/catalogo/centros-costo">Centros de Costo</MudNavLink>
                         <MudNavLink Href="/catalogo/centros-trabajo">Centros de Trabajo</MudNavLink>
                         <MudNavLink Href="/catalogo/bodegas">Bodegas</MudNavLink>
-                        <MudNavLink Href="/catalogo/clientes">Clientes</MudNavLink>
                         <MudNavLink Href="/catalogo/proveedores">Proveedores</MudNavLink>
                         <MudNavLink Href="/catalogo/mapeo-articulos-visions">Mapeo Articulos Visions</MudNavLink>
                     </Authorized>
                 </AuthorizeView>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="Administrador,SupervisorPlanta">
+        <Authorized>
+            <MudNavGroup Title="Planificacion" Icon="@Icons.Material.Filled.Timeline" Expanded="false">
+                <MudNavLink Href="/planificacion/demanda">Demanda Proyectada</MudNavLink>
+                <MudNavLink Href="/planificacion/metas-venta">Metas de Venta</MudNavLink>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="Administrador">
+        <Authorized>
+            <MudNavGroup Title="CRM" Icon="@Icons.Material.Filled.Handshake" Expanded="false">
+                <MudNavLink Href="/crm/clientes">Clientes</MudNavLink>
+                <MudNavLink Href="/crm/leads">Leads</MudNavLink>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="Administrador">
+        <Authorized>
+            <MudNavGroup Title="Recursos Humanos" Icon="@Icons.Material.Filled.Badge" Expanded="false">
+                <MudNavLink Href="/rrhh/empleados">Empleados</MudNavLink>
+                <MudNavLink Href="/rrhh/cargos">Cargos y Departamentos</MudNavLink>
+                <MudNavLink Href="/rrhh/ausencias">Ausencias y Vacaciones</MudNavLink>
+                <MudNavLink Href="/rrhh/organigrama">Organigrama</MudNavLink>
             </MudNavGroup>
         </Authorized>
     </AuthorizeView>
@@ -87,3 +151,7 @@
         </Authorized>
     </AuthorizeView>
 </MudNavMenu>
+
+@code {
+    [Inject] private NexoWeb.Common.Auth.PreferenciasState Preferencias { get; set; } = default!;
+}

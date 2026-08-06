@@ -1,0 +1,22 @@
+@* Recursivo: un nodo del organigrama mas sus subordinados directos. *@
+
+<div class="nexo-organigrama__nodo" style="margin-left: @(Nivel * 24)px;">
+    <MudPaper Class="pa-2 mb-2 d-flex align-center" Style="gap: 0.5rem; max-width: 420px;">
+        <MudAvatar Size="Size.Small" Color="Color.Secondary">@Nodo.Nombres[0]@Nodo.Apellidos[0]</MudAvatar>
+        <div>
+            <MudText Typo="Typo.body2"><strong>@Nodo.Nombres @Nodo.Apellidos</strong></MudText>
+            <MudText Typo="Typo.caption" Style="color: var(--n-text-3, #9B9BB4);">@(Nodo.Cargo ?? "Sin cargo")</MudText>
+        </div>
+    </MudPaper>
+</div>
+
+@foreach (var hijo in Todos.Where(n => n.JefeDirectoID == Nodo.EmpleadoID))
+{
+    <OrganigramaRama Nodo="hijo" Todos="Todos" Nivel="Nivel + 1" />
+}
+
+@code {
+    [Parameter] public NexoWeb.Common.Dtos.OrganigramaNodo Nodo { get; set; } = default!;
+    [Parameter] public List<NexoWeb.Common.Dtos.OrganigramaNodo> Todos { get; set; } = new();
+    [Parameter] public int Nivel { get; set; } = 0;
+}

@@ -1,0 +1,158 @@
+@page "/planificacion/metas-venta"
+@attribute [Authorize(Roles = "Administrador,SupervisorPlanta")]
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Metas de Venta - NEXO</PageTitle>
+
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Metas de Venta</MudText>
+    <BotonFavorito Href="/planificacion/metas-venta" Etiqueta="Metas de Venta" />
+</div>
+<InfoAyuda Texto="Objetivo comercial por Centro de Costo y mes. Se compara contra la venta real reportada por Visions (cantidad vendida x precio de venta actual del artículo -- una aproximación, no reconstruye el precio histórico de cada venta)." />
+
+<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
+           StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
+    Nueva Meta
+</MudButton>
+
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar las metas: @_errorCarga</MudAlert>
+}
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_metas.Count == 0)
+{
+    <MudText>No hay metas registradas.</MudText>
+}
+else
+{
+    <MudTable Items="_metas" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Mes</MudTh>
+            <MudTh>Centro de Costo</MudTh>
+            <MudTh Style="text-align:right">Meta</MudTh>
+            <MudTh Style="text-align:right">Venta Real</MudTh>
+            <MudTh Style="text-align:right">Cumplimiento</MudTh>
+            <MudTh>Accion</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Mes">@context.Periodo.ToString("MMM yyyy")</MudTd>
+            <MudTd DataLabel="Centro de Costo">@context.CentroCosto</MudTd>
+            <MudTd DataLabel="Meta" Style="text-align:right">@context.MetaValor.ToString("C0")</MudTd>
+            <MudTd DataLabel="Venta Real" Style="text-align:right">@context.VentaReal.ToString("C0")</MudTd>
+            <MudTd DataLabel="Cumplimiento" Style="text-align:right">
+                @{
+                    var cumplimiento = context.MetaValor > 0 ? context.VentaReal / context.MetaValor * 100 : 0;
+                }
+                <MudChip T="string" Size="Size.Small" Color="@(cumplimiento >= 100 ? Color.Success : cumplimiento >= 70 ? Color.Warning : Color.Error)">
+                    @cumplimiento.ToString("N0")%
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Accion">
+                <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">Editar</MudButton>
+                <MudButton Size="Size.Small" OnClick="@(() => VerHistorialAsync(context))">Historial</MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<MetaVentaItem> _metas = new();
+    private List<CentroCostoItem> _centrosCosto = new();
+    private bool _cargando = true;
+    private string? _errorCarga;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true");
+            var tareaMetas = ApiClient.GetAsync<List<MetaVentaItem>>("api/planificacion/metas-venta");
+
+            await Task.WhenAll(tareaCentrosCosto, tareaMetas);
+
+            _centrosCosto = await tareaCentrosCosto ?? new();
+            _metas = await tareaMetas ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task CargarMetasAsync()
+    {
+        try
+        {
+            _metas = await ApiClient.GetAsync<List<MetaVentaItem>>("api/planificacion/metas-venta") ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+    }
+
+    private async Task AbrirCreacionAsync()
+    {
+        var parametros = new DialogParameters<MetaVentaDialog> { { x => x.CentrosCosto, _centrosCosto } };
+
+        var dialogo = await DialogService.ShowAsync<MetaVentaDialog>("Nueva Meta de Venta", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (CrearMetaVentaRequest)resultado.Data!;
+            await ApiClient.PostAsync<CrearMetaVentaRequest, object?>("api/planificacion/metas-venta", request);
+            Snackbar.Add("Meta creada correctamente.", Severity.Success);
+            await CargarMetasAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AbrirEdicionAsync(MetaVentaItem meta)
+    {
+        var parametros = new DialogParameters<MetaVentaDialog> { { x => x.Meta, meta } };
+
+        var dialogo = await DialogService.ShowAsync<MetaVentaDialog>("Editar Meta de Venta", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (ActualizarMetaVentaRequest)resultado.Data!;
+            await ApiClient.PutAsync<ActualizarMetaVentaRequest, object?>(
+                $"api/planificacion/metas-venta/{meta.MetaID}", request);
+            Snackbar.Add("Meta actualizada correctamente.", Severity.Success);
+            await CargarMetasAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task VerHistorialAsync(MetaVentaItem meta)
+    {
+        var historial = await ApiClient.GetAsync<List<MetaVentaHistorialItem>>($"api/planificacion/metas-venta/{meta.MetaID}/historial") ?? new();
+        var parametros = new DialogParameters<HistorialMetaVentaDialog> { { x => x.Historial, historial } };
+        await DialogService.ShowAsync<HistorialMetaVentaDialog>($"Historial de la meta -- {meta.CentroCosto} {meta.Periodo:MMM yyyy}", parametros);
+    }
+}

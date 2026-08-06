@@ -28,11 +28,16 @@ public static class NexoTheme
             Error               = "#EF4444",
 
             // ── Fondos ────────────────────────────────────────────────
-            Background          = "#F4F5F9",   // Gris claro elegante
-            Surface             = "#FFFFFF",   // Tarjetas y paneles blancos
+            // Agosto 2026: antes Surface era #FFFFFF puro -- el usuario lo vio
+            // demasiado luminoso/con brillo. Se bajo a un blanco roto suave
+            // (#FAFBFD) y se oscurecio un poco el fondo general (#EDEFF5) para
+            // que las tarjetas sigan contrastando contra el fondo (ver mismo
+            // ajuste en wwwroot/app.css, variables --n-bg/--n-card).
+            Background          = "#EDEFF5",   // Gris claro elegante
+            Surface             = "#FAFBFD",   // Tarjetas y paneles (blanco roto, no puro)
 
-            // ── Barra superior (blanca) ───────────────────────────────
-            AppbarBackground    = "#FFFFFF",
+            // ── Barra superior ────────────────────────────────────────
+            AppbarBackground    = "#FAFBFD",
             AppbarText          = "#1A1C2E",
 
             // ── Sidebar oscuro ────────────────────────────────────────

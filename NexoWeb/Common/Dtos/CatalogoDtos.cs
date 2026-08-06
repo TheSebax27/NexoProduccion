@@ -1,11 +1,6 @@
 ﻿namespace NexoWeb.Common.Dtos;
 
-public record ClienteItem(
-    int ClienteID, string Nombre, string? NIT, string? Contacto,
-    string? Telefono, string? Email, string? Direccion, bool Estado
-);
-public record CrearClienteRequest(string Nombre, string? NIT, string? Contacto, string? Telefono, string? Email, string? Direccion);
-public record ActualizarClienteRequest(string Nombre, string? NIT, string? Contacto, string? Telefono, string? Email, string? Direccion, bool Estado);
+// Clientes se movio a Common/Dtos/CrmDtos.cs (agosto 2026).
 
 public record CentroTrabajoItem(
     int CentroTrabajoID,

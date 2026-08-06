@@ -17,3 +17,13 @@ public record CumplimientoCentroCostoItem(
     int OrdenesATiempo,
     decimal PorcentajeCumplimiento
 );
+
+// ---------- Resumenes transversales (BI, agosto 2026) ----------
+
+public record ResumenCrmItem(int ClientesNuevos, int Interacciones);
+
+public record EmpleadosPorCentroCostoItem(string CentroCosto, int TotalEmpleados);
+
+public record ResumenPlanificacionItem(decimal CumplimientoDemandaPromedio, decimal CumplimientoVentaPromedio);
+
+public record ResumenInventarioItem(decimal ValorTotalStock, int ArticulosConAlerta);

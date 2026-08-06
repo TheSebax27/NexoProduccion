@@ -1,0 +1,184 @@
+@page "/planificacion/demanda"
+@attribute [Authorize(Roles = "Administrador,SupervisorPlanta")]
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Demanda Proyectada - NEXO</PageTitle>
+
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Demanda Proyectada</MudText>
+    <BotonFavorito Href="/planificacion/demanda" Etiqueta="Demanda Proyectada" />
+</div>
+<InfoAyuda Texto="Forecast de producción a futuro, por artículo y mes -- distinto de las Órdenes de Producción ya creadas. Compara cuánto proyectaste contra lo que realmente se produjo ese mes (Kardex de entradas de Producto Terminado)." />
+
+<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
+           StartIcon="@Icons.Material.Filled.Add" Class="mb-4"
+           Disabled="_articulosProductoTerminado.Count == 0">
+    Nueva Proyeccion
+</MudButton>
+
+@if (_historico.Count > 0)
+{
+    <MudPaper Class="pa-4 mb-4">
+        <MudText Typo="Typo.subtitle2" Class="mb-2">Comparativo histórico (últimos 12 meses)</MudText>
+        <MudTable Items="_historico" Dense="true" Elevation="0">
+            <HeaderContent>
+                <MudTh>Mes</MudTh>
+                <MudTh Style="text-align:right">Cumplimiento Demanda</MudTh>
+                <MudTh Style="text-align:right">Cumplimiento Venta</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Mes">@context.Periodo.ToString("MMM yyyy")</MudTd>
+                <MudTd DataLabel="Cumplimiento Demanda" Style="text-align:right">@context.CumplimientoDemandaPromedio.ToString("N0")%</MudTd>
+                <MudTd DataLabel="Cumplimiento Venta" Style="text-align:right">@context.CumplimientoVentaPromedio.ToString("N0")%</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+}
+
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudo cargar la demanda: @_errorCarga</MudAlert>
+}
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_demanda.Count == 0)
+{
+    <MudText>No hay proyecciones registradas.</MudText>
+}
+else
+{
+    <MudTable Items="_demanda" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Mes</MudTh>
+            <MudTh>Articulo</MudTh>
+            <MudTh>Centro de Costo</MudTh>
+            <MudTh Style="text-align:right">Proyectado</MudTh>
+            <MudTh Style="text-align:right">Real</MudTh>
+            <MudTh Style="text-align:right">Cumplimiento</MudTh>
+            <MudTh>Accion</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Mes">@context.Periodo.ToString("MMM yyyy")</MudTd>
+            <MudTd DataLabel="Articulo">@context.SkuArticulo - @context.NombreArticulo</MudTd>
+            <MudTd DataLabel="Centro de Costo">@context.CentroCosto</MudTd>
+            <MudTd DataLabel="Proyectado" Style="text-align:right">@context.CantidadProyectada.ToString("N2")</MudTd>
+            <MudTd DataLabel="Real" Style="text-align:right">@context.CantidadReal.ToString("N2")</MudTd>
+            <MudTd DataLabel="Cumplimiento" Style="text-align:right">
+                @{
+                    var cumplimiento = context.CantidadProyectada > 0 ? context.CantidadReal / context.CantidadProyectada * 100 : 0;
+                }
+                <MudChip T="string" Size="Size.Small" Color="@(cumplimiento >= 100 ? Color.Success : cumplimiento >= 70 ? Color.Warning : Color.Error)">
+                    @cumplimiento.ToString("N0")%
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Accion">
+                <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">Editar</MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<DemandaProyectadaItem> _demanda = new();
+    private List<ArticuloItem> _articulosProductoTerminado = new();
+    private List<CentroCostoItem> _centrosCosto = new();
+    private List<HistoricoCumplimientoItem> _historico = new();
+    private bool _cargando = true;
+    private string? _errorCarga;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+            var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true");
+            var tareaDemanda = ApiClient.GetAsync<List<DemandaProyectadaItem>>("api/planificacion/demanda");
+            var tareaHistorico = ApiClient.GetAsync<List<HistoricoCumplimientoItem>>("api/planificacion/historico-cumplimiento?meses=12");
+
+            await Task.WhenAll(tareaArticulos, tareaCentrosCosto, tareaDemanda, tareaHistorico);
+
+            _articulosProductoTerminado = (await tareaArticulos ?? new())
+                .Where(a => a.TipoArticulo == "Producto Terminado" && a.Estado)
+                .ToList();
+            _centrosCosto = await tareaCentrosCosto ?? new();
+            _demanda = await tareaDemanda ?? new();
+            _historico = await tareaHistorico ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task CargarDemandaAsync()
+    {
+        try
+        {
+            _demanda = await ApiClient.GetAsync<List<DemandaProyectadaItem>>("api/planificacion/demanda") ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+    }
+
+    private async Task AbrirCreacionAsync()
+    {
+        var parametros = new DialogParameters<DemandaDialog>
+        {
+            { x => x.ArticulosDisponibles, _articulosProductoTerminado },
+            { x => x.CentrosCosto, _centrosCosto }
+        };
+
+        var dialogo = await DialogService.ShowAsync<DemandaDialog>("Nueva Proyeccion de Demanda", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (CrearDemandaRequest)resultado.Data!;
+            await ApiClient.PostAsync<CrearDemandaRequest, object?>("api/planificacion/demanda", request);
+            Snackbar.Add("Proyeccion creada correctamente.", Severity.Success);
+            await CargarDemandaAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AbrirEdicionAsync(DemandaProyectadaItem demanda)
+    {
+        var parametros = new DialogParameters<DemandaDialog> { { x => x.Demanda, demanda } };
+
+        var dialogo = await DialogService.ShowAsync<DemandaDialog>("Editar Proyeccion", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (ActualizarDemandaRequest)resultado.Data!;
+            await ApiClient.PutAsync<ActualizarDemandaRequest, object?>(
+                $"api/planificacion/demanda/{demanda.DemandaID}", request);
+            Snackbar.Add("Proyeccion actualizada correctamente.", Severity.Success);
+            await CargarDemandaAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

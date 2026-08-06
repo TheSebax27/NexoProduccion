@@ -1,0 +1,191 @@
+@page "/crm/cotizaciones"
+@attribute [Authorize(Roles = "Administrador")]
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Cotizaciones - NEXO</PageTitle>
+
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Cotizaciones</MudText>
+    <BotonFavorito Href="/crm/cotizaciones" Etiqueta="Cotizaciones" />
+</div>
+<InfoAyuda Texto="Propuesta formal de venta con líneas de artículos y precios, antes de facturar. Una cotización Aceptada se puede convertir directo en Factura sin volver a teclear cliente ni artículos." />
+
+<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
+           StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
+    Nueva Cotización
+</MudButton>
+
+<MudGrid Class="mb-4">
+    <MudItem xs="12" sm="4">
+        <MudSelect T="int?" Value="_filtroClienteId" ValueChanged="OnFiltroClienteCambiadoAsync" Label="Cliente" Clearable="true">
+            @foreach (var c in _clientes)
+            {
+                <MudSelectItem T="int?" Value="@c.ClienteID">@c.Nombre</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudSelect T="string" Value="_filtroEstado" ValueChanged="OnFiltroEstadoCambiadoAsync" Label="Estado" Clearable="true">
+            <MudSelectItem Value="@("BORRADOR")">Borrador</MudSelectItem>
+            <MudSelectItem Value="@("ENVIADA")">Enviada</MudSelectItem>
+            <MudSelectItem Value="@("ACEPTADA")">Aceptada</MudSelectItem>
+            <MudSelectItem Value="@("RECHAZADA")">Rechazada</MudSelectItem>
+            <MudSelectItem Value="@("VENCIDA")">Vencida</MudSelectItem>
+        </MudSelect>
+    </MudItem>
+</MudGrid>
+
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar las cotizaciones: @_errorCarga</MudAlert>
+}
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_cotizaciones.Count == 0)
+{
+    <MudText>No hay cotizaciones registradas.</MudText>
+}
+else
+{
+    <MudTable Items="_cotizaciones" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Fecha</MudTh>
+            <MudTh>Cliente</MudTh>
+            <MudTh Style="text-align:right">Total</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Factura</MudTh>
+            <MudTh>Accion</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="Cliente">@context.Cliente</MudTd>
+            <MudTd DataLabel="Total" Style="text-align:right">@context.Total.ToString("C0")</MudTd>
+            <MudTd DataLabel="Estado">
+                <MudChip T="string" Size="Size.Small" Color="@ColorEstado(context.Estado)">@context.Estado</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Factura">@(context.FacturaID is not null ? $"#{context.FacturaID}" : "-")</MudTd>
+            <MudTd DataLabel="Accion">
+                <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No hay cotizaciones registradas.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+}
+
+@code {
+    private List<CotizacionItem> _cotizaciones = new();
+    private List<ClienteItem> _clientes = new();
+    private List<OportunidadItem> _oportunidades = new();
+    private List<ArticuloItem> _articulos = new();
+    private bool _cargando = true;
+    private string? _errorCarga;
+    private int? _filtroClienteId;
+    private string? _filtroEstado;
+
+    private Color ColorEstado(string estado) => estado switch
+    {
+        "ACEPTADA" => Color.Success,
+        "RECHAZADA" or "VENCIDA" => Color.Error,
+        "ENVIADA" => Color.Info,
+        _ => Color.Default
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var tareaCotizaciones = ApiClient.GetAsync<List<CotizacionItem>>("api/crm/cotizaciones");
+            var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
+            var tareaOportunidades = ApiClient.GetAsync<List<OportunidadItem>>("api/crm/oportunidades");
+            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+
+            await Task.WhenAll(tareaCotizaciones, tareaClientes, tareaOportunidades, tareaArticulos);
+
+            _cotizaciones = await tareaCotizaciones ?? new();
+            _clientes = (await tareaClientes ?? new()).Where(c => c.Estado).ToList();
+            _oportunidades = (await tareaOportunidades ?? new()).Where(o => o.Etapa is not "GANADA" and not "PERDIDA").ToList();
+            _articulos = (await tareaArticulos ?? new()).Where(a => a.Estado).ToList();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task CargarCotizacionesAsync()
+    {
+        try
+        {
+            var ruta = "api/crm/cotizaciones";
+            var query = new List<string>();
+            if (_filtroClienteId is not null) query.Add($"clienteId={_filtroClienteId}");
+            if (_filtroEstado is not null) query.Add($"estado={_filtroEstado}");
+            if (query.Count > 0) ruta += "?" + string.Join("&", query);
+
+            _cotizaciones = await ApiClient.GetAsync<List<CotizacionItem>>(ruta) ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+    }
+
+    private async Task OnFiltroClienteCambiadoAsync(int? nuevoValor)
+    {
+        _filtroClienteId = nuevoValor;
+        await CargarCotizacionesAsync();
+    }
+
+    private async Task OnFiltroEstadoCambiadoAsync(string? nuevoValor)
+    {
+        _filtroEstado = nuevoValor;
+        await CargarCotizacionesAsync();
+    }
+
+    private async Task AbrirCreacionAsync()
+    {
+        var parametros = new DialogParameters<CotizacionDialog>
+        {
+            { x => x.Clientes, _clientes },
+            { x => x.Oportunidades, _oportunidades },
+            { x => x.Articulos, _articulos }
+        };
+
+        var dialogo = await DialogService.ShowAsync<CotizacionDialog>("Nueva Cotización", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled) return;
+
+        try
+        {
+            var request = (CrearCotizacionRequest)resultado.Data!;
+            await ApiClient.PostAsync<CrearCotizacionRequest, object?>("api/crm/cotizaciones", request);
+            Snackbar.Add("Cotización creada correctamente.", Severity.Success);
+            await CargarCotizacionesAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AbrirGestionAsync(CotizacionItem cotizacion)
+    {
+        var parametros = new DialogParameters<GestionCotizacionDialog> { { x => x.Cotizacion, cotizacion } };
+        var dialogo = await DialogService.ShowAsync<GestionCotizacionDialog>("Gestionar Cotización", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        await dialogo.Result;
+        await CargarCotizacionesAsync();
+    }
+}

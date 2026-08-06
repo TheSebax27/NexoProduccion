@@ -1,0 +1,167 @@
+@using NexoWeb.Common.Dtos
+@inject INexoApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.subtitle2" Class="mb-1">@_facturaActual.Cliente</MudText>
+        <div class="d-flex flex-wrap mb-3" style="gap: 0.4rem;">
+            <MudChip T="string" Size="Size.Small" Color="@ColorEstado(_facturaActual.Estado)">@_facturaActual.Estado</MudChip>
+            <MudChip T="string" Size="Size.Small">Total: @_facturaActual.Total.ToString("C0")</MudChip>
+            <MudChip T="string" Size="Size.Small" Color="Color.Success">Pagado: @_facturaActual.TotalPagado.ToString("C0")</MudChip>
+            @if (_facturaActual.SaldoPendiente > 0)
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Error">Saldo: @_facturaActual.SaldoPendiente.ToString("C0")</MudChip>
+            }
+        </div>
+
+        <MudTabs>
+            <MudTabPanel Text="Artículos">
+                @if (_lineas.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Style="color: var(--n-text-3, #9B9BB4);">Sin artículos.</MudText>
+                }
+                else
+                {
+                    <MudTable Items="_lineas" Dense="true" Hover="true" Elevation="0">
+                        <HeaderContent>
+                            <MudTh>Articulo</MudTh>
+                            <MudTh Style="text-align:right">Cantidad</MudTh>
+                            <MudTh Style="text-align:right">Precio Unit.</MudTh>
+                            <MudTh Style="text-align:right">Subtotal</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Articulo">@context.SkuArticulo - @context.NombreArticulo</MudTd>
+                            <MudTd DataLabel="Cantidad" Style="text-align:right">@context.Cantidad.ToString("0.##")</MudTd>
+                            <MudTd DataLabel="Precio Unit." Style="text-align:right">@context.PrecioUnitario.ToString("C0")</MudTd>
+                            <MudTd DataLabel="Subtotal" Style="text-align:right">@context.Subtotal.ToString("C0")</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudTabPanel>
+
+            <MudTabPanel Text="Pagos">
+                @if (_facturaActual.SaldoPendiente > 0)
+                {
+                    <MudForm @ref="_formPago" Class="mb-3">
+                        <div class="d-flex align-center flex-wrap" style="gap: 0.5rem;">
+                            <MudNumericField T="decimal" @bind-Value="_montoPago" Label="Monto" Style="flex: 1; min-width: 120px;" Min="0.01m" Format="N0" />
+                            <MudDatePicker @bind-Date="_fechaPago" Label="Fecha de pago" Style="flex: 1; min-width: 140px;" />
+                            <MudTextField @bind-Value="_notasPago" Label="Notas (opcional)" Style="flex: 2; min-width: 160px;" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" OnClick="RegistrarPagoAsync" Disabled="_guardandoPago" />
+                        </div>
+                    </MudForm>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Success" Class="mb-3">Esta factura ya está pagada por completo.</MudAlert>
+                }
+
+                @if (_pagos.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Style="color: var(--n-text-3, #9B9BB4);">Sin pagos registrados todavía.</MudText>
+                }
+                else
+                {
+                    <MudTable Items="_pagos" Dense="true" Hover="true" Elevation="0">
+                        <HeaderContent>
+                            <MudTh Style="text-align:right">Monto</MudTh>
+                            <MudTh>Fecha</MudTh>
+                            <MudTh>Notas</MudTh>
+                            <MudTh>Usuario</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Monto" Style="text-align:right">@context.Monto.ToString("C0")</MudTd>
+                            <MudTd DataLabel="Fecha">@context.FechaPago.ToString("dd/MM/yyyy")</MudTd>
+                            <MudTd DataLabel="Notas">@(context.Notas ?? "-")</MudTd>
+                            <MudTd DataLabel="Usuario">@(context.Usuario ?? "-")</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudTabPanel>
+        </MudTabs>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cerrar">Cerrar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public FacturaItem Factura { get; set; } = default!;
+
+    private MudForm _formPago = default!;
+    private List<FacturaLineaItem> _lineas = new();
+    private List<PagoItem> _pagos = new();
+
+    // Copia local mutable -- despues de registrar un pago se actualiza esta
+    // variable de inmediato (sin cerrar el dialogo ni esperar a que la
+    // pagina padre vuelva a pedir la lista completa de facturas), para que
+    // el cambio se sienta instantaneo en vez de tener que reabrir el dialogo.
+    private FacturaItem _facturaActual = default!;
+    private bool _guardandoPago;
+
+    private decimal _montoPago;
+    private DateTime? _fechaPago = DateTime.Today;
+    private string? _notasPago;
+
+    private Color ColorEstado(string estado) => estado switch
+    {
+        "PAGADA" => Color.Success,
+        "PARCIAL" => Color.Warning,
+        _ => Color.Error
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _facturaActual = Factura;
+        await CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        _lineas = await ApiClient.GetAsync<List<FacturaLineaItem>>($"api/facturacion/facturas/{_facturaActual.FacturaID}/lineas") ?? new();
+        _pagos = await ApiClient.GetAsync<List<PagoItem>>($"api/facturacion/facturas/{_facturaActual.FacturaID}/pagos") ?? new();
+        _montoPago = _facturaActual.SaldoPendiente > 0 ? _facturaActual.SaldoPendiente : 0;
+    }
+
+    private async Task RegistrarPagoAsync()
+    {
+        if (_montoPago <= 0 || _fechaPago is null)
+        {
+            Snackbar.Add("Ingresa un monto mayor a cero y una fecha.", Severity.Warning);
+            return;
+        }
+
+        _guardandoPago = true;
+        try
+        {
+            var monto = _montoPago;
+            var request = new CrearPagoRequest(_facturaActual.FacturaID, monto, _fechaPago.Value, _notasPago);
+            await ApiClient.PostAsync<CrearPagoRequest, object?>("api/facturacion/pagos", request);
+
+            // Actualizacion optimista: se recalcula Total/Estado en el cliente
+            // al instante -- CargarAsync() de todos modos refresca la lista de
+            // pagos contra el servidor justo despues, asi que no hay riesgo de
+            // quedar desincronizado, solo se ve instantaneo mientras tanto.
+            var nuevoTotalPagado = _facturaActual.TotalPagado + monto;
+            var nuevoSaldo = _facturaActual.Total - nuevoTotalPagado;
+            var nuevoEstado = nuevoTotalPagado <= 0 ? "PENDIENTE" : nuevoSaldo > 0 ? "PARCIAL" : "PAGADA";
+            _facturaActual = _facturaActual with { TotalPagado = nuevoTotalPagado, SaldoPendiente = nuevoSaldo, Estado = nuevoEstado };
+
+            Snackbar.Add("Pago registrado.", Severity.Success);
+            _notasPago = null;
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _guardandoPago = false;
+        }
+    }
+
+    private void Cerrar() => MudDialog.Close(DialogResult.Ok(true));
+}

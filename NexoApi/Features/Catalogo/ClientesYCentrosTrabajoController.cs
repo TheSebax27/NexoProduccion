@@ -4,6 +4,9 @@ using NexoApi.Features.Catalogo.Dtos;
 
 namespace NexoApi.Features.Catalogo;
 
+// Clientes se movio a Features/Crm/CrmController.cs (agosto 2026) -- este
+// controller se quedo solo con Centros de Trabajo y Proveedores, el nombre
+// de la clase no se cambio para no romper referencias, pero ya no incluye Clientes.
 [ApiController]
 [Route("api/catalogo")]
 [Authorize]
@@ -14,26 +17,6 @@ public class ClientesYCentrosTrabajoController : ControllerBase
     public ClientesYCentrosTrabajoController(ICatalogoService service)
     {
         _service = service;
-    }
-
-    [HttpGet("clientes")]
-    public async Task<ActionResult<IEnumerable<ClienteItem>>> ListarClientes()
-        => Ok(await _service.ListarClientesAsync());
-
-    [HttpPost("clientes")]
-    [Authorize(Roles = "Administrador")]
-    public async Task<ActionResult> CrearCliente(CrearClienteRequest request)
-    {
-        var id = await _service.CrearClienteAsync(request);
-        return CreatedAtAction(nameof(ListarClientes), new { }, new { ClienteID = id });
-    }
-
-    [HttpPut("clientes/{id:int}")]
-    [Authorize(Roles = "Administrador")]
-    public async Task<ActionResult> ActualizarCliente(int id, ActualizarClienteRequest request)
-    {
-        await _service.ActualizarClienteAsync(id, request);
-        return Ok();
     }
 
     [HttpGet("centros-trabajo")]

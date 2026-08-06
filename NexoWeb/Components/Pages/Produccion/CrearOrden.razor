@@ -181,7 +181,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         var tareaTipos = ApiClient.GetAsync<List<TipoProduccionItem>>("api/produccion/ordenes/tipos-produccion");
-        var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/catalogo/clientes");
+        var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
         // Se filtra por nombre de tipo, no por ID: los IDs de Catalogo.TiposArticulo
         // dependen del orden de insercion de los datos semilla y no son confiables
         // como numero fijo (antes esto apuntaba por error al tipo Insumo).

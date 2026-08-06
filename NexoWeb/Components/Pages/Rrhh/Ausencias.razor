@@ -1,0 +1,117 @@
+@page "/rrhh/ausencias"
+@attribute [Authorize(Roles = "Administrador")]
+@inject INexoApiClient ApiClient
+@inject ISnackbar Snackbar
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Ausencias y Vacaciones - NEXO</PageTitle>
+
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Ausencias y Vacaciones</MudText>
+    <BotonFavorito Href="/rrhh/ausencias" Etiqueta="Ausencias y Vacaciones" />
+</div>
+<InfoAyuda Texto="Control de disponibilidad del personal: vacaciones, incapacidades y permisos. No calcula nómina -- solo indica quién está disponible y cuándo. Se registran desde 'Gestionar' en cada Empleado." />
+
+<MudSelect T="string" Value="_filtroEstado" ValueChanged="OnFiltroCambiadoAsync" Label="Estado" Clearable="true" Style="max-width: 220px;" Class="mb-4">
+    <MudSelectItem Value="@("PENDIENTE")">Pendiente</MudSelectItem>
+    <MudSelectItem Value="@("APROBADA")">Aprobada</MudSelectItem>
+    <MudSelectItem Value="@("RECHAZADA")">Rechazada</MudSelectItem>
+</MudSelect>
+
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar las ausencias: @_errorCarga</MudAlert>
+}
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_ausencias.Count == 0)
+{
+    <MudText>No hay ausencias registradas.</MudText>
+}
+else
+{
+    <MudTable Items="_ausencias" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Empleado</MudTh>
+            <MudTh>Tipo</MudTh>
+            <MudTh>Inicio</MudTh>
+            <MudTh>Fin</MudTh>
+            <MudTh>Motivo</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Accion</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Empleado">@context.Empleado</MudTd>
+            <MudTd DataLabel="Tipo">@context.Tipo</MudTd>
+            <MudTd DataLabel="Inicio">@context.FechaInicio.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="Fin">@context.FechaFin.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="Motivo">@(context.Motivo ?? "-")</MudTd>
+            <MudTd DataLabel="Estado">
+                <MudChip T="string" Size="Size.Small" Color="@ColorEstado(context.Estado)">@context.Estado</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Accion">
+                @if (context.Estado == "PENDIENTE")
+                {
+                    <MudButton Size="Size.Small" Color="Color.Success" OnClick="@(() => CambiarEstadoAsync(context, "APROBADA"))">Aprobar</MudButton>
+                    <MudButton Size="Size.Small" Color="Color.Error" OnClick="@(() => CambiarEstadoAsync(context, "RECHAZADA"))">Rechazar</MudButton>
+                }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<AusenciaItem> _ausencias = new();
+    private bool _cargando = true;
+    private string? _errorCarga;
+    private string? _filtroEstado;
+
+    private Color ColorEstado(string estado) => estado switch
+    {
+        "APROBADA" => Color.Success,
+        "RECHAZADA" => Color.Error,
+        _ => Color.Default
+    };
+
+    protected override async Task OnInitializedAsync() => await CargarAsync();
+
+    private async Task OnFiltroCambiadoAsync(string? nuevoValor)
+    {
+        _filtroEstado = nuevoValor;
+        await CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        try
+        {
+            var ruta = "api/rrhh/ausencias" + (_filtroEstado is not null ? $"?estado={_filtroEstado}" : "");
+            _ausencias = await ApiClient.GetAsync<List<AusenciaItem>>(ruta) ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task CambiarEstadoAsync(AusenciaItem ausencia, string nuevoEstado)
+    {
+        try
+        {
+            await ApiClient.PutAsync<ActualizarEstadoAusenciaRequest, object?>(
+                $"api/rrhh/ausencias/{ausencia.AusenciaID}/estado", new ActualizarEstadoAusenciaRequest(nuevoEstado));
+            Snackbar.Add($"Ausencia {(nuevoEstado == "APROBADA" ? "aprobada" : "rechazada")}.", Severity.Success);
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

@@ -48,6 +48,31 @@ public class DashboardController : ControllerBase
     public async Task<ActionResult<IEnumerable<CumplimientoCentroCostoItem>>> CumplimientoPlanificacion()
         => Ok(await _service.ObtenerCumplimientoAsync());
 
+    // Estos 4 resumenes leen de modulos que en su pantalla propia son
+    // Admin-only (CRM, RRHH) -- se restringen igual aqui, aunque el resto del
+    // Dashboard/BI sea visible para SupervisorPlanta/Bodeguero tambien.
+    [HttpGet("resumen-crm")]
+    [Authorize(Roles = "Administrador")]
+    public async Task<ActionResult<ResumenCrmItem>> ResumenCrm([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
+    {
+        var hastaFinal = hasta ?? DateTime.Today;
+        var desdeFinal = desde ?? hastaFinal.AddDays(-30);
+        return Ok(await _service.ObtenerResumenCrmAsync(desdeFinal, hastaFinal));
+    }
+
+    [HttpGet("empleados-por-centro-costo")]
+    [Authorize(Roles = "Administrador")]
+    public async Task<ActionResult<IEnumerable<EmpleadosPorCentroCostoItem>>> EmpleadosPorCentroCosto()
+        => Ok(await _service.ObtenerEmpleadosPorCentroCostoAsync());
+
+    [HttpGet("resumen-planificacion")]
+    public async Task<ActionResult<ResumenPlanificacionItem>> ResumenPlanificacion()
+        => Ok(await _service.ObtenerResumenPlanificacionAsync());
+
+    [HttpGet("resumen-inventario")]
+    public async Task<ActionResult<ResumenInventarioItem>> ResumenInventario()
+        => Ok(await _service.ObtenerResumenInventarioAsync());
+
     [HttpGet("exportar/excel")]
     public async Task<IActionResult> ExportarExcel([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
     {

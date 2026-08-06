@@ -449,15 +449,23 @@
 }
 
 /* ══ CONTENIDO PRINCIPAL ════════════════════════════════════════ */
+/* BUG REAL (agosto 2026): MudAppBar es "Fixed" por defecto (position:fixed,
+   sacado del flujo normal) -- MudBlazor compensa eso agregando
+   padding-top:var(--mud-appbar-height) a .mud-main-content, pero esta regla
+   pisaba el padding COMPLETO con un valor fijo de 1.75rem (28px) sin relacion
+   con la altura REAL de la barra (76px, ver .nexo-topbar arriba), dejando los
+   primeros ~48px de cada pagina tapados detras de la barra fija. Fix: el
+   padding-top ahora suma la altura de la barra + el aire original.
+   Si se cambia la altura de .nexo-topbar, hay que actualizar este valor tambien. */
 ::deep .mud-main-content.nexo-main-content {
   background: #F4F5F9 !important;
-  padding: 1.75rem 2rem !important;
+  padding: calc(76px + 1.75rem) 2rem 1.75rem !important;
   min-height: 100vh;
 }
 
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 960px) {
-  ::deep .mud-main-content.nexo-main-content { padding: 1.25rem 1rem !important; }
+  ::deep .mud-main-content.nexo-main-content { padding: calc(76px + 1.25rem) 1rem 1.25rem !important; }
   ::deep .nexo-topbar__search { max-width: 200px; }
   ::deep .nexo-topbar__user-info { display: none !important; }
 }

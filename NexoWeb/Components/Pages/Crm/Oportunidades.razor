@@ -1,0 +1,238 @@
+@page "/crm/oportunidades"
+@attribute [Authorize(Roles = "Administrador")]
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Oportunidades - NEXO</PageTitle>
+
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Oportunidades</MudText>
+    <BotonFavorito Href="/crm/oportunidades" Etiqueta="Oportunidades" />
+</div>
+<InfoAyuda Texto="Embudo de ventas: cada oportunidad viene de un Lead o de un Cliente existente, con valor estimado y probabilidad de cierre. Muévela entre etapas con las flechas, o márcala Ganada/Perdida directamente." />
+
+<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
+           StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
+    Nueva Oportunidad
+</MudButton>
+
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar las oportunidades: @_errorCarga</MudAlert>
+}
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else
+{
+    <div class="nexo-embudo mb-6">
+        @foreach (var columna in _columnas)
+        {
+            <div class="nexo-embudo__columna">
+                <div class="nexo-embudo__columna-titulo">
+                    @columna.Titulo
+                    <span class="nexo-embudo__contador">@OportunidadesActivas.Count(o => o.Etapa == columna.Etapa)</span>
+                </div>
+                <div class="nexo-embudo__columna-valor">
+                    @OportunidadesActivas.Where(o => o.Etapa == columna.Etapa).Sum(o => o.ValorEstimado).ToString("C0")
+                </div>
+                @foreach (var op in OportunidadesActivas.Where(o => o.Etapa == columna.Etapa))
+                {
+                    <div class="nexo-embudo__tarjeta">
+                        <div class="nexo-embudo__tarjeta-titulo" @onclick="@(() => AbrirEdicionAsync(op))" style="cursor:pointer;">@op.Nombre</div>
+                        <div class="nexo-embudo__tarjeta-meta">@(op.Cliente ?? op.Lead ?? "-")</div>
+                        <div class="nexo-embudo__tarjeta-meta">@op.ValorEstimado.ToString("C0") · @op.Probabilidad%</div>
+                        @if (op.Responsable is not null)
+                        {
+                            <div class="nexo-embudo__tarjeta-meta">@op.Responsable</div>
+                        }
+                        <div class="nexo-embudo__tarjeta-acciones">
+                            @if (columna.Etapa != "PROSPECCION")
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Size="Size.Small" OnClick="@(() => MoverEtapaAsync(op, ColumnaAnterior(columna.Etapa)))" />
+                            }
+                            @if (columna.Etapa != "NEGOCIACION")
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" OnClick="@(() => MoverEtapaAsync(op, ColumnaSiguiente(columna.Etapa)))" />
+                            }
+                            <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Color="Color.Success" Title="Marcar Ganada" OnClick="@(() => MoverEtapaAsync(op, "GANADA"))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" Color="Color.Error" Title="Marcar Perdida" OnClick="@(() => MoverEtapaAsync(op, "PERDIDA"))" />
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <MudText Typo="Typo.subtitle2" Class="mb-2">Cerradas (Ganadas / Perdidas)</MudText>
+    @if (OportunidadesCerradas.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Style="color: var(--n-text-3, #9B9BB4);">Sin oportunidades cerradas todavía.</MudText>
+    }
+    else
+    {
+        <MudTable Items="OportunidadesCerradas" Dense="true" Hover="true" Striped="true">
+            <HeaderContent>
+                <MudTh>Oportunidad</MudTh>
+                <MudTh>Cliente/Lead</MudTh>
+                <MudTh Style="text-align:right">Valor</MudTh>
+                <MudTh>Resultado</MudTh>
+                <MudTh>Fecha de Cierre</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Oportunidad">@context.Nombre</MudTd>
+                <MudTd DataLabel="Cliente/Lead">@(context.Cliente ?? context.Lead ?? "-")</MudTd>
+                <MudTd DataLabel="Valor" Style="text-align:right">@context.ValorEstimado.ToString("C0")</MudTd>
+                <MudTd DataLabel="Resultado">
+                    <MudChip T="string" Size="Size.Small" Color="@(context.Etapa == "GANADA" ? Color.Success : Color.Error)">
+                        @(context.Etapa == "GANADA" ? "Ganada" : "Perdida")
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Fecha de Cierre">@(context.FechaCierre?.ToLocalTime().ToString("dd/MM/yyyy") ?? "-")</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+}
+
+@code {
+    private record ColumnaEmbudo(string Etapa, string Titulo);
+    private readonly List<ColumnaEmbudo> _columnas = new()
+    {
+        new("PROSPECCION", "Prospección"),
+        new("CALIFICACION", "Calificación"),
+        new("PROPUESTA", "Propuesta"),
+        new("NEGOCIACION", "Negociación")
+    };
+
+    private List<OportunidadItem> _oportunidades = new();
+    private List<LeadItem> _leads = new();
+    private List<ClienteItem> _clientes = new();
+    private List<EmpleadoItem> _empleados = new();
+    private bool _cargando = true;
+    private string? _errorCarga;
+
+    private IEnumerable<OportunidadItem> OportunidadesActivas => _oportunidades.Where(o => o.Etapa is not "GANADA" and not "PERDIDA");
+    private List<OportunidadItem> OportunidadesCerradas => _oportunidades.Where(o => o.Etapa is "GANADA" or "PERDIDA").OrderByDescending(o => o.FechaCierre).ToList();
+
+    private static string ColumnaAnterior(string etapa) => etapa switch
+    {
+        "CALIFICACION" => "PROSPECCION",
+        "PROPUESTA" => "CALIFICACION",
+        "NEGOCIACION" => "PROPUESTA",
+        _ => etapa
+    };
+
+    private static string ColumnaSiguiente(string etapa) => etapa switch
+    {
+        "PROSPECCION" => "CALIFICACION",
+        "CALIFICACION" => "PROPUESTA",
+        "PROPUESTA" => "NEGOCIACION",
+        _ => etapa
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var tareaOportunidades = ApiClient.GetAsync<List<OportunidadItem>>("api/crm/oportunidades");
+            var tareaLeads = ApiClient.GetAsync<List<LeadItem>>("api/crm/leads");
+            var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
+            var tareaEmpleados = ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados?soloActivos=true");
+
+            await Task.WhenAll(tareaOportunidades, tareaLeads, tareaClientes, tareaEmpleados);
+
+            _oportunidades = await tareaOportunidades ?? new();
+            _leads = (await tareaLeads ?? new()).Where(l => l.Etapa != "CONVERTIDO").ToList();
+            _clientes = (await tareaClientes ?? new()).Where(c => c.Estado).ToList();
+            _empleados = await tareaEmpleados ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task CargarAsync()
+    {
+        try
+        {
+            _oportunidades = await ApiClient.GetAsync<List<OportunidadItem>>("api/crm/oportunidades") ?? new();
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+        }
+    }
+
+    private async Task AbrirCreacionAsync()
+    {
+        var parametros = new DialogParameters<OportunidadDialog>
+        {
+            { x => x.Leads, _leads },
+            { x => x.Clientes, _clientes },
+            { x => x.Empleados, _empleados }
+        };
+
+        var dialogo = await DialogService.ShowAsync<OportunidadDialog>("Nueva Oportunidad", parametros);
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled) return;
+
+        try
+        {
+            var request = (CrearOportunidadRequest)resultado.Data!;
+            await ApiClient.PostAsync<CrearOportunidadRequest, object?>("api/crm/oportunidades", request);
+            Snackbar.Add("Oportunidad creada correctamente.", Severity.Success);
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AbrirEdicionAsync(OportunidadItem oportunidad)
+    {
+        var parametros = new DialogParameters<OportunidadDialog>
+        {
+            { x => x.Oportunidad, oportunidad },
+            { x => x.Empleados, _empleados }
+        };
+
+        var dialogo = await DialogService.ShowAsync<OportunidadDialog>("Editar Oportunidad", parametros);
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled) return;
+
+        try
+        {
+            var request = (ActualizarOportunidadRequest)resultado.Data!;
+            await ApiClient.PutAsync<ActualizarOportunidadRequest, object?>($"api/crm/oportunidades/{oportunidad.OportunidadID}", request);
+            Snackbar.Add("Oportunidad actualizada correctamente.", Severity.Success);
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task MoverEtapaAsync(OportunidadItem op, string nuevaEtapa)
+    {
+        try
+        {
+            var request = new ActualizarOportunidadRequest(op.Nombre, op.ValorEstimado, op.Probabilidad, nuevaEtapa, op.FechaCierreEsperada, op.ResponsableID, op.Notas);
+            await ApiClient.PutAsync<ActualizarOportunidadRequest, object?>($"api/crm/oportunidades/{op.OportunidadID}", request);
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

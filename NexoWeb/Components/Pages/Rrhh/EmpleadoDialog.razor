@@ -1,0 +1,155 @@
+@using NexoWeb.Common.Dtos
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" Model="@this">
+            @* Foto opcional -- una sola por empleado, nunca obligatoria. *@
+            <div class="mb-3">
+                <MudText Typo="Typo.caption" Class="d-block mb-1" Style="color: var(--n-text-3, #9B9BB4);">Foto (opcional)</MudText>
+                <div class="d-flex align-center" style="gap: 0.75rem;">
+                    @if (_fotoPreviewUrl is not null)
+                    {
+                        <img src="@_fotoPreviewUrl" alt="" style="width:56px; height:56px; object-fit:cover; border-radius:50%;" />
+                    }
+                    else if (EsEdicion && Empleado!.TieneFoto)
+                    {
+                        <img src="@($"api/rrhh/empleados/{Empleado!.EmpleadoID}/foto?v={_cacheBust}")" alt=""
+                             style="width:56px; height:56px; object-fit:cover; border-radius:50%;" />
+                    }
+                    <InputFile id="nexo-empleado-foto-input" OnChange="OnFotoSeleccionadaAsync"
+                               accept="image/png,image/jpeg,image/webp" style="display:none;" />
+                    <label for="nexo-empleado-foto-input" class="nexo-perfil-panel__btn-archivo">
+                        @((_fotoPreviewUrl is not null || (EsEdicion && Empleado!.TieneFoto)) ? "Cambiar" : "Subir foto")
+                    </label>
+                </div>
+                <MudText Typo="Typo.caption" Class="d-block mt-1" Style="color: var(--n-text-3, #9B9BB4);">Maximo 1 MB.</MudText>
+            </div>
+
+            <MudTextField @bind-Value="_nombres" Label="Nombres" Required="true"
+                          RequiredError="Los nombres son obligatorios" Class="mb-3" />
+
+            <MudTextField @bind-Value="_apellidos" Label="Apellidos" Required="true"
+                          RequiredError="Los apellidos son obligatorios" Class="mb-3" />
+
+            <MudSelect T="int?" @bind-Value="_cargoId" Label="Cargo" Clearable="true" Class="mb-3">
+                @foreach (var c in Cargos.Where(c => c.Estado))
+                {
+                    <MudSelectItem T="int?" Value="@c.CargoID">@c.Nombre @(c.Departamento is not null ? $"({c.Departamento})" : "")</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Clearable="true" Class="mb-3">
+                @foreach (var cc in CentrosCosto)
+                {
+                    <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="int?" @bind-Value="_jefeDirectoId" Label="Jefe Directo" Clearable="true" Class="mb-3">
+                @foreach (var e in Empleados.Where(e => !EsEdicion || e.EmpleadoID != Empleado!.EmpleadoID))
+                {
+                    <MudSelectItem T="int?" Value="@e.EmpleadoID">@e.Nombres @e.Apellidos</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudDatePicker @bind-Date="_fechaIngreso" Label="Fecha de Ingreso" Class="mb-3" />
+
+            <MudTextField @bind-Value="_telefono" Label="Telefono" Class="mb-3" />
+
+            <MudTextField @bind-Value="_email" Label="Email" InputType="InputType.Email" Class="mb-3" />
+
+            @if (EsEdicion)
+            {
+                <MudSwitch T="bool" @bind-Value="_estado" Color="Color.Success" Label="Activo" />
+            }
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancelar">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="GuardarAsync">
+            @(EsEdicion ? "Guardar Cambios" : "Crear")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public EmpleadoItem? Empleado { get; set; }
+    [Parameter] public List<CentroCostoItem> CentrosCosto { get; set; } = new();
+    [Parameter] public List<CargoItem> Cargos { get; set; } = new();
+    [Parameter] public List<EmpleadoItem> Empleados { get; set; } = new();
+
+    private bool EsEdicion => Empleado is not null;
+
+    private MudForm _form = default!;
+    private string _nombres = string.Empty;
+    private string _apellidos = string.Empty;
+    private int? _cargoId;
+    private int? _centroCostoId;
+    private int? _jefeDirectoId;
+    private DateTime? _fechaIngreso;
+    private string? _telefono;
+    private string? _email;
+    private bool _estado = true;
+    private string? _fotoBase64;
+    private string? _fotoContentType;
+    private string? _fotoPreviewUrl;
+    private readonly long _cacheBust = DateTime.UtcNow.Ticks;
+
+    protected override void OnInitialized()
+    {
+        if (Empleado is not null)
+        {
+            _nombres = Empleado.Nombres;
+            _apellidos = Empleado.Apellidos;
+            _cargoId = Empleado.CargoID;
+            _centroCostoId = Empleado.CentroCostoID;
+            _jefeDirectoId = Empleado.JefeDirectoID;
+            _fechaIngreso = Empleado.FechaIngreso;
+            _telefono = Empleado.Telefono;
+            _email = Empleado.Email;
+            _estado = Empleado.Estado;
+        }
+    }
+
+    private async Task OnFotoSeleccionadaAsync(InputFileChangeEventArgs e)
+    {
+        const long maxBytes = 1_000_000;
+
+        if (e.File.Size > maxBytes)
+        {
+            _fotoBase64 = null;
+            return;
+        }
+
+        using var stream = e.File.OpenReadStream(maxBytes);
+        using var memoria = new MemoryStream();
+        await stream.CopyToAsync(memoria);
+        _fotoBase64 = Convert.ToBase64String(memoria.ToArray());
+        _fotoContentType = e.File.ContentType;
+        _fotoPreviewUrl = $"data:{_fotoContentType};base64,{_fotoBase64}";
+    }
+
+    private async Task GuardarAsync()
+    {
+        await _form.Validate();
+        if (!_form.IsValid)
+            return;
+
+        if (EsEdicion)
+        {
+            var request = new ActualizarEmpleadoRequest(
+                _nombres, _apellidos, _cargoId, _centroCostoId, _fechaIngreso, _telefono, _email, _estado, _jefeDirectoId);
+            MudDialog.Close(DialogResult.Ok(new EmpleadoDialogResultado(request, _fotoBase64, _fotoContentType)));
+        }
+        else
+        {
+            var request = new CrearEmpleadoRequest(
+                _nombres, _apellidos, _cargoId, _centroCostoId, _fechaIngreso, _telefono, _email, _jefeDirectoId);
+            MudDialog.Close(DialogResult.Ok(new EmpleadoDialogResultado(request, _fotoBase64, _fotoContentType)));
+        }
+    }
+
+    private void Cancelar() => MudDialog.Cancel();
+}

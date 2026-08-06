@@ -1,0 +1,341 @@
+@using NexoWeb.Common.Dtos
+@inject INexoApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.subtitle2">@Cliente.Nombre</MudText>
+        @* Antes este dialogo solo mostraba el nombre -- si el usuario editaba
+           Responsable/Proximo Contacto/NIT/Estado desde "Editar", no habia
+           forma de verlo reflejado aca adentro. *@
+        <div class="d-flex flex-wrap mb-3" style="gap: 0.4rem;">
+            <MudChip T="string" Size="Size.Small" Color="@(Cliente.Estado ? Color.Success : Color.Error)">
+                @(Cliente.Estado ? "Activo" : "Inactivo")
+            </MudChip>
+            @if (Cliente.NIT is not null)
+            {
+                <MudChip T="string" Size="Size.Small">NIT: @Cliente.NIT</MudChip>
+            }
+            <MudChip T="string" Size="Size.Small">Responsable: @(Cliente.Responsable ?? "Sin asignar")</MudChip>
+            @if (Cliente.ProximoContacto is not null)
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Info">
+                    Próximo contacto: @Cliente.ProximoContacto.Value.ToString("dd/MM/yyyy")
+                </MudChip>
+            }
+        </div>
+
+        <MudTabs>
+            <MudTabPanel Text="Contactos">
+                <MudForm @ref="_formContacto" Class="mb-3">
+                    <div class="d-flex align-center flex-wrap mb-2" style="gap: 0.5rem;">
+                        <MudTextField @bind-Value="_nombresContacto" Label="Nombre" Style="flex: 2;" />
+                        <MudTextField @bind-Value="_cargoContacto" Label="Cargo" Style="flex: 1;" />
+                        <MudTextField @bind-Value="_telefonoContacto" Label="Telefono" Style="flex: 1;" />
+                        <MudTextField @bind-Value="_emailContacto" Label="Email" Style="flex: 1;" />
+                        <MudCheckBox T="bool" @bind-Value="_esPrincipalContacto" Label="Principal" Dense="true" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" OnClick="AgregarContactoAsync" />
+                    </div>
+                </MudForm>
+
+                @if (_contactos.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Style="color: var(--n-text-3, #9B9BB4);">Sin contactos registrados todavía.</MudText>
+                }
+                else
+                {
+                    <MudTable Items="_contactos" Dense="true" Hover="true" Elevation="0">
+                        <HeaderContent>
+                            <MudTh>Nombre</MudTh>
+                            <MudTh>Cargo</MudTh>
+                            <MudTh>Telefono</MudTh>
+                            <MudTh>Email</MudTh>
+                            <MudTh>Principal</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Nombre">@context.Nombres</MudTd>
+                            <MudTd DataLabel="Cargo">@(context.Cargo ?? "-")</MudTd>
+                            <MudTd DataLabel="Telefono">@(context.Telefono ?? "-")</MudTd>
+                            <MudTd DataLabel="Email">@(context.Email ?? "-")</MudTd>
+                            <MudTd DataLabel="Principal">
+                                @if (context.EsPrincipal)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Small" />
+                                }
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudTabPanel>
+
+            <MudTabPanel Text="Bitacora">
+                <MudForm @ref="_formInteraccion" Class="mb-3">
+                    <MudSelect T="string" @bind-Value="_tipoInteraccion" Label="Tipo" Required="true" Class="mb-2">
+                        <MudSelectItem Value="@("Llamada")">Llamada</MudSelectItem>
+                        <MudSelectItem Value="@("Correo")">Correo</MudSelectItem>
+                        <MudSelectItem Value="@("Reunion")">Reunión</MudSelectItem>
+                        <MudSelectItem Value="@("Otro")">Otro</MudSelectItem>
+                    </MudSelect>
+                    <MudTextField @bind-Value="_notasInteraccion" Label="Notas" Lines="3" Required="true"
+                                  RequiredError="Escribe una nota" Class="mb-2" />
+                    <MudDatePicker @bind-Date="_proximoContactoInteraccion" Label="Agendar proximo contacto (opcional)" Class="mb-2" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="RegistrarInteraccionAsync" Size="Size.Small">
+                        Registrar
+                    </MudButton>
+                </MudForm>
+
+                <MudDivider Class="mb-3" />
+
+                @if (_interacciones.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Style="color: var(--n-text-3, #9B9BB4);">Sin interacciones registradas todavía.</MudText>
+                }
+                else
+                {
+                    @foreach (var i in _interacciones)
+                    {
+                        <div class="mb-3">
+                            <div class="d-flex justify-space-between">
+                                <MudChip T="string" Size="Size.Small" Color="Color.Primary">@i.Tipo</MudChip>
+                                <MudText Typo="Typo.caption" Style="color: var(--n-text-3, #9B9BB4);">
+                                    @i.Fecha.ToLocalTime().ToString("dd/MM/yyyy HH:mm") @(i.Usuario is not null ? $"· {i.Usuario}" : "")
+                                </MudText>
+                            </div>
+                            <MudText Typo="Typo.body2" Class="mt-1">@i.Notas</MudText>
+                        </div>
+                    }
+                }
+            </MudTabPanel>
+
+            <MudTabPanel Text="Historial">
+                <MudText Typo="Typo.caption" Class="mb-3" Style="color: var(--n-text-3, #9B9BB4);">
+                    Todo lo que ha pasado con este cliente: interacciones, pedidos y despachos, en orden.
+                </MudText>
+                @if (_historial.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Style="color: var(--n-text-3, #9B9BB4);">Sin eventos todavía.</MudText>
+                }
+                else
+                {
+                    @foreach (var ev in _historial)
+                    {
+                        <div class="mb-3">
+                            <div class="d-flex justify-space-between">
+                                <MudChip T="string" Size="Size.Small" Color="@ColorTipoEvento(ev.TipoEvento)">@ev.TipoEvento</MudChip>
+                                <MudText Typo="Typo.caption" Style="color: var(--n-text-3, #9B9BB4);">
+                                    @ev.Fecha.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                </MudText>
+                            </div>
+                            <MudText Typo="Typo.body2" Class="mt-1"><strong>@ev.Titulo</strong></MudText>
+                            @if (ev.Detalle is not null)
+                            {
+                                <MudText Typo="Typo.body2">@ev.Detalle</MudText>
+                            }
+                        </div>
+                    }
+                }
+            </MudTabPanel>
+
+            <MudTabPanel Text="Documentos">
+                <div class="d-flex align-center flex-wrap mb-3" style="gap: 0.5rem;">
+                    <MudSelect T="string" @bind-Value="_tipoDocumento" Label="Tipo" Style="max-width: 200px;">
+                        <MudSelectItem Value="@("RUT")">RUT</MudSelectItem>
+                        <MudSelectItem Value="@("CAMARA_COMERCIO")">Cámara de Comercio</MudSelectItem>
+                        <MudSelectItem Value="@("CONTRATO")">Contrato</MudSelectItem>
+                        <MudSelectItem Value="@("OTRO")">Otro</MudSelectItem>
+                    </MudSelect>
+                    <InputFile id="nexo-cliente-doc-input" OnChange="OnDocumentoSeleccionadoAsync" style="display:none;" />
+                    <label for="nexo-cliente-doc-input" class="nexo-perfil-panel__btn-archivo">
+                        Subir Documento
+                    </label>
+                </div>
+                <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">Maximo 5 MB por documento.</MudText>
+
+                @if (_documentos.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Style="color: var(--n-text-3, #9B9BB4);">Sin documentos todavía.</MudText>
+                }
+                else
+                {
+                    <MudTable Items="_documentos" Dense="true" Hover="true" Elevation="0">
+                        <HeaderContent>
+                            <MudTh>Tipo</MudTh>
+                            <MudTh>Archivo</MudTh>
+                            <MudTh>Fecha</MudTh>
+                            <MudTh>Accion</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Tipo">@context.TipoDocumento</MudTd>
+                            <MudTd DataLabel="Archivo">@context.NombreArchivo</MudTd>
+                            <MudTd DataLabel="Fecha">@context.FechaSubida.ToLocalTime().ToString("dd/MM/yyyy")</MudTd>
+                            <MudTd DataLabel="Accion">
+                                <MudButton Size="Size.Small" OnClick="@(() => DescargarDocumentoAsync(context))">Descargar</MudButton>
+                                <MudButton Size="Size.Small" Color="Color.Error" OnClick="@(() => EliminarDocumentoAsync(context))">Eliminar</MudButton>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudTabPanel>
+        </MudTabs>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cerrar">Cerrar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ClienteItem Cliente { get; set; } = default!;
+
+    // Contactos
+    private MudForm _formContacto = default!;
+    private List<ContactoItem> _contactos = new();
+    private string _nombresContacto = string.Empty;
+    private string? _cargoContacto;
+    private string? _telefonoContacto;
+    private string? _emailContacto;
+    private bool _esPrincipalContacto;
+
+    // Bitacora
+    private MudForm _formInteraccion = default!;
+    private List<InteraccionItem> _interacciones = new();
+    private string _tipoInteraccion = "Llamada";
+    private string _notasInteraccion = string.Empty;
+    private DateTime? _proximoContactoInteraccion;
+
+    // Historial
+    private List<EventoHistorialItem> _historial = new();
+
+    // Documentos
+    private List<ClienteDocumentoItem> _documentos = new();
+    private string _tipoDocumento = "RUT";
+
+    private Color ColorTipoEvento(string tipo) => tipo switch
+    {
+        "PEDIDO" => Color.Info,
+        "DESPACHO" => Color.Success,
+        _ => Color.Primary
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarContactosAsync();
+        await CargarInteraccionesAsync();
+        await CargarHistorialAsync();
+        await CargarDocumentosAsync();
+    }
+
+    private async Task CargarContactosAsync() =>
+        _contactos = await ApiClient.GetAsync<List<ContactoItem>>($"api/crm/clientes/{Cliente.ClienteID}/contactos") ?? new();
+
+    private async Task CargarInteraccionesAsync() =>
+        _interacciones = await ApiClient.GetAsync<List<InteraccionItem>>($"api/crm/clientes/{Cliente.ClienteID}/interacciones") ?? new();
+
+    private async Task CargarHistorialAsync() =>
+        _historial = await ApiClient.GetAsync<List<EventoHistorialItem>>($"api/crm/clientes/{Cliente.ClienteID}/historial") ?? new();
+
+    private async Task CargarDocumentosAsync() =>
+        _documentos = await ApiClient.GetAsync<List<ClienteDocumentoItem>>($"api/crm/clientes/{Cliente.ClienteID}/documentos") ?? new();
+
+    private async Task AgregarContactoAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_nombresContacto))
+            return;
+
+        try
+        {
+            var request = new CrearContactoRequest(Cliente.ClienteID, _nombresContacto.Trim(), _cargoContacto, _telefonoContacto, _emailContacto, _esPrincipalContacto);
+            await ApiClient.PostAsync<CrearContactoRequest, object?>("api/crm/contactos", request);
+            _nombresContacto = string.Empty;
+            _cargoContacto = null;
+            _telefonoContacto = null;
+            _emailContacto = null;
+            _esPrincipalContacto = false;
+            await CargarContactosAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task RegistrarInteraccionAsync()
+    {
+        await _formInteraccion.Validate();
+        if (!_formInteraccion.IsValid)
+            return;
+
+        try
+        {
+            var request = new CrearInteraccionRequest(Cliente.ClienteID, _tipoInteraccion, _notasInteraccion.Trim(), _proximoContactoInteraccion);
+            await ApiClient.PostAsync<CrearInteraccionRequest, object?>("api/crm/interacciones", request);
+            _notasInteraccion = string.Empty;
+            _proximoContactoInteraccion = null;
+            await CargarInteraccionesAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task OnDocumentoSeleccionadoAsync(InputFileChangeEventArgs e)
+    {
+        const long maxBytes = 5_000_000;
+
+        if (e.File.Size > maxBytes)
+        {
+            Snackbar.Add("El documento es muy grande (máximo 5 MB).", Severity.Warning);
+            return;
+        }
+
+        using var stream = e.File.OpenReadStream(maxBytes);
+        using var memoria = new MemoryStream();
+        await stream.CopyToAsync(memoria);
+        var base64 = Convert.ToBase64String(memoria.ToArray());
+
+        try
+        {
+            var request = new SubirDocumentoRequest(_tipoDocumento, e.File.Name, e.File.ContentType, base64);
+            await ApiClient.PostAsync<SubirDocumentoRequest, object?>($"api/crm/clientes/{Cliente.ClienteID}/documentos", request);
+            Snackbar.Add("Documento subido.", Severity.Success);
+            await CargarDocumentosAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DescargarDocumentoAsync(ClienteDocumentoItem documento)
+    {
+        try
+        {
+            var bytes = await ApiClient.GetBytesAsync($"api/crm/documentos/{documento.DocumentoID}");
+            using var stream = new MemoryStream(bytes);
+            using var streamRef = new DotNetStreamReference(stream);
+            await JS.InvokeVoidAsync("nexoDescargarArchivo", documento.NombreArchivo, documento.ContentType, streamRef);
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task EliminarDocumentoAsync(ClienteDocumentoItem documento)
+    {
+        try
+        {
+            await ApiClient.DeleteAsync($"api/crm/documentos/{documento.DocumentoID}");
+            Snackbar.Add("Documento eliminado.", Severity.Success);
+            await CargarDocumentosAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private void Cerrar() => MudDialog.Close();
+}
