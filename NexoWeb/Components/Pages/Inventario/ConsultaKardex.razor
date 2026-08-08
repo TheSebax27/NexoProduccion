@@ -1,21 +1,22 @@
 @page "/inventario/kardex"
-@attribute [Authorize(Roles = "Administrador,SupervisorPlanta,Bodeguero")]
+@attribute [Authorize(Roles = "Administracion,Jefes,Empleados")]
 @inject INexoApiClient ApiClient
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
+@using NexoWeb.Common.Helpers
 
-<PageTitle>Kardex de Movimientos - NEXO</PageTitle>
+<PageTitle>Kardex de Artículos - NEXO</PageTitle>
 
 <div class="d-flex align-center mb-4" style="gap: 0.25rem;">
-    <MudText Typo="Typo.h5">Kardex de Movimientos</MudText>
-    <BotonFavorito Href="/inventario/kardex" Etiqueta="Kardex" />
+    <MudText Typo="Typo.h5">Kardex de Artículos</MudText>
+    <BotonFavorito Href="/inventario/kardex" Etiqueta="Kardex de Artículos" />
 </div>
-<InfoAyuda Texto="Historial completo de movimientos de inventario (entradas, salidas, ajustes, traspasos) por artículo y bodega, con el saldo después de cada movimiento. Usa los filtros para acotar por artículo, bodega o rango de fechas." />
+<InfoAyuda Texto="Historial detallado de cada movimiento de inventario (entradas, salidas, ajustes, traspasos) con el saldo tras cada operación. Filtra por artículo, bodega o rango de fechas. La columna 'Valor' muestra el impacto económico del movimiento." />
 
 <MudPaper Class="pa-4 mb-4">
     <MudGrid>
         <MudItem xs="12" sm="6" md="3">
-            <MudSelect T="int?" @bind-Value="_articuloId" Label="Articulo" Clearable="true">
+            <MudSelect T="int?" @bind-Value="_articuloId" Label="Artículo" Clearable="true">
                 @foreach (var a in _articulos)
                 {
                     <MudSelectItem T="int?" Value="@((int?)a.ArticuloID)">@a.SKU - @a.Nombre</MudSelectItem>
@@ -55,28 +56,48 @@
 }
 else if (_movimientos.Count > 0)
 {
-    <MudText Typo="Typo.caption" Class="mb-2">
-        Mostrando @_movimientos.Count movimientos (maximo 500 por consulta)
-    </MudText>
+    <div class="d-flex align-center justify-space-between mb-2">
+        <MudText Typo="Typo.caption">
+            @_movimientos.Count movimientos (máximo 500 por consulta)
+        </MudText>
+        @if (_movimientos.Count > 0)
+        {
+            <MudText Typo="Typo.caption" Style="color:var(--n-text-3);">
+                Valor total consultado: @_movimientos.Sum(m => m.ValorMovimiento).ToString("C0")
+            </MudText>
+        }
+    </div>
+
     @if (Preferencias.VistaListado == "tarjetas")
     {
         <div class="nexo-card-grid">
             @foreach (var mov in _movimientos)
             {
                 <div class="nexo-item-card">
-                    <div class="d-flex align-center justify-space-between">
-                        <div class="nexo-item-card__title">@mov.Articulo</div>
-                        <MudChip T="string" Size="Size.Small" Color="@(mov.Cantidad >= 0 ? Color.Success : Color.Error)">
-                            @mov.TipoMovimiento
-                        </MudChip>
+                    <div class="d-flex align-center justify-space-between mb-1">
+                        <div class="nexo-item-card__title" style="font-size:0.9rem;">@mov.Articulo</div>
+                        @ChipTipo(mov)
                     </div>
-                    <div class="nexo-item-card__sub">@mov.Bodega · @mov.Fecha.ToString("dd/MM/yy HH:mm")</div>
-                    <div class="nexo-item-card__row"><span>Cantidad</span><strong>@mov.Cantidad.ToString("N2")</strong></div>
-                    <div class="nexo-item-card__row"><span>Costo Unit.</span><strong>@mov.CostoUnitario.ToString("C2")</strong></div>
-                    <div class="nexo-item-card__row"><span>Saldo</span><strong>@mov.CantidadSaldo.ToString("N2")</strong></div>
+                    <div class="nexo-item-card__sub">@mov.SKU · @mov.Bodega · @mov.Fecha.ToString("dd/MM/yy HH:mm")</div>
+                    <div class="nexo-item-card__row">
+                        <span>Cantidad</span>
+                        <strong>@FormatearCantidad(mov)</strong>
+                    </div>
+                    <div class="nexo-item-card__row">
+                        <span>Costo unit.</span>
+                        <strong>@mov.CostoUnitario.ToString("C2")</strong>
+                    </div>
+                    <div class="nexo-item-card__row">
+                        <span>Valor</span>
+                        <strong>@mov.ValorMovimiento.ToString("C0")</strong>
+                    </div>
+                    <div class="nexo-item-card__row">
+                        <span>Saldo</span>
+                        <strong>@FormatearCantidad(mov.CantidadSaldo, mov.Unidad, mov.UnidadesPorEmbalaje)</strong>
+                    </div>
                     @if (mov.ObservacionDetallada is not null)
                     {
-                        <div class="nexo-item-card__sub">@mov.ObservacionDetallada</div>
+                        <div class="nexo-item-card__sub mt-1">@mov.ObservacionDetallada</div>
                     }
                 </div>
             }
@@ -87,28 +108,36 @@ else if (_movimientos.Count > 0)
         <MudTable Items="_movimientos" Hover="true" Dense="true" Striped="true" FixedHeader="true" Height="500px">
             <HeaderContent>
                 <MudTh>Fecha</MudTh>
-                <MudTh>Articulo</MudTh>
+                <MudTh>SKU / Artículo</MudTh>
                 <MudTh>Bodega</MudTh>
                 <MudTh>Tipo</MudTh>
                 <MudTh Style="text-align:right">Cantidad</MudTh>
                 <MudTh Style="text-align:right">Costo Unit.</MudTh>
+                <MudTh Style="text-align:right">Valor</MudTh>
                 <MudTh Style="text-align:right">Saldo</MudTh>
                 <MudTh>Detalle</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yy HH:mm")</MudTd>
-                <MudTd DataLabel="Articulo">@context.Articulo</MudTd>
-                <MudTd DataLabel="Bodega">@context.Bodega</MudTd>
-                <MudTd DataLabel="Tipo">
-                    <MudChip T="string" Size="Size.Small"
-                             Color="@(context.Cantidad >= 0 ? Color.Success : Color.Error)">
-                        @context.TipoMovimiento
-                    </MudChip>
+                <MudTd DataLabel="Artículo">
+                    <div style="font-weight:600; font-size:0.8rem; color:var(--n-text-3);">@context.SKU</div>
+                    <div>@context.Articulo</div>
                 </MudTd>
-                <MudTd DataLabel="Cantidad" Style="text-align:right">@context.Cantidad.ToString("N2")</MudTd>
+                <MudTd DataLabel="Bodega">@context.Bodega</MudTd>
+                <MudTd DataLabel="Tipo">@ChipTipo(context)</MudTd>
+                <MudTd DataLabel="Cantidad" Style="text-align:right">@FormatearCantidad(context)</MudTd>
                 <MudTd DataLabel="Costo Unit." Style="text-align:right">@context.CostoUnitario.ToString("C2")</MudTd>
-                <MudTd DataLabel="Saldo" Style="text-align:right">@context.CantidadSaldo.ToString("N2")</MudTd>
-                <MudTd DataLabel="Detalle">@(context.ObservacionDetallada ?? "-")</MudTd>
+                <MudTd DataLabel="Valor" Style="text-align:right; font-weight:600;">
+                    <span style="color:@(context.EsEntrada ? "var(--mud-palette-success)" : "var(--mud-palette-error)")">
+                        @(context.EsEntrada ? "+" : "-")@context.ValorMovimiento.ToString("C0")
+                    </span>
+                </MudTd>
+                <MudTd DataLabel="Saldo" Style="text-align:right">
+                    @FormatearCantidad(context.CantidadSaldo, context.Unidad, context.UnidadesPorEmbalaje)
+                </MudTd>
+                <MudTd DataLabel="Detalle" Style="max-width:200px; white-space:normal; font-size:0.8rem;">
+                    @(context.ObservacionDetallada ?? "-")
+                </MudTd>
             </RowTemplate>
             <NoRecordsContent>
                 <MudText>No hay movimientos con estos filtros.</MudText>
@@ -172,4 +201,44 @@ else if (_consultaEjecutada)
             _cargando = false;
         }
     }
+
+    private static string FormatearCantidad(KardexMovimientoItem mov)
+    {
+        var signo = mov.EsEntrada ? "+" : "-";
+        var abs = Math.Abs(mov.Cantidad);
+        var texto = FormatearCantidad(abs, mov.Unidad, mov.UnidadesPorEmbalaje);
+        return signo + texto;
+    }
+
+    private static string FormatearCantidad(decimal cantidad, string? unidad, decimal? unidadesPorEmbalaje)
+    {
+        if (unidad == "cja" && unidadesPorEmbalaje is > 0)
+            return StockHelper.FormatearCajaUnidades(cantidad, unidadesPorEmbalaje.Value);
+        return $"{cantidad:N3} {unidad}".Trim();
+    }
+
+    private static RenderFragment ChipTipo(KardexMovimientoItem mov) => builder =>
+    {
+        var (color, icon) = mov.TipoMovimiento switch
+        {
+            var t when t.Contains("Ajuste") => (Color.Info, Icons.Material.Filled.Tune),
+            var t when t.Contains("Baja") || t.Contains("Pérdida") => (Color.Error, Icons.Material.Filled.DeleteOutline),
+            var t when t.Contains("Traspaso") => (Color.Secondary, Icons.Material.Filled.SwapHoriz),
+            var t when t.Contains("Compra") || t.Contains("Entrada") => (Color.Success, Icons.Material.Filled.ArrowDownward),
+            var t when t.Contains("Venta") || t.Contains("Salida") || t.Contains("Despacho") => (Color.Warning, Icons.Material.Filled.ArrowUpward),
+            var t when t.Contains("Produccion") || t.Contains("Producción") => (Color.Tertiary, Icons.Material.Filled.Factory),
+            _ => (mov.EsEntrada ? Color.Success : Color.Error, Icons.Material.Filled.SwapVert)
+        };
+
+        builder.OpenComponent<MudChip<string>>(0);
+        builder.AddAttribute(1, "T", typeof(string));
+        builder.AddAttribute(2, "Size", Size.Small);
+        builder.AddAttribute(3, "Color", color);
+        builder.AddAttribute(4, "Icon", icon);
+        builder.AddAttribute(5, "ChildContent", (RenderFragment)(b =>
+        {
+            b.AddContent(0, mov.TipoMovimiento);
+        }));
+        builder.CloseComponent();
+    };
 }

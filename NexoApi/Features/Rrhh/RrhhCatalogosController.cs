@@ -9,7 +9,7 @@ namespace NexoApi.Features.Rrhh;
 // 2026) que no giran alrededor de un solo EmpleadoID como EmpleadosController.
 [ApiController]
 [Route("api/rrhh")]
-[Authorize(Roles = "Administrador")]
+[Authorize(Roles = "Administracion")]
 public class RrhhCatalogosController : ControllerBase
 {
     private readonly IRrhhService _service;
@@ -25,7 +25,7 @@ public class RrhhCatalogosController : ControllerBase
     // ---------- Departamentos ----------
 
     [HttpGet("departamentos")]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult<IEnumerable<DepartamentoItem>>> ListarDepartamentos()
         => Ok(await _service.ListarDepartamentosAsync());
 
@@ -53,7 +53,7 @@ public class RrhhCatalogosController : ControllerBase
     // ---------- Cargos ----------
 
     [HttpGet("cargos")]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult<IEnumerable<CargoItem>>> ListarCargos()
         => Ok(await _service.ListarCargosAsync());
 

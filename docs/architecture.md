@@ -314,6 +314,7 @@ Ver tabla de Inventario arriba — Traspasos vive como feature slice propio (`Fe
 | Método | Ruta | Rol | Descripción |
 |---|---|---|---|
 | GET | `/clientes` | Admin, Bodeguero, Supervisor | Lista clientes (filtros: responsable, tipo, fuente, activos) |
+| GET | `/clientes/{id}` | Administrador | Un solo cliente (404 si no existe) — usado por el workspace `/crm/clientes/{id}` (agosto 2026, ver `CLAUDE.md` sección 33) |
 | POST/PUT | `/clientes[/{id}]` | Administrador | Crear/editar cliente |
 | GET/POST | `/clientes/{id}/interacciones`, `/interacciones` | Administrador | Bitácora de interacciones |
 | GET/POST/PUT | `/clientes/{id}/contactos`, `/contactos[/{id}]` | Administrador | Múltiples contactos por cliente |
@@ -322,6 +323,10 @@ Ver tabla de Inventario arriba — Traspasos vive como feature slice propio (`Fe
 | GET/POST/PUT | `/leads[/{id}]` | Administrador | Pipeline de prospectos |
 | POST | `/leads/{id}/convertir` | Administrador | Convierte Lead → Cliente (transacción) |
 | GET | `/clientes-frios?diasSinContacto=30` | Administrador | Alerta interna de clientes sin contacto reciente |
+| GET/POST/PUT | `/oportunidades[/{id}]` | Administrador | Embudo de ventas — origen Lead o Cliente (agosto 2026, CRM v3) |
+| GET/POST | `/cotizaciones`, `/cotizaciones/{id}/lineas` | Administrador | Propuestas formales con líneas artículo+precio (agosto 2026) |
+| PUT | `/cotizaciones/{id}/estado` | Administrador | Cambiar estado (Borrador/Enviada/Aceptada/Rechazada/Vencida) |
+| POST | `/cotizaciones/{id}/convertir-a-factura` | Administrador | Genera la Factura desde una Cotización Aceptada (integración CRM→Facturación) |
 
 ### RRHH (`/api/rrhh`) — agosto 2026
 
@@ -376,13 +381,13 @@ Ver tabla de Inventario arriba — Traspasos vive como feature slice propio (`Fe
 
 | Método | Ruta | Rol | Descripción |
 |---|---|---|---|
-| GET | `/resumen` | Autenticado | Resumen agregado por categoría — **hoy solo cubre Sin Stock/Bajo Stock/Órdenes en Proceso**, ver auditoría (`docs/AUDITORIA_2026.md` sección 5.5) para el gap de módulos nuevos sin conectar |
+| GET | `/resumen` | Autenticado (gateado por rol dentro del servicio) | Resumen agregado por categoría — Sin Stock/Bajo Stock/Órdenes en Proceso + (agosto 2026) Clientes Fríos, Desviaciones de Planificación, Alertas de Proyectos, reusando `ICrmService`/`IPlanificacionService`/`IProyectosService` en vez de duplicar SQL. Ver `CLAUDE.md` sección 31.3 |
 
 ### Búsqueda (`/api/busqueda`)
 
 | Método | Ruta | Rol | Descripción |
 |---|---|---|---|
-| GET | `?q=texto` | Autenticado | Búsqueda global — **hoy solo cubre Stock, Traspasos, Artículos, Clientes, Proveedores, Centros de Costo, Bodegas, Órdenes de Producción/Compra**, ver auditoría sección 5.2 para el gap |
+| GET | `?q=texto` | Autenticado (cada categoría gateada por el mismo rol de su página) | Búsqueda global — Stock, Traspasos, Artículos, Clientes, Proveedores, Centros de Costo, Bodegas, Órdenes de Producción/Compra + (agosto 2026) Empleados, Leads, Oportunidades, Facturas, Proyectos, Despachos. Ver `CLAUDE.md` sección 31.3 |
 
 ### Preferencias (`/api/preferencias`) y Configuración (`/api/configuracion`)
 

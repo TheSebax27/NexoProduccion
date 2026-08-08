@@ -10,7 +10,7 @@ public interface IAuthService
     Task<LoginResponse?> LoginAsync(LoginRequest request);
     Task<int> RegistrarPrimerAdminAsync(RegistrarUsuarioRequest request);
 
-    // Gestion de usuarios (Administrador)
+    // Gestion de usuarios (Administracion)
     Task<IEnumerable<UsuarioItem>> ListarUsuariosAsync();
     Task<int> CrearUsuarioAsync(CrearUsuarioRequest request);
     Task ActualizarUsuarioAsync(int usuarioId, ActualizarUsuarioRequest request);
@@ -100,7 +100,7 @@ public class AuthService : IAuthService
 
         if (totalUsuarios > 0)
             throw new InvalidOperationException(
-                "Ya existe al menos un usuario. Este endpoint de arranque queda deshabilitado; los usuarios nuevos se crean autenticado como Administrador.");
+                "Ya existe al menos un usuario. Este endpoint de arranque queda deshabilitado; los usuarios nuevos se crean autenticado como Administracion.");
 
         var (hash, salt) = PasswordHasher.HashPassword(r.Password);
 
@@ -122,7 +122,7 @@ public class AuthService : IAuthService
         });
     }
 
-    // ================= Gestion de usuarios (Administrador) =================
+    // ================= Gestion de usuarios (Administracion) =================
 
     public async Task<IEnumerable<UsuarioItem>> ListarUsuariosAsync()
     {
@@ -131,7 +131,7 @@ public class AuthService : IAuthService
         const string sql = @"
             SELECT u.UsuarioID, u.Nombres, u.Apellidos, u.Email, u.Username,
                    u.RolID, r.Nombre AS Rol, u.CentroCostoID, cc.Nombre AS CentroCosto,
-                   u.Estado, u.UltimoAcceso
+                   u.Estado, u.UltimoAcceso, u.EmpleadoID
             FROM Seguridad.Usuarios u
             JOIN Seguridad.Roles r ON r.RolID = u.RolID
             LEFT JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = u.CentroCostoID
@@ -155,10 +155,10 @@ public class AuthService : IAuthService
 
         const string sql = @"
             INSERT INTO Seguridad.Usuarios
-                (Nombres, Apellidos, Email, Username, PasswordHash, Salt, RolID, CentroCostoID, Estado, FechaCreacion)
+                (Nombres, Apellidos, Email, Username, PasswordHash, Salt, RolID, CentroCostoID, EmpleadoID, Estado, FechaCreacion)
             OUTPUT INSERTED.UsuarioID
             VALUES
-                (@Nombres, @Apellidos, @Email, @Username, @Hash, @Salt, @RolID, @CentroCostoID, 1, SYSUTCDATETIME())";
+                (@Nombres, @Apellidos, @Email, @Username, @Hash, @Salt, @RolID, @CentroCostoID, @EmpleadoID, 1, SYSUTCDATETIME())";
 
         return await connection.ExecuteScalarAsync<int>(sql, new
         {
@@ -169,7 +169,8 @@ public class AuthService : IAuthService
             Hash = hash,
             Salt = salt,
             r.RolID,
-            r.CentroCostoID
+            r.CentroCostoID,
+            r.EmpleadoID
         });
     }
 
@@ -226,7 +227,7 @@ public class AuthService : IAuthService
 
     // ================= Mi perfil (el usuario sobre si mismo) =================
     // A proposito NO permite tocar RolID/CentroCostoID/Estado -- eso sigue
-    // siendo exclusivo de "Gestion de usuarios" (Administrador). Aqui solo
+    // siendo exclusivo de "Gestion de usuarios" (Administracion). Aqui solo
     // nombre y foto, sobre el propio UsuarioID que viene del JWT.
 
     public async Task<string> ActualizarPerfilAsync(int usuarioId, ActualizarPerfilRequest r)

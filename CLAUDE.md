@@ -1108,3 +1108,130 @@ El usuario pidió un registro de ventas simple: qué artículo se vendió, a qui
 ### 29.4 — Nota: no se encontraron procesos huérfanos al momento de revisar
 
 Se verificó `Get-Process -Name "NexoApi","NexoWeb","dotnet"` y los puertos 5272/7144 — nada corriendo. Si el usuario seguía viendo comportamiento viejo, probablemente su instancia local no se reinició después de los últimos cambios (ver rutina de diagnóstico ya documentada: sección de reglas de sesión al inicio de este archivo) — recomendado cerrar Visual Studio/cualquier proceso previo y volver a compilar antes de probar de nuevo.
+
+## 31. Los 3 hallazgos de mayor prioridad de `docs/AUDITORIA_2026.md` — resueltos (agosto 2026)
+
+El usuario pidió atacar directamente los 3 hallazgos de más alta prioridad de la auditoría (dejando el tema de repositorio/multi-tenencia para después — ver nota de modelo de despliegue abajo). Los 3 quedaron construidos el mismo día.
+
+### 31.1 — Modelo de despliegue real de la empresa (dato para recordar, no un cambio de código)
+
+El usuario aclaró que su empresa **ya tiene** un modelo de despliegue comercial: **subdominio + base de datos dedicada por cliente** (ej. cliente "Tienda Sebas" → `tiendassebasnexoerp.com` + BD `tiendasebasnexo_erp.bd`), **no** multi-tenencia compartida con columna `TenantID`. Esto **corrige** la recomendación de la sección 14.3 de `docs/AUDITORIA_2026.md` (que sugería Row-Level Security con `TenantID` compartido) — ese modelo queda descartado. Si se retoma el tema de escalabilidad multi-cliente en el futuro, el trabajo real es de **automatización de aprovisionamiento** (crear BD desde plantilla + `DatosSemilla.sql` + apuntar un subdominio nuevo a una instancia de NexoApi), no de rediseño de esquema — el código actual (Dapper + connection string por `appsettings`) ya es compatible tal cual con este modelo. Guardado también en memoria de usuario (`project_nexo_erp_deployment_model.md`) para que futuras sesiones no repitan la recomendación descartada.
+
+### 31.2 — CRM: Oportunidades + Cotizaciones (embudo de ventas real)
+
+Hasta ahora CRM era de seguimiento (Clientes, Leads, Bitácora) sin la pieza central de un CRM comercial: embudo de ventas con valor en juego.
+
+- **`Crm.Oportunidades`** (nueva): se origina de un `LeadID` o de un `ClienteID` — al menos uno debe venir informado (`CHECK CK_Oportunidades_OrigenRequerido`, verificado con una prueba real que confirmó el bloqueo). Etapas: `PROSPECCION`/`CALIFICACION`/`PROPUESTA`/`NEGOCIACION`/`GANADA`/`PERDIDA`. Al pasar a `GANADA`/`PERDIDA`, `FechaCierre` se rellena solo la primera vez (mismo patrón que `FechaCompletado` de Hitos en Proyectos). Frontend: `Oportunidades.razor` (`/crm/oportunidades`) — embudo tipo Kanban con 4 columnas activas (Prospección→Negociación, con botones `‹`/`›` para mover, mismo patrón que el Kanban de Proyectos) + botones directos "Marcar Ganada"/"Marcar Perdida" disponibles desde cualquier etapa activa (no es lineal como Proyectos) + una tabla aparte de Cerradas debajo del embudo.
+- **`Crm.Cotizaciones` + `Crm.CotizacionLineas`** (nuevas): propuesta formal con líneas artículo+cantidad+precio (mismo patrón que Facturación — `FacturaDialog.razor`). Estados: `BORRADOR`/`ENVIADA`/`ACEPTADA`/`RECHAZADA`/`VENCIDA`. Frontend: `Cotizaciones.razor` (lista, `/crm/cotizaciones`) + `CotizacionDialog.razor` (crear) + `GestionCotizacionDialog.razor` (ver líneas + cambiar estado + convertir a factura).
+- **Integración real ERP+CRM (recomendación 4.1 de la auditoría, ya implementada)**: una Cotización en estado `ACEPTADA` tiene un botón **"Generar Factura"** que crea la Factura completa (mismo cliente, mismas líneas) sin volver a teclear nada — `CrmService.ConvertirCotizacionAFacturaAsync` inyecta `IFacturacionService` directo (única excepción documentada a la regla "un módulo no importa clases de otro módulo" de `docs/architecture.md` — se justifica porque es exactamente el tipo de integración que la auditoría pidió, mismo espíritu que `ConvertirLeadAsync` ya usado dentro de CRM). Bloquea reconvertir una cotización que ya tiene `FacturaID` asignado.
+- **Verificado con SQL real dentro de una transacción con ROLLBACK**: el CHECK bloqueó una oportunidad sin origen; ciclo completo Oportunidad→Cotización→Factura confirmado (Total=45000, Estado=ACEPTADA, FacturaID asignado), sin dejar datos de prueba.
+
+### 31.3 — Buscador global y notificaciones conectados a los 6 módulos que quedaron aislados
+
+- **`BusquedaService.cs`** ganó 6 bloques nuevos (Empleados, Leads, Oportunidades, Facturas, Proyectos, Despachos), cada uno gateado por el mismo rol que ya exige la página de destino (idéntico criterio que los bloques originales). Los bloques nuevos usan `private record` para el mapeo de Dapper (nunca `ValueTuple` — los bloques viejos siguen con tupla porque nunca dispararon el bug con `QueryAsync` de varias filas, pero no repetir ese patrón en código nuevo, dejado como nota en el propio archivo).
+- **`NotificacionesService.cs`** (antes solo Sin Stock/Bajo Stock/Órdenes en Proceso) ahora también agrega, **reusando los métodos que ya existían** (sin duplicar SQL): Clientes Fríos (`ICrmService.ListarClientesFriosAsync`, solo Administrador), Desviaciones de Planificación (`IPlanificacionService.ListarDesviacionesAsync`, Admin+Supervisor), Alertas de Proyectos (`IProyectosService.ListarAlertasAsync`, Admin+Supervisor). **Requirió agregar el `ClaimsPrincipal` al método** (`ObtenerResumenAsync(ClaimsPrincipal usuario)`) para poder gatear por rol igual que el buscador — antes el endpoint de notificaciones era `[Authorize]` genérico sin distinción de rol, así que sin este cambio cualquier usuario autenticado habría visto alertas de módulos a los que no tiene acceso (fuga de permisos que se evitó desde el diseño, no un bug que se coló).
+- Sin cambios de frontend necesarios — el loop de notificaciones en `MainLayout.razor` ya era genérico (itera `NotificacionItem` por severidad/mensaje/link sin importar la categoría).
+
+### 31.4 — Auditoría centralizada real (`Auditoria.LogAuditoria` empieza a escribirse)
+
+La tabla existía desde hace meses sin que ningún servicio insertara ahí (`docs/AUDITORIA_2026.md` sección 8.4). Se implementó exactamente lo que la auditoría recomendó: un middleware, no un `INSERT` manual repetido en cada servicio.
+
+- **`Common/Middleware/AuditoriaMiddleware.cs`** (nuevo) — intercepta toda request `POST`/`PUT`/`PATCH`/`DELETE` a `/api/*` (excepto `/api/auth/login` y `/api/auth/registrar`, que llevan contraseña). Registra `EsquemaTabla` (la ruta completa), `RegistroID` (el segmento numérico de la ruta si lo hay, si no `"nuevo"`), `Accion`, `UsuarioID` (del JWT ya validado) y `ValoresNuevos` (el body de la request, como JSON). **`ValoresAnteriores` queda `NULL` a propósito** — capturar el estado previo requeriría leer cada entidad antes de cada operación, acoplado por tabla; el alcance elegido (quién hizo qué, cuándo, con qué payload) resuelve la pregunta real ("¿quién cambió esto?") sin ese costo.
+- **Redacción de campos sensibles**: cualquier propiedad del JSON cuyo nombre contenga `password`/`contrasena`/`clave`/`apikey`/`token` (sin importar mayúsculas ni el resto del nombre) se reemplaza por `"***"` antes de guardar — recorre el JSON completo con `JsonNode`, no un regex sobre el texto crudo.
+- **Bug real encontrado y corregido antes de llegar a producción**: `Auditoria.LogAuditoria.Accion` tiene un `CHECK` que **solo acepta `'INSERT'/'UPDATE'/'DELETE'`** (verbos de base de datos) — la primera versión del middleware guardaba el verbo HTTP crudo (`'PUT'`, `'POST'`), lo cual viola el CHECK y hace fallar el INSERT de auditoría en cada request. Encontrado al **probar el INSERT real contra la BD** (dentro de una transacción con ROLLBACK) antes de dar el trabajo por terminado — no se asumió que el mapeo iba a funcionar. Corregido con `MapearAccion()`: `POST→INSERT`, `PUT`/`PATCH→UPDATE`, `DELETE→DELETE`.
+- **Nunca tumba la request real**: el `INSERT` de auditoría va en su propio `try/catch` — si falla (ej. BD momentáneamente no disponible), se registra un `LogWarning` y la respuesta al usuario sigue intacta.
+- Solo se audita si la respuesta fue 2xx (una request rechazada con 400/401/403/404/409 no cambió nada, no vale la pena registrarla).
+- Registrado en `Program.cs` **después** de `UseAuthorization()` (para tener `context.User` ya validado con el rol confirmado) y **antes** de `MapControllers()`.
+- **Verificado con SQL real dentro de una transacción con ROLLBACK**: insert de prueba con `Accion='INSERT'`/`'DELETE'` y un `UsuarioID` real de `Seguridad.Usuarios` — confirmado que la fila queda exactamente como se esperaba, sin dejar datos de prueba.
+
+## 32. Ajustes puntuales reportados por el usuario (agosto 2026)
+
+### 32.1 — Estado "Ausente" en Empleados (RRHH)
+
+El usuario notó que "Activo" en la tabla de Empleados solo distinguía "sigue trabajando aquí" vs "ya no trabaja aquí" — no había forma de ver de un vistazo que alguien estaba de vacaciones/incapacidad/permiso hoy.
+
+- **`EmpleadoItem` ganó `EnAusencia` (bool), calculado al vuelo** en `RrhhService.ListarEmpleadosAsync` — `EXISTS` contra `Rrhh.Ausencias` con `Estado = 'APROBADA'` y `CAST(GETDATE() AS DATE) BETWEEN FechaInicio AND FechaFin`. **No es una columna guardada** — mismo criterio que `Estado`/`SaldoPendiente` en Facturación, para que nunca quede desactualizado (ej. si se aprueba o cancela una ausencia, el estado del empleado cambia solo, sin ningún job ni trigger).
+- Una ausencia en estado `PENDIENTE` (sin aprobar todavía) **no** cuenta como ausente — solo `APROBADA`.
+- Frontend (`Empleados.razor`): el chip de Estado pasó de 2 valores a 3, con prioridad `Inactivo > Ausente > Activo` (`ColorEstadoLaboral`/`EtiquetaEstadoLaboral`) — un empleado inactivo nunca muestra "Ausente" aunque tenga una ausencia aprobada vigente (ya no aplica, no es información útil).
+- **Verificado con SQL real dentro de una transacción con ROLLBACK**: sin ausencia → `EnAusencia=0`; ausencia `APROBADA` cubriendo hoy → `EnAusencia=1`; la misma ausencia en `PENDIENTE` → vuelve a `0`. Los 3 casos confirmados, sin dejar datos de prueba.
+
+### 32.2 — Método de Pago en Facturación
+
+`Facturacion.Pagos` ganó `MetodoPago NVARCHAR(20) NOT NULL DEFAULT 'EFECTIVO'` (EFECTIVO/TRANSFERENCIA/TARJETA/CHEQUE/OTRO). Se agregó al formulario de registrar pago y a la tabla de pagos de `GestionFacturaDialog.razor` — mismo flujo ya existente (actualización optimista + `CargarAsync()` de confirmación), solo un campo más en el `CrearPagoRequest`.
+
+### 32.3 — Dashboard: todas las tarjetas de gráfico al mismo tamaño
+
+El usuario reportó (con captura) que las 6 tarjetas de "Gráficos principales" en BI tenían tamaños distintos — cada `MudPaper` crecía según su contenido (una tabla de 20 filas quedaba mucho más alta que un gráfico vacío), y 2 de las 6 (Variación de Producción, Cumplimiento de Planificación) eran de ancho completo (`MudItem xs="12"`) rompiendo el patrón de 2 por fila.
+
+- **`Dashboard.razor.css`** ganó `.nexo-chart-card` (altura fija `560px`, `display:flex; flex-direction:column; overflow:hidden`) + `.nexo-chart-card__header` (`flex-shrink:0`) + `.nexo-chart-card__body` (`flex:1; min-height:0; overflow-y:auto`). El `min-height:0` es imprescindible — sin eso, un hijo flex con contenido largo se estira en vez de scrollear, que es justo el bug que se estaba arreglando.
+- Las 6 tarjetas de `Dashboard.razor` (Producción Planificada vs Real, Variación de Producción, Distribución por Centro de Costo, Pérdidas por Motivo, Tendencia de Costo Unitario, Cumplimiento de Planificación) ahora **todas** usan `<MudItem xs="12" md="6">` (2 por fila siempre) + `<MudPaper Class="pa-5 nexo-chart-card">`, con el header envuelto en `nexo-chart-card__header` y todo el resto (gráfico/tabla/estado vacío) envuelto en un único `<div class="nexo-chart-card__body">` — necesario para que solo ESE div sea el hijo flexible que scrollea, no la tarjeta completa.
+- **Si se agrega una tarjeta de gráfico nueva al Dashboard en el futuro, seguir este mismo patrón** (`xs="12" md="6"` + `nexo-chart-card` + header/body envueltos) para no reintroducir el problema — las tarjetas de alerta (Clientes Fríos, Desviaciones, Alertas de Proyectos) quedaron fuera de este cambio a propósito, son banners condicionales de ancho completo, no parte de la grilla de gráficos.
+
+## 33. Cliente como página propia (workspace) en vez de diálogo modal (agosto 2026)
+
+El usuario preguntó si convenía que cada entidad central (Cliente, Proyecto, ...) tuviera su propio "workspace" en vez de un diálogo modal sobre una lista. Se acordó probar primero con **Cliente** (la entidad que más conecta con el resto: Oportunidades, Cotizaciones, Facturas, Despachos, Proyectos) antes de decidir si se replica en las demás.
+
+- **`GestionClienteDialog.razor` se ELIMINÓ** — su contenido completo (tabs Contactos/Bitácora/Historial/Documentos + los chips de Estado/NIT/Responsable/Próximo Contacto agregados en la sección 29.3) se migró a una página nueva con ruta propia.
+- **`Components/Pages/Crm/ClienteWorkspace.razor`** (nuevo), ruta `/crm/clientes/{ExternalId}` (string opaco, no int). Diferencias reales frente al diálogo que reemplaza (no es solo "lo mismo en otra caja"):
+  - Tiene **URL propia** con `ExternalId` (no el int primario) — se puede compartir el link, dejar abierta en otra pestaña, o favoritear con `BotonFavorito` (`Href`/`Etiqueta` dinámicos según el cliente cargado).
+  - Botón "Editar" abre el `ClienteDialog` existente (sin cambios, se reutiliza tal cual) y al guardar recarga el cliente in-place, sin salir de la página.
+  - `OnParametersSetAsync` recarga todo si `ExternalId` cambia **sin que Blazor destruya el componente** — pasa cuando se navega de un cliente a otro sin volver a la lista primero. Sin este chequeo, cambiar el ID en la URL no habría recargado nada.
+- **Backend nuevo**: `ICrmService.ObtenerClienteAsync(string externalId)` + `GET api/crm/clientes/{externalId}` (404 si no existe) — busca por `ExternalId` (string), devuelve el int `ClienteID` en el DTO para que el workspace lo use en sub-rutas (contactos, interacciones, etc.) sin exponerlo en la URL.
+- **`ExternalId` en `Crm.Clientes`**: columna `NVARCHAR(12)` agregada en agosto 2026, `NOT NULL`, índice único `UQ_Clientes_ExternalId`, DEFAULT que genera un hash de 12 chars vía `NEWID()` en cada INSERT nuevo — nunca se muestra el int primario en la URL ni en ningún enlace de la app. **Si se agrega un workspace nuevo para otra entidad (Proyecto, Empleado, etc.), replicar el mismo patrón `ExternalId`.**
+- **`Clientes.razor`**: el botón "Gestionar" (tabla y tarjetas) pasó de abrir un diálogo a `Navigation.NavigateTo($"/crm/clientes/{cliente.ExternalId}")`.
+- **`ClienteFrioItem`** ganó `ExternalId` para que los links de BI apunten al workspace correcto. **`BusquedaService.cs`** también usa `ExternalId` para el resultado de búsqueda de tipo "Cliente".
+- **Si el resultado de esta prueba con Cliente es bueno, el siguiente candidato a convertir en workspace (a decisión del usuario) sería Proyecto** — mismo criterio: es la otra entidad con un diálogo "Gestionar" ya denso (5 tabs) que más se beneficiaría de una URL propia.
+
+## 34. Leads: cambio de etapa inline + ExternalId en cliente + diagrama de ayuda (agosto 2026)
+
+### 34.1 — Leads: cambio de etapa directo desde el listado
+
+`Leads.razor` ganó botones de transición de estado **inline en la columna Acción**, sin necesidad de abrir el diálogo de edición (mismo patrón que "Convertir a Cliente" que ya existía):
+- **NUEVO**: [Marcar Contactado] [Descartar] [Editar]
+- **CONTACTADO**: [Marcar Calificado] [Descartar] [Editar]
+- **CALIFICADO**: [Convertir a Cliente] [Descartar] [Editar]
+- **DESCARTADO**: [Reactivar → NUEVO] [Editar]
+- **CONVERTIDO**: solo texto "Convertido {fecha}" (terminal, sin acciones)
+
+Backend: nuevo `PATCH api/crm/leads/{id}/etapa` con `CambiarEtapaLeadRequest(string Etapa)` — actualiza la etapa siempre que el lead no esté en `CONVERTIDO` (único estado terminal que no se puede tocar).
+
+### 34.2 — ExternalId en Crm.Clientes (URLs sin ID entero)
+
+Ver sección 33 actualizada arriba — mismo texto, se movió la descripción completa ahí para mantener la narrativa cronológica de la sección 33.
+
+### 34.3 — Diagrama de flujo en Ayuda.razor
+
+`/settings/ayuda` ganó un SVG inline (sin librería externa) que muestra los 4 flujos principales de NEXO: CRM (Lead→Calificado→Cliente), Compras→Inventario (OC→Recepción→Stock), Producción (OP→Iniciada→Cerrada→Stock), Logística→Facturación (Despacho→Cotización→Factura), más columna de módulos de soporte (Traspasos, Ajuste, Planificación, RRHH, Proyectos, BI) e integración con Visions. Responsive (overflow-x auto).
+
+## 35. Facturación: descuento de stock opcional (agosto 2026)
+
+El módulo de Facturación nació sin afectar inventario (diseño original, sección 30). El usuario pidió agregar la opción de descontar stock al momento de facturar, con validaciones realistas.
+
+### Cambios de BD (ejecutar via sqlcmd -I)
+
+1. `ALTER TABLE Facturacion.Facturas ADD StockDescontado BIT NOT NULL DEFAULT 0` — protege contra doble descuento.
+2. `INSERT INTO Kardex.TiposMovimientoKardex` → `TipoMovID = 14`, `Codigo = 'SALIDA_VENTA_FACTURA'`, `Signo = -1`.
+3. `CREATE OR ALTER PROCEDURE Facturacion.sp_DescontarStockFactura @FacturaID INT, @UsuarioID INT` — sigue exactamente el mismo patrón que `Logistica.sp_CrearDespacho`:
+   - Valida factura existente y no ya-descontada (THROW 57001/57002).
+   - Valida que tenga líneas (THROW 57003).
+   - Verifica stock de **TODAS** las líneas **antes** de tocar nada (THROW 57004 con lista de artículos faltantes — nombra qué artículo, qué se necesitaba, qué hay disponible, separados por `; `).
+   - Solo si todo OK: `BEGIN TRANSACTION`, cursor por línea → cursor FEFO por lote (`ORDER BY ISNULL(l.FechaVencimiento,'9999-12-31') ASC`) → `UPDATE InventarioStock` → `INSERT KardexMovimientos` (`ObservacionDetallada = 'Factura #N'`). Al final: `UPDATE Facturas SET StockDescontado = 1`.
+
+### Cambios de API (NexoApi)
+
+- `FacturaItem`: `bool StockDescontado` agregado (campo 10).
+- `FacturaLineaStockItem` (nuevo DTO): ArticuloID, SkuArticulo, NombreArticulo, CantidadFacturada, StockDisponible + propiedad calculada `EsInsuficiente`.
+- `IFacturacionService`: dos métodos nuevos: `ObtenerStockLineasAsync(int facturaId)` y `DescontarStockAsync(int facturaId, int usuarioId)`.
+- `ListarFacturasAsync`: SELECT agrega `f.StockDescontado`; `FacturaCruda` private record también actualizado.
+- `DescontarStockAsync`: llama `EXEC Facturacion.sp_DescontarStockFactura` y convierte excepciones SQL (por mensaje) a `InvalidOperationException` o `KeyNotFoundException`.
+- Dos endpoints nuevos: `GET api/facturacion/facturas/{id}/stock-lineas` y `POST api/facturacion/facturas/{id}/descontar-stock`.
+
+### Cambios de frontend (NexoWeb)
+
+- `GestionFacturaDialog.razor`: en la tab Artículos, debajo de la tabla, aparece la sección de stock:
+  - Si `StockDescontado = true`: chip "Stock descontado" en el encabezado + `MudAlert Severity.Info` ("El inventario ya fue descontado").
+  - Si no: botón "¿Descontar del stock?" — al hacer clic llama `GET /stock-lineas` y muestra tabla con Artículo / Facturado / Disponible / Estado (chip OK en verde o "Sin stock" en rojo por fila).
+  - Si hay insuficientes: `MudAlert Severity.Error` bloqueando + solo botón "Cancelar".
+  - Si todo OK: botón "Confirmar descuento de stock" + "Cancelar".
+  - Tras confirmar: `POST /descontar-stock` → snackbar éxito → `_facturaActual with { StockDescontado = true }` (actualización optimista) → oculta la sección de verificación.
+- **El chip "Stock descontado" se muestra en el header del diálogo** (junto a Estado, Total, Pagado, Saldo) cuando `StockDescontado = true`, para visibilidad inmediata sin necesidad de ir a la tab Artículos.

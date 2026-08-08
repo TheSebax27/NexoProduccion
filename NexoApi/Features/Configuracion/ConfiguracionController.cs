@@ -22,7 +22,7 @@ public class ConfiguracionController : ControllerBase
         => Ok(await _service.ObtenerEmpresaAsync());
 
     [HttpPut("empresa")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> ActualizarNombre(ActualizarNombreEmpresaRequest request)
     {
         await _service.ActualizarNombreEmpresaAsync(request.NombreEmpresa);
@@ -30,7 +30,7 @@ public class ConfiguracionController : ControllerBase
     }
 
     [HttpPut("empresa/logo")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> ActualizarLogo(ActualizarLogoEmpresaRequest request)
     {
         if (Convert.FromBase64String(request.Base64).Length > 1_000_000)
@@ -41,10 +41,18 @@ public class ConfiguracionController : ControllerBase
     }
 
     [HttpDelete("empresa/logo")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> EliminarLogo()
     {
         await _service.EliminarLogoEmpresaAsync();
+        return NoContent();
+    }
+
+    [HttpPut("empresa/visions")]
+    [Authorize(Roles = "Administracion")]
+    public async Task<ActionResult> ActualizarUsaVisions(ActualizarUsaVisionsRequest request)
+    {
+        await _service.ActualizarUsaVisionsAsync(request.UsaVisions);
         return NoContent();
     }
 }

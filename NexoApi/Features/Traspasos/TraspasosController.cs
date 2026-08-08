@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexoApi.Features.Traspasos.Dtos;
@@ -36,7 +36,7 @@ public class TraspasosController : ControllerBase
 
     /// <summary>Crea el traspaso y descuenta de inmediato la bodega de origen (queda EN_TRANSITO).</summary>
     [HttpPost]
-    [Authorize(Roles = "Administrador,Bodeguero")]
+    [Authorize(Roles = "Administracion,Empleados")]
     public async Task<ActionResult> CrearYEnviar(CrearTraspasoRequest request)
     {
         var (traspasoId, codigo) = await _service.CrearYEnviarAsync(request, UsuarioActualId);
@@ -45,7 +45,7 @@ public class TraspasosController : ControllerBase
 
     /// <summary>Confirma la recepcion en la bodega destino y suma el stock alla.</summary>
     [HttpPost("{id:int}/recibir")]
-    [Authorize(Roles = "Administrador,Bodeguero")]
+    [Authorize(Roles = "Administracion,Empleados")]
     public async Task<ActionResult> Recibir(int id)
     {
         await _service.RecibirAsync(id, UsuarioActualId);

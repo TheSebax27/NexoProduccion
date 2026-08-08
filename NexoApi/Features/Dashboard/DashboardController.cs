@@ -6,7 +6,7 @@ namespace NexoApi.Features.Dashboard;
 
 [ApiController]
 [Route("api/dashboard")]
-[Authorize(Roles = "Administrador,SupervisorPlanta,Bodeguero")]
+[Authorize(Roles = "Administracion,Jefes,Empleados")]
 public class DashboardController : ControllerBase
 {
     private readonly IDashboardService _service;
@@ -50,9 +50,9 @@ public class DashboardController : ControllerBase
 
     // Estos 4 resumenes leen de modulos que en su pantalla propia son
     // Admin-only (CRM, RRHH) -- se restringen igual aqui, aunque el resto del
-    // Dashboard/BI sea visible para SupervisorPlanta/Bodeguero tambien.
+    // Dashboard/BI sea visible para Jefes/Empleados tambien.
     [HttpGet("resumen-crm")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult<ResumenCrmItem>> ResumenCrm([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
     {
         var hastaFinal = hasta ?? DateTime.Today;
@@ -61,7 +61,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("empleados-por-centro-costo")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult<IEnumerable<EmpleadosPorCentroCostoItem>>> EmpleadosPorCentroCosto()
         => Ok(await _service.ObtenerEmpleadosPorCentroCostoAsync());
 

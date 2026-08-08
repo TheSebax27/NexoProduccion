@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexoApi.Features.Rrhh.Dtos;
@@ -7,7 +7,7 @@ namespace NexoApi.Features.Rrhh;
 
 [ApiController]
 [Route("api/rrhh/empleados")]
-[Authorize(Roles = "Administrador")]
+[Authorize(Roles = "Administracion")]
 public class EmpleadosController : ControllerBase
 {
     private readonly IRrhhService _service;
@@ -20,11 +20,11 @@ public class EmpleadosController : ControllerBase
     private int UsuarioActualId =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-    // Solo esta lectura se abre tambien a SupervisorPlanta -- Proyectos
+    // Solo esta lectura se abre tambien a Jefes -- Proyectos
     // necesita elegir responsables de tarea, y ese modulo si incluye ese rol.
     // Crear/editar empleados se queda Admin-only.
     [HttpGet]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult<IEnumerable<EmpleadoItem>>> Listar([FromQuery] bool soloActivos = false)
         => Ok(await _service.ListarEmpleadosAsync(soloActivos));
 

@@ -1,5 +1,5 @@
 @page "/proyectos"
-@attribute [Authorize(Roles = "Administrador,SupervisorPlanta")]
+@attribute [Authorize(Roles = "Administracion,Jefes")]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar

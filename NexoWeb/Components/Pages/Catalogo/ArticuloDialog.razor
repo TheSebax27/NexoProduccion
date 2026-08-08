@@ -47,12 +47,19 @@
             @if (EsUnidadCaja)
             {
                 <MudNumericField @bind-Value="_unidadesPorEmbalaje" Label="Unidades por Caja/Embalaje" Min="1m" Format="N2"
-                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Inventory2" Class="mb-1" />
-                <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
-                    Cuantas unidades individuales trae 1 caja de este articulo. Se usa como referencia
-                    al comprar, recibir o ajustar inventario en cajas (el stock se sigue registrando
-                    en la unidad base del articulo).
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Inventory2" Class="mb-2" />
+                <MudText Typo="Typo.caption" Class="mb-2 d-block" Style="color: var(--n-text-3, #9B9BB4);">
+                    Cuantas unidades individuales trae 1 caja de este articulo.
                 </MudText>
+                <MudText Typo="Typo.body2" Class="mb-1"><b>¿Cómo se vende este artículo?</b></MudText>
+                <MudRadioGroup T="string" @bind-Value="_modoVentaCaja" Class="mb-3">
+                    <MudRadio T="string" Value="@("AMBOS")" Color="Color.Primary">
+                        Puede salir en caja y en unidades sueltas
+                    </MudRadio>
+                    <MudRadio T="string" Value="@("CAJA")" Color="Color.Primary">
+                        Solo en caja completa
+                    </MudRadio>
+                </MudRadioGroup>
             }
 
             @if (EsProductoTerminado)
@@ -62,6 +69,21 @@
                 {
                     <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
                         = @((_precioVenta / _unidadesPorEmbalaje.Value).ToString("C2")) por unidad (@_unidadesPorEmbalaje.Value.ToString("N0") unidades/caja)
+                    </MudText>
+
+                    @* Precio por unidad suelta (opcional) *@
+                    <MudText Typo="Typo.body2" Class="mb-1"><b>Precio por unidad suelta (opcional)</b></MudText>
+                    <div class="d-flex align-center mb-1" style="gap:0.75rem; flex-wrap:wrap;">
+                        <MudNumericField T="decimal" @bind-Value="_margenUnidad" @bind-Value:after="RecalcPrecioUnidad" Label="% ganancia individual"
+                                         Min="0m" Max="9999m" Format="N1" Style="flex:1; min-width:140px;"
+                                         Adornment="Adornment.End" AdornmentText="%" />
+                        <MudNumericField T="decimal?" @bind-Value="_precioVentaUnidad" Label="Precio unitario"
+                                         Min="0m" Format="N0" Style="flex:1; min-width:140px;"
+                                         Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+                    </div>
+                    <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
+                        Si no se define, se usará el precio base por caja al vender unidades individuales. Con 10% de margen y caja a @_precioVenta.ToString("C0"):
+                        unidad base = @((_precioVenta / _unidadesPorEmbalaje.Value).ToString("C0")) → con margen = @((_precioVenta / _unidadesPorEmbalaje.Value * 1.1m).ToString("C0"))
                     </MudText>
                 }
                 else
@@ -172,6 +194,9 @@
     private decimal _puntoReorden;
     private int? _diasVidaUtil;
     private decimal? _unidadesPorEmbalaje;
+    private string _modoVentaCaja = "AMBOS";
+    private decimal? _precioVentaUnidad;
+    private decimal _margenUnidad;
     private bool _estado = true;
     private string? _imagenBase64;
     private string? _imagenContentType;
@@ -191,8 +216,16 @@
             _puntoReorden = Articulo.PuntoReorden;
             _diasVidaUtil = Articulo.DiasVidaUtil;
             _unidadesPorEmbalaje = Articulo.UnidadesPorEmbalaje;
+            _modoVentaCaja = Articulo.ModoVentaCaja ?? "AMBOS";
+            _precioVentaUnidad = Articulo.PrecioVentaUnidad;
             _estado = Articulo.Estado;
         }
+    }
+
+    private void RecalcPrecioUnidad()
+    {
+        if (_unidadesPorEmbalaje is > 0 && _precioVenta > 0)
+            _precioVentaUnidad = Math.Round(_precioVenta / _unidadesPorEmbalaje.Value * (1 + _margenUnidad / 100), 0);
     }
 
     private async Task GuardarAsync()
@@ -201,14 +234,15 @@
         if (!_form.IsValid)
             return;
 
-        // Si la unidad ya no es Caja (ej. se corrigio el tipo), el factor no aplica.
         var embalajeAEnviar = EsUnidadCaja ? _unidadesPorEmbalaje : null;
+        var modoAEnviar = EsUnidadCaja ? _modoVentaCaja : null;
+        var precioUnidadAEnviar = EsUnidadCaja ? _precioVentaUnidad : null;
 
         if (EsEdicion)
         {
             var request = new ActualizarArticuloRequest(
                 _nombre, _descripcion, _precioVenta, _stockMinimo, _puntoReorden, _diasVidaUtil, _estado,
-                embalajeAEnviar);
+                embalajeAEnviar, modoAEnviar, precioUnidadAEnviar);
             MudDialog.Close(DialogResult.Ok(new ArticuloDialogResultado(request, _imagenBase64, _imagenContentType)));
         }
         else
@@ -218,7 +252,7 @@
 
             var request = new CrearArticuloRequest(
                 _sku, _nombre, _descripcion, _tipoArticuloId, _unidadId,
-                _precioVenta, _stockMinimo, _puntoReorden, _diasVidaUtil, embalajeAEnviar);
+                _precioVenta, _stockMinimo, _puntoReorden, _diasVidaUtil, embalajeAEnviar, modoAEnviar, precioUnidadAEnviar);
             MudDialog.Close(DialogResult.Ok(new ArticuloDialogResultado(request, _imagenBase64, _imagenContentType)));
         }
     }

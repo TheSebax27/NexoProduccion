@@ -792,6 +792,22 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "NexoApi.Features.Configuracion.ConfiguracionController",
+    "Method": "ActualizarUsaVisions",
+    "RelativePath": "api/configuracion/empresa/visions",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Configuracion.Dtos.ActualizarUsaVisionsRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "NexoApi.Features.Crm.CrmController",
     "Method": "ListarClientes",
     "RelativePath": "api/crm/clientes",
@@ -865,6 +881,32 @@
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Crm.Dtos.ClienteFrioItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Crm.CrmController",
+    "Method": "ObtenerCliente",
+    "RelativePath": "api/crm/clientes/{externalId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "externalId",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Crm.Dtos.ClienteItem",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1316,6 +1358,27 @@
   },
   {
     "ContainingType": "NexoApi.Features.Crm.CrmController",
+    "Method": "CambiarEtapaLead",
+    "RelativePath": "api/crm/leads/{id}/etapa",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Crm.Dtos.CambiarEtapaLeadRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Crm.CrmController",
     "Method": "ListarOportunidades",
     "RelativePath": "api/crm/oportunidades",
     "HttpMethod": "GET",
@@ -1692,6 +1755,22 @@
   },
   {
     "ContainingType": "NexoApi.Features.Facturacion.FacturacionController",
+    "Method": "DescontarStock",
+    "RelativePath": "api/facturacion/facturas/{id}/descontar-stock",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Facturacion.FacturacionController",
     "Method": "ListarLineas",
     "RelativePath": "api/facturacion/facturas/{id}/lineas",
     "HttpMethod": "GET",
@@ -1733,6 +1812,32 @@
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Facturacion.Dtos.PagoItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Facturacion.FacturacionController",
+    "Method": "ObtenerStockLineas",
+    "RelativePath": "api/facturacion/facturas/{id}/stock-lineas",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Facturacion.Dtos.FacturaLineaStockItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2307,6 +2412,32 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Operaciones.OperacionesController",
+    "Method": "ListarMovimientos",
+    "RelativePath": "api/operaciones/movimientos",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "desde",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "hasta",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "tipo",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "NexoApi.Features.Planificacion.PlanificacionController",

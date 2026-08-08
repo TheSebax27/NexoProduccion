@@ -1,11 +1,15 @@
 namespace NexoApi.Features.Rrhh.Dtos;
 
+// EnAusencia se calcula al vuelo (existe una Ausencia APROBADA que cubre hoy)
+// -- no es una columna guardada, para que nunca quede desactualizada. En la
+// UI se combina con Estado para mostrar 3 chips: Inactivo (Estado=0),
+// Ausente (Estado=1 y EnAusencia=1), Activo (Estado=1 y EnAusencia=0).
 public record EmpleadoItem(
     int EmpleadoID, string Nombres, string Apellidos,
     int? CargoID, string? Cargo, int? DepartamentoID, string? Departamento,
     int? CentroCostoID, string? CentroCosto, DateTime? FechaIngreso,
     string? Telefono, string? Email, bool Estado, bool TieneFoto,
-    int? JefeDirectoID, string? JefeDirecto
+    int? JefeDirectoID, string? JefeDirecto, bool EnAusencia, bool TieneUsuario
 );
 
 public record CrearEmpleadoRequest(

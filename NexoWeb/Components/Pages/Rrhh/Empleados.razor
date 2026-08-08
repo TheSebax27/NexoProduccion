@@ -1,9 +1,10 @@
 @page "/rrhh/empleados"
-@attribute [Authorize(Roles = "Administrador")]
+@attribute [Authorize(Roles = "Administracion")]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @using NexoWeb.Common.Dtos
+@using NexoWeb.Components.Pages.Admin
 
 <PageTitle>Empleados - NEXO</PageTitle>
 
@@ -41,6 +42,7 @@ else
             <MudTh>Centro de Costo</MudTh>
             <MudTh>Fecha Ingreso</MudTh>
             <MudTh>Contacto</MudTh>
+            <MudTh>Sistema</MudTh>
             <MudTh>Estado</MudTh>
             <MudTh>Accion</MudTh>
         </HeaderContent>
@@ -65,9 +67,23 @@ else
                 @if (!string.IsNullOrWhiteSpace(context.Telefono)) { <div>@context.Telefono</div> }
                 @if (!string.IsNullOrWhiteSpace(context.Email)) { <div>@context.Email</div> }
             </MudTd>
+            <MudTd DataLabel="Sistema">
+                @if (context.TieneUsuario)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.AccountCircle">Usuario activo</MudChip>
+                }
+                else
+                {
+                    <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined"
+                               StartIcon="@Icons.Material.Filled.PersonAdd"
+                               OnClick="@(() => AbrirCrearUsuarioAsync(context))">
+                        Crear usuario
+                    </MudButton>
+                }
+            </MudTd>
             <MudTd DataLabel="Estado">
-                <MudChip T="string" Color="@(context.Estado ? Color.Success : Color.Error)" Size="Size.Small">
-                    @(context.Estado ? "Activo" : "Inactivo")
+                <MudChip T="string" Color="@ColorEstadoLaboral(context)" Size="Size.Small">
+                    @EtiquetaEstadoLaboral(context)
                 </MudChip>
             </MudTd>
             <MudTd DataLabel="Accion">
@@ -82,9 +98,20 @@ else
     private List<EmpleadoItem> _empleados = new();
     private List<CentroCostoItem> _centrosCosto = new();
     private List<CargoItem> _cargos = new();
+    private List<RolItem> _roles = new();
     private bool _cargando = true;
     private string? _errorCarga;
     private long _cacheBust = DateTime.UtcNow.Ticks;
+
+    // Estado laboral: Inactivo (ya no trabaja aqui) gana sobre Ausente (esta
+    // de vacaciones/incapacidad/permiso pero sigue siendo empleado), que a su
+    // vez gana sobre Activo. EnAusencia se calcula en el backend a partir de
+    // Rrhh.Ausencias con Estado=APROBADA cubriendo la fecha de hoy.
+    private static Color ColorEstadoLaboral(EmpleadoItem e) =>
+        !e.Estado ? Color.Error : e.EnAusencia ? Color.Warning : Color.Success;
+
+    private static string EtiquetaEstadoLaboral(EmpleadoItem e) =>
+        !e.Estado ? "Inactivo" : e.EnAusencia ? "Ausente" : "Activo";
 
     protected override async Task OnInitializedAsync()
     {
@@ -93,12 +120,14 @@ else
             var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true");
             var tareaEmpleados = ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados?soloActivos=false");
             var tareaCargos = ApiClient.GetAsync<List<CargoItem>>("api/rrhh/cargos");
+            var tareaRoles = ApiClient.GetAsync<List<RolItem>>("api/auth/roles");
 
-            await Task.WhenAll(tareaCentrosCosto, tareaEmpleados, tareaCargos);
+            await Task.WhenAll(tareaCentrosCosto, tareaEmpleados, tareaCargos, tareaRoles);
 
             _centrosCosto = await tareaCentrosCosto ?? new();
             _empleados = await tareaEmpleados ?? new();
             _cargos = await tareaCargos ?? new();
+            _roles = await tareaRoles ?? new();
         }
         catch (Exception ex)
         {
@@ -151,7 +180,45 @@ else
                 _cacheBust = DateTime.UtcNow.Ticks;
             }
 
-            Snackbar.Add("Empleado creado correctamente.", Severity.Success);
+            await CargarEmpleadosAsync();
+            var empleadoCreado = _empleados.FirstOrDefault(e => e.EmpleadoID == creado?.EmpleadoId);
+            if (empleadoCreado is not null)
+            {
+                Snackbar.Add($"Empleado creado. ¿Crear usuario en el sistema?", Severity.Success,
+                    cfg => { cfg.Action = "Crear usuario"; cfg.ActionColor = Color.Info; cfg.Onclick = _ => AbrirCrearUsuarioAsync(empleadoCreado); });
+            }
+            else
+            {
+                Snackbar.Add("Empleado creado correctamente.", Severity.Success);
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AbrirCrearUsuarioAsync(EmpleadoItem empleado)
+    {
+        var parametros = new DialogParameters<UsuarioDialog>
+        {
+            { x => x.Roles, _roles },
+            { x => x.CentrosCosto, _centrosCosto },
+            { x => x.EmpleadoPrefil, empleado }
+        };
+
+        var dialogo = await DialogService.ShowAsync<UsuarioDialog>(
+            $"Nuevo usuario para {empleado.Nombres} {empleado.Apellidos}", parametros);
+        var resultado = await dialogo.Result;
+
+        if (resultado is null || resultado.Canceled)
+            return;
+
+        try
+        {
+            var request = (CrearUsuarioRequest)resultado.Data!;
+            await ApiClient.PostAsync<CrearUsuarioRequest, object?>("api/auth/usuarios", request);
+            Snackbar.Add("Usuario creado y enlazado al empleado.", Severity.Success);
             await CargarEmpleadosAsync();
         }
         catch (HttpRequestException ex)

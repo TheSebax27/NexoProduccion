@@ -1,31 +1,58 @@
-@using NexoWeb.Common.Dtos
+@page "/crm/clientes/{ExternalId}"
+@attribute [Authorize(Roles = "Administracion")]
 @inject INexoApiClient ApiClient
+@inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
+@using NexoWeb.Common.Dtos
 
-<MudDialog>
-    <DialogContent>
-        <MudText Typo="Typo.subtitle2">@Cliente.Nombre</MudText>
-        @* Antes este dialogo solo mostraba el nombre -- si el usuario editaba
-           Responsable/Proximo Contacto/NIT/Estado desde "Editar", no habia
-           forma de verlo reflejado aca adentro. *@
-        <div class="d-flex flex-wrap mb-3" style="gap: 0.4rem;">
-            <MudChip T="string" Size="Size.Small" Color="@(Cliente.Estado ? Color.Success : Color.Error)">
-                @(Cliente.Estado ? "Activo" : "Inactivo")
+<PageTitle>@(_cliente?.Nombre ?? "Cliente") - NEXO</PageTitle>
+
+<MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack"
+           OnClick="@(() => Navigation.NavigateTo("/crm/clientes"))" Class="mb-2">
+    Clientes
+</MudButton>
+
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudo cargar el cliente: @_errorCarga</MudAlert>
+}
+else if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_cliente is null)
+{
+    <MudAlert Severity="Severity.Warning">No se encontró este cliente.</MudAlert>
+}
+else
+{
+    <div class="d-flex align-center flex-wrap mb-2" style="gap: 0.4rem;">
+        <MudText Typo="Typo.h5">@_cliente.Nombre</MudText>
+        <BotonFavorito Href="@($"/crm/clientes/{_cliente.ExternalId}")" Etiqueta="@_cliente.Nombre" />
+        <MudSpacer />
+        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="AbrirEdicionAsync">Editar</MudButton>
+    </div>
+
+    <div class="d-flex flex-wrap mb-4" style="gap: 0.4rem;">
+        <MudChip T="string" Size="Size.Small" Color="@(_cliente.Estado ? Color.Success : Color.Error)">
+            @(_cliente.Estado ? "Activo" : "Inactivo")
+        </MudChip>
+        @if (_cliente.NIT is not null)
+        {
+            <MudChip T="string" Size="Size.Small">NIT: @_cliente.NIT</MudChip>
+        }
+        <MudChip T="string" Size="Size.Small">Responsable: @(_cliente.Responsable ?? "Sin asignar")</MudChip>
+        @if (_cliente.ProximoContacto is not null)
+        {
+            <MudChip T="string" Size="Size.Small" Color="Color.Info">
+                Próximo contacto: @_cliente.ProximoContacto.Value.ToString("dd/MM/yyyy")
             </MudChip>
-            @if (Cliente.NIT is not null)
-            {
-                <MudChip T="string" Size="Size.Small">NIT: @Cliente.NIT</MudChip>
-            }
-            <MudChip T="string" Size="Size.Small">Responsable: @(Cliente.Responsable ?? "Sin asignar")</MudChip>
-            @if (Cliente.ProximoContacto is not null)
-            {
-                <MudChip T="string" Size="Size.Small" Color="Color.Info">
-                    Próximo contacto: @Cliente.ProximoContacto.Value.ToString("dd/MM/yyyy")
-                </MudChip>
-            }
-        </div>
+        }
+    </div>
 
+    <MudPaper Class="pa-4">
         <MudTabs>
             <MudTabPanel Text="Contactos">
                 <MudForm @ref="_formContacto" Class="mb-3">
@@ -110,7 +137,7 @@
 
             <MudTabPanel Text="Historial">
                 <MudText Typo="Typo.caption" Class="mb-3" Style="color: var(--n-text-3, #9B9BB4);">
-                    Todo lo que ha pasado con este cliente: interacciones, pedidos y despachos, en orden.
+                    Todo lo que ha pasado con este cliente: interacciones, pedidos, despachos y facturas, en orden.
                 </MudText>
                 @if (_historial.Count == 0)
                 {
@@ -178,15 +205,16 @@
                 }
             </MudTabPanel>
         </MudTabs>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Cerrar">Cerrar</MudButton>
-    </DialogActions>
-</MudDialog>
+    </MudPaper>
+}
 
 @code {
-    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
-    [Parameter] public ClienteItem Cliente { get; set; } = default!;
+    [Parameter] public string ExternalId { get; set; } = "";
+
+    private ClienteItem? _cliente;
+    private List<EmpleadoItem> _empleados = new();
+    private bool _cargando = true;
+    private string? _errorCarga;
 
     // Contactos
     private MudForm _formContacto = default!;
@@ -215,28 +243,83 @@
     {
         "PEDIDO" => Color.Info,
         "DESPACHO" => Color.Success,
+        "FACTURA" => Color.Warning,
         _ => Color.Primary
     };
 
-    protected override async Task OnInitializedAsync()
+    // OnParametersSetAsync corre en cada navegacion a esta pagina (primera vez
+    // y re-navegacion con mismo o diferente ExternalId). Siempre recargamos para
+    // evitar que Blazor sirva datos viejos cuando el cliente fue editado desde
+    // la lista y el usuario regresa al workspace.
+    protected override async Task OnParametersSetAsync() => await CargarTodoAsync();
+
+    private async Task CargarTodoAsync()
     {
-        await CargarContactosAsync();
-        await CargarInteraccionesAsync();
-        await CargarHistorialAsync();
-        await CargarDocumentosAsync();
+        _cargando = true;
+        try
+        {
+            var tareaCliente = ApiClient.GetAsync<ClienteItem>($"api/crm/clientes/{ExternalId}");
+            var tareaEmpleados = ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados?soloActivos=true");
+
+            await Task.WhenAll(tareaCliente, tareaEmpleados);
+
+            _cliente = await tareaCliente;
+            _empleados = await tareaEmpleados ?? new();
+
+            if (_cliente is not null)
+            {
+                await CargarContactosAsync();
+                await CargarInteraccionesAsync();
+                await CargarHistorialAsync();
+                await CargarDocumentosAsync();
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            _errorCarga = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
     }
 
     private async Task CargarContactosAsync() =>
-        _contactos = await ApiClient.GetAsync<List<ContactoItem>>($"api/crm/clientes/{Cliente.ClienteID}/contactos") ?? new();
+        _contactos = await ApiClient.GetAsync<List<ContactoItem>>($"api/crm/clientes/{_cliente!.ClienteID}/contactos") ?? new();
 
     private async Task CargarInteraccionesAsync() =>
-        _interacciones = await ApiClient.GetAsync<List<InteraccionItem>>($"api/crm/clientes/{Cliente.ClienteID}/interacciones") ?? new();
+        _interacciones = await ApiClient.GetAsync<List<InteraccionItem>>($"api/crm/clientes/{_cliente!.ClienteID}/interacciones") ?? new();
 
     private async Task CargarHistorialAsync() =>
-        _historial = await ApiClient.GetAsync<List<EventoHistorialItem>>($"api/crm/clientes/{Cliente.ClienteID}/historial") ?? new();
+        _historial = await ApiClient.GetAsync<List<EventoHistorialItem>>($"api/crm/clientes/{_cliente!.ClienteID}/historial") ?? new();
 
     private async Task CargarDocumentosAsync() =>
-        _documentos = await ApiClient.GetAsync<List<ClienteDocumentoItem>>($"api/crm/clientes/{Cliente.ClienteID}/documentos") ?? new();
+        _documentos = await ApiClient.GetAsync<List<ClienteDocumentoItem>>($"api/crm/clientes/{_cliente!.ClienteID}/documentos") ?? new();
+
+    private async Task AbrirEdicionAsync()
+    {
+        var parametros = new DialogParameters<ClienteDialog>
+        {
+            { x => x.Cliente, _cliente },
+            { x => x.Empleados, _empleados }
+        };
+
+        var dialogo = await DialogService.ShowAsync<ClienteDialog>("Editar Cliente", parametros);
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled) return;
+
+        try
+        {
+            var request = (ActualizarClienteRequest)resultado.Data!;
+            await ApiClient.PutAsync<ActualizarClienteRequest, object?>($"api/crm/clientes/{_cliente!.ClienteID}", request);
+            Snackbar.Add("Cliente actualizado correctamente.", Severity.Success);
+            _cliente = await ApiClient.GetAsync<ClienteItem>($"api/crm/clientes/{ExternalId}");
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
 
     private async Task AgregarContactoAsync()
     {
@@ -245,7 +328,7 @@
 
         try
         {
-            var request = new CrearContactoRequest(Cliente.ClienteID, _nombresContacto.Trim(), _cargoContacto, _telefonoContacto, _emailContacto, _esPrincipalContacto);
+            var request = new CrearContactoRequest(_cliente!.ClienteID, _nombresContacto.Trim(), _cargoContacto, _telefonoContacto, _emailContacto, _esPrincipalContacto);
             await ApiClient.PostAsync<CrearContactoRequest, object?>("api/crm/contactos", request);
             _nombresContacto = string.Empty;
             _cargoContacto = null;
@@ -268,11 +351,15 @@
 
         try
         {
-            var request = new CrearInteraccionRequest(Cliente.ClienteID, _tipoInteraccion, _notasInteraccion.Trim(), _proximoContactoInteraccion);
+            var request = new CrearInteraccionRequest(_cliente!.ClienteID, _tipoInteraccion, _notasInteraccion.Trim(), _proximoContactoInteraccion);
             await ApiClient.PostAsync<CrearInteraccionRequest, object?>("api/crm/interacciones", request);
             _notasInteraccion = string.Empty;
             _proximoContactoInteraccion = null;
             await CargarInteraccionesAsync();
+
+            // Si se agendo proximo contacto, recargar por ExternalId para que
+            // el chip de Proximo Contacto del encabezado se actualice.
+            _cliente = await ApiClient.GetAsync<ClienteItem>($"api/crm/clientes/{ExternalId}");
         }
         catch (HttpRequestException ex)
         {
@@ -298,7 +385,7 @@
         try
         {
             var request = new SubirDocumentoRequest(_tipoDocumento, e.File.Name, e.File.ContentType, base64);
-            await ApiClient.PostAsync<SubirDocumentoRequest, object?>($"api/crm/clientes/{Cliente.ClienteID}/documentos", request);
+            await ApiClient.PostAsync<SubirDocumentoRequest, object?>($"api/crm/clientes/{_cliente!.ClienteID}/documentos", request);
             Snackbar.Add("Documento subido.", Severity.Success);
             await CargarDocumentosAsync();
         }
@@ -336,6 +423,4 @@
             Snackbar.Add(ex.Message, Severity.Error);
         }
     }
-
-    private void Cerrar() => MudDialog.Close();
 }

@@ -1,5 +1,5 @@
 @page "/planificacion/metas-venta"
-@attribute [Authorize(Roles = "Administrador,SupervisorPlanta")]
+@attribute [Authorize(Roles = "Administracion,Jefes")]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -11,7 +11,7 @@
     <MudText Typo="Typo.h5">Metas de Venta</MudText>
     <BotonFavorito Href="/planificacion/metas-venta" Etiqueta="Metas de Venta" />
 </div>
-<InfoAyuda Texto="Objetivo comercial por Centro de Costo y mes. Se compara contra la venta real reportada por Visions (cantidad vendida x precio de venta actual del artículo -- una aproximación, no reconstruye el precio histórico de cada venta)." />
+<InfoAyuda Texto="Objetivo comercial por Centro de Costo y mes. Se compara contra la venta real de Facturación y Visions (cantidad vendida × precio actual del artículo -- aproximación, no reconstruye el precio histórico de cada venta)." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
            StartIcon="@Icons.Material.Filled.Add" Class="mb-4">

@@ -1,10 +1,11 @@
-@* Components/Pages/Settings/Settings.razor *@
+﻿@* Components/Pages/Settings/Settings.razor *@
 @page "/settings"
 @attribute [Authorize]
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @inject NexoWeb.Common.Auth.ConfiguracionEmpresaState ConfiguracionEmpresa
 @inject ISnackbar Snackbar
 @inject NavigationManager Navegacion
+@inject IDialogService DialogService
 
 <PageTitle>Configuración - NEXO</PageTitle>
 
@@ -96,8 +97,42 @@
     </div>
 </MudPaper>
 
-@* Solo Administrador -- afecta a TODOS los usuarios (nombre/logo del sidebar), no es una preferencia personal. *@
-<AuthorizeView Roles="Administrador">
+@* Integraciones -- solo Administracion, afecta a toda la plataforma. *@
+<AuthorizeView Roles="Administracion">
+    <Authorized>
+        <MudPaper Class="pa-5 mt-4" Style="max-width: 640px;">
+            <div class="nexo-chart-header mb-4">
+                <MudIcon Icon="@Icons.Material.Outlined.Extension" Size="Size.Small" Class="nexo-chart-header__icon" />
+                <div>
+                    <div class="nexo-chart-header__title">Integraciones</div>
+                    <div class="nexo-chart-header__sub">Configura qué sistemas externos usa esta empresa</div>
+                </div>
+            </div>
+
+            <MudAlert Severity="Severity.Info" Class="mb-4" Icon="@Icons.Material.Outlined.Info">
+                <strong>¿Qué es Visions?</strong> Visions es el sistema de facturación/punto de venta externo
+                con el que NEXO puede sincronizar ventas e inventario. Si esta empresa <strong>no usa Visions</strong>,
+                desactiva esta opción para ocultar las funciones relacionadas (Mapeo de Artículos Visions,
+                configuración Visions en Centros de Costo, etc.).
+            </MudAlert>
+
+            <div class="d-flex align-center justify-space-between py-2">
+                <div>
+                    <div style="font-weight:600; font-size:0.9rem;">La empresa utiliza Visions</div>
+                    <div style="font-size:0.78rem; color:var(--n-text-3);">
+                        Activa o desactiva la integración con Visions para toda la plataforma.
+                    </div>
+                </div>
+                <MudSwitch T="bool" Value="ConfiguracionEmpresa.UsaVisions"
+                           ValueChanged="OnUsaVisionsCambiadoAsync"
+                           Color="Color.Primary" />
+            </div>
+        </MudPaper>
+    </Authorized>
+</AuthorizeView>
+
+@* Solo Administracion -- afecta a TODOS los usuarios (nombre/logo del sidebar), no es una preferencia personal. *@
+<AuthorizeView Roles="Administracion">
     <Authorized>
         <MudPaper Class="pa-5 mt-4" Style="max-width: 640px;">
             <div class="nexo-chart-header mb-4">
@@ -158,7 +193,31 @@
         await Preferencias.EstablecerMostrarAyudaAsync(nuevoValor);
     }
 
-    // ── Mi Negocio (Administrador) ──────────────────────────────────
+    // ── Integraciones (Administracion) ───────────────────────────────
+    private async Task OnUsaVisionsCambiadoAsync(bool nuevoValor)
+    {
+        if (!nuevoValor)
+        {
+            var confirm = await DialogService.ShowMessageBox(
+                "Desactivar integración con Visions",
+                "Al desactivar Visions se ocultarán el Mapeo de Artículos, la configuración Visions en Centros de Costo y todas las menciones relacionadas. Los datos guardados no se eliminan y puedes volver a activarlo cuando quieras. ¿Confirmas?",
+                yesText: "Sí, desactivar", cancelText: "Cancelar");
+
+            if (confirm != true) return;
+        }
+
+        try
+        {
+            await ConfiguracionEmpresa.ActualizarUsaVisionsAsync(nuevoValor);
+            Snackbar.Add(nuevoValor ? "Integración con Visions activada." : "Integración con Visions desactivada.", Severity.Success);
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    // ── Mi Negocio (Administracion) ───────────────────────────────────
     private string _nombreEmpresa = "";
     private bool _procesandoLogo;
 

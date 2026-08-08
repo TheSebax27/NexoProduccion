@@ -412,6 +412,8 @@ Con la arquitectura actual, "soportar 10 empresas" significa 10 bases de datos i
 **Esfuerzo para llegar aquí**: ya se está ahí. Es el modelo "un cliente, una instalación" — válido como estrategia comercial (muchos ERPs empiezan así), pero no escala en costo operativo pasado cierto número de clientes.
 
 ### 14.3 — Para 100 empresas: requiere multi-tenencia real — cambio estructural, no cosmético
+
+> **⚠️ Corrección posterior (agosto 2026)**: la recomendación de Row-Level Security con `TenantID` de esta sub-sección quedó **descartada** — la empresa del usuario ya opera con un modelo distinto (subdominio + base de datos dedicada por cliente), que no requiere este cambio. Ver `CLAUDE.md` sección 31.1 para el detalle. Se deja el análisis original abajo sin editar, como registro de lo que se evaluó y por qué no aplica.
 **Qué cambiaría**: cada tabla de negocio necesita `EmpresaID`, cada query necesita filtrar por él (o usar Row-Level Security de SQL Server, que permite hacerlo sin tocar cada query manualmente), y la autenticación necesita resolver "a qué empresa pertenece este usuario" antes de emitir el JWT (agregar `EmpresaID` como claim).
 **Impacto de no hacerlo**: a 100 empresas, 100 instalaciones independientes ya no es sostenible operacionalmente (100 bases de datos que mantener, actualizar, respaldar por separado).
 **Prioridad**: Alta **si la estrategia comercial es SaaS multi-cliente**; Baja/no aplica si la estrategia sigue siendo "una instalación por cliente" (modelo on-premise/licenciado).
@@ -447,22 +449,22 @@ No se trata de copiar esas plataformas — se trata de identificar **qué están
 ## Roadmap sugerido (orden de ataque, no todo a la vez)
 
 **Ahora mismo (riesgo/esfuerzo bajo, impacto alto):**
-1. Rotar y mover la clave JWT fuera del repositorio (9.1)
-2. Conectar Clientes Fríos / Desviaciones / Alertas de Proyectos a la campana de notificaciones (5.5)
-3. Agregar Empleados/Proyectos/Facturas/Leads/Despachos al buscador global (5.2)
-4. Endpoint de refresh token (9.2)
-5. Confirmación antes de eliminar documentos (6.4)
+1. Rotar y mover la clave JWT fuera del repositorio (9.1) — **pendiente**, explícitamente diferido por el usuario para más adelante.
+2. ~~Conectar Clientes Fríos / Desviaciones / Alertas de Proyectos a la campana de notificaciones (5.5)~~ — **✅ Resuelto agosto 2026**, ver `CLAUDE.md` sección 31.3.
+3. ~~Agregar Empleados/Proyectos/Facturas/Leads/Despachos al buscador global (5.2)~~ — **✅ Resuelto agosto 2026** (más Oportunidades, que no existía cuando se escribió este roadmap), ver `CLAUDE.md` sección 31.3.
+4. Endpoint de refresh token (9.2) — pendiente.
+5. Confirmación antes de eliminar documentos (6.4) — pendiente.
 
 **Siguiente fase (construye el "CRM real"):**
-6. Oportunidades + Cotizaciones (3.2, 3.3)
-7. Botón "Generar Factura" desde Despacho/Cotización (2.2, 4.1)
-8. Incluir Facturas en el historial unificado del cliente (4.2)
+6. ~~Oportunidades + Cotizaciones (3.2, 3.3)~~ — **✅ Resuelto agosto 2026**, ver `CLAUDE.md` sección 31.2.
+7. ~~Botón "Generar Factura" desde Cotización (2.2, 4.1)~~ — **✅ Resuelto agosto 2026** (vía Cotización Aceptada → Factura, ver 31.2). El equivalente desde Despacho sigue pendiente.
+8. Incluir Facturas en el historial unificado del cliente (4.2) — pendiente.
 
 **Cuando se piense en vender el producto a terceros:**
-9. Auditoría centralizada vía middleware (8.4)
-10. Numeración configurable de documentos + exportación a Excel/PDF universal (11)
-11. Decisión consciente sobre estrategia de escalamiento: on-premise por cliente vs. multi-tenencia real (14.3)
-12. Roles/permisos configurables + API pública versionada (15)
+9. ~~Auditoría centralizada vía middleware (8.4)~~ — **✅ Resuelto agosto 2026**, ver `CLAUDE.md` sección 31.4.
+10. Numeración configurable de documentos + exportación a Excel/PDF universal (11) — pendiente.
+11. ~~Decisión consciente sobre estrategia de escalamiento: on-premise por cliente vs. multi-tenencia real (14.3)~~ — **Ya decidido, no era una decisión pendiente**: la empresa del usuario ya opera con subdominio + base de datos dedicada por cliente (no multi-tenencia compartida). La recomendación de Row-Level Security con `TenantID` de la sección 14.3 de este documento queda **descartada** — ver `CLAUDE.md` sección 31.1 para el detalle y la implicación real (aprovisionamiento, no rediseño de esquema).
+12. Roles/permisos configurables + API pública versionada (15) — pendiente.
 
 ---
 

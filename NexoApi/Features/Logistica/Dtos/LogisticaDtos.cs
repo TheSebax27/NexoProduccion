@@ -7,16 +7,19 @@ public record DespachoItem(
     int CentroCostoID, string CentroCosto, string BodegaOrigen,
     DateTime FechaDespacho, string Estado, DateTime? FechaEntrega,
     string? Direccion, string? Observaciones, decimal ValorTotal,
-    string? MotivoAnulacion, DateTime? FechaAnulacion
+    string? MotivoAnulacion, DateTime? FechaAnulacion, bool DescuentaStock
 );
 
-public record DespachoDetalleItem(int ArticuloID, string SkuArticulo, string NombreArticulo, decimal Cantidad);
+public record DespachoDetalleItem(int ArticuloID, string SkuArticulo, string NombreArticulo, decimal Cantidad, decimal? ValorUnitario);
 
-public record LineaDespachoRequest(int ArticuloID, decimal Cantidad);
+// ValorUnitario: precio personalizado por linea (descuento, precio especial).
+// Si es null se usa el PrecioVenta del catalogo solo para mostrar el ValorTotal.
+public record LineaDespachoRequest(int ArticuloID, decimal Cantidad, decimal? ValorUnitario = null);
 
 public record CrearDespachoRequest(
     int ClienteID, int CentroCostoID, int BodegaOrigenID,
-    string? Direccion, string? Observaciones, List<LineaDespachoRequest> Lineas
+    string? Direccion, string? Observaciones, List<LineaDespachoRequest> Lineas,
+    bool DescuentaStock = true
 );
 
 public record CrearDespachoResponse(int DespachoId);

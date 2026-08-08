@@ -34,21 +34,23 @@ public record BodegaItem(int BodegaID, string Nombre, int CentroCostoID, string 
 // Caja de Fuente trae 10 unidades). Es solo informativo/de conversion para
 // ayudar a calcular bien la cantidad -- el stock, kardex y recetas SIEMPRE
 // se registran en la UnidadID base del articulo, esto no cambia esa logica.
+// ModoVentaCaja: 'CAJA' = solo en cajas completas, 'AMBOS' = cajas y unidades sueltas.
+// Solo aplica cuando UnidadesPorEmbalaje tiene valor (articulo con unidad de caja).
 public record CrearArticuloRequest(
     string SKU, string Nombre, string? Descripcion, int TipoArticuloID, int? UnidadID,
     decimal PrecioVenta, decimal StockMinimo, decimal PuntoReorden, int? DiasVidaUtil,
-    decimal? UnidadesPorEmbalaje
+    decimal? UnidadesPorEmbalaje, string? ModoVentaCaja = "AMBOS", decimal? PrecioVentaUnidad = null
 );
 public record ActualizarArticuloRequest(
     string Nombre, string? Descripcion, decimal PrecioVenta,
     decimal StockMinimo, decimal PuntoReorden, int? DiasVidaUtil, bool Estado,
-    decimal? UnidadesPorEmbalaje
+    decimal? UnidadesPorEmbalaje, string? ModoVentaCaja = "AMBOS", decimal? PrecioVentaUnidad = null
 );
 
 public record ArticuloItem(
     int ArticuloID, string SKU, string Nombre, string? Descripcion, string TipoArticulo, string? Unidad,
     decimal CostoPromedio, decimal PrecioVenta, decimal StockMinimo, decimal PuntoReorden, bool Estado,
-    int? DiasVidaUtil, decimal? UnidadesPorEmbalaje, bool TieneImagen
+    int? DiasVidaUtil, decimal? UnidadesPorEmbalaje, bool TieneImagen, string? ModoVentaCaja, decimal? PrecioVentaUnidad
 );
 
 // ---------- Imagen de articulo (opcional, una sola por articulo) ----------

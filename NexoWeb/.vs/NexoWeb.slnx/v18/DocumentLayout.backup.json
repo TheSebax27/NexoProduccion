@@ -3,16 +3,16 @@
   "WorkspaceRootPath": "C:\\Produccion\\NexoWeb\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\dashboard\\dashboard.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\dashboard\\dashboard.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\catalogodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\catalogodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\catalogo\\articulos.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\catalogo\\articulos.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\catalogodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\catalogodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\dashboard\\dashboard.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\dashboard\\dashboard.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\auth\\authstateservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -86,7 +86,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -94,16 +94,15 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "Dashboard.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Dashboard\\Dashboard.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Dashboard\\Dashboard.razor",
               "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Dashboard\\Dashboard.razor",
               "RelativeToolTip": "Components\\Pages\\Dashboard\\Dashboard.razor",
-              "ViewState": "AgIAAIYAAAAAAAAAAAAAAJIAAAAhAAAAAAAAAA==",
+              "ViewState": "AgIAAIYAAAAAAAAAAAAAAKYAAABoAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-08-06T15:57:05.101Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-06T15:57:05.101Z"
             },
             {
               "$type": "Document",
@@ -113,21 +112,23 @@
               "RelativeDocumentMoniker": "Components\\Pages\\Catalogo\\Articulos.razor",
               "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Catalogo\\Articulos.razor",
               "RelativeToolTip": "Components\\Pages\\Catalogo\\Articulos.razor",
-              "ViewState": "AgIAANEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAPYAAAAAAAAAAAAAAA8BAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-08-06T15:55:15.651Z"
+              "WhenOpened": "2026-08-06T15:55:15.651Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "CatalogoDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\CatalogoDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\CatalogoDtos.cs",
               "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\CatalogoDtos.cs",
               "RelativeToolTip": "Common\\Dtos\\CatalogoDtos.cs",
-              "ViewState": "AgIAAHcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAI8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-06T15:53:48.555Z"
+              "WhenOpened": "2026-08-06T15:53:48.555Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",

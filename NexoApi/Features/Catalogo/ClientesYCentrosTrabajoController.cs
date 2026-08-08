@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexoApi.Features.Catalogo.Dtos;
 
@@ -24,7 +24,7 @@ public class ClientesYCentrosTrabajoController : ControllerBase
         => Ok(await _service.ListarCentrosTrabajoAsync(soloActivos));
 
     [HttpPost("centros-trabajo")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> CrearCentroTrabajo(CrearCentroTrabajoRequest request)
     {
         var id = await _service.CrearCentroTrabajoAsync(request);
@@ -32,7 +32,7 @@ public class ClientesYCentrosTrabajoController : ControllerBase
     }
 
     [HttpPut("centros-trabajo/{id:int}")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> ActualizarCentroTrabajo(int id, ActualizarCentroTrabajoRequest request)
     {
         await _service.ActualizarCentroTrabajoAsync(id, request);
@@ -44,7 +44,7 @@ public class ClientesYCentrosTrabajoController : ControllerBase
         => Ok(await _service.ListarProveedoresAsync());
 
     [HttpPost("proveedores")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> CrearProveedor(CrearProveedorRequest request)
     {
         var id = await _service.CrearProveedorAsync(request);
@@ -52,7 +52,7 @@ public class ClientesYCentrosTrabajoController : ControllerBase
     }
 
     [HttpPut("proveedores/{id:int}")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> ActualizarProveedor(int id, ActualizarProveedorRequest request)
     {
         await _service.ActualizarProveedorAsync(id, request);

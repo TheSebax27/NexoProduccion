@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexoApi.Features.Crm.Dtos;
@@ -7,7 +7,7 @@ namespace NexoApi.Features.Crm;
 
 [ApiController]
 [Route("api/crm")]
-[Authorize(Roles = "Administrador")]
+[Authorize(Roles = "Administracion")]
 public class CrmController : ControllerBase
 {
     private readonly ICrmService _service;
@@ -20,15 +20,24 @@ public class CrmController : ControllerBase
     private int UsuarioActualId =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-    // Solo esta lectura se abre tambien a Bodeguero (Logistica/Despachos) y
-    // SupervisorPlanta (Proyectos) -- ambos necesitan elegir un cliente.
+    // Solo esta lectura se abre tambien a Empleados (Logistica/Despachos) y
+    // Jefes (Proyectos) -- ambos necesitan elegir un cliente.
     // Crear/editar clientes y ver interacciones se quedan Admin-only.
     [HttpGet("clientes")]
-    [Authorize(Roles = "Administrador,Bodeguero,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Empleados,Jefes")]
     public async Task<ActionResult<IEnumerable<ClienteItem>>> ListarClientes(
         [FromQuery] int? responsableId, [FromQuery] string? tipoCliente,
         [FromQuery] string? fuenteContacto, [FromQuery] bool? soloActivos)
         => Ok(await _service.ListarClientesAsync(responsableId, tipoCliente, fuenteContacto, soloActivos));
+
+    // Usa ExternalId (string opaco) para que la URL no exponga el int primario.
+    // El workspace carga el cliente por aqui y luego usa ClienteID (int) internamente.
+    [HttpGet("clientes/{externalId}")]
+    public async Task<ActionResult<ClienteItem>> ObtenerCliente(string externalId)
+    {
+        var cliente = await _service.ObtenerClienteAsync(externalId);
+        return cliente is null ? NotFound() : Ok(cliente);
+    }
 
     [HttpPost("clientes")]
     public async Task<ActionResult> CrearCliente(CrearClienteRequest request)
@@ -154,6 +163,24 @@ public class CrmController : ControllerBase
         try
         {
             await _service.ActualizarLeadAsync(id, request);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+    }
+
+    [HttpPatch("leads/{id:int}/etapa")]
+    public async Task<ActionResult> CambiarEtapaLead(int id, CambiarEtapaLeadRequest request)
+    {
+        try
+        {
+            await _service.CambiarEtapaLeadAsync(id, request.Etapa);
             return NoContent();
         }
         catch (KeyNotFoundException ex)

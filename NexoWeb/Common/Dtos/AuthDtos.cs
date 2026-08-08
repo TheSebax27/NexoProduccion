@@ -16,7 +16,7 @@ public record LoginResponse(
     string? FotoPerfilContentType
 );
 
-// ---------- Gestion de usuarios (Administrador) ----------
+// ---------- Gestion de usuarios (Administracion) ----------
 public record UsuarioItem(
     int UsuarioID,
     string Nombres,
@@ -28,7 +28,8 @@ public record UsuarioItem(
     int? CentroCostoID,
     string? CentroCosto,
     bool Estado,
-    DateTime? UltimoAcceso
+    DateTime? UltimoAcceso,
+    int? EmpleadoID
 );
 
 public record RolItem(int RolID, string Nombre);
@@ -40,7 +41,8 @@ public record CrearUsuarioRequest(
     string Username,
     string Password,
     int RolID,
-    int? CentroCostoID
+    int? CentroCostoID,
+    int? EmpleadoID = null
 );
 
 public record ActualizarUsuarioRequest(

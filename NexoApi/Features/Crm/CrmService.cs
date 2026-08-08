@@ -9,6 +9,7 @@ namespace NexoApi.Features.Crm;
 public interface ICrmService
 {
     Task<IEnumerable<ClienteItem>> ListarClientesAsync(int? responsableId, string? tipoCliente, string? fuenteContacto, bool? soloActivos);
+    Task<ClienteItem?> ObtenerClienteAsync(string externalId);
     Task<int> CrearClienteAsync(CrearClienteRequest request);
     Task ActualizarClienteAsync(int clienteId, ActualizarClienteRequest request);
 
@@ -32,6 +33,7 @@ public interface ICrmService
     Task<int> ConvertirLeadAsync(int leadId);
 
     Task<IEnumerable<ClienteFrioItem>> ListarClientesFriosAsync(int diasSinContacto);
+    Task CambiarEtapaLeadAsync(int leadId, string etapa);
 
     // ---------- Oportunidades (embudo de ventas, agosto 2026) ----------
     Task<IEnumerable<OportunidadItem>> ListarOportunidadesAsync(string? etapa, int? responsableId);
@@ -62,7 +64,7 @@ public class CrmService : ICrmService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT c.ClienteID, c.Nombre, c.NIT, c.Contacto, c.Telefono, c.Email, c.Direccion, c.Estado,
+            SELECT c.ClienteID, c.ExternalId, c.Nombre, c.NIT, c.Contacto, c.Telefono, c.Email, c.Direccion, c.Estado,
                    c.FuenteContacto, c.TipoCliente, c.ResponsableID,
                    e.Nombres + ' ' + e.Apellidos AS Responsable, c.ProximoContacto,
                    (SELECT COUNT(*) FROM Crm.Contactos ct WHERE ct.ClienteID = c.ClienteID AND ct.Estado = 1) AS TotalContactos,
@@ -82,6 +84,26 @@ public class CrmService : ICrmService
             FuenteContacto = fuenteContacto,
             SoloActivos = soloActivos
         });
+    }
+
+    // Usado por el workspace (/crm/clientes/{externalId}) -- busca por ExternalId
+    // (string opaco, no expone el int primario) y devuelve el ClienteID interno
+    // para que el workspace lo use en operaciones posteriores.
+    public async Task<ClienteItem?> ObtenerClienteAsync(string externalId)
+    {
+        using var connection = _db.CreateConnection();
+
+        const string sql = @"
+            SELECT c.ClienteID, c.ExternalId, c.Nombre, c.NIT, c.Contacto, c.Telefono, c.Email, c.Direccion, c.Estado,
+                   c.FuenteContacto, c.TipoCliente, c.ResponsableID,
+                   e.Nombres + ' ' + e.Apellidos AS Responsable, c.ProximoContacto,
+                   (SELECT COUNT(*) FROM Crm.Contactos ct WHERE ct.ClienteID = c.ClienteID AND ct.Estado = 1) AS TotalContactos,
+                   (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion
+            FROM Crm.Clientes c
+            LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = c.ResponsableID
+            WHERE c.ExternalId = @ExternalId";
+
+        return await connection.QuerySingleOrDefaultAsync<ClienteItem>(sql, new { ExternalId = externalId });
     }
 
     public async Task<int> CrearClienteAsync(CrearClienteRequest r)
@@ -273,6 +295,14 @@ public class CrmService : ICrmService
             FROM Logistica.Despachos d
             WHERE d.ClienteID = @ClienteId
 
+            UNION ALL
+
+            SELECT 'FACTURA' AS TipoEvento, f.Fecha,
+                   'Factura #' + CAST(f.FacturaID AS VARCHAR) AS Titulo,
+                   'Total: $' + FORMAT(ISNULL((SELECT SUM(l.Cantidad * l.PrecioUnitario) FROM Facturacion.FacturaLineas l WHERE l.FacturaID = f.FacturaID), 0), 'N0') AS Detalle
+            FROM Facturacion.Facturas f
+            WHERE f.ClienteID = @ClienteId
+
             ORDER BY Fecha DESC";
 
         return await connection.QueryAsync<EventoHistorialItem>(sql, new { ClienteId = clienteId });
@@ -430,6 +460,21 @@ public class CrmService : ICrmService
         }
     }
 
+    // Cambio rapido de etapa desde el listado (sin abrir el dialogo de edicion).
+    // CONVERTIDO no se puede cambiar -- ya tiene un cliente asociado.
+    public async Task CambiarEtapaLeadAsync(int leadId, string etapa)
+    {
+        using var connection = _db.CreateConnection();
+
+        const string sql = @"
+            UPDATE Crm.Leads SET Etapa = @Etapa
+            WHERE LeadID = @LeadId AND Etapa <> 'CONVERTIDO'";
+
+        var filas = await connection.ExecuteAsync(sql, new { LeadId = leadId, Etapa = etapa });
+        if (filas == 0)
+            throw new InvalidOperationException("No se puede cambiar la etapa de este lead (ya fue convertido o no existe).");
+    }
+
     private record LeadParaConvertir(string Nombre, string? Empresa, string? Telefono, string? Email, string? FuenteContacto, int? ResponsableID, string Etapa);
 
     // D) Clientes activos sin interaccion reciente (o con proximo contacto
@@ -439,7 +484,7 @@ public class CrmService : ICrmService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT c.ClienteID, c.Nombre, e.Nombres + ' ' + e.Apellidos AS Responsable,
+            SELECT c.ClienteID, c.ExternalId, c.Nombre, e.Nombres + ' ' + e.Apellidos AS Responsable,
                    (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion,
                    c.ProximoContacto
             FROM Crm.Clientes c

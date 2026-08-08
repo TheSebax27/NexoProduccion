@@ -109,8 +109,17 @@ public record ArticuloItem(
     bool Estado,
     int? DiasVidaUtil,
     decimal? UnidadesPorEmbalaje,
-    bool TieneImagen
-);
+    bool TieneImagen,
+    string? ModoVentaCaja,
+    decimal? PrecioVentaUnidad
+)
+{
+    // Helpers para uso en dialogs de despacho/factura
+    public bool EsUnidadCaja => Unidad == "cja" && UnidadesPorEmbalaje is > 0;
+    public bool SoloEnCajas  => EsUnidadCaja && ModoVentaCaja == "CAJA";
+    // Precio efectivo por unidad suelta: PrecioVentaUnidad si está definido, si no PrecioVenta/upEmbalaje
+    public decimal PrecioUnidadEfectivo => PrecioVentaUnidad ?? (EsUnidadCaja ? PrecioVenta / UnidadesPorEmbalaje!.Value : PrecioVenta);
+};
 
 // Imagen opcional, una sola por articulo. CrearArticuloResponse solo se usa
 // para leer el ArticuloID nuevo y poder subir la imagen justo despues de crear.
@@ -137,7 +146,9 @@ public record CrearArticuloRequest(
     decimal StockMinimo,
     decimal PuntoReorden,
     int? DiasVidaUtil,
-    decimal? UnidadesPorEmbalaje
+    decimal? UnidadesPorEmbalaje,
+    string? ModoVentaCaja = "AMBOS",
+    decimal? PrecioVentaUnidad = null
 );
 
 public record ActualizarArticuloRequest(
@@ -148,7 +159,9 @@ public record ActualizarArticuloRequest(
     decimal PuntoReorden,
     int? DiasVidaUtil,
     bool Estado,
-    decimal? UnidadesPorEmbalaje
+    decimal? UnidadesPorEmbalaje,
+    string? ModoVentaCaja = "AMBOS",
+    decimal? PrecioVentaUnidad = null
 );
 
 public record ProveedorItem(

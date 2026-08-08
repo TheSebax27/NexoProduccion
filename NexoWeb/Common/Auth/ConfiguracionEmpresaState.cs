@@ -1,13 +1,13 @@
-using NexoWeb.Common.ApiClient;
+﻿using NexoWeb.Common.ApiClient;
 using NexoWeb.Common.Dtos;
 
 namespace NexoWeb.Common.Auth;
 
-// Nombre y logo de la empresa (Settings > Mi Negocio, solo Administrador
+// Nombre y logo de la empresa (Settings > Mi Negocio, solo Administracion
 // puede editarlo) -- a diferencia de PreferenciasState, esto NO es por
 // usuario: todos ven lo mismo. Se carga una vez por circuito (CargarAsync es
 // idempotente) y dispara OnCambio para que el sidebar se actualice sin
-// recargar la pagina cuando un Administrador lo cambia.
+// recargar la pagina cuando un Administracion lo cambia.
 public class ConfiguracionEmpresaState
 {
     private readonly INexoApiClient _apiClient;
@@ -16,6 +16,7 @@ public class ConfiguracionEmpresaState
     public string NombreEmpresa { get; private set; } = "NEXO ERP";
     public string? LogoBase64 { get; private set; }
     public string? LogoContentType { get; private set; }
+    public bool UsaVisions { get; private set; } = true;
 
     // Null si no hay logo propio -- el sidebar usa la imagen por defecto (LogoV.png) en ese caso.
     public string? LogoDataUri => LogoBase64 is null ? null : $"data:{LogoContentType};base64,{LogoBase64}";
@@ -39,6 +40,7 @@ public class ConfiguracionEmpresaState
                 NombreEmpresa = respuesta.NombreEmpresa;
                 LogoBase64 = respuesta.LogoBase64;
                 LogoContentType = respuesta.LogoContentType;
+                UsaVisions = respuesta.UsaVisions;
             }
         }
         catch
@@ -71,6 +73,14 @@ public class ConfiguracionEmpresaState
         await _apiClient.DeleteAsync("api/configuracion/empresa/logo");
         LogoBase64 = null;
         LogoContentType = null;
+        OnCambio?.Invoke();
+    }
+
+    public async Task ActualizarUsaVisionsAsync(bool usaVisions)
+    {
+        await _apiClient.PutAsync<ActualizarUsaVisionsRequest, object>(
+            "api/configuracion/empresa/visions", new ActualizarUsaVisionsRequest(usaVisions));
+        UsaVisions = usaVisions;
         OnCambio?.Invoke();
     }
 }

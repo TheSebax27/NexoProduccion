@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using NexoApi.Common.Data;
 using NexoApi.Features.Configuracion.Dtos;
 
@@ -10,12 +10,13 @@ public interface IConfiguracionService
     Task ActualizarNombreEmpresaAsync(string nombreEmpresa);
     Task ActualizarLogoEmpresaAsync(string base64, string contentType);
     Task EliminarLogoEmpresaAsync();
+    Task ActualizarUsaVisionsAsync(bool usaVisions);
 }
 
 // Configuracion global de la empresa (nombre + logo del sidebar) -- a
 // diferencia de Seguridad.PreferenciasUsuario, esto NO es por usuario: es
 // una sola fila (ConfiguracionID = 1) que ve y usa todo el mundo, pero solo
-// Administrador puede editarla (logica de rol en el controller).
+// Administracion puede editarla (logica de rol en el controller).
 public class ConfiguracionService : IConfiguracionService
 {
     private readonly IDbConnectionFactory _db;
@@ -29,13 +30,14 @@ public class ConfiguracionService : IConfiguracionService
     {
         using var connection = _db.CreateConnection();
 
-        var fila = await connection.QuerySingleAsync<(string NombreEmpresa, byte[]? Logo, string? LogoContentType)>(
-            "SELECT NombreEmpresa, Logo, LogoContentType FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
+        var fila = await connection.QuerySingleAsync<(string NombreEmpresa, byte[]? Logo, string? LogoContentType, bool UsaVisions)>(
+            "SELECT NombreEmpresa, Logo, LogoContentType, UsaVisions FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
 
         return new ConfiguracionEmpresaResponse(
             fila.NombreEmpresa,
             fila.Logo is null ? null : Convert.ToBase64String(fila.Logo),
-            fila.LogoContentType);
+            fila.LogoContentType,
+            fila.UsaVisions);
     }
 
     public async Task ActualizarNombreEmpresaAsync(string nombreEmpresa)
@@ -63,5 +65,13 @@ public class ConfiguracionService : IConfiguracionService
         using var connection = _db.CreateConnection();
         await connection.ExecuteAsync(
             "UPDATE Organizacion.ConfiguracionEmpresa SET Logo = NULL, LogoContentType = NULL WHERE ConfiguracionID = 1");
+    }
+
+    public async Task ActualizarUsaVisionsAsync(bool usaVisions)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            "UPDATE Organizacion.ConfiguracionEmpresa SET UsaVisions = @UsaVisions WHERE ConfiguracionID = 1",
+            new { UsaVisions = usaVisions });
     }
 }

@@ -56,10 +56,11 @@
     [Parameter] public List<RolItem> Roles { get; set; } = new();
     [Parameter] public List<CentroCostoItem> CentrosCosto { get; set; } = new();
 
-    // Si se pasa un Usuario existente, el dialogo entra en modo edicion
-    // (oculta Usuario y Contrasena, que no se editan desde aqui; para
-    // cambiar la clave se usa el boton "Resetear clave" en la lista).
+    // Si se pasa un Usuario existente, el dialogo entra en modo edicion.
     [Parameter] public UsuarioItem? Usuario { get; set; }
+
+    // Pre-relleno desde un empleado (flujo "Crear usuario para este empleado").
+    [Parameter] public EmpleadoItem? EmpleadoPrefil { get; set; }
 
     private bool EsEdicion => Usuario is not null;
 
@@ -72,6 +73,7 @@
     private int _rolId;
     private int? _centroCostoId;
     private bool _estado = true;
+    private int? _empleadoId;
 
     protected override void OnInitialized()
     {
@@ -83,6 +85,16 @@
             _rolId = Usuario.RolID;
             _centroCostoId = Usuario.CentroCostoID;
             _estado = Usuario.Estado;
+            _empleadoId = Usuario.EmpleadoID;
+        }
+        else if (EmpleadoPrefil is not null)
+        {
+            _nombres = EmpleadoPrefil.Nombres;
+            _apellidos = EmpleadoPrefil.Apellidos;
+            _email = EmpleadoPrefil.Email ?? string.Empty;
+            _centroCostoId = EmpleadoPrefil.CentroCostoID;
+            _empleadoId = EmpleadoPrefil.EmpleadoID;
+            _rolId = Roles.Count > 0 ? Roles[0].RolID : 0;
         }
         else if (Roles.Count > 0)
         {
@@ -103,7 +115,7 @@
         }
         else
         {
-            var request = new CrearUsuarioRequest(_nombres, _apellidos, _email, _username, _password, _rolId, _centroCostoId);
+            var request = new CrearUsuarioRequest(_nombres, _apellidos, _email, _username, _password, _rolId, _centroCostoId, _empleadoId);
             MudDialog.Close(DialogResult.Ok(request));
         }
     }

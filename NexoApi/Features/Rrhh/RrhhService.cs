@@ -71,7 +71,15 @@ public class RrhhService : IRrhhService
                    e.CargoID, c.Nombre AS Cargo, c.DepartamentoID, dep.Nombre AS Departamento,
                    e.CentroCostoID, cc.Nombre AS CentroCosto, e.FechaIngreso, e.Telefono, e.Email, e.Estado,
                    CAST(CASE WHEN e.Foto IS NULL THEN 0 ELSE 1 END AS BIT) AS TieneFoto,
-                   e.JefeDirectoID, jefe.Nombres + ' ' + jefe.Apellidos AS JefeDirecto
+                   e.JefeDirectoID, jefe.Nombres + ' ' + jefe.Apellidos AS JefeDirecto,
+                   CAST(CASE WHEN EXISTS (
+                       SELECT 1 FROM Rrhh.Ausencias a
+                       WHERE a.EmpleadoID = e.EmpleadoID AND a.Estado = 'APROBADA'
+                         AND CAST(GETDATE() AS DATE) BETWEEN a.FechaInicio AND a.FechaFin
+                   ) THEN 1 ELSE 0 END AS BIT) AS EnAusencia,
+                   CAST(CASE WHEN EXISTS (
+                       SELECT 1 FROM Seguridad.Usuarios u WHERE u.EmpleadoID = e.EmpleadoID
+                   ) THEN 1 ELSE 0 END AS BIT) AS TieneUsuario
             FROM Rrhh.Empleados e
             LEFT JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = e.CentroCostoID
             LEFT JOIN Rrhh.Cargos c ON c.CargoID = e.CargoID

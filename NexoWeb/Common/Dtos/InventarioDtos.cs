@@ -24,10 +24,16 @@ public record StockConsolidadoItem(
 public record MotivoPerdidaItem(int MotivoID, string Nombre);
 
 public record KardexMovimientoItem(
-    long KardexID, DateTime Fecha, string Articulo, string Bodega,
-    string TipoMovimiento, decimal Cantidad, decimal CostoUnitario,
-    decimal CantidadSaldo, string? ObservacionDetallada
-);
+    long KardexID, DateTime Fecha,
+    string SKU, string Articulo, string? Unidad, decimal? UnidadesPorEmbalaje,
+    string Bodega, string TipoMovimiento,
+    decimal Cantidad, decimal CostoUnitario, decimal CantidadSaldo, decimal ValorMovimiento,
+    string? ObservacionDetallada
+)
+{
+    public bool EsCaja => Unidad == "cja" && UnidadesPorEmbalaje is > 0;
+    public bool EsEntrada => Cantidad >= 0;
+};
 
 public record RegistrarBajaRequest(
     int ArticuloID,

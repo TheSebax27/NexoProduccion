@@ -100,11 +100,18 @@ public class InventarioService : IInventarioService
     {
         using var connection = _db.CreateConnection();
         const string sql = @"
-            SELECT TOP 500 k.KardexID, k.Fecha, a.Nombre AS Articulo, b.Nombre AS Bodega,
-                   tm.Nombre AS TipoMovimiento, k.Cantidad, k.CostoUnitario,
-                   k.CantidadSaldo, k.ObservacionDetallada
+            SELECT TOP 500
+                k.KardexID, k.Fecha,
+                a.SKU, a.Nombre AS Articulo,
+                um.Abreviatura AS Unidad, a.UnidadesPorEmbalaje,
+                b.Nombre AS Bodega,
+                tm.Nombre AS TipoMovimiento,
+                k.Cantidad, k.CostoUnitario, k.CantidadSaldo,
+                ABS(k.Cantidad) * k.CostoUnitario AS ValorMovimiento,
+                k.ObservacionDetallada
             FROM Kardex.KardexMovimientos k
             JOIN Catalogo.Articulos a ON a.ArticuloID = k.ArticuloID
+            LEFT JOIN Catalogo.UnidadesMedida um ON um.UnidadID = a.UnidadID
             JOIN Inventario.Bodegas b ON b.BodegaID = k.BodegaID
             JOIN Kardex.TiposMovimientoKardex tm ON tm.TipoMovID = k.TipoMovID
             WHERE (@ArticuloId IS NULL OR k.ArticuloID = @ArticuloId)

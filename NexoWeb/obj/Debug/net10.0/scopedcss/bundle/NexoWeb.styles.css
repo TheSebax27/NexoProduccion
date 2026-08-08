@@ -1440,6 +1440,27 @@
   margin-top: 0.1rem;
 }
 
+/* ── Tarjetas de gráfico -- todas el mismo tamaño (agosto 2026) ──
+   Antes cada MudPaper crecia segun su contenido (una tabla con 20 filas
+   quedaba mucho mas alta que un grafico vacio), asi que la grilla se veia
+   despareja. Ahora la tarjeta tiene una altura fija y el contenido que no
+   cabe (tablas largas) scrollea adentro, sin estirar la tarjeta. *@
+.nexo-chart-card {
+  height: 560px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.nexo-chart-card__header {
+  flex-shrink: 0;
+}
+.nexo-chart-card__body {
+  flex: 1;
+  min-height: 0; /* imprescindible para que un hijo flex realmente scrollee en vez de estirarse */
+  overflow-y: auto;
+  overflow-x: hidden;[b-p6pn72qmbn]
+}
+
 /* ── Estado vacío ──────────────────────────────────────────── */
 .nexo-empty-state[b-p6pn72qmbn] {
   display: flex;

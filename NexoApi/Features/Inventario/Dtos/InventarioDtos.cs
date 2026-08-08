@@ -47,11 +47,15 @@ public record AjustarInventarioResponse(string CodigoAjuste, int AjusteID, decim
 public record KardexMovimientoItem(
     long KardexID,
     DateTime Fecha,
+    string SKU,
     string Articulo,
+    string? Unidad,
+    decimal? UnidadesPorEmbalaje,
     string Bodega,
     string TipoMovimiento,
     decimal Cantidad,
     decimal CostoUnitario,
     decimal CantidadSaldo,
+    decimal ValorMovimiento,
     string? ObservacionDetallada
 );

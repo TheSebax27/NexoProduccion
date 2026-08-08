@@ -39,7 +39,7 @@
 ### `Auditoria`
 
 #### `LogAuditoria`
-Registro de auditoría general. Actualmente creado pero no se escribe desde la API (pendiente de integrar).
+Registro de auditoría general. **Se escribe automáticamente desde agosto 2026** vía `Common/Middleware/AuditoriaMiddleware.cs` — intercepta toda request `POST`/`PUT`/`PATCH`/`DELETE` a `/api/*` (excepto login/registro), sin que ningún servicio individual tenga que llamarlo. `EsquemaTabla` guarda la **ruta HTTP completa** (ej. `/api/crm/clientes/42`), no un nombre de tabla SQL — es una decisión deliberada (capturar a nivel HTTP, no por entidad) documentada en `CLAUDE.md` sección 31.4. `ValoresAnteriores` queda siempre `NULL` (alcance: quién hizo qué y con qué payload, no un diff campo-por-campo). `Accion` recibe el CHECK de abajo mapeado desde el verbo HTTP (`POST→INSERT`, `PUT`/`PATCH→UPDATE`, `DELETE→DELETE`) — **ojo, no el verbo HTTP crudo**, el CHECK lo rechaza.
 
 | Columna | Tipo | Descripción |
 |---|---|---|
@@ -481,6 +481,52 @@ Pipeline de prospectos, previo a convertirse en `Clientes`.
 
 Un Lead en Etapa `CONVERTIDO` no se puede editar (bloqueado en `CrmService.ActualizarLeadAsync`). La conversión (`ConvertirLeadAsync`) es una transacción: crea el `Cliente` con los datos del Lead + marca el Lead como `CONVERTIDO`.
 
+#### `Oportunidades` (agosto 2026, CRM v3 — embudo de ventas)
+Se origina de un Lead o de un Cliente existente — al menos uno debe venir informado.
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `OportunidadID` | int PK IDENTITY | |
+| `LeadID` | int NULL FK → `Crm.Leads` | |
+| `ClienteID` | int NULL FK → `Crm.Clientes` | |
+| `Nombre` | nvarchar(150) NOT NULL | |
+| `ValorEstimado` | decimal(18,2) NOT NULL DEFAULT 0 | |
+| `Probabilidad` | int NOT NULL DEFAULT 50 | 0 a 100 |
+| `Etapa` | nvarchar(20) NOT NULL DEFAULT 'PROSPECCION' | PROSPECCION / CALIFICACION / PROPUESTA / NEGOCIACION / GANADA / PERDIDA |
+| `FechaCierreEsperada` | date NULL | |
+| `ResponsableID` | int NULL FK → `Rrhh.Empleados` | |
+| `Notas` | nvarchar(1000) NULL | |
+| `FechaCreacion` | datetime2 | |
+| `FechaCierre` | datetime2 NULL | Se rellena solo la primera vez que pasa a GANADA/PERDIDA |
+
+`CHECK CK_Oportunidades_OrigenRequerido (LeadID IS NOT NULL OR ClienteID IS NOT NULL)`.
+
+#### `Cotizaciones` + `CotizacionLineas` (agosto 2026, CRM v3)
+Propuesta formal con líneas artículo+cantidad+precio, mismo patrón que `Facturacion.Facturas`/`FacturaLineas`.
+
+| Columna (`Cotizaciones`) | Tipo | Restricciones |
+|---|---|---|
+| `CotizacionID` | int PK IDENTITY | |
+| `ClienteID` | int NOT NULL FK → `Crm.Clientes` | |
+| `OportunidadID` | int NULL FK → `Crm.Oportunidades` | |
+| `Fecha` | date NOT NULL | |
+| `ValidoHasta` | date NULL | |
+| `Estado` | nvarchar(20) NOT NULL DEFAULT 'BORRADOR' | BORRADOR / ENVIADA / ACEPTADA / RECHAZADA / VENCIDA |
+| `Notas` | nvarchar(500) NULL | |
+| `FacturaID` | int NULL | Se llena al convertir a factura — **sin FK cross-schema** hacia `Facturacion.Facturas` a propósito, para no acoplar los dos módulos a nivel de constraint |
+| `FechaCreacion` | datetime2 | |
+| `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | |
+
+| Columna (`CotizacionLineas`) | Tipo | Restricciones |
+|---|---|---|
+| `LineaID` | int PK IDENTITY | |
+| `CotizacionID` | int NOT NULL FK → `Crm.Cotizaciones` | |
+| `ArticuloID` | int NOT NULL FK → `Catalogo.Articulos` | |
+| `Cantidad` | decimal(18,4) NOT NULL | |
+| `PrecioUnitario` | decimal(18,2) NOT NULL | |
+
+`ConvertirCotizacionAFacturaAsync` (en `CrmService`, inyecta `IFacturacionService`) crea la Factura con las mismas líneas, marca la Cotización `ACEPTADA` y guarda `FacturaID` — bloquea reconvertir si `FacturaID` ya tiene valor.
+
 ---
 
 ### `Logistica` (agosto 2026)
@@ -692,6 +738,7 @@ Abonos/pagos parciales de una factura. **El estado (Pagada/Parcial/Pendiente) NO
 | `FacturaID` | int NOT NULL FK → `Facturacion.Facturas` | |
 | `Monto` | decimal(18,2) NOT NULL | |
 | `FechaPago` | date NOT NULL | |
+| `MetodoPago` | nvarchar(20) NOT NULL DEFAULT 'EFECTIVO' | Agregada agosto 2026 — EFECTIVO / TRANSFERENCIA / TARJETA / CHEQUE / OTRO |
 | `Notas` | nvarchar(300) NULL | |
 | `FechaCreacion` | datetime2 | |
 | `UsuarioID` | int NULL FK → `Seguridad.Usuarios` | |
@@ -721,6 +768,8 @@ Directorio básico de personal. **Deliberadamente separada de `Seguridad.Usuario
 | `JefeDirectoID` | int NULL FK → `Rrhh.Empleados` (auto-FK) | Agregada agosto 2026 (RRHH v2) — usado para el Organigrama; validado contra ciclos en `RrhhService.ActualizarEmpleadoAsync` |
 
 **Nota**: la columna `Cargo` (texto libre) ya no se usa desde el código — reemplazada por `CargoID` → `Rrhh.Cargos`. Se dejó en la tabla sin eliminar (mismo criterio que `Crm.Clientes.Contacto`).
+
+**`EnAusencia` (agosto 2026) no es una columna** — `RrhhService.ListarEmpleadosAsync` la calcula al vuelo con `EXISTS` contra `Rrhh.Ausencias` (`Estado='APROBADA'` y la fecha de hoy dentro de `FechaInicio`/`FechaFin`). El estado laboral que ve el usuario (Activo/Ausente/Inactivo) combina esto con `Estado` — nunca se guarda, para que no quede desactualizado.
 
 #### `Departamentos` (agosto 2026, RRHH v2)
 

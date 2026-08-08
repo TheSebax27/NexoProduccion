@@ -1,7 +1,7 @@
 namespace NexoWeb.Common.Dtos;
 
 public record ClienteItem(
-    int ClienteID, string Nombre, string? NIT, string? Contacto,
+    int ClienteID, string ExternalId, string Nombre, string? NIT, string? Contacto,
     string? Telefono, string? Email, string? Direccion, bool Estado,
     string? FuenteContacto, string? TipoCliente,
     int? ResponsableID, string? Responsable, DateTime? ProximoContacto,
@@ -40,7 +40,9 @@ public record CrearLeadRequest(string Nombre, string? Empresa, string? Telefono,
 public record ActualizarLeadRequest(string Nombre, string? Empresa, string? Telefono, string? Email, string? FuenteContacto, string Etapa, string? Notas, int? ResponsableID);
 public record ConvertirLeadResponse(int ClienteId);
 
-public record ClienteFrioItem(int ClienteID, string Nombre, string? Responsable, DateTime? UltimaInteraccion, DateTime? ProximoContacto);
+public record ClienteFrioItem(int ClienteID, string ExternalId, string Nombre, string? Responsable, DateTime? UltimaInteraccion, DateTime? ProximoContacto);
+
+public record CambiarEtapaLeadRequest(string Etapa);
 
 // ---------- Oportunidades (embudo de ventas, agosto 2026) ----------
 public record OportunidadItem(

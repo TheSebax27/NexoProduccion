@@ -1,10 +1,11 @@
-﻿@page "/inventario/stock"
+@page "/inventario/stock"
 @attribute [Authorize]
 @implements IDisposable
 @inject NexoWeb.Common.ApiClient.INexoApiClient ApiClient
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @inject NavigationManager Navegacion
 @using NexoWeb.Common.Dtos
+@using NexoWeb.Common.Helpers
 
 <PageTitle>Consulta de Stock - NEXO</PageTitle>
 
@@ -12,7 +13,7 @@
     <MudText Typo="Typo.h5">Consulta de Stock</MudText>
     <BotonFavorito Href="/inventario/stock" Etiqueta="Consulta de Stock" />
 </div>
-<InfoAyuda Texto="Consulta cuánto stock tienes de cada artículo, en qué bodega y a qué costo. Filtra por Centro de Costo o Bodega para acotar la búsqueda. El chip 'Requiere pedido' te lleva directo a crear una Orden de Compra." />
+<InfoAyuda Texto="Consulta cuánto stock tienes de cada artículo, en qué bodega y a qué costo. Cada artículo muestra su total agrupado; haz clic en la flecha para ver el detalle por lote. El chip 'Requiere pedido' te lleva directo a crear una Orden de Compra." />
 
 <MudGrid Class="mb-4">
     <MudItem xs="12" sm="3">
@@ -52,53 +53,63 @@ else if (_error is not null)
 {
     <MudAlert Severity="Severity.Error">@_error</MudAlert>
 }
-else if (_stock.Count == 0)
+else if (_grupos.Count == 0)
 {
     <MudText>No hay stock que coincida con el filtro.</MudText>
 }
 else if (Preferencias.VistaListado == "tarjetas")
 {
     <div class="nexo-card-grid">
-        @foreach (var item in _stock)
+        @foreach (var grupo in _grupos)
         {
             <div class="nexo-item-card">
-                @if (item.TieneImagen)
+                @if (grupo.TieneImagen)
                 {
-                    <img src="@($"api/catalogo/articulos/{item.ArticuloID}/imagen?v={_cacheBust}")" alt=""
+                    <img src="@($"api/catalogo/articulos/{grupo.ArticuloID}/imagen?v={_cacheBust}")" alt=""
                          style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:0.5rem;" />
                 }
-                <div class="nexo-item-card__title">@item.Articulo</div>
-                <div class="nexo-item-card__sub">@item.SKU · @item.Bodega · @item.CentroCosto</div>
+                <div class="nexo-item-card__title">@grupo.Articulo</div>
+                <div class="nexo-item-card__sub">@grupo.SKU · @grupo.Bodega · @grupo.CentroCosto</div>
                 <div class="nexo-item-card__row">
                     <span>Cantidad</span>
-                    <strong>
-                        @item.CantidadActual.ToString("N2") @item.Unidad
-                        @if (item.Unidad == "cja" && item.UnidadesPorEmbalaje is > 0)
-                        {
-                            <span style="font-weight:400; color:var(--n-text-3);">
-                                (@((item.CantidadActual * item.UnidadesPorEmbalaje.Value).ToString("N0")) und)
-                            </span>
-                        }
-                    </strong>
+                    <strong>@FormatearCantidad(grupo.CantidadTotal, grupo.Unidad, grupo.UnidadesPorEmbalaje)</strong>
                 </div>
                 <div class="nexo-item-card__row">
                     <span>Valor total</span>
-                    <strong>@item.ValorTotal.ToString("C0")</strong>
+                    <strong>@grupo.ValorTotal.ToString("C0")</strong>
                 </div>
-                @if (item.CantidadActual <= 0)
+                @if (grupo.Lotes.Count > 1)
+                {
+                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Layers"
+                               OnClick="@(() => ToggleExpand(grupo.Key))">
+                        @(grupo.Lotes.Count) lotes @(_expandidos.Contains(grupo.Key) ? "▲" : "▼")
+                    </MudButton>
+                    @if (_expandidos.Contains(grupo.Key))
+                    {
+                        @foreach (var lote in grupo.Lotes)
+                        {
+                            <div style="border-left: 2px solid var(--n-primary); padding-left: 0.75rem; margin-top:0.5rem; font-size:0.82rem;">
+                                <div>@(lote.NumeroLote ?? "Sin lote") @(lote.FechaVencimiento.HasValue ? "· Vence: " + lote.FechaVencimiento.Value.ToString("dd/MM/yy") : "")</div>
+                                <div>@FormatearCantidad(lote.CantidadActual, lote.Unidad, lote.UnidadesPorEmbalaje) · Costo: @lote.CostoUnitarioLote.ToString("C0")</div>
+                            </div>
+                        }
+                    }
+                }
+                @if (grupo.CantidadTotal <= 0)
                 {
                     <div class="nexo-item-card__actions">
                         <MudChip T="string" Color="Color.Error" Size="Size.Small" Icon="@Icons.Material.Filled.ShoppingCart"
-                                 OnClick="@(() => IrAOrdenarAsync(item.ArticuloID))" Style="cursor:pointer;">
+                                 OnClick="@(() => IrAOrdenarAsync(grupo.ArticuloID))" Style="cursor:pointer;">
                             Sin stock
                         </MudChip>
                     </div>
                 }
-                else if (item.RequierePedido)
+                else if (grupo.RequierePedido)
                 {
                     <div class="nexo-item-card__actions">
                         <MudChip T="string" Color="Color.Warning" Size="Size.Small" Icon="@Icons.Material.Filled.ShoppingCart"
-                                 OnClick="@(() => IrAOrdenarAsync(item.ArticuloID))" Style="cursor:pointer;">
+                                 OnClick="@(() => IrAOrdenarAsync(grupo.ArticuloID))" Style="cursor:pointer;">
                             Requiere pedido
                         </MudChip>
                     </div>
@@ -109,18 +120,20 @@ else if (Preferencias.VistaListado == "tarjetas")
 }
 else
 {
-    <MudTable Items="_stock" Hover="true" Dense="true" Striped="true">
+    <MudTable Items="_grupos" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
+            <MudTh></MudTh>
             <MudTh></MudTh>
             <MudTh>SKU</MudTh>
             <MudTh>Articulo</MudTh>
             <MudTh>Bodega</MudTh>
             <MudTh>Centro de Costo</MudTh>
-            <MudTh>Cantidad</MudTh>
-            <MudTh>Valor Total</MudTh>
+            <MudTh Style="text-align:right">Cantidad</MudTh>
+            <MudTh Style="text-align:right">Valor Total</MudTh>
             <MudTh>Alerta</MudTh>
         </HeaderContent>
         <RowTemplate>
+            @* Fila resumen del grupo *@
             <MudTd DataLabel="">
                 @if (context.TieneImagen)
                 {
@@ -128,22 +141,30 @@ else
                          style="width:32px; height:32px; object-fit:cover; border-radius:6px;" />
                 }
             </MudTd>
+            <MudTd DataLabel="">
+                @if (context.Lotes.Count > 1)
+                {
+                    <MudIconButton Size="Size.Small"
+                                   Icon="@(_expandidos.Contains(context.Key) ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                                   OnClick="@(() => ToggleExpand(context.Key))" />
+                }
+            </MudTd>
             <MudTd DataLabel="SKU">@context.SKU</MudTd>
             <MudTd DataLabel="Articulo">@context.Articulo</MudTd>
             <MudTd DataLabel="Bodega">@context.Bodega</MudTd>
             <MudTd DataLabel="Centro de Costo">@context.CentroCosto</MudTd>
-            <MudTd DataLabel="Cantidad">
-                @context.CantidadActual.ToString("N2") @context.Unidad
-                @if (context.Unidad == "cja" && context.UnidadesPorEmbalaje is > 0)
+            <MudTd DataLabel="Cantidad" Style="text-align:right">
+                @FormatearCantidad(context.CantidadTotal, context.Unidad, context.UnidadesPorEmbalaje)
+                @if (context.Lotes.Count > 1)
                 {
-                    <MudText Typo="Typo.caption" Class="d-block" Style="color: var(--n-text-3, #9B9BB4);">
-                        = @((context.CantidadActual * context.UnidadesPorEmbalaje.Value).ToString("N0")) unidades
+                    <MudText Typo="Typo.caption" Class="d-block" Style="color:var(--n-text-3);">
+                        @context.Lotes.Count lotes
                     </MudText>
                 }
             </MudTd>
-            <MudTd DataLabel="Valor Total">@context.ValorTotal.ToString("C0")</MudTd>
+            <MudTd DataLabel="Valor Total" Style="text-align:right">@context.ValorTotal.ToString("C0")</MudTd>
             <MudTd DataLabel="Alerta">
-                @if (context.CantidadActual <= 0)
+                @if (context.CantidadTotal <= 0)
                 {
                     <MudChip T="string" Color="Color.Error" Size="Size.Small" Icon="@Icons.Material.Filled.ShoppingCart"
                              OnClick="@(() => IrAOrdenarAsync(context.ArticuloID))" Style="cursor:pointer;">
@@ -159,6 +180,37 @@ else
                 }
             </MudTd>
         </RowTemplate>
+        <ChildRowContent>
+            @* Filas de detalle por lote cuando el grupo está expandido *@
+            @if (_expandidos.Contains(context.Key) && context.Lotes.Count > 1)
+            {
+                @foreach (var lote in context.Lotes)
+                {
+                    <MudTr Style="background:var(--mud-palette-background-grey, rgba(0,0,0,0.03));">
+                        <MudTd colspan="2"></MudTd>
+                        <MudTd colspan="2">
+                            <div style="padding-left:1.5rem; font-size:0.82rem; color:var(--n-text-2);">
+                                <strong>@(lote.NumeroLote ?? "Sin lote")</strong>
+                                @if (lote.FechaVencimiento.HasValue)
+                                {
+                                    <text> · Vence @lote.FechaVencimiento.Value.ToString("dd/MM/yyyy")</text>
+                                }
+                            </div>
+                        </MudTd>
+                        <MudTd>@lote.Bodega</MudTd>
+                        <MudTd></MudTd>
+                        <MudTd Style="text-align:right; font-size:0.85rem;">
+                            @FormatearCantidad(lote.CantidadActual, lote.Unidad, lote.UnidadesPorEmbalaje)
+                        </MudTd>
+                        <MudTd Style="text-align:right; font-size:0.85rem;">
+                            <div>@lote.ValorTotal.ToString("C0")</div>
+                            <div style="font-size:0.78rem; color:var(--n-text-3);">@lote.CostoUnitarioLote.ToString("C0")/und</div>
+                        </MudTd>
+                        <MudTd></MudTd>
+                    </MudTr>
+                }
+            }
+        </ChildRowContent>
         <NoRecordsContent>
             <MudText>No hay stock que coincida con el filtro.</MudText>
         </NoRecordsContent>
@@ -166,14 +218,24 @@ else
 }
 
 @code {
+    private record GrupoStock(
+        (int ArticuloID, int BodegaID, int CentroCostoID) Key,
+        int ArticuloID, string SKU, string Articulo, string TipoArticulo,
+        string? Unidad, decimal? UnidadesPorEmbalaje,
+        int BodegaID, string Bodega, int CentroCostoID, string CentroCosto,
+        decimal CantidadTotal, decimal ValorTotal, bool RequierePedido, bool TieneImagen,
+        List<StockConsolidadoItem> Lotes
+    );
+
     private List<StockConsolidadoItem> _stock = new();
+    private List<GrupoStock> _grupos = new();
+    private readonly HashSet<(int, int, int)> _expandidos = new();
+
     private string _filtroSku = "";
     private int? _filtroCentroCostoId;
     private int? _filtroBodegaId;
     private bool _cargando = true;
     private string? _error;
-    // Rompe el cache del navegador para las imagenes de articulo -- ver mismo
-    // patron en Articulos.razor.
     private readonly long _cacheBust = DateTime.UtcNow.Ticks;
 
     private List<CentroCostoItem> _centrosCosto = new();
@@ -210,11 +272,16 @@ else
     private async Task OnCentroCostoCambiadoAsync(int? nuevoCentroCostoId)
     {
         _filtroCentroCostoId = nuevoCentroCostoId;
-        // Si la bodega elegida ya no pertenece al centro de costo filtrado, se limpia
         if (_filtroBodegaId is not null && _bodegasFiltradas.All(b => b.BodegaID != _filtroBodegaId))
             _filtroBodegaId = null;
 
         await CargarAsync();
+    }
+
+    private void ToggleExpand((int, int, int) key)
+    {
+        if (!_expandidos.Remove(key))
+            _expandidos.Add(key);
     }
 
     private async Task CargarAsync()
@@ -230,8 +297,25 @@ else
             if (_filtroBodegaId is not null) parametros.Add($"bodegaId={_filtroBodegaId}");
 
             var ruta = "api/inventario/stock" + (parametros.Count > 0 ? "?" + string.Join("&", parametros) : "");
-
             _stock = await ApiClient.GetAsync<List<StockConsolidadoItem>>(ruta) ?? new();
+
+            _grupos = _stock
+                .GroupBy(s => (s.ArticuloID, s.BodegaID, s.CentroCostoID))
+                .Select(g =>
+                {
+                    var first = g.First();
+                    var key = (first.ArticuloID, first.BodegaID, first.CentroCostoID);
+                    return new GrupoStock(
+                        key,
+                        first.ArticuloID, first.SKU, first.Articulo, first.TipoArticulo,
+                        first.Unidad, first.UnidadesPorEmbalaje,
+                        first.BodegaID, first.Bodega, first.CentroCostoID, first.CentroCosto,
+                        g.Sum(s => s.CantidadActual), g.Sum(s => s.ValorTotal),
+                        g.Any(s => s.RequierePedido), first.TieneImagen,
+                        g.ToList()
+                    );
+                })
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -241,5 +325,12 @@ else
         {
             _cargando = false;
         }
+    }
+
+    private static string FormatearCantidad(decimal cantidad, string? unidad, decimal? unidadesPorEmbalaje)
+    {
+        if (unidad == "cja" && unidadesPorEmbalaje is > 0)
+            return StockHelper.FormatearCajaUnidades(cantidad, unidadesPorEmbalaje.Value);
+        return $"{cantidad:N2} {unidad}".Trim();
     }
 }

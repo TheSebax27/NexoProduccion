@@ -7,7 +7,7 @@ namespace NexoApi.Features.Facturacion;
 
 [ApiController]
 [Route("api/facturacion")]
-[Authorize(Roles = "Administrador,Bodeguero")]
+[Authorize(Roles = "Administracion,Empleados")]
 public class FacturacionController : ControllerBase
 {
     private readonly IFacturacionService _service;
@@ -41,6 +41,22 @@ public class FacturacionController : ControllerBase
     [HttpGet("facturas/{id:int}/lineas")]
     public async Task<ActionResult<IEnumerable<FacturaLineaItem>>> ListarLineas(int id)
         => Ok(await _service.ListarLineasAsync(id));
+
+    [HttpGet("facturas/{id:int}/stock-lineas")]
+    public async Task<ActionResult<IEnumerable<FacturaLineaStockItem>>> ObtenerStockLineas(int id)
+        => Ok(await _service.ObtenerStockLineasAsync(id));
+
+    [HttpPost("facturas/{id:int}/descontar-stock")]
+    public async Task<ActionResult> DescontarStock(int id)
+    {
+        try
+        {
+            await _service.DescontarStockAsync(id, UsuarioActualId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
+    }
 
     [HttpGet("facturas/{id:int}/pagos")]
     public async Task<ActionResult<IEnumerable<PagoItem>>> ListarPagos(int id)

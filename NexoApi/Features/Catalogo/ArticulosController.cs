@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexoApi.Features.Catalogo.Dtos;
 
@@ -24,7 +24,7 @@ public class ArticulosController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult> Crear(CrearArticuloRequest request)
     {
         var id = await _service.CrearArticuloAsync(request);
@@ -34,7 +34,7 @@ public class ArticulosController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult> Actualizar(int id, ActualizarArticuloRequest request)
     {
         try
@@ -78,11 +78,11 @@ public class ArticulosController : ControllerBase
     }
 
     [HttpPut("{id:int}/imagen")]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult> ActualizarImagen(int id, ActualizarImagenRequest request)
     {
         if (Convert.FromBase64String(request.Base64).Length > 1_000_000)
-            return BadRequest(new { error = "La imagen es muy grande (máximo 1 MB)." });
+            return BadRequest(new { error = "La imagen es muy grande (m�ximo 1 MB)." });
 
         try
         {
@@ -96,7 +96,7 @@ public class ArticulosController : ControllerBase
     }
 
     [HttpDelete("{id:int}/imagen")]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult> EliminarImagen(int id)
     {
         try

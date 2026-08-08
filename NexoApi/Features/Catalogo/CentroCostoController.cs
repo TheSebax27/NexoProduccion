@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexoApi.Features.Catalogo.Dtos;
 
@@ -23,7 +23,7 @@ public class CentrosCostoController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> Crear(CrearCentroCostoRequest request)
     {
         var id = await _service.CrearCentroCostoAsync(request);
@@ -31,7 +31,7 @@ public class CentrosCostoController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> Actualizar(int id, ActualizarCentroCostoRequest request)
     {
         try

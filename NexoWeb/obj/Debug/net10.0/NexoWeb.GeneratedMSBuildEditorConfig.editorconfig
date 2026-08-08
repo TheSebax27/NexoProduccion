@@ -118,16 +118,16 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDcm1cQ2xpZW50ZXMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Produccion/NexoWeb/Components/Pages/Crm/ClienteWorkspace.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDcm1cQ2xpZW50ZVdvcmtzcGFjZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Produccion/NexoWeb/Components/Pages/Crm/CotizacionDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDcm1cQ290aXphY2lvbkRpYWxvZy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Pages/Crm/Cotizaciones.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDcm1cQ290aXphY2lvbmVzLnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
-
-[C:/Produccion/NexoWeb/Components/Pages/Crm/GestionClienteDialog.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDcm1cR2VzdGlvbkNsaWVudGVEaWFsb2cucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Pages/Crm/GestionCotizacionDialog.razor]
@@ -196,6 +196,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Produccion/NexoWeb/Components/Pages/NotFound.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xOb3RGb3VuZC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Operaciones/Movimientos.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xPcGVyYWNpb25lc1xNb3ZpbWllbnRvcy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Pages/Planificacion/Demanda.razor]

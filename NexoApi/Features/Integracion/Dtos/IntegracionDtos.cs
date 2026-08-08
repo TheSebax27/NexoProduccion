@@ -21,7 +21,7 @@ public record EventoPendienteItem(
 // Se mandan siempre (el agente ya tiene esa fila a la mano en TareaExportarVentas)
 // para que, si resulta que el articulo no esta mapeado en NEXO todavia, sirvan
 // de sugerencia en la pantalla de "Articulos pendientes de mapeo" -- evita que
-// el Administrador tenga que ir a Visions a averiguar nombre/costo/precio.
+// el Administracion tenga que ir a Visions a averiguar nombre/costo/precio.
 public record RegistrarEventoEntranteRequest(
     string IdEventoExterno,
     string TipoEvento,
@@ -69,7 +69,7 @@ public record ArticuloPendienteMapeoItem(
 // Si ArticuloIDExistente viene informado, solo se crea el mapeo hacia ese
 // articulo. Si viene null, se crea un articulo NUEVO de tipo Producto
 // Terminado con los datos dados (normalmente precargados con lo que sugirio
-// Visions, pero el Administrador los puede editar antes de confirmar) y
+// Visions, pero el Administracion los puede editar antes de confirmar) y
 // LUEGO se mapea. Nombre/PrecioVenta/StockMinimo solo se usan si se crea nuevo.
 public record ResolverArticuloPendienteRequest(
     int? ArticuloIDExistente,

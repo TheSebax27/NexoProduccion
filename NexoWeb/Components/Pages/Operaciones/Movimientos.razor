@@ -1,0 +1,221 @@
+@page "/operaciones/movimientos"
+@attribute [Authorize(Roles = "Administracion,Empleados")]
+@inject INexoApiClient ApiClient
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Movimientos - NEXO</PageTitle>
+
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Movimientos Operacionales</MudText>
+    <BotonFavorito Href="/operaciones/movimientos" Etiqueta="Movimientos" />
+</div>
+<InfoAyuda Texto="Registro cronológico unificado de Órdenes de Compra, Despachos y Facturas. Permite ver en una sola vista el historial completo de operaciones del período." />
+
+@* Filtros *@
+<MudPaper Class="pa-4 mb-4" Elevation="1">
+    <MudGrid>
+        <MudItem xs="12" sm="4" md="3">
+            <MudDatePicker Label="Desde" Date="_desde" DateChanged="d => { _desde = d; }" Variant="Variant.Outlined"
+                           DateFormat="dd/MM/yyyy" />
+        </MudItem>
+        <MudItem xs="12" sm="4" md="3">
+            <MudDatePicker Label="Hasta" Date="_hasta" DateChanged="d => { _hasta = d; }" Variant="Variant.Outlined"
+                           DateFormat="dd/MM/yyyy" />
+        </MudItem>
+        <MudItem xs="12" sm="4" md="3">
+            <MudSelect T="string?" Label="Tipo" @bind-Value="_tipoFiltro" Variant="Variant.Outlined" Clearable="true">
+                <MudSelectItem T="string?" Value="@("OC")">Órdenes de Compra</MudSelectItem>
+                <MudSelectItem T="string?" Value="@("DESPACHO")">Despachos</MudSelectItem>
+                <MudSelectItem T="string?" Value="@("FACTURA")">Facturas</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="12" md="3" Class="d-flex align-end">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="BuscarAsync"
+                       StartIcon="@Icons.Material.Filled.Search" FullWidth="true">
+                Buscar
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@* Resumen *@
+@if (_movimientos.Count > 0)
+{
+    <MudGrid Class="mb-4">
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-3 text-center" Elevation="1">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Total registros</MudText>
+                <MudText Typo="Typo.h6">@_movimientos.Count</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-3 text-center" Elevation="1">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Compras</MudText>
+                <MudText Typo="Typo.h6">@_movimientos.Count(m => m.Tipo == "OC")</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-3 text-center" Elevation="1">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Despachos</MudText>
+                <MudText Typo="Typo.h6">@_movimientos.Count(m => m.Tipo == "DESPACHO")</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-3 text-center" Elevation="1">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Facturas</MudText>
+                <MudText Typo="Typo.h6">@_movimientos.Count(m => m.Tipo == "FACTURA")</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@* Tabla *@
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+}
+else if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_movimientos.Count == 0)
+{
+    <MudText Color="Color.Secondary">No hay movimientos para el período seleccionado.</MudText>
+}
+else
+{
+    <MudTable Items="_movimientos" Hover="true" Dense="true" Striped="true"
+              Filter="FiltroTexto" @bind-SelectedItem="_seleccionado">
+        <ToolBarContent>
+            <MudTextField @bind-Value="_busqueda" Placeholder="Buscar referencia, contraparte..."
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          IconSize="Size.Medium" Class="mt-0" Immediate="true" />
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy='new Func<MovimientoItem,object>(x => x.Fecha)'>Fecha</MudTableSortLabel></MudTh>
+            <MudTh>Tipo</MudTh>
+            <MudTh>Referencia</MudTh>
+            <MudTh><MudTableSortLabel SortBy='new Func<MovimientoItem,object>(x => x.Contraparte)'>Contraparte</MudTableSortLabel></MudTh>
+            <MudTh Style="text-align:right"><MudTableSortLabel SortBy='new Func<MovimientoItem,object>(x => x.Monto)'>Monto</MudTableSortLabel></MudTh>
+            <MudTh>Estado</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="Tipo">
+                <MudChip T="string" Size="Size.Small" Color="@ColorTipo(context.Tipo)" Icon="@IconoTipo(context.Tipo)">
+                    @LabelTipo(context.Tipo)
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Referencia">
+                <MudText Typo="Typo.body2"><b>@context.Referencia</b></MudText>
+            </MudTd>
+            <MudTd DataLabel="Contraparte">@context.Contraparte</MudTd>
+            <MudTd DataLabel="Monto" Style="text-align:right">
+                @context.Monto.ToString("N0")
+            </MudTd>
+            <MudTd DataLabel="Estado">
+                <MudChip T="string" Size="Size.Small" Color="@ColorEstado(context)">@context.Estado</MudChip>
+            </MudTd>
+        </RowTemplate>
+        <FooterContent>
+            <MudTd colspan="4"><b>Total período</b></MudTd>
+            <MudTd Style="text-align:right"><b>@_movimientos.Sum(m => m.Monto).ToString("N0")</b></MudTd>
+            <MudTd></MudTd>
+        </FooterContent>
+    </MudTable>
+}
+
+@code {
+    private List<MovimientoItem> _movimientos = new();
+    private bool _cargando = false;
+    private string? _error;
+    private string _busqueda = "";
+    private MovimientoItem? _seleccionado;
+
+    private DateTime? _desde = DateTime.Today.AddDays(-30);
+    private DateTime? _hasta = DateTime.Today;
+    private string? _tipoFiltro;
+
+    protected override async Task OnInitializedAsync() => await BuscarAsync();
+
+    private async Task BuscarAsync()
+    {
+        _cargando = true;
+        _error = null;
+        _movimientos = new();
+        try
+        {
+            var qs = new List<string>();
+            if (_desde.HasValue)            qs.Add($"desde={_desde.Value:yyyy-MM-dd}");
+            if (_hasta.HasValue)            qs.Add($"hasta={_hasta.Value:yyyy-MM-dd}");
+            if (!string.IsNullOrEmpty(_tipoFiltro)) qs.Add($"tipo={_tipoFiltro}");
+            var url = "api/operaciones/movimientos" + (qs.Count > 0 ? "?" + string.Join("&", qs) : "");
+
+            _movimientos = await ApiClient.GetAsync<List<MovimientoItem>>(url) ?? new();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private bool FiltroTexto(MovimientoItem m) =>
+        string.IsNullOrWhiteSpace(_busqueda) ||
+        m.Referencia.Contains(_busqueda, StringComparison.OrdinalIgnoreCase) ||
+        m.Contraparte.Contains(_busqueda, StringComparison.OrdinalIgnoreCase);
+
+    private static Color ColorTipo(string tipo) => tipo switch
+    {
+        "OC"       => Color.Warning,
+        "DESPACHO" => Color.Info,
+        "FACTURA"  => Color.Success,
+        _          => Color.Default
+    };
+
+    private static string IconoTipo(string tipo) => tipo switch
+    {
+        "OC"       => Icons.Material.Filled.ShoppingCart,
+        "DESPACHO" => Icons.Material.Filled.LocalShipping,
+        "FACTURA"  => Icons.Material.Filled.Receipt,
+        _          => Icons.Material.Filled.Circle
+    };
+
+    private static string LabelTipo(string tipo) => tipo switch
+    {
+        "OC"       => "Compra",
+        "DESPACHO" => "Despacho",
+        "FACTURA"  => "Factura",
+        _          => tipo
+    };
+
+    private static Color ColorEstado(MovimientoItem m) => m.Tipo switch
+    {
+        "OC" => m.Estado switch
+        {
+            "PENDIENTE" => Color.Warning,
+            "RECIBIDA"  => Color.Success,
+            "ANULADA"   => Color.Error,
+            _           => Color.Default
+        },
+        "DESPACHO" => m.Estado switch
+        {
+            "PENDIENTE"   => Color.Warning,
+            "EN_TRANSITO" => Color.Info,
+            "ENTREGADO"   => Color.Success,
+            "ANULADO"     => Color.Error,
+            _             => Color.Default
+        },
+        "FACTURA" => m.Estado switch
+        {
+            "Pendiente" => Color.Warning,
+            "Parcial"   => Color.Info,
+            "Pagada"    => Color.Success,
+            _           => Color.Default
+        },
+        _ => Color.Default
+    };
+}

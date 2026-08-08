@@ -10,6 +10,8 @@ public interface IFacturacionService
     Task<int> CrearFacturaAsync(CrearFacturaRequest request, int usuarioId);
 
     Task<IEnumerable<FacturaLineaItem>> ListarLineasAsync(int facturaId);
+    Task<IEnumerable<FacturaLineaStockItem>> ObtenerStockLineasAsync(int facturaId);
+    Task DescontarStockAsync(int facturaId, int usuarioId);
 
     Task<IEnumerable<PagoItem>> ListarPagosAsync(int facturaId);
     Task<int> CrearPagoAsync(CrearPagoRequest request, int usuarioId);
@@ -24,9 +26,7 @@ public class FacturacionService : IFacturacionService
         _db = db;
     }
 
-    // Dapper no soporta mapear una fila directo a ValueTuple (leccion 20.30
-    // en CLAUDE.md) -- se usa este record privado.
-    private record FacturaCruda(int FacturaID, int ClienteID, string Cliente, DateTime Fecha, string? Notas, decimal Total, decimal TotalPagado);
+    private record FacturaCruda(int FacturaID, int ClienteID, string Cliente, DateTime Fecha, string? Notas, decimal Total, decimal TotalPagado, bool StockDescontado);
 
     // Estado (PAGADA/PARCIAL/PENDIENTE) y SaldoPendiente se calculan aca, en
     // C#, a partir de Total y TotalPagado -- nunca se guardan como columna
@@ -37,8 +37,9 @@ public class FacturacionService : IFacturacionService
 
         const string sql = @"
             SELECT f.FacturaID, f.ClienteID, c.Nombre AS Cliente, f.Fecha, f.Notas,
-                   ISNULL((SELECT SUM(l.Cantidad * l.PrecioUnitario) FROM Facturacion.FacturaLineas l WHERE l.FacturaID = f.FacturaID), 0) AS Total,
-                   ISNULL((SELECT SUM(p.Monto) FROM Facturacion.Pagos p WHERE p.FacturaID = f.FacturaID), 0) AS TotalPagado
+                   ISNULL(ROUND((SELECT SUM(l.Cantidad * l.PrecioUnitario) FROM Facturacion.FacturaLineas l WHERE l.FacturaID = f.FacturaID), 0), 0) AS Total,
+                   ISNULL((SELECT SUM(p.Monto) FROM Facturacion.Pagos p WHERE p.FacturaID = f.FacturaID), 0) AS TotalPagado,
+                   f.StockDescontado
             FROM Facturacion.Facturas f
             JOIN Crm.Clientes c ON c.ClienteID = f.ClienteID
             WHERE (@ClienteId IS NULL OR f.ClienteID = @ClienteId)
@@ -50,7 +51,7 @@ public class FacturacionService : IFacturacionService
         {
             var saldo = f.Total - f.TotalPagado;
             var estadoCalculado = f.TotalPagado <= 0 ? "PENDIENTE" : saldo > 0 ? "PARCIAL" : "PAGADA";
-            return new FacturaItem(f.FacturaID, f.ClienteID, f.Cliente, f.Fecha, f.Notas, f.Total, f.TotalPagado, saldo, estadoCalculado);
+            return new FacturaItem(f.FacturaID, f.ClienteID, f.Cliente, f.Fecha, f.Notas, f.Total, f.TotalPagado, saldo, estadoCalculado, f.StockDescontado);
         });
 
         if (estado is not null)
@@ -107,9 +108,11 @@ public class FacturacionService : IFacturacionService
 
         const string sql = @"
             SELECT l.LineaID, l.FacturaID, l.ArticuloID, a.SKU AS SkuArticulo, a.Nombre AS NombreArticulo,
-                   l.Cantidad, l.PrecioUnitario, (l.Cantidad * l.PrecioUnitario) AS Subtotal
+                   l.Cantidad, l.PrecioUnitario, ROUND(l.Cantidad * l.PrecioUnitario, 0) AS Subtotal,
+                   um.Abreviatura AS Unidad, a.UnidadesPorEmbalaje
             FROM Facturacion.FacturaLineas l
             JOIN Catalogo.Articulos a ON a.ArticuloID = l.ArticuloID
+            LEFT JOIN Catalogo.UnidadesMedida um ON um.UnidadID = a.UnidadID
             WHERE l.FacturaID = @FacturaId
             ORDER BY l.LineaID";
 
@@ -121,7 +124,7 @@ public class FacturacionService : IFacturacionService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT p.PagoID, p.FacturaID, p.Monto, p.FechaPago, p.Notas,
+            SELECT p.PagoID, p.FacturaID, p.Monto, p.FechaPago, p.MetodoPago, p.Notas,
                    u.Nombres + ' ' + u.Apellidos AS Usuario
             FROM Facturacion.Pagos p
             LEFT JOIN Seguridad.Usuarios u ON u.UsuarioID = p.UsuarioID
@@ -139,10 +142,50 @@ public class FacturacionService : IFacturacionService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            INSERT INTO Facturacion.Pagos (FacturaID, Monto, FechaPago, Notas, UsuarioID)
+            INSERT INTO Facturacion.Pagos (FacturaID, Monto, FechaPago, MetodoPago, Notas, UsuarioID)
             OUTPUT INSERTED.PagoID
-            VALUES (@FacturaID, @Monto, @FechaPago, @Notas, @UsuarioID)";
+            VALUES (@FacturaID, @Monto, @FechaPago, @MetodoPago, @Notas, @UsuarioID)";
 
-        return await connection.ExecuteScalarAsync<int>(sql, new { r.FacturaID, r.Monto, r.FechaPago, r.Notas, UsuarioID = usuarioId });
+        return await connection.ExecuteScalarAsync<int>(sql, new { r.FacturaID, r.Monto, r.FechaPago, r.MetodoPago, r.Notas, UsuarioID = usuarioId });
+    }
+
+    public async Task<IEnumerable<FacturaLineaStockItem>> ObtenerStockLineasAsync(int facturaId)
+    {
+        using var connection = _db.CreateConnection();
+
+        const string sql = @"
+            SELECT fl.ArticuloID, a.SKU AS SkuArticulo, a.Nombre AS NombreArticulo,
+                   fl.Cantidad AS CantidadFacturada,
+                   ISNULL((SELECT SUM(s.CantidadActual) FROM Inventario.InventarioStock s WHERE s.ArticuloID = fl.ArticuloID), 0) AS StockDisponible
+            FROM Facturacion.FacturaLineas fl
+            JOIN Catalogo.Articulos a ON a.ArticuloID = fl.ArticuloID
+            WHERE fl.FacturaID = @FacturaId
+            ORDER BY fl.LineaID";
+
+        return await connection.QueryAsync<FacturaLineaStockItem>(sql, new { FacturaId = facturaId });
+    }
+
+    public async Task DescontarStockAsync(int facturaId, int usuarioId)
+    {
+        using var connection = _db.CreateConnection();
+
+        try
+        {
+            await connection.ExecuteAsync(
+                "EXEC Facturacion.sp_DescontarStockFactura @FacturaID, @UsuarioID",
+                new { FacturaID = facturaId, UsuarioID = usuarioId });
+        }
+        catch (Exception ex) when (ex.Message.Contains("ya fue descontado"))
+        {
+            throw new InvalidOperationException("El stock de esta factura ya fue descontado anteriormente.");
+        }
+        catch (Exception ex) when (ex.Message.Contains("Stock insuficiente"))
+        {
+            throw new InvalidOperationException(ex.Message);
+        }
+        catch (Exception ex) when (ex.Message.Contains("no encontrada") || ex.Message.Contains("no tiene lineas"))
+        {
+            throw new KeyNotFoundException(ex.Message);
+        }
     }
 }

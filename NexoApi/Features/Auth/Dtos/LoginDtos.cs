@@ -26,10 +26,11 @@ public record RegistrarUsuarioRequest(
     int? CentroCostoID
 );
 
-// ---------- Gestion de usuarios (Administrador) ----------
+// ---------- Gestion de usuarios (Administracion) ----------
 public record UsuarioItem(
     int UsuarioID, string Nombres, string Apellidos, string Email, string Username,
-    int RolID, string Rol, int? CentroCostoID, string? CentroCosto, bool Estado, DateTime? UltimoAcceso
+    int RolID, string Rol, int? CentroCostoID, string? CentroCosto, bool Estado, DateTime? UltimoAcceso,
+    int? EmpleadoID
 );
 
 public record RolItem(int RolID, string Nombre);
@@ -41,7 +42,8 @@ public record CrearUsuarioRequest(
     string Username,
     string Password,
     int RolID,
-    int? CentroCostoID
+    int? CentroCostoID,
+    int? EmpleadoID = null
 );
 
 public record ActualizarUsuarioRequest(

@@ -1,5 +1,5 @@
-ï»¿@page "/inventario/bajas"
-@attribute [Authorize(Roles = "Administrador,Bodeguero")]
+@page "/inventario/bajas"
+@attribute [Authorize(Roles = "Administracion,Empleados")]
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
@@ -12,7 +12,7 @@
     <MudText Typo="Typo.h5">Registrar Baja por Merma o Dano</MudText>
     <BotonFavorito Href="/inventario/bajas" Etiqueta="Registrar Baja" />
 </div>
-<InfoAyuda Texto="Descuenta stock definitivamente por daÃ±o o pÃ©rdida (no por venta ni traspaso). Solo se listan las bodegas donde el artÃ­culo elegido tiene stock. El movimiento queda registrado en el Kardex y no se puede deshacer." />
+<InfoAyuda Texto="Descuenta stock definitivamente por daño o pérdida (no por venta ni traspaso). Solo se listan las bodegas donde el artículo elegido tiene stock. El movimiento queda registrado en el Kardex y no se puede deshacer." />
 
 <MudPaper Class="pa-6" MaxWidth="600px">
     <MudSelect T="int" Value="_articuloId" ValueChanged="OnArticuloCambiadoAsync" Label="Articulo" Class="mb-4" Required="true">
@@ -115,7 +115,7 @@
             $"Bodega: {bodegaNombre}\n" +
             $"Cantidad: {_cantidadPerdida:N2}\n" +
             $"Motivo: {motivoNombre}\n\n" +
-            "Â¿Confirmar la baja?",
+            "¿Confirmar la baja?",
             yesText: "Si, registrar baja",
             noText: "Cancelar");
 

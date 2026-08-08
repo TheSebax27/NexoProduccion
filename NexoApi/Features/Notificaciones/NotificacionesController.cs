@@ -18,5 +18,5 @@ public class NotificacionesController : ControllerBase
 
     [HttpGet("resumen")]
     public async Task<ActionResult<ResumenNotificaciones>> ObtenerResumen()
-        => Ok(await _service.ObtenerResumenAsync());
+        => Ok(await _service.ObtenerResumenAsync(User));
 }

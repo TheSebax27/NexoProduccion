@@ -1,6 +1,6 @@
-﻿@page "/produccion/recetas/crear"
+@page "/produccion/recetas/crear"
 @page "/produccion/recetas/{RecetaBaseId:int}/nueva-version"
-@attribute [Authorize(Roles = "Administrador,SupervisorPlanta")]
+@attribute [Authorize(Roles = "Administracion,Jefes")]
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject NavigationManager Navegacion

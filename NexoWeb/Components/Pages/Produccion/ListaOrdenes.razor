@@ -1,5 +1,5 @@
-ï»¿@page "/produccion/ordenes"
-@attribute [Authorize(Roles = "Administrador,SupervisorPlanta,Operario")]
+@page "/produccion/ordenes"
+@attribute [Authorize(Roles = "Administracion,Jefes,Subempleados")]
 @implements IDisposable
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -13,7 +13,7 @@
     <MudText Typo="Typo.h5">Ordenes de Produccion</MudText>
     <BotonFavorito Href="/produccion/ordenes" Etiqueta="Ordenes de Produccion" />
 </div>
-<InfoAyuda Texto="Una orden pasa por 4 etapas: Planificada (aÃºn no descuenta nada) â†’ Liberada (descuenta la materia prima de la receta) â†’ En Proceso â†’ Cerrada (registra cuÃ¡nto se produjo y su costo). Solo se puede cancelar mientras estÃ¡ Planificada." />
+<InfoAyuda Texto="Una orden pasa por 4 etapas: Planificada (aún no descuenta nada) ? Liberada (descuenta la materia prima de la receta) ? En Proceso ? Cerrada (registra cuánto se produjo y su costo). Solo se puede cancelar mientras está Planificada." />
 @if (_puedeGestionar)
 {
     <MudButton Variant="Variant.Filled" Color="Color.Success" Href="/produccion/ordenes/crear"
@@ -56,7 +56,7 @@ else if (Preferencias.VistaListado == "tarjetas")
                     <div class="nexo-item-card__title">@orden.CodigoOP</div>
                     <MudChip T="string" Color="@ColorSegunEstado(orden.Estado)" Size="Size.Small">@orden.Estado</MudChip>
                 </div>
-                <div class="nexo-item-card__sub">@orden.Producto Â· @orden.CentroCosto</div>
+                <div class="nexo-item-card__sub">@orden.Producto · @orden.CentroCosto</div>
                 <div class="nexo-item-card__row">
                     <span>Programada</span>
                     <strong>@orden.CantidadProgramada.ToString("N2")</strong>
@@ -193,7 +193,7 @@ else
         if (EstadoAuth is not null)
         {
             var estado = await EstadoAuth;
-            _puedeGestionar = estado.User.IsInRole("Administrador") || estado.User.IsInRole("SupervisorPlanta");
+            _puedeGestionar = estado.User.IsInRole("Administracion") || estado.User.IsInRole("Jefes");
             _puedeCerrar = _puedeGestionar; // cerrar tiene la misma restriccion que liberar
         }
 
@@ -230,7 +230,7 @@ else
         var confirmacion = await DialogService.ShowMessageBox(
             "Cancelar Orden de Produccion",
             "La orden quedara marcada como Cancelada. No se puede deshacer, pero no se toca inventario " +
-            "porque la orden todavia no habia sido liberada.\n\nÂ¿Confirmar la cancelacion?",
+            "porque la orden todavia no habia sido liberada.\n\n¿Confirmar la cancelacion?",
             yesText: "Si, cancelar orden",
             noText: "No");
 
@@ -247,7 +247,7 @@ else
         var confirmacion = await DialogService.ShowMessageBox(
             "Confirmar Inicio de Orden",
             "Esta accion consumira la materia prima de forma PERMANENTE segun la receta y el FEFO.\n\n" +
-            "Â¿Desea iniciar la orden de produccion?",
+            "¿Desea iniciar la orden de produccion?",
             yesText: "Si, iniciar orden",
             noText: "Cancelar");
 

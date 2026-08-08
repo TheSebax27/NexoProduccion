@@ -7,7 +7,7 @@ namespace NexoApi.Features.Logistica;
 
 [ApiController]
 [Route("api/logistica")]
-[Authorize(Roles = "Administrador,Bodeguero")]
+[Authorize(Roles = "Administracion,Empleados")]
 public class LogisticaController : ControllerBase
 {
     private readonly ILogisticaService _service;

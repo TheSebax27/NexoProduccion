@@ -45,15 +45,15 @@ public class AuthController : ControllerBase
         }
     }
 
-    // ================= Gestion de usuarios (solo Administrador) =================
+    // ================= Gestion de usuarios (solo Administracion) =================
 
     [HttpGet("usuarios")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult<IEnumerable<UsuarioItem>>> ListarUsuarios()
         => Ok(await _authService.ListarUsuariosAsync());
 
     [HttpPost("usuarios")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> CrearUsuario(CrearUsuarioRequest request)
     {
         try
@@ -68,7 +68,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPut("usuarios/{id:int}")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> ActualizarUsuario(int id, ActualizarUsuarioRequest request)
     {
         try
@@ -83,7 +83,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("usuarios/{id:int}/resetear-password")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> ResetearPassword(int id, ResetearPasswordRequest request)
     {
         try
@@ -98,14 +98,14 @@ public class AuthController : ControllerBase
     }
 
     [HttpGet("roles")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult<IEnumerable<RolItem>>> ListarRoles()
         => Ok(await _authService.ListarRolesAsync());
 
     // ================= Mi perfil (cualquier usuario autenticado, sobre si mismo) =================
     // Sin restriccion de rol a proposito: solo tocan Nombres/Apellidos/Foto del
     // propio UsuarioID (del JWT), nunca RolID/CentroCostoID/Estado -- eso sigue
-    // siendo exclusivo de Administrador via /usuarios/{id}.
+    // siendo exclusivo de Administracion via /usuarios/{id}.
 
     [HttpPut("perfil")]
     [Authorize]
@@ -129,7 +129,7 @@ public class AuthController : ControllerBase
         // Limite generoso para un avatar pequeno (~1.3MB en base64 ~ 1MB real);
         // suficiente para una foto de perfil sin abrir la puerta a archivos grandes.
         if (Convert.FromBase64String(request.Base64).Length > 1_000_000)
-            return BadRequest(new { error = "La imagen es muy grande (máximo 1 MB)." });
+            return BadRequest(new { error = "La imagen es muy grande (m�ximo 1 MB)." });
 
         try
         {

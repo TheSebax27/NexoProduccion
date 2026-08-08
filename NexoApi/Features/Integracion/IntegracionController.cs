@@ -46,15 +46,15 @@ public class IntegracionController : ControllerBase
         return Ok(new { mensaje = "Evento entrante procesado." });
     }
 
-    /// <summary>Genera la API Key de un cliente nuevo. Usa JWT normal, solo Administrador -- nada que ver con el agente.</summary>
+    /// <summary>Genera la API Key de un cliente nuevo. Usa JWT normal, solo Administracion -- nada que ver con el agente.</summary>
     [HttpPost("agentes/api-key")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult<GenerarApiKeyResponse>> GenerarApiKey(GenerarApiKeyRequest request)
     {
         return Ok(await _service.GenerarApiKeyAsync(request));
     }
 
-    /// <summary>Llamado por el Agente en cada ronda: trae la configuracion que el Administrador
+    /// <summary>Llamado por el Agente en cada ronda: trae la configuracion que el Administracion
     /// dejo en NEXO (activo, prefijos de documento de venta) para aplicarla en Visions. Asi
     /// esos valores solo se editan desde la web, nunca directo por SQL contra la base de Visions.</summary>
     [HttpGet("configuracion")]
@@ -64,17 +64,17 @@ public class IntegracionController : ControllerBase
         return Ok(await _service.ObtenerConfiguracionAgenteAsync(CentroCostoDelAgente));
     }
 
-    // ---------- Mapeo de Articulos (uso del Administrador desde NEXO Web, JWT normal) ----------
+    // ---------- Mapeo de Articulos (uso del Administracion desde NEXO Web, JWT normal) ----------
 
     [HttpGet("mapeos")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult<IEnumerable<MapeoArticuloItem>>> ListarMapeos([FromQuery] int centroCostoId)
     {
         return Ok(await _service.ListarMapeosAsync(centroCostoId));
     }
 
     [HttpPost("mapeos")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> CrearMapeo(CrearMapeoArticuloRequest request)
     {
         await _service.CrearMapeoAsync(request);
@@ -82,14 +82,14 @@ public class IntegracionController : ControllerBase
     }
 
     [HttpGet("articulos-pendientes")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult<IEnumerable<ArticuloPendienteMapeoItem>>> ListarArticulosPendientes([FromQuery] int centroCostoId)
     {
         return Ok(await _service.ListarArticulosPendientesMapeoAsync(centroCostoId));
     }
 
     [HttpPost("articulos-pendientes/{id:int}/resolver")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> ResolverArticuloPendiente(int id, ResolverArticuloPendienteRequest request)
     {
         try

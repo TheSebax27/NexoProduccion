@@ -1,5 +1,5 @@
 @page "/crm/leads"
-@attribute [Authorize(Roles = "Administrador")]
+@attribute [Authorize(Roles = "Administracion")]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -60,15 +60,49 @@ else
             </MudTd>
             <MudTd DataLabel="Fecha">@context.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy")</MudTd>
             <MudTd DataLabel="Accion">
-                @if (context.Etapa != "CONVERTIDO")
+                <div class="d-flex flex-wrap" style="gap: 0.25rem;">
+                @if (context.Etapa == "NUEVO")
                 {
+                    <MudButton Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined"
+                               OnClick="@(() => CambiarEtapaAsync(context, "CONTACTADO"))">
+                        Marcar Contactado
+                    </MudButton>
+                    <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text"
+                               OnClick="@(() => CambiarEtapaAsync(context, "DESCARTADO"))">
+                        Descartar
+                    </MudButton>
                     <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">Editar</MudButton>
-                    @if (context.Etapa == "CALIFICADO")
-                    {
-                        <MudButton Size="Size.Small" Color="Color.Success" OnClick="@(() => ConvertirAsync(context))">
-                            Convertir a Cliente
-                        </MudButton>
-                    }
+                }
+                else if (context.Etapa == "CONTACTADO")
+                {
+                    <MudButton Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined"
+                               OnClick="@(() => CambiarEtapaAsync(context, "CALIFICADO"))">
+                        Marcar Calificado
+                    </MudButton>
+                    <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text"
+                               OnClick="@(() => CambiarEtapaAsync(context, "DESCARTADO"))">
+                        Descartar
+                    </MudButton>
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">Editar</MudButton>
+                }
+                else if (context.Etapa == "CALIFICADO")
+                {
+                    <MudButton Size="Size.Small" Color="Color.Success" OnClick="@(() => ConvertirAsync(context))">
+                        Convertir a Cliente
+                    </MudButton>
+                    <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text"
+                               OnClick="@(() => CambiarEtapaAsync(context, "DESCARTADO"))">
+                        Descartar
+                    </MudButton>
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">Editar</MudButton>
+                }
+                else if (context.Etapa == "DESCARTADO")
+                {
+                    <MudButton Size="Size.Small" Color="Color.Default" Variant="Variant.Text"
+                               OnClick="@(() => CambiarEtapaAsync(context, "NUEVO"))">
+                        Reactivar
+                    </MudButton>
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">Editar</MudButton>
                 }
                 else
                 {
@@ -76,6 +110,7 @@ else
                         Convertido @context.FechaConversion?.ToLocalTime().ToString("dd/MM/yyyy")
                     </MudText>
                 }
+                </div>
             </MudTd>
         </RowTemplate>
     </MudTable>
@@ -177,6 +212,21 @@ else
             var request = (ActualizarLeadRequest)resultado.Data!;
             await ApiClient.PutAsync<ActualizarLeadRequest, object?>($"api/crm/leads/{lead.LeadID}", request);
             Snackbar.Add("Lead actualizado correctamente.", Severity.Success);
+            await CargarLeadsAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task CambiarEtapaAsync(LeadItem lead, string nuevaEtapa)
+    {
+        try
+        {
+            await ApiClient.PatchAsync<CambiarEtapaLeadRequest, object?>(
+                $"api/crm/leads/{lead.LeadID}/etapa",
+                new CambiarEtapaLeadRequest(nuevaEtapa));
             await CargarLeadsAsync();
         }
         catch (HttpRequestException ex)

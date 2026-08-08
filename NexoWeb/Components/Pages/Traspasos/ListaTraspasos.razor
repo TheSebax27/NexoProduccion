@@ -1,5 +1,5 @@
-ï»¿@page "/inventario/traspasos"
-@attribute [Authorize(Roles = "Administrador,Bodeguero")]
+@page "/inventario/traspasos"
+@attribute [Authorize(Roles = "Administracion,Empleados")]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -12,7 +12,7 @@
     <MudText Typo="Typo.h5">Traspasos entre Bodegas</MudText>
     <BotonFavorito Href="/inventario/traspasos" Etiqueta="Traspasos" />
 </div>
-<InfoAyuda Texto="EnvÃ­a stock de una bodega a otra. El stock se descuenta de la bodega origen al enviar, y se suma en la bodega destino reciÃ©n cuando se confirma la recepciÃ³n." />
+<InfoAyuda Texto="Envía stock de una bodega a otra. El stock se descuenta de la bodega origen al enviar, y se suma en la bodega destino recién cuando se confirma la recepción." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
            StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
@@ -43,9 +43,9 @@ else if (Preferencias.VistaListado == "tarjetas")
                         @traspaso.EstadoTraspaso
                     </MudChip>
                 </div>
-                <div class="nexo-item-card__sub">@traspaso.BodegaOrigen â†’ @traspaso.BodegaDestino</div>
-                <div class="nexo-item-card__row"><span>EnvÃ­o</span><strong>@(traspaso.FechaEnvio?.ToString("dd/MM/yyyy HH:mm") ?? "-")</strong></div>
-                <div class="nexo-item-card__row"><span>RecepciÃ³n</span><strong>@(traspaso.FechaRecepcion?.ToString("dd/MM/yyyy HH:mm") ?? "-")</strong></div>
+                <div class="nexo-item-card__sub">@traspaso.BodegaOrigen ? @traspaso.BodegaDestino</div>
+                <div class="nexo-item-card__row"><span>Envío</span><strong>@(traspaso.FechaEnvio?.ToString("dd/MM/yyyy HH:mm") ?? "-")</strong></div>
+                <div class="nexo-item-card__row"><span>Recepción</span><strong>@(traspaso.FechaRecepcion?.ToString("dd/MM/yyyy HH:mm") ?? "-")</strong></div>
                 <div class="nexo-item-card__actions">
                     <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(traspaso.TraspasoID))">Ver Detalle</MudButton>
                     @if (traspaso.EstadoTraspaso == "EN_TRANSITO")

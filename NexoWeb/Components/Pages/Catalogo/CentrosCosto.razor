@@ -1,5 +1,5 @@
 ﻿@page "/catalogo/centros-costo"
-@attribute [Authorize(Roles = "Administrador")]
+@attribute [Authorize(Roles = "Administracion")]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -12,7 +12,7 @@
     <MudText Typo="Typo.h5">Centros de Costo</MudText>
     <BotonFavorito Href="/catalogo/centros-costo" Etiqueta="Centros de Costo" />
 </div>
-<InfoAyuda Texto="Un Centro de Costo representa una planta, sede u operación. Agrupa Bodegas, Centros de Trabajo y Usuarios, y sirve para separar el costo e inventario de cada operación." />
+<InfoAyuda Texto="Un Centro de Costo representa una planta, sede u operaci�n. Agrupa Bodegas, Centros de Trabajo y Usuarios, y sirve para separar el costo e inventario de cada operaci�n." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
            StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
@@ -43,8 +43,8 @@ else if (Preferencias.VistaListado == "tarjetas")
                         @(cc.Estado ? "Activo" : "Inactivo")
                     </MudChip>
                 </div>
-                <div class="nexo-item-card__sub">@cc.Codigo · @cc.TipoCentro</div>
-                <div class="nexo-item-card__row"><span>Dirección</span><strong>@cc.Direccion</strong></div>
+                <div class="nexo-item-card__sub">@cc.Codigo � @cc.TipoCentro</div>
+                <div class="nexo-item-card__row"><span>Direcci�n</span><strong>@cc.Direccion</strong></div>
                 <div class="nexo-item-card__row">
                     <span>Visions</span>
                     <MudChip T="string" Color="@(cc.TieneVisions ? Color.Info : Color.Default)" Size="Size.Small">
@@ -122,7 +122,7 @@ else
 
         try
         {
-            // soloActivos=false para que el administrador tambien vea los inactivos
+            // soloActivos=false para que el Administracion tambien vea los inactivos
             _centrosCosto = await ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=false") ?? new();
             _bodegas = await ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas") ?? new();
         }

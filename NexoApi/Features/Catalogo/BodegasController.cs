@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexoApi.Features.Catalogo.Dtos;
 
@@ -23,7 +23,7 @@ public class BodegasController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult> Crear(CrearBodegaRequest request)
     {
         var id = await _service.CrearBodegaAsync(request);
@@ -31,7 +31,7 @@ public class BodegasController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult> Actualizar(int id, ActualizarBodegaRequest request)
     {
         try
@@ -46,7 +46,7 @@ public class BodegasController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> Desactivar(int id)
     {
         try

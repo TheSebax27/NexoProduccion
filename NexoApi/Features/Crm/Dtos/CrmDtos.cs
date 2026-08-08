@@ -6,7 +6,7 @@ namespace NexoApi.Features.Crm.Dtos;
 // se mantiene por compatibilidad pero la UI nueva usa Crm.Contactos (multiples
 // contactos por cliente) en su lugar.
 public record ClienteItem(
-    int ClienteID, string Nombre, string? NIT, string? Contacto,
+    int ClienteID, string ExternalId, string Nombre, string? NIT, string? Contacto,
     string? Telefono, string? Email, string? Direccion, bool Estado,
     string? FuenteContacto, string? TipoCliente,
     int? ResponsableID, string? Responsable, DateTime? ProximoContacto,
@@ -56,7 +56,9 @@ public record ActualizarLeadRequest(string Nombre, string? Empresa, string? Tele
 public record ConvertirLeadResponse(int ClienteId);
 
 // ---------- D) Clientes fríos (BI / alertas internas) ----------
-public record ClienteFrioItem(int ClienteID, string Nombre, string? Responsable, DateTime? UltimaInteraccion, DateTime? ProximoContacto);
+public record ClienteFrioItem(int ClienteID, string ExternalId, string Nombre, string? Responsable, DateTime? UltimaInteraccion, DateTime? ProximoContacto);
+
+public record CambiarEtapaLeadRequest(string Etapa);
 
 // ---------- Oportunidades (embudo de ventas, agosto 2026) ----------
 // Origen: un Lead sin convertir aun, o un Cliente ya existente -- al menos

@@ -1,4 +1,4 @@
-﻿// Features/Inventario/InventarioController.cs
+// Features/Inventario/InventarioController.cs
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -32,7 +32,7 @@ public class InventarioController : ControllerBase
 
     /// <summary>Registra una baja por dano o merma accidental. Descuenta stock y genera KARDEX.</summary>
     [HttpPost("bajas")]
-    [Authorize(Roles = "Administrador,Bodeguero")]
+    [Authorize(Roles = "Administracion,Empleados")]
     public async Task<ActionResult<RegistrarBajaResponse>> RegistrarBaja(RegistrarBajaRequest request)
     {
         var resultado = await _service.RegistrarBajaAsync(request, UsuarioActualId);
@@ -41,7 +41,7 @@ public class InventarioController : ControllerBase
 
     /// <summary>Registra una entrada positiva de inventario (carga inicial o correccion por conteo fisico). Aumenta stock y genera KARDEX.</summary>
     [HttpPost("ajustes")]
-    [Authorize(Roles = "Administrador,Bodeguero")]
+    [Authorize(Roles = "Administracion,Empleados")]
     public async Task<ActionResult<AjustarInventarioResponse>> AjustarInventario(AjustarInventarioRequest request)
     {
         var resultado = await _service.AjustarInventarioAsync(request, UsuarioActualId);

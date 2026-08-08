@@ -32,13 +32,13 @@ public class LogisticaService : ILogisticaService
             SELECT d.DespachoID, 'GUIA-' + RIGHT('000000' + CAST(d.DespachoID AS VARCHAR(6)), 6) AS NumeroGuia,
                    d.ClienteID, c.Nombre AS Cliente, d.CentroCostoID, cc.Nombre AS CentroCosto, b.Nombre AS BodegaOrigen,
                    d.FechaDespacho, d.Estado, d.FechaEntrega, d.Direccion, d.Observaciones,
-                   d.MotivoAnulacion, d.FechaAnulacion,
                    ISNULL((
-                       SELECT SUM(dd.Cantidad * a.PrecioVenta)
+                       SELECT SUM(dd.Cantidad * ISNULL(dd.ValorUnitario, a.PrecioVenta))
                        FROM Logistica.DespachoDetalle dd
                        JOIN Catalogo.Articulos a ON a.ArticuloID = dd.ArticuloID
                        WHERE dd.DespachoID = d.DespachoID
-                   ), 0) AS ValorTotal
+                   ), 0) AS ValorTotal,
+                   d.MotivoAnulacion, d.FechaAnulacion, d.DescuentaStock
             FROM Logistica.Despachos d
             JOIN Crm.Clientes c ON c.ClienteID = d.ClienteID
             JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = d.CentroCostoID
@@ -55,7 +55,7 @@ public class LogisticaService : ILogisticaService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT dd.ArticuloID, a.SKU AS SkuArticulo, a.Nombre AS NombreArticulo, dd.Cantidad
+            SELECT dd.ArticuloID, a.SKU AS SkuArticulo, a.Nombre AS NombreArticulo, dd.Cantidad, dd.ValorUnitario
             FROM Logistica.DespachoDetalle dd
             JOIN Catalogo.Articulos a ON a.ArticuloID = dd.ArticuloID
             WHERE dd.DespachoID = @DespachoId";
@@ -77,6 +77,7 @@ public class LogisticaService : ILogisticaService
         parametros.Add("Direccion", r.Direccion);
         parametros.Add("Observaciones", r.Observaciones);
         parametros.Add("LineasJson", lineasJson);
+        parametros.Add("DescuentaStock", r.DescuentaStock);
 
         return await connection.QuerySingleAsync<int>(
             "Logistica.sp_CrearDespacho", parametros, commandType: CommandType.StoredProcedure);

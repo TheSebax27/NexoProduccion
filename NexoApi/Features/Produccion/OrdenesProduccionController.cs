@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexoApi.Features.Produccion.Dtos;
@@ -36,7 +36,7 @@ public class OrdenesProduccionController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult> Crear(CrearOrdenProduccionRequest request)
     {
         var id = await _service.CrearAsync(request, UsuarioActualId);
@@ -45,7 +45,7 @@ public class OrdenesProduccionController : ControllerBase
 
     /// <summary>Detalle con IDs crudos (no nombres), para precargar el formulario de edicion.</summary>
     [HttpGet("{id:int}/editar")]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult<OrdenProduccionDetalleEdicion>> ObtenerParaEdicion(int id)
     {
         var detalle = await _service.ObtenerParaEdicionAsync(id);
@@ -54,7 +54,7 @@ public class OrdenesProduccionController : ControllerBase
 
     /// <summary>Solo permitido mientras la orden esta en estado Planificada (aun no se descuenta stock).</summary>
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult> Actualizar(int id, ActualizarOrdenProduccionRequest request)
     {
         await _service.ActualizarAsync(id, request);
@@ -63,7 +63,7 @@ public class OrdenesProduccionController : ControllerBase
 
     /// <summary>Solo permitido mientras la orden esta en estado Planificada. No se borra fisicamente, queda como Cancelada.</summary>
     [HttpPost("{id:int}/cancelar")]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult> Cancelar(int id)
     {
         await _service.CancelarAsync(id);
@@ -71,7 +71,7 @@ public class OrdenesProduccionController : ControllerBase
     }
 
     [HttpPost("{id:int}/liberar")]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult> Liberar(int id)
     {
         await _service.LiberarAsync(id, UsuarioActualId);
@@ -79,7 +79,7 @@ public class OrdenesProduccionController : ControllerBase
     }
 
     [HttpPost("{id:int}/iniciar")]
-    [Authorize(Roles = "Administrador,SupervisorPlanta,Operario")]
+    [Authorize(Roles = "Administracion,Jefes,Subempleados")]
     public async Task<ActionResult> Iniciar(int id)
     {
         await _service.IniciarAsync(id, UsuarioActualId);
@@ -87,7 +87,7 @@ public class OrdenesProduccionController : ControllerBase
     }
 
     [HttpPatch("consumo/{consumoId:long}")]
-    [Authorize(Roles = "Administrador,SupervisorPlanta,Operario")]
+    [Authorize(Roles = "Administracion,Jefes,Subempleados")]
     public async Task<ActionResult> AjustarConsumo(long consumoId, AjustarConsumoRealRequest request)
     {
         await _service.AjustarConsumoAsync(consumoId, request, UsuarioActualId);
@@ -95,7 +95,7 @@ public class OrdenesProduccionController : ControllerBase
     }
 
     [HttpPost("{id:int}/cerrar")]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult> Cerrar(int id, CerrarOrdenProduccionRequest request)
     {
         var (costoUnitarioReal, loteId) = await _service.CerrarAsync(id, request, UsuarioActualId);

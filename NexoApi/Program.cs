@@ -17,6 +17,7 @@ using NexoApi.Features.Integracion;
 using NexoApi.Features.Inventario;
 using NexoApi.Features.Logistica;
 using NexoApi.Features.Notificaciones;
+using NexoApi.Features.Operaciones;
 using NexoApi.Features.Planificacion;
 using NexoApi.Features.Preferencias;
 using NexoApi.Features.Produccion;
@@ -97,6 +98,7 @@ builder.Services.AddScoped<INotificacionesService, NotificacionesService>();
 builder.Services.AddScoped<IBusquedaService, BusquedaService>();
 builder.Services.AddScoped<IPreferenciasService, PreferenciasService>();
 builder.Services.AddScoped<IConfiguracionService, ConfiguracionService>();
+builder.Services.AddScoped<IOperacionesService, OperacionesService>();
 
 // ----------------------------------------------------------------------------
 // AUTENTICACIÓN Y AUTORIZACIÓN (AQUÍ ESTÁ EL CAMBIO)
@@ -144,6 +146,9 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+// Despues de Authorization: para este punto ya se conoce el usuario (JWT
+// validado) y la request ya paso el chequeo de rol -- ver AuditoriaMiddleware.cs.
+app.UseMiddleware<AuditoriaMiddleware>();
 app.MapControllers();
 
 app.Run();

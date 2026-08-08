@@ -1281,6 +1281,37 @@
         }
       }
     },
+    "/api/configuracion/empresa/visions": {
+      "put": {
+        "tags": [
+          "Configuracion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarUsaVisionsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarUsaVisionsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarUsaVisionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/crm/clientes": {
       "get": {
         "tags": [
@@ -1375,6 +1406,45 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/crm/clientes/{externalId}": {
+      "get": {
+        "tags": [
+          "Crm"
+        ],
+        "parameters": [
+          {
+            "name": "externalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteItem"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteItem"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteItem"
+                }
+              }
+            }
           }
         }
       }
@@ -1912,6 +1982,48 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/ActualizarLeadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/crm/leads/{id}/etapa": {
+      "patch": {
+        "tags": [
+          "Crm"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarEtapaLeadRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarEtapaLeadRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarEtapaLeadRequest"
               }
             }
           }
@@ -3508,6 +3620,78 @@
         }
       }
     },
+    "/api/facturacion/facturas/{id}/stock-lineas": {
+      "get": {
+        "tags": [
+          "Facturacion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FacturaLineaStockItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FacturaLineaStockItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FacturaLineaStockItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/facturacion/facturas/{id}/descontar-stock": {
+      "post": {
+        "tags": [
+          "Facturacion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/facturacion/facturas/{id}/pagos": {
       "get": {
         "tags": [
@@ -4416,6 +4600,43 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/operaciones/movimientos": {
+      "get": {
+        "tags": [
+          "Operaciones"
+        ],
+        "parameters": [
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -7001,6 +7222,15 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "modoVentaCaja": {
+            "type": "string",
+            "nullable": true
+          },
+          "precioVentaUnidad": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7622,6 +7852,15 @@
         },
         "additionalProperties": false
       },
+      "ActualizarUsaVisionsRequest": {
+        "type": "object",
+        "properties": {
+          "usaVisions": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "ActualizarUsuarioRequest": {
         "type": "object",
         "properties": {
@@ -7783,6 +8022,15 @@
           },
           "tieneImagen": {
             "type": "boolean"
+          },
+          "modoVentaCaja": {
+            "type": "string",
+            "nullable": true
+          },
+          "precioVentaUnidad": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7897,6 +8145,16 @@
           },
           "estado": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CambiarEtapaLeadRequest": {
+        "type": "object",
+        "properties": {
+          "etapa": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8100,6 +8358,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "externalId": {
+            "type": "string",
+            "nullable": true
+          },
           "nombre": {
             "type": "string",
             "nullable": true
@@ -8127,6 +8389,10 @@
           "clienteID": {
             "type": "integer",
             "format": "int32"
+          },
+          "externalId": {
+            "type": "string",
+            "nullable": true
           },
           "nombre": {
             "type": "string",
@@ -8247,6 +8513,9 @@
           "logoContentType": {
             "type": "string",
             "nullable": true
+          },
+          "usaVisions": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -8518,6 +8787,15 @@
             "nullable": true
           },
           "unidadesPorEmbalaje": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "modoVentaCaja": {
+            "type": "string",
+            "nullable": true
+          },
+          "precioVentaUnidad": {
             "type": "number",
             "format": "double",
             "nullable": true
@@ -8876,6 +9154,9 @@
               "$ref": "#/components/schemas/LineaDespachoRequest"
             },
             "nullable": true
+          },
+          "descuentaStock": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -9258,6 +9539,10 @@
             "type": "string",
             "format": "date-time"
           },
+          "metodoPago": {
+            "type": "string",
+            "nullable": true
+          },
           "notas": {
             "type": "string",
             "nullable": true
@@ -9449,6 +9734,11 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "empleadoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9564,6 +9854,11 @@
           "cantidad": {
             "type": "number",
             "format": "double"
+          },
+          "valorUnitario": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9632,6 +9927,9 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "descuentaStock": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -9851,6 +10149,12 @@
           "jefeDirecto": {
             "type": "string",
             "nullable": true
+          },
+          "enAusencia": {
+            "type": "boolean"
+          },
+          "tieneUsuario": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -10012,6 +10316,9 @@
           "estado": {
             "type": "string",
             "nullable": true
+          },
+          "stockDescontado": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -10050,6 +10357,45 @@
           "subtotal": {
             "type": "number",
             "format": "double"
+          },
+          "unidad": {
+            "type": "string",
+            "nullable": true
+          },
+          "unidadesPorEmbalaje": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FacturaLineaStockItem": {
+        "type": "object",
+        "properties": {
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "skuArticulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreArticulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidadFacturada": {
+            "type": "number",
+            "format": "double"
+          },
+          "stockDisponible": {
+            "type": "number",
+            "format": "double"
+          },
+          "esInsuficiente": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "additionalProperties": false
@@ -10224,8 +10570,21 @@
             "type": "string",
             "format": "date-time"
           },
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
           "articulo": {
             "type": "string",
+            "nullable": true
+          },
+          "unidad": {
+            "type": "string",
+            "nullable": true
+          },
+          "unidadesPorEmbalaje": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           },
           "bodega": {
@@ -10245,6 +10604,10 @@
             "format": "double"
           },
           "cantidadSaldo": {
+            "type": "number",
+            "format": "double"
+          },
+          "valorMovimiento": {
             "type": "number",
             "format": "double"
           },
@@ -10344,6 +10707,11 @@
           "cantidad": {
             "type": "number",
             "format": "double"
+          },
+          "valorUnitario": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10901,6 +11269,10 @@
           "fechaPago": {
             "type": "string",
             "format": "date-time"
+          },
+          "metodoPago": {
+            "type": "string",
+            "nullable": true
           },
           "notas": {
             "type": "string",
@@ -11869,6 +12241,11 @@
           "ultimoAcceso": {
             "type": "string",
             "format": "date-time",
+            "nullable": true
+          },
+          "empleadoID": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           }
         },

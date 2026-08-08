@@ -178,10 +178,11 @@ public class CatalogoService : ICatalogoService
 
         const string sql = @"
             INSERT INTO Catalogo.Articulos
-                (SKU, Nombre, Descripcion, TipoArticuloID, UnidadID, PrecioVenta, StockMinimo, PuntoReorden, DiasVidaUtil, UnidadesPorEmbalaje)
+                (SKU, Nombre, Descripcion, TipoArticuloID, UnidadID, PrecioVenta, StockMinimo, PuntoReorden, DiasVidaUtil, UnidadesPorEmbalaje, ModoVentaCaja, PrecioVentaUnidad)
             OUTPUT INSERTED.ArticuloID
             VALUES
-                (@SKU, @Nombre, @Descripcion, @TipoArticuloID, @UnidadID, @PrecioVenta, @StockMinimo, @PuntoReorden, @DiasVidaUtil, @UnidadesPorEmbalaje)";
+                (@SKU, @Nombre, @Descripcion, @TipoArticuloID, @UnidadID, @PrecioVenta, @StockMinimo, @PuntoReorden, @DiasVidaUtil, @UnidadesPorEmbalaje,
+                 ISNULL(@ModoVentaCaja, 'AMBOS'), @PrecioVentaUnidad)";
 
         return await connection.ExecuteScalarAsync<int>(sql, r);
     }
@@ -194,7 +195,8 @@ public class CatalogoService : ICatalogoService
             SELECT a.ArticuloID, a.SKU, a.Nombre, a.Descripcion, ta.Nombre AS TipoArticulo, u.Abreviatura AS Unidad,
                    a.CostoPromedio, a.PrecioVenta, a.StockMinimo, a.PuntoReorden, a.Estado, a.DiasVidaUtil,
                    a.UnidadesPorEmbalaje,
-                   CAST(CASE WHEN a.Imagen IS NULL THEN 0 ELSE 1 END AS BIT) AS TieneImagen
+                   CAST(CASE WHEN a.Imagen IS NULL THEN 0 ELSE 1 END AS BIT) AS TieneImagen,
+                   a.ModoVentaCaja, a.PrecioVentaUnidad
             FROM Catalogo.Articulos a
             JOIN Catalogo.TiposArticulo ta ON ta.TipoArticuloID = a.TipoArticuloID
             LEFT JOIN Catalogo.UnidadesMedida u ON u.UnidadID = a.UnidadID
@@ -213,7 +215,9 @@ public class CatalogoService : ICatalogoService
             UPDATE Catalogo.Articulos
             SET Nombre = @Nombre, Descripcion = @Descripcion, PrecioVenta = @PrecioVenta,
                 StockMinimo = @StockMinimo, PuntoReorden = @PuntoReorden, DiasVidaUtil = @DiasVidaUtil, Estado = @Estado,
-                UnidadesPorEmbalaje = @UnidadesPorEmbalaje
+                UnidadesPorEmbalaje = @UnidadesPorEmbalaje,
+                ModoVentaCaja = ISNULL(@ModoVentaCaja, 'AMBOS'),
+                PrecioVentaUnidad = @PrecioVentaUnidad
             WHERE ArticuloID = @ArticuloId";
 
         var filas = await connection.ExecuteAsync(sql, new
@@ -226,7 +230,9 @@ public class CatalogoService : ICatalogoService
             r.PuntoReorden,
             r.DiasVidaUtil,
             r.Estado,
-            r.UnidadesPorEmbalaje
+            r.UnidadesPorEmbalaje,
+            r.ModoVentaCaja,
+            r.PrecioVentaUnidad
         });
 
         if (filas == 0)

@@ -1,5 +1,5 @@
-ï»¿@page "/produccion/recetas"
-@attribute [Authorize(Roles = "Administrador,SupervisorPlanta")]
+@page "/produccion/recetas"
+@attribute [Authorize(Roles = "Administracion,Jefes")]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -13,7 +13,7 @@
     <MudText Typo="Typo.h5">Recetas (BOM)</MudText>
     <BotonFavorito Href="/produccion/recetas" Etiqueta="Recetas (BOM)" />
 </div>
-<InfoAyuda Texto="Define los insumos y cantidades necesarias para producir un artÃ­culo (BOM). Cada cambio importante crea una nueva versiÃ³n, sin borrar ni afectar el historial de Ã³rdenes que usaron versiones anteriores." />
+<InfoAyuda Texto="Define los insumos y cantidades necesarias para producir un artículo (BOM). Cada cambio importante crea una nueva versión, sin borrar ni afectar el historial de órdenes que usaron versiones anteriores." />
 
 <MudGrid Class="mb-4" Justify="Justify.SpaceBetween">
     <MudItem xs="12" sm="6" md="4">
@@ -60,13 +60,13 @@ else if (Preferencias.VistaListado == "tarjetas")
                         @(receta.Estado ? "Activa" : "Reemplazada")
                     </MudChip>
                 </div>
-                <div class="nexo-item-card__sub">@receta.NombreReceta Â· v@(receta.Version)</div>
+                <div class="nexo-item-card__sub">@receta.NombreReceta · v@(receta.Version)</div>
                 <div class="nexo-item-card__row"><span>Rendimiento</span><strong>@receta.CantidadRendimientoBase.ToString("N2") @receta.UnidadRendimiento</strong></div>
                 <div class="nexo-item-card__actions">
                     <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(receta))">Ver Insumos</MudButton>
                     @if (receta.Estado)
                     {
-                        <MudButton Size="Size.Small" Color="Color.Primary" Href="@($"/produccion/recetas/{receta.RecetaID}/nueva-version")">Nueva VersiÃ³n</MudButton>
+                        <MudButton Size="Size.Small" Color="Color.Primary" Href="@($"/produccion/recetas/{receta.RecetaID}/nueva-version")">Nueva Versión</MudButton>
                         <MudButton Size="Size.Small" Color="Color.Error" OnClick="@(() => DesactivarAsync(receta))">Desactivar</MudButton>
                     }
                 </div>
@@ -183,7 +183,7 @@ else
             $"Esta receta no vuelve a estar disponible para crear ordenes de produccion. " +
             $"No se borra: las ordenes que ya la usaron siguen mostrando su historial correctamente.\n\n" +
             $"Receta: {receta.NombreReceta} (v{receta.Version})\n\n" +
-            "Â¿Confirmar?",
+            "¿Confirmar?",
             yesText: "Si, desactivar",
             noText: "Cancelar");
 

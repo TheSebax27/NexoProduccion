@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexoApi.Features.Recetas.Dtos;
 
@@ -30,7 +30,7 @@ public class RecetasController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult> Crear(CrearRecetaRequest request)
     {
         var id = await _service.CrearAsync(request);
@@ -39,7 +39,7 @@ public class RecetasController : ControllerBase
 
     /// <summary>Crea una nueva version de la receta y desactiva la anterior. La anterior nunca se borra.</summary>
     [HttpPost("{id:int}/nueva-version")]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult> CrearNuevaVersion(int id, CrearNuevaVersionRequest request)
     {
         var nuevaId = await _service.CrearNuevaVersionAsync(id, request);
@@ -48,7 +48,7 @@ public class RecetasController : ControllerBase
 
     /// <summary>Desactiva la receta (no se borra fisicamente: ordenes de produccion pasadas quedan enlazadas a ella).</summary>
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Administrador,SupervisorPlanta")]
+    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult> Desactivar(int id)
     {
         await _service.DesactivarAsync(id);

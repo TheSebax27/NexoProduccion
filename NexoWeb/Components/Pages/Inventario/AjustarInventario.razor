@@ -1,5 +1,5 @@
 @page "/inventario/ajustes"
-@attribute [Authorize(Roles = "Administrador,Bodeguero")]
+@attribute [Authorize(Roles = "Administracion,Empleados")]
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
@@ -15,7 +15,8 @@
 <InfoAyuda Texto="Usa esta pantalla para cargar el stock inicial de un artículo (por ejemplo, al arrancar el sistema) o para corregir la cantidad tras un conteo físico. El movimiento queda registrado en el Kardex como 'Ajuste de Inventario' y afecta el costo promedio del artículo." />
 
 <MudPaper Class="pa-6" MaxWidth="600px">
-    <MudSelect T="int" @bind-Value="_articuloId" Label="Articulo" Class="mb-4" Required="true">
+    <MudSelect T="int" @bind-Value="_articuloId" @bind-Value:after="OnArticuloCambiado"
+               Label="Articulo" Class="mb-4" Required="true">
         @foreach (var articulo in _articulos)
         {
             <MudSelectItem T="int" Value="@articulo.ArticuloID">@articulo.SKU - @articulo.Nombre (@articulo.TipoArticulo)</MudSelectItem>
@@ -29,14 +30,69 @@
         }
     </MudSelect>
 
-    <MudNumericField @bind-Value="_cantidad" Label="Cantidad a agregar" Min="0.01m" Format="N2" Class="mb-1" Required="true" />
-    @if (PistaEmbalaje() is string pista)
+    @* ── Sección de cantidad: adapta según el tipo de unidad del artículo ── *@
+    @if (ArticuloSeleccionado is { } art)
     {
-        <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">@pista</MudText>
+        @if (!_modoManual && art.Unidad == "cja" && art.UnidadesPorEmbalaje is > 0)
+        {
+            @* Modo caja: inputs separados cajas + unidades *@
+            <div class="d-flex align-end mb-1" style="gap: 0.75rem;">
+                <MudNumericField @bind-Value="_cajas" @bind-Value:after="RecalcularDesdeCajas"
+                                 Label="Cajas" Min="0m" Format="N0" Style="flex:1" />
+                <MudNumericField @bind-Value="_unidades" @bind-Value:after="RecalcularDesdeCajas"
+                                 Label="Unidades sueltas" Min="0m"
+                                 HelperText="@($"(máx {art.UnidadesPorEmbalaje - 1:N0} por caja)")"
+                                 Max="@(art.UnidadesPorEmbalaje!.Value - 1)"
+                                 Format="N0" Style="flex:1" />
+            </div>
+            <div class="d-flex align-center justify-space-between mb-3">
+                <MudText Typo="Typo.caption" Style="color:var(--n-text-3);">
+                    Total: @(_cantidad.ToString("N5")) cajas = @((_cantidad * art.UnidadesPorEmbalaje.Value).ToString("N0")) unidades
+                </MudText>
+                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                           OnClick="@(() => { _modoManual = true; })" Style="font-size:0.75rem;">
+                    Cambiar a otro valor manualmente
+                </MudButton>
+            </div>
+        }
+        else if (!_modoManual)
+        {
+            @* Modo normal con unidad conocida *@
+            <div class="d-flex align-end mb-1" style="gap: 0.5rem;">
+                <MudNumericField @bind-Value="_cantidad" Label="Cantidad a agregar" Min="0.001m" Format="N3"
+                                 Class="flex-1" Required="true" />
+                @if (!string.IsNullOrWhiteSpace(art.Unidad))
+                {
+                    <MudText Style="margin-bottom:0.5rem; color:var(--n-text-2); font-size:0.9rem;">@art.Unidad</MudText>
+                }
+            </div>
+            <div class="d-flex align-center justify-space-between mb-3">
+                <span></span>
+                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                           OnClick="@(() => { _modoManual = true; })" Style="font-size:0.75rem;">
+                    Cambiar a otro valor manualmente
+                </MudButton>
+            </div>
+        }
+        else
+        {
+            @* Modo manual (decimal libre) *@
+            <MudNumericField @bind-Value="_cantidad" Label="Cantidad a agregar (valor manual)" Min="0.000001m"
+                             Format="N6" Class="mb-1" Required="true"
+                             HelperText="@($"Escribe el valor decimal exacto en unidad base ({art.Unidad ?? "und"})")" />
+            <div class="d-flex align-center justify-space-between mb-3">
+                <span></span>
+                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Secondary"
+                           OnClick="VolveModoFriendly" Style="font-size:0.75rem;">
+                    Volver al modo normal
+                </MudButton>
+            </div>
+        }
     }
     else
     {
-        <div class="mb-3"></div>
+        @* Sin artículo seleccionado: campo genérico *@
+        <MudNumericField @bind-Value="_cantidad" Label="Cantidad a agregar" Min="0.01m" Format="N2" Class="mb-4" Required="true" />
     }
 
     <MudMoneyField @bind-Value="_costoUnitario" Label="Costo Unitario" Required="true"
@@ -63,6 +119,14 @@
     private string _motivo = "";
     private bool _guardando;
 
+    // Modo de entrada de cantidad
+    private bool _modoManual;
+    private decimal _cajas;
+    private decimal _unidades;
+
+    private ArticuloItem? ArticuloSeleccionado =>
+        _articuloId > 0 ? _articulos.FirstOrDefault(a => a.ArticuloID == _articuloId) : null;
+
     private bool FormularioValido =>
         _articuloId > 0 && _bodegaId > 0 && _cantidad > 0 &&
         _costoUnitario >= 0 && _motivo.Trim().Length >= 5;
@@ -78,29 +142,51 @@
         _bodegas = await tareaBodegas ?? new();
     }
 
-    // La Cantidad se captura en la unidad base del articulo. Si esa unidad
-    // es "Caja", esta pista ayuda a verificar cuantas unidades sueltas representa.
-    private string? PistaEmbalaje()
+    private void OnArticuloCambiado()
     {
-        var articulo = _articulos.FirstOrDefault(a => a.ArticuloID == _articuloId);
-        if (articulo is null || articulo.Unidad != "cja" || articulo.UnidadesPorEmbalaje is not > 0 || _cantidad <= 0)
-            return null;
+        // Resetear modo al cambiar de artículo
+        _modoManual = false;
+        _cajas = 0;
+        _unidades = 0;
+        _cantidad = 0;
+    }
 
-        var totalUnidades = _cantidad * articulo.UnidadesPorEmbalaje.Value;
-        return $"{_cantidad:N2} cajas x {articulo.UnidadesPorEmbalaje:N0} und/caja = {totalUnidades:N0} unidades";
+    private void RecalcularDesdeCajas()
+    {
+        var art = ArticuloSeleccionado;
+        if (art?.UnidadesPorEmbalaje is > 0)
+            _cantidad = _cajas + _unidades / art.UnidadesPorEmbalaje.Value;
+        else
+            _cantidad = _cajas;
+    }
+
+    private void VolveModoFriendly()
+    {
+        _modoManual = false;
+        var art = ArticuloSeleccionado;
+        if (art?.Unidad == "cja" && art.UnidadesPorEmbalaje is > 0)
+        {
+            _cajas = Math.Floor(_cantidad);
+            _unidades = Math.Round((_cantidad - _cajas) * art.UnidadesPorEmbalaje.Value, 0);
+        }
     }
 
     private async Task RegistrarAsync()
     {
-        var articuloNombre = _articulos.FirstOrDefault(a => a.ArticuloID == _articuloId)?.Nombre ?? "?";
+        var art = ArticuloSeleccionado;
+        var articuloNombre = art?.Nombre ?? "?";
         var bodegaNombre = _bodegas.FirstOrDefault(b => b.BodegaID == _bodegaId)?.Nombre ?? "?";
+
+        var resumenCantidad = (art?.Unidad == "cja" && art.UnidadesPorEmbalaje is > 0)
+            ? $"{_cantidad:N5} cajas ({_cantidad * art.UnidadesPorEmbalaje!.Value:N0} und)"
+            : $"{_cantidad:N3} {art?.Unidad ?? "und"}";
 
         var confirmacion = await DialogService.ShowMessageBox(
             "Confirmar Ajuste de Inventario",
             $"Esta accion quedara registrada en el Kardex y no se puede deshacer directamente.\n\n" +
             $"Articulo: {articuloNombre}\n" +
             $"Bodega: {bodegaNombre}\n" +
-            $"Cantidad a agregar: {_cantidad:N2}\n" +
+            $"Cantidad a agregar: {resumenCantidad}\n" +
             $"Costo unitario: {_costoUnitario:C2}\n\n" +
             "¿Confirmar el ajuste?",
             yesText: "Si, registrar ajuste",
@@ -116,11 +202,14 @@
             var request = new AjustarInventarioRequest(_articuloId, _bodegaId, _cantidad, _costoUnitario, _motivo.Trim());
             var resultado = await ApiClient.PostAsync<AjustarInventarioRequest, AjustarInventarioResponse>("api/inventario/ajustes", request);
 
-            Snackbar.Add($"Ajuste registrado correctamente. Codigo: {resultado!.CodigoAjuste}. Nuevo saldo: {resultado.NuevoSaldo:N2}", Severity.Success);
+            Snackbar.Add($"Ajuste registrado correctamente. Codigo: {resultado!.CodigoAjuste}. Nuevo saldo: {resultado.NuevoSaldo:N3}", Severity.Success);
 
             _cantidad = 0;
+            _cajas = 0;
+            _unidades = 0;
             _costoUnitario = 0;
             _motivo = "";
+            _modoManual = false;
         }
         catch (HttpRequestException ex)
         {

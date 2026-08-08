@@ -37,7 +37,7 @@ public class PlanificacionService : IPlanificacionService
 
         const string sql = @"
             SELECT d.DemandaID, d.ArticuloID, a.SKU AS SkuArticulo, a.Nombre AS NombreArticulo,
-                   d.CentroCostoID, cc.Nombre AS CentroCosto, d.Periodo, d.CantidadProyectada, d.Notas,
+                   d.CentroCostoID, cc.Nombre AS CentroCosto, d.Periodo, d.CantidadProyectada,
                    ISNULL((
                        SELECT SUM(km.Cantidad)
                        FROM Kardex.KardexMovimientos km
@@ -47,7 +47,7 @@ public class PlanificacionService : IPlanificacionService
                          AND km.CentroCostoID = d.CentroCostoID
                          AND km.Fecha >= d.Periodo
                          AND km.Fecha < DATEADD(MONTH, 1, d.Periodo)
-                   ), 0) AS CantidadReal
+                   ), 0) AS CantidadReal, d.Notas
             FROM Planificacion.DemandaProyectada d
             JOIN Catalogo.Articulos a ON a.ArticuloID = d.ArticuloID
             JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = d.CentroCostoID
@@ -92,17 +92,18 @@ public class PlanificacionService : IPlanificacionService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT m.MetaID, m.CentroCostoID, cc.Nombre AS CentroCosto, m.Periodo, m.MetaValor, m.Notas,
+            SELECT m.MetaID, m.CentroCostoID, cc.Nombre AS CentroCosto, m.Periodo, m.MetaValor,
                    ISNULL((
-                       SELECT SUM(km.Cantidad * a.PrecioVenta)
+                       SELECT SUM(ABS(km.Cantidad) * a.PrecioVenta)
                        FROM Kardex.KardexMovimientos km
                        JOIN Kardex.TiposMovimientoKardex t ON t.TipoMovID = km.TipoMovID
                        JOIN Catalogo.Articulos a ON a.ArticuloID = km.ArticuloID
-                       WHERE t.Codigo = 'SALIDA_VENTA_VISIONS'
-                         AND km.CentroCostoID = m.CentroCostoID
+                       JOIN Inventario.Bodegas b ON b.BodegaID = km.BodegaID
+                       WHERE t.Codigo IN ('SALIDA_VENTA_VISIONS', 'SALIDA_VENTA_FACTURA')
+                         AND b.CentroCostoID = m.CentroCostoID
                          AND km.Fecha >= m.Periodo
                          AND km.Fecha < DATEADD(MONTH, 1, m.Periodo)
-                   ), 0) AS VentaReal
+                   ), 0) AS VentaReal, m.Notas
             FROM Planificacion.MetasVenta m
             JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = m.CentroCostoID
             WHERE (@CentroCostoId IS NULL OR m.CentroCostoID = @CentroCostoId)
@@ -199,10 +200,11 @@ public class PlanificacionService : IPlanificacionService
                 SELECT AVG(Cumplimiento) AS CumplimientoVenta FROM (
                     SELECT CASE WHEN m.MetaValor > 0
                          THEN (ISNULL((
-                             SELECT SUM(km.Cantidad * a.PrecioVenta) FROM Kardex.KardexMovimientos km
+                             SELECT SUM(ABS(km.Cantidad) * a.PrecioVenta) FROM Kardex.KardexMovimientos km
                              JOIN Kardex.TiposMovimientoKardex t ON t.TipoMovID = km.TipoMovID
                              JOIN Catalogo.Articulos a ON a.ArticuloID = km.ArticuloID
-                             WHERE t.Codigo = 'SALIDA_VENTA_VISIONS' AND km.CentroCostoID = m.CentroCostoID
+                             JOIN Inventario.Bodegas b ON b.BodegaID = km.BodegaID
+                             WHERE t.Codigo IN ('SALIDA_VENTA_VISIONS', 'SALIDA_VENTA_FACTURA') AND b.CentroCostoID = m.CentroCostoID
                                AND km.Fecha >= m.Periodo AND km.Fecha < DATEADD(MONTH, 1, m.Periodo)
                          ), 0) / m.MetaValor * 100) END AS Cumplimiento
                     FROM Planificacion.MetasVenta m WHERE m.CentroCostoID = cc.CentroCostoID AND m.Periodo = @PeriodoActual
@@ -230,7 +232,7 @@ public class PlanificacionService : IPlanificacionService
         const string sql = @"
             DECLARE @Desde DATE = DATEADD(MONTH, -@Meses + 1, DATEFROMPARTS(YEAR(GETUTCDATE()), MONTH(GETUTCDATE()), 1));
 
-            SELECT Periodo, AVG(Cumplimiento) AS CumplimientoDemandaPromedio, 0 AS CumplimientoVentaPromedio
+            SELECT Periodo, AVG(Cumplimiento) AS CumplimientoDemandaPromedio, CAST(0 AS DECIMAL(18,4)) AS CumplimientoVentaPromedio
             FROM (
                 SELECT d.Periodo,
                        CASE WHEN d.CantidadProyectada > 0
@@ -256,10 +258,11 @@ public class PlanificacionService : IPlanificacionService
                 SELECT m.Periodo,
                        CASE WHEN m.MetaValor > 0
                            THEN (ISNULL((
-                               SELECT SUM(km.Cantidad * a.PrecioVenta) FROM Kardex.KardexMovimientos km
+                               SELECT SUM(ABS(km.Cantidad) * a.PrecioVenta) FROM Kardex.KardexMovimientos km
                                JOIN Kardex.TiposMovimientoKardex t ON t.TipoMovID = km.TipoMovID
                                JOIN Catalogo.Articulos a ON a.ArticuloID = km.ArticuloID
-                               WHERE t.Codigo = 'SALIDA_VENTA_VISIONS' AND km.CentroCostoID = m.CentroCostoID
+                               JOIN Inventario.Bodegas b ON b.BodegaID = km.BodegaID
+                               WHERE t.Codigo IN ('SALIDA_VENTA_VISIONS', 'SALIDA_VENTA_FACTURA') AND b.CentroCostoID = m.CentroCostoID
                                  AND km.Fecha >= m.Periodo AND km.Fecha < DATEADD(MONTH, 1, m.Periodo)
                            ), 0) / m.MetaValor * 100) ELSE 0 END AS Cumplimiento
                 FROM Planificacion.MetasVenta m

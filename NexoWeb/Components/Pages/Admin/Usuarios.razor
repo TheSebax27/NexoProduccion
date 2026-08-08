@@ -1,5 +1,5 @@
 @page "/admin/usuarios"
-@attribute [Authorize(Roles = "Administrador")]
+@attribute [Authorize(Roles = "Administracion")]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -12,7 +12,7 @@
     <MudText Typo="Typo.h5">Usuarios</MudText>
     <BotonFavorito Href="/admin/usuarios" Etiqueta="Usuarios" />
 </div>
-<InfoAyuda Texto="Crea usuarios del sistema y asígnales un rol (Administrador, SupervisorPlanta, Operario o Bodeguero) y un Centro de Costo. El rol determina qué pantallas puede ver y qué acciones puede hacer." />
+<InfoAyuda Texto="Crea usuarios del sistema y asígnales un rol (Administracion, Jefes, Empleados o Subempleados) y un Centro de Costo. El rol determina qué pantallas puede ver y qué acciones puede hacer." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
            StartIcon="@Icons.Material.Filled.PersonAdd" Class="mb-4">

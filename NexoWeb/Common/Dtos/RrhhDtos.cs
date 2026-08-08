@@ -5,7 +5,7 @@ public record EmpleadoItem(
     int? CargoID, string? Cargo, int? DepartamentoID, string? Departamento,
     int? CentroCostoID, string? CentroCosto, DateTime? FechaIngreso,
     string? Telefono, string? Email, bool Estado, bool TieneFoto,
-    int? JefeDirectoID, string? JefeDirecto
+    int? JefeDirectoID, string? JefeDirecto, bool EnAusencia, bool TieneUsuario
 );
 
 public record CrearEmpleadoRequest(

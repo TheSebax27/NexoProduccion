@@ -1,4 +1,4 @@
-@* Components/Shared/PerfilMenu.razor
+﻿@* Components/Shared/PerfilMenu.razor
    Mini-panel del avatar/nombre del Top Bar: cambiar nombre y foto de perfil
    (el rol NO se puede tocar aqui, eso sigue siendo exclusivo de Usuarios). *@
 @inject NexoWeb.Common.Auth.AuthStateService AuthState
@@ -54,7 +54,7 @@
             <MudTextField T="string" @bind-Value="_nombres" Label="Nombres" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-3" />
             <MudTextField T="string" @bind-Value="_apellidos" Label="Apellidos" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-2" />
             <MudTextField T="string" Value="@AuthState.Rol" Label="Rol" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-2"
-                          ReadOnly="true" Disabled="true" HelperText="Solo un Administrador puede cambiar tu rol, desde Usuarios." />
+                          ReadOnly="true" Disabled="true" HelperText="Solo un Administracion puede cambiar tu rol, desde Usuarios." />
 
             <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-3"
                        OnClick="GuardarNombreAsync"
