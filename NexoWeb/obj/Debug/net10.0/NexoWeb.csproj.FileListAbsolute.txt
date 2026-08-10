@@ -79,6 +79,7 @@ C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\iihq0jkn0u-{0}-notf2xhcfb-not
 C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\yyg49w46yb-{0}-h1s4sie4z3-h1s4sie4z3.gz
 C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\rfwk4ls4yv-{0}-63fj8s7r0e-63fj8s7r0e.gz
 C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\s074obfnsx-{0}-0j3bgjxly4-0j3bgjxly4.gz
+C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\rkatry7cmk-{0}-768oygq9dz-768oygq9dz.gz
 C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\a0erazg3lp-{0}-p17byqhy34-p17byqhy34.gz
 C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\i5e2m5sr5f-{0}-abdmv1u4y3-abdmv1u4y3.gz
 C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\1jra6etdxu-{0}-f7fxoh55ae-f7fxoh55ae.gz
@@ -97,4 +98,3 @@ C:\Produccion\NexoWeb\obj\Debug\net10.0\refint\NexoWeb.dll
 C:\Produccion\NexoWeb\obj\Debug\net10.0\NexoWeb.pdb
 C:\Produccion\NexoWeb\obj\Debug\net10.0\NexoWeb.genruntimeconfig.cache
 C:\Produccion\NexoWeb\obj\Debug\net10.0\ref\NexoWeb.dll
-C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\rkatry7cmk-{0}-s32djgew61-s32djgew61.gz

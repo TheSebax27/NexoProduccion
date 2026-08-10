@@ -107,7 +107,7 @@
         </Authorized>
     </AuthorizeView>
 
-    <AuthorizeView Roles="Administracion">
+    <AuthorizeView Roles="Administracion,Ventas">
         <Authorized>
             <MudNavGroup Title="CRM" Icon="@Icons.Material.Filled.Handshake" Expanded="false">
                 <MudNavLink Href="/crm/clientes">Clientes</MudNavLink>
@@ -115,6 +115,7 @@
                 <MudNavLink Href="/crm/oportunidades">Oportunidades</MudNavLink>
                 <MudNavLink Href="/crm/actividades">Actividades</MudNavLink>
                 <MudNavLink Href="/crm/cotizaciones">Cotizaciones</MudNavLink>
+                <MudNavLink Href="/crm/campanas" Icon="@Icons.Material.Filled.Campaign">Campañas</MudNavLink>
             </MudNavGroup>
         </Authorized>
     </AuthorizeView>

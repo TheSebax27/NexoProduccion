@@ -16,7 +16,12 @@ CultureInfo.DefaultThreadCurrentUICulture = culturaCO;
 
 // Blazor Server: los componentes .razor + la conexion en tiempo real (SignalR)
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents()
+    .AddHubOptions(o =>
+    {
+        // Permite subir imágenes base64 (~5 MB) a través del canal SignalR
+        o.MaximumReceiveMessageSize = 10 * 1024 * 1024;
+    });
 
 // MudBlazor
 builder.Services.AddMudServices();

@@ -1474,6 +1474,22 @@
   },
   {
     "ContainingType": "NexoApi.Features.Crm.CrmController",
+    "Method": "EnviarEmailCotizacion",
+    "RelativePath": "api/crm/cotizaciones/{id}/enviar-email",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Crm.CrmController",
     "Method": "ActualizarEstadoCotizacion",
     "RelativePath": "api/crm/cotizaciones/{id}/estado",
     "HttpMethod": "PUT",
@@ -2005,6 +2021,58 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Email.EmailController",
+    "Method": "ObtenerConfig",
+    "RelativePath": "api/email/config",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Email.EmailConfigItem",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Email.EmailController",
+    "Method": "GuardarConfig",
+    "RelativePath": "api/email/config",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "config",
+        "Type": "NexoApi.Features.Email.EmailConfigItem",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Email.EmailController",
+    "Method": "EnviarTest",
+    "RelativePath": "api/email/test",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "to",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "NexoApi.Features.Facturacion.FacturacionController",
@@ -2692,6 +2760,286 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "Listar",
+    "RelativePath": "api/marketing/campanas",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "Crear",
+    "RelativePath": "api/marketing/campanas",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "r",
+        "Type": "NexoApi.Features.Marketing.Dtos.GuardarCampanaRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "Obtener",
+    "RelativePath": "api/marketing/campanas/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "Actualizar",
+    "RelativePath": "api/marketing/campanas/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "r",
+        "Type": "NexoApi.Features.Marketing.Dtos.GuardarCampanaRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "Eliminar",
+    "RelativePath": "api/marketing/campanas/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "Enviar",
+    "RelativePath": "api/marketing/campanas/{id}/enviar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "EnviarPrueba",
+    "RelativePath": "api/marketing/campanas/{id}/enviar-prueba",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "r",
+        "Type": "NexoApi.Features.Marketing.Dtos.EnviarPruebaRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "ListarEnvios",
+    "RelativePath": "api/marketing/campanas/{id}/envios",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "ContarDestinatarios",
+    "RelativePath": "api/marketing/campanas/destinatarios/contar",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "tipo",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "valor",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "Preview",
+    "RelativePath": "api/marketing/campanas/preview",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "r",
+        "Type": "NexoApi.Features.Marketing.Dtos.PreviewRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "ListarImagenes",
+    "RelativePath": "api/marketing/imagenes",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "SubirImagen",
+    "RelativePath": "api/marketing/imagenes",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "r",
+        "Type": "NexoApi.Features.Marketing.Dtos.SubirImagenRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "ObtenerImagen",
+    "RelativePath": "api/marketing/imagenes/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "EliminarImagen",
+    "RelativePath": "api/marketing/imagenes/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "TrackClick",
+    "RelativePath": "api/marketing/track/click/{token}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "token",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "url",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "TrackOpen",
+    "RelativePath": "api/marketing/track/open/{token}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "token",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.MarketingController",
+    "Method": "Unsub",
+    "RelativePath": "api/marketing/unsub/{token}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "token",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "NexoApi.Features.Notificaciones.NotificacionesController",

@@ -35,7 +35,28 @@
                           RequiredError="El nombre es obligatorio" Class="mb-3" />
 
             <MudNumericField T="decimal" @bind-Value="_valorEstimado" Label="Valor Estimado ($)" Format="N0" Class="mb-3" />
-            <MudNumericField T="int" @bind-Value="_probabilidad" Label="Probabilidad de cierre (%)" Min="0" Max="100" Class="mb-3" />
+
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">Confianza en el cierre</MudText>
+            <MudStack Row Class="mb-3" Spacing="2">
+                <MudChip T="string" Color="@(_confianza == "OPTIMISTA" ? Color.Success : Color.Default)"
+                         Variant="@(_confianza == "OPTIMISTA" ? Variant.Filled : Variant.Outlined)"
+                         OnClick="@(() => _confianza = "OPTIMISTA")"
+                         Icon="@Icons.Material.Filled.TrendingUp">
+                    Optimista
+                </MudChip>
+                <MudChip T="string" Color="@(_confianza == "NEUTRO" ? Color.Warning : Color.Default)"
+                         Variant="@(_confianza == "NEUTRO" ? Variant.Filled : Variant.Outlined)"
+                         OnClick="@(() => _confianza = "NEUTRO")"
+                         Icon="@Icons.Material.Filled.TrendingFlat">
+                    Neutro
+                </MudChip>
+                <MudChip T="string" Color="@(_confianza == "BAJA" ? Color.Error : Color.Default)"
+                         Variant="@(_confianza == "BAJA" ? Variant.Filled : Variant.Outlined)"
+                         OnClick="@(() => _confianza = "BAJA")"
+                         Icon="@Icons.Material.Filled.TrendingDown">
+                    Baja confianza
+                </MudChip>
+            </MudStack>
             <MudDatePicker @bind-Date="_fechaCierreEsperada" Label="Fecha de cierre esperada" Class="mb-3" />
 
             <MudSelect T="int?" @bind-Value="_responsableId" Label="Responsable" Clearable="true" Class="mb-3">
@@ -91,7 +112,7 @@
     private int? _clienteId;
     private string _nombre = string.Empty;
     private decimal _valorEstimado;
-    private int _probabilidad = 50;
+    private string _confianza = "NEUTRO";
     private DateTime? _fechaCierreEsperada;
     private int? _responsableId;
     private string _etapa = "PROSPECCION";
@@ -103,7 +124,7 @@
         {
             _nombre = Oportunidad.Nombre;
             _valorEstimado = Oportunidad.ValorEstimado;
-            _probabilidad = Oportunidad.Probabilidad;
+            _confianza = Oportunidad.ConfianzaCierre ?? "NEUTRO";
             _fechaCierreEsperada = Oportunidad.FechaCierreEsperada;
             _responsableId = Oportunidad.ResponsableID;
             _etapa = Oportunidad.Etapa;
@@ -119,24 +140,18 @@
 
         if (EsEdicion)
         {
-            var request = new ActualizarOportunidadRequest(_nombre.Trim(), _valorEstimado, _probabilidad, _etapa, _fechaCierreEsperada, _responsableId, _notas);
+            var request = new ActualizarOportunidadRequest(_nombre.Trim(), _valorEstimado, _confianza, _etapa, _fechaCierreEsperada, _responsableId, _notas);
             MudDialog.Close(DialogResult.Ok(request));
         }
         else
         {
-            if (_origen == "LEAD" && _leadId is null)
-            {
-                return;
-            }
-            if (_origen == "CLIENTE" && _clienteId is null)
-            {
-                return;
-            }
+            if (_origen == "LEAD" && _leadId is null) return;
+            if (_origen == "CLIENTE" && _clienteId is null) return;
 
             var request = new CrearOportunidadRequest(
                 _origen == "LEAD" ? _leadId : null,
                 _origen == "CLIENTE" ? _clienteId : null,
-                _nombre.Trim(), _valorEstimado, _probabilidad, _fechaCierreEsperada, _responsableId, _notas);
+                _nombre.Trim(), _valorEstimado, _confianza, _fechaCierreEsperada, _responsableId, _notas);
             MudDialog.Close(DialogResult.Ok(request));
         }
     }

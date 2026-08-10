@@ -3,6 +3,7 @@ using System.Text.Json;
 using Dapper;
 using NexoApi.Common.Data;
 using NexoApi.Features.Crm.Dtos;
+using NexoApi.Features.Email;
 
 namespace NexoApi.Features.Crm;
 
@@ -18,8 +19,9 @@ public interface IAutomacionService
 public class AutomacionService : IAutomacionService
 {
     private readonly IDbConnectionFactory _db;
+    private readonly IEmailService _email;
 
-    public AutomacionService(IDbConnectionFactory db) => _db = db;
+    public AutomacionService(IDbConnectionFactory db, IEmailService email) { _db = db; _email = email; }
 
     // ── CRUD Reglas ───────────────────────────────────────────────────────────
 
@@ -89,12 +91,52 @@ public class AutomacionService : IAutomacionService
         int creadas = 0;
         switch (r.Evento)
         {
-            case "COTIZACION_PENDIENTE": creadas = await EvalCotizacionPendienteAsync(con, r, ignorarDedup); break;
-            case "CLIENTE_FRIO":         creadas = await EvalClienteFrioAsync(con, r, ignorarDedup); break;
-            case "OPORTUNIDAD_VENCIDA":  creadas = await EvalOportunidadVencidaAsync(con, r, ignorarDedup); break;
+            case "COTIZACION_PENDIENTE":     creadas = await EvalCotizacionPendienteAsync(con, r, ignorarDedup); break;
+            case "COTIZACION_POR_VENCER":    creadas = await EvalCotizacionPorVencerAsync(con, r, ignorarDedup); break;
+            case "CLIENTE_FRIO":             creadas = await EvalClienteFrioAsync(con, r, ignorarDedup); break;
+            case "OPORTUNIDAD_VENCIDA":      creadas = await EvalOportunidadVencidaAsync(con, r, ignorarDedup); break;
             case "OPORTUNIDAD_SIN_ACTIVIDAD": creadas = await EvalOportunidadSinActividadAsync(con, r, ignorarDedup); break;
         }
         return creadas;
+    }
+
+    private async Task<int> EvalCotizacionPorVencerAsync(IDbConnection con, ReglaRow r, bool ignorarDedup)
+    {
+        var p = Params(r);
+        var dias = Int(p, "DiasAntes", 2);
+
+        var entidades = await con.QueryAsync<(int ID, int ClienteID, string Cliente, string? Email, DateTime ValidoHasta, decimal Total)>(@"
+            SELECT c.CotizacionID AS ID, c.ClienteID, cl.Nombre AS Cliente, cl.Email,
+                   c.ValidoHasta, c.Total
+            FROM Crm.Cotizaciones c
+            JOIN Crm.Clientes cl ON cl.ClienteID = c.ClienteID
+            WHERE c.Estado NOT IN ('CONVERTIDA','RECHAZADA')
+              AND c.ValidoHasta IS NOT NULL
+              AND DATEDIFF(DAY, SYSUTCDATETIME(), c.ValidoHasta) BETWEEN 0 AND @Dias",
+            new { Dias = dias });
+
+        var empresa = await con.ExecuteScalarAsync<string>(
+            "SELECT TOP 1 NombreEmpresa FROM Organizacion.ConfiguracionEmpresa") ?? "NEXO ERP";
+
+        int cnt = 0;
+        foreach (var e in entidades)
+        {
+            if (!ignorarDedup && await YaEjecutadaHoyAsync(con, r.ReglaID, "Cotizacion", e.ID)) continue;
+
+            // Crear actividad interna
+            await CrearActividadAsync(con, r, p, "Cotizacion", e.ID, null, e.ClienteID, null);
+
+            // Enviar email al cliente si tiene email
+            if (!string.IsNullOrWhiteSpace(e.Email))
+            {
+                int diasRestantes = (int)(e.ValidoHasta.Date - DateTime.UtcNow.Date).TotalDays;
+                var html = EmailTemplates.CotizacionPorVencer(empresa, e.Cliente, e.ID, e.ValidoHasta, e.Total, diasRestantes);
+                await _email.SendAsync(new EmailMessage(e.Email, $"Recordatorio: tu cotización #{e.ID} por vencer", html, e.Cliente));
+            }
+
+            cnt++;
+        }
+        return cnt;
     }
 
     private async Task<int> EvalCotizacionPendienteAsync(IDbConnection con, ReglaRow r, bool ignorarDedup)
@@ -145,15 +187,22 @@ public class AutomacionService : IAutomacionService
     private async Task<int> EvalOportunidadVencidaAsync(IDbConnection con, ReglaRow r, bool ignorarDedup)
     {
         var p = Params(r);
-        var probMin = Int(p, "ProbabilidadMinima", 50);
+        // Filtro de confianza mínima: OPTIMISTA > NEUTRO > BAJA
+        var confianzaMin = Str(p, "ConfianzaMinima") ?? "BAJA";
+        var confianzasFiltro = confianzaMin switch
+        {
+            "OPTIMISTA" => new[] { "OPTIMISTA" },
+            "NEUTRO"    => new[] { "OPTIMISTA", "NEUTRO" },
+            _           => new[] { "OPTIMISTA", "NEUTRO", "BAJA" }
+        };
         var entidades = await con.QueryAsync<(int OportunidadID, int? ClienteID, int? ResponsableID)>(@"
             SELECT OportunidadID, ClienteID, ResponsableID
             FROM Crm.Oportunidades
             WHERE Etapa NOT IN ('GANADA','PERDIDA')
               AND FechaCierreEsperada IS NOT NULL
               AND FechaCierreEsperada < SYSUTCDATETIME()
-              AND Probabilidad >= @ProbMin",
-            new { ProbMin = probMin });
+              AND ConfianzaCierre IN @Confianzas",
+            new { Confianzas = confianzasFiltro });
 
         int cnt = 0;
         foreach (var (opId, clienteId, respId) in entidades)
@@ -231,5 +280,5 @@ public class AutomacionService : IAutomacionService
     private static int Int(JsonElement e, string key, int def)
         => e.TryGetProperty(key, out var v) && v.TryGetInt32(out var i) ? i : def;
 
-    private record ReglaRow(int ReglaID, string Nombre, string? Descripcion, string Evento, string ParametrosJSON, bool Activa);
+    private record ReglaRow(int ReglaID, string Nombre, string? Descripcion, string Evento, string ParametrosJSON, bool Activa, DateTime FechaCreacion);
 }

@@ -87,7 +87,7 @@ else
 {
     <MudTable Items="_clientesFiltrados" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
-            <MudTh>Nombre</MudTh>
+            <MudTh>Nombre / Empresa</MudTh>
             <MudTh>NIT</MudTh>
             <MudTh>Tipo</MudTh>
             <MudTh>Responsable</MudTh>
@@ -97,7 +97,15 @@ else
             <MudTh>Accion</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+            <MudTd DataLabel="Nombre">
+                <div style="line-height:1.3;">
+                    <div style="font-weight:600;">@context.Nombre</div>
+                    @if (!string.IsNullOrWhiteSpace(context.Contacto))
+                    {
+                        <div style="font-size:0.78rem; color:var(--n-text-3);">@context.Contacto</div>
+                    }
+                </div>
+            </MudTd>
             <MudTd DataLabel="NIT">@(context.NIT ?? "-")</MudTd>
             <MudTd DataLabel="Tipo">@(context.TipoCliente ?? "-")</MudTd>
             <MudTd DataLabel="Responsable">@(context.Responsable ?? "-")</MudTd>

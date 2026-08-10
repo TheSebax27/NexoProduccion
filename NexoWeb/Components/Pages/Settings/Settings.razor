@@ -151,6 +151,26 @@
     </Authorized>
 </AuthorizeView>
 
+@* Email transaccional -- solo Administracion *@
+<AuthorizeView Roles="Administracion">
+    <Authorized>
+        <MudPaper Class="pa-5 mt-4" Style="max-width: 640px;">
+            <div class="nexo-chart-header mb-3">
+                <MudIcon Icon="@Icons.Material.Outlined.Email" Size="Size.Small" Class="nexo-chart-header__icon" />
+                <div>
+                    <div class="nexo-chart-header__title">Email transaccional</div>
+                    <div class="nexo-chart-header__sub">Envío de cotizaciones, recordatorios y notificaciones a clientes vía Resend</div>
+                </div>
+            </div>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true"
+                       StartIcon="@Icons.Material.Outlined.Settings"
+                       OnClick="@(() => Navegacion.NavigateTo("/settings/email"))">
+                Configurar email
+            </MudButton>
+        </MudPaper>
+    </Authorized>
+</AuthorizeView>
+
 @* Solo Administracion -- afecta a TODOS los usuarios (nombre/logo del sidebar), no es una preferencia personal. *@
 <AuthorizeView Roles="Administracion">
     <Authorized>

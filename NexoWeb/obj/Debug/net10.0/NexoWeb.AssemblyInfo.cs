@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NexoWeb")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1343b72b53b79566f3166a3ccec55546d604c670")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d417ef17e8304486e82953779f9d064e4c54c6a2")]
 [assembly: System.Reflection.AssemblyProductAttribute("NexoWeb")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NexoWeb")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

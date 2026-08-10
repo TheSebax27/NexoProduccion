@@ -153,8 +153,12 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
@@ -163,7 +167,7 @@
               "RelativeDocumentMoniker": "Features\\Email\\EmailTemplates.cs",
               "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Email\\EmailTemplates.cs",
               "RelativeToolTip": "Features\\Email\\EmailTemplates.cs",
-              "ViewState": "AgIAAAEAAAAAAAAAAAAAAAkAAAAOAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-08-10T16:13:48.562Z",
               "EditorCaption": ""
@@ -178,8 +182,7 @@
               "RelativeToolTip": "Features\\Crm\\AutomacionController.cs",
               "ViewState": "AgIAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-10T16:09:44.035Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-10T16:09:44.035Z"
             },
             {
               "$type": "Document",
@@ -227,8 +230,7 @@
               "RelativeToolTip": "Program.cs",
               "ViewState": "AgIAAFoAAAAAAAAAAAAAAGEAAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-30T21:33:28.874Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-30T21:33:28.874Z"
             },
             {
               "$type": "Document",
@@ -240,8 +242,7 @@
               "RelativeToolTip": "Features\\Catalogo\\ClientesYCentrosTrabajoController.cs",
               "ViewState": "AgIAAB0AAAAAAAAAAAAIwBwAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-30T21:18:50.918Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-30T21:18:50.918Z"
             },
             {
               "$type": "Document",
@@ -253,8 +254,7 @@
               "RelativeToolTip": "Features\\Logistica\\LogisticaController.cs",
               "ViewState": "AgIAAAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-08T15:16:35.628Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-08T15:16:35.628Z"
             },
             {
               "$type": "Document",
@@ -267,10 +267,6 @@
               "ViewState": "AgIAACcAAAAAAAAAAAAAAEEAAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-08-04T15:14:30.792Z"
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
             },
             {
               "$type": "Document",

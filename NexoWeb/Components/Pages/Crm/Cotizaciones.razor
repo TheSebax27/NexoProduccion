@@ -70,7 +70,15 @@ else
             </MudTd>
             <MudTd DataLabel="Factura">@(context.FacturaID is not null ? $"#{context.FacturaID}" : "-")</MudTd>
             <MudTd DataLabel="Accion">
-                <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
+                <div class="d-flex" style="gap:4px;">
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
+                    @if (context.Estado is "BORRADOR" or "ENVIADA" or "PENDIENTE")
+                    {
+                        <MudIconButton Size="Size.Small" Icon="@Icons.Material.Outlined.Email"
+                                       Color="Color.Primary" Title="Enviar por email"
+                                       OnClick="@(() => EnviarEmailAsync(context.CotizacionID))" />
+                    }
+                </div>
             </MudTd>
         </RowTemplate>
         <NoRecordsContent>
@@ -187,5 +195,19 @@ else
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
         await dialogo.Result;
         await CargarCotizacionesAsync();
+    }
+
+    private async Task EnviarEmailAsync(int cotizacionId)
+    {
+        try
+        {
+            await ApiClient.PostAsync<object?, object?>($"api/crm/cotizaciones/{cotizacionId}/enviar-email", null);
+            Snackbar.Add("Email enviado correctamente al cliente.", Severity.Success);
+            await CargarCotizacionesAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
     }
 }

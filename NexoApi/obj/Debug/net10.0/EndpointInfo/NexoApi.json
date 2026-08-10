@@ -2990,6 +2990,29 @@
         }
       }
     },
+    "/api/crm/cotizaciones/{id}/enviar-email": {
+      "post": {
+        "tags": [
+          "Crm"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/dashboard/plan-vs-real": {
       "get": {
         "tags": [
@@ -3419,6 +3442,85 @@
             "schema": {
               "type": "string",
               "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/email/config": {
+      "get": {
+        "tags": [
+          "Email"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailConfigItem"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailConfigItem"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailConfigItem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Email"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailConfigItem"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailConfigItem"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailConfigItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/email/test": {
+      "post": {
+        "tags": [
+          "Email"
+        ],
+        "parameters": [
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -5093,6 +5195,436 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/campanas": {
+      "get": {
+        "tags": [
+          "Marketing"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Marketing"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarCampanaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarCampanaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarCampanaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/campanas/{id}": {
+      "get": {
+        "tags": [
+          "Marketing"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Marketing"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarCampanaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarCampanaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarCampanaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Marketing"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/campanas/destinatarios/contar": {
+      "get": {
+        "tags": [
+          "Marketing"
+        ],
+        "parameters": [
+          {
+            "name": "tipo",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "valor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/campanas/preview": {
+      "post": {
+        "tags": [
+          "Marketing"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/campanas/{id}/enviar-prueba": {
+      "post": {
+        "tags": [
+          "Marketing"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnviarPruebaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnviarPruebaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnviarPruebaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/campanas/{id}/enviar": {
+      "post": {
+        "tags": [
+          "Marketing"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/campanas/{id}/envios": {
+      "get": {
+        "tags": [
+          "Marketing"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/imagenes": {
+      "get": {
+        "tags": [
+          "Marketing"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Marketing"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubirImagenRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubirImagenRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubirImagenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/imagenes/{id}": {
+      "get": {
+        "tags": [
+          "Marketing"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Marketing"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/track/open/{token}": {
+      "get": {
+        "tags": [
+          "Marketing"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/track/click/{token}": {
+      "get": {
+        "tags": [
+          "Marketing"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "url",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/unsub/{token}": {
+      "get": {
+        "tags": [
+          "Marketing"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -8292,9 +8824,9 @@
             "type": "number",
             "format": "double"
           },
-          "probabilidad": {
-            "type": "integer",
-            "format": "int32"
+          "confianzaCierre": {
+            "type": "string",
+            "nullable": true
           },
           "etapa": {
             "type": "string",
@@ -10192,9 +10724,9 @@
             "type": "number",
             "format": "double"
           },
-          "probabilidad": {
-            "type": "integer",
-            "format": "int32"
+          "confianzaCierre": {
+            "type": "string",
+            "nullable": true
           },
           "fechaCierreEsperada": {
             "type": "string",
@@ -10831,6 +11363,31 @@
         },
         "additionalProperties": false
       },
+      "EmailConfigItem": {
+        "type": "object",
+        "properties": {
+          "proveedor": {
+            "type": "string",
+            "nullable": true
+          },
+          "apiKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "emailFrom": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreFrom": {
+            "type": "string",
+            "nullable": true
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "EmpleadoDocumentoItem": {
         "type": "object",
         "properties": {
@@ -10950,6 +11507,16 @@
           "totalEmpleados": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EnviarPruebaRequest": {
+        "type": "object",
+        "properties": {
+          "emailDestino": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11265,6 +11832,36 @@
             "format": "int32"
           },
           "apiKey": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GuardarCampanaRequest": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "asunto": {
+            "type": "string",
+            "nullable": true
+          },
+          "bloqueJSON": {
+            "type": "string",
+            "nullable": true
+          },
+          "segmentoTipo": {
+            "type": "string",
+            "nullable": true
+          },
+          "segmentoValor": {
             "type": "string",
             "nullable": true
           }
@@ -11830,9 +12427,9 @@
             "type": "number",
             "format": "double"
           },
-          "probabilidad": {
-            "type": "integer",
-            "format": "int32"
+          "confianzaCierre": {
+            "type": "string",
+            "nullable": true
           },
           "etapa": {
             "type": "string",
@@ -12170,6 +12767,20 @@
           "totalReal": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PreviewRequest": {
+        "type": "object",
+        "properties": {
+          "bloqueJSON": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreCliente": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -12880,6 +13491,24 @@
             "nullable": true
           },
           "base64": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SubirImagenRequest": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "contentType": {
+            "type": "string",
+            "nullable": true
+          },
+          "datosBase64": {
             "type": "string",
             "nullable": true
           }

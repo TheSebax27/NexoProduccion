@@ -343,4 +343,13 @@ public class CrmController : ControllerBase
             return Conflict(new { error = ex.Message });
         }
     }
+
+    [HttpPost("cotizaciones/{id:int}/enviar-email")]
+    public async Task<ActionResult> EnviarEmailCotizacion(int id)
+    {
+        var enviado = await _service.EnviarEmailCotizacionAsync(id);
+        if (!enviado)
+            return BadRequest(new { error = "El cliente no tiene email registrado o el servicio de email no está activo." });
+        return Ok(new { mensaje = "Email enviado correctamente." });
+    }
 }

@@ -53,7 +53,12 @@ else
                          @ondragend="@(() => { _draggingId = null; _sobreColumna = null; })">
                         <div class="nexo-embudo__tarjeta-titulo" @onclick="@(() => AbrirEdicionAsync(op))" style="cursor:pointer;">@op.Nombre</div>
                         <div class="nexo-embudo__tarjeta-meta">@(op.Cliente ?? op.Lead ?? "-")</div>
-                        <div class="nexo-embudo__tarjeta-meta">@op.ValorEstimado.ToString("C0") · @op.Probabilidad%</div>
+                        <div class="nexo-embudo__tarjeta-meta" style="display:flex;align-items:center;gap:6px">
+                            @op.ValorEstimado.ToString("C0")
+                            <span style="@EstiloConfianza(op.ConfianzaCierre);font-size:0.7rem;padding:1px 6px;border-radius:4px;font-weight:600">
+                                @EtiquetaConfianza(op.ConfianzaCierre)
+                            </span>
+                        </div>
                         @if (op.FechaCierreEsperada.HasValue)
                         {
                             var dias = (op.FechaCierreEsperada.Value.Date - DateTime.Today).Days;
@@ -257,7 +262,7 @@ else
     {
         try
         {
-            var request = new ActualizarOportunidadRequest(op.Nombre, op.ValorEstimado, op.Probabilidad, nuevaEtapa, op.FechaCierreEsperada, op.ResponsableID, op.Notas);
+            var request = new ActualizarOportunidadRequest(op.Nombre, op.ValorEstimado, op.ConfianzaCierre, nuevaEtapa, op.FechaCierreEsperada, op.ResponsableID, op.Notas);
             await ApiClient.PutAsync<ActualizarOportunidadRequest, object?>($"api/crm/oportunidades/{op.OportunidadID}", request);
             await CargarAsync();
         }
@@ -266,4 +271,18 @@ else
             Snackbar.Add(ex.Message, Severity.Error);
         }
     }
+
+    private static string EtiquetaConfianza(string c) => c switch
+    {
+        "OPTIMISTA" => "↑ Optimista",
+        "BAJA"      => "↓ Baja",
+        _           => "→ Neutro"
+    };
+
+    private static string EstiloConfianza(string c) => c switch
+    {
+        "OPTIMISTA" => "background:#e8f5e9;color:#2e7d32",
+        "BAJA"      => "background:#ffebee;color:#c62828",
+        _           => "background:#fff8e1;color:#f57f17"
+    };
 }

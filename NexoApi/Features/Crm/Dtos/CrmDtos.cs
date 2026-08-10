@@ -63,18 +63,19 @@ public record CambiarEtapaLeadRequest(string Etapa);
 // ---------- Oportunidades (embudo de ventas, agosto 2026) ----------
 // Origen: un Lead sin convertir aun, o un Cliente ya existente -- al menos
 // uno de los dos debe venir informado (CK_Oportunidades_OrigenRequerido en BD).
+// ConfianzaCierre: OPTIMISTA | NEUTRO | BAJA — reemplaza el numérico Probabilidad%
 public record OportunidadItem(
     int OportunidadID, int? LeadID, string? Lead, int? ClienteID, string? Cliente,
-    string Nombre, decimal ValorEstimado, int Probabilidad, string Etapa,
+    string Nombre, decimal ValorEstimado, string ConfianzaCierre, string Etapa,
     DateTime? FechaCierreEsperada, int? ResponsableID, string? Responsable, string? Notas,
     DateTime FechaCreacion, DateTime? FechaCierre
 );
 public record CrearOportunidadRequest(
-    int? LeadID, int? ClienteID, string Nombre, decimal ValorEstimado, int Probabilidad,
+    int? LeadID, int? ClienteID, string Nombre, decimal ValorEstimado, string ConfianzaCierre,
     DateTime? FechaCierreEsperada, int? ResponsableID, string? Notas
 );
 public record ActualizarOportunidadRequest(
-    string Nombre, decimal ValorEstimado, int Probabilidad, string Etapa,
+    string Nombre, decimal ValorEstimado, string ConfianzaCierre, string Etapa,
     DateTime? FechaCierreEsperada, int? ResponsableID, string? Notas
 );
 

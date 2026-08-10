@@ -1,6 +1,7 @@
 using Dapper;
 using NexoApi.Common.Data;
 using NexoApi.Features.Crm.Dtos;
+using NexoApi.Features.Email;
 using NexoApi.Features.Facturacion;
 using NexoApi.Features.Facturacion.Dtos;
 
@@ -52,6 +53,7 @@ public interface ICrmService
     Task<IEnumerable<CotizacionLineaItem>> ListarLineasCotizacionAsync(int cotizacionId);
     Task ActualizarEstadoCotizacionAsync(int cotizacionId, ActualizarEstadoCotizacionRequest request);
     Task<int> ConvertirCotizacionAFacturaAsync(int cotizacionId, int usuarioId);
+    Task<bool> EnviarEmailCotizacionAsync(int cotizacionId);
 }
 
 public class CrmService : ICrmService
@@ -59,12 +61,14 @@ public class CrmService : ICrmService
     private readonly IDbConnectionFactory _db;
     private readonly IFacturacionService _facturacion;
     private readonly IAutomacionService _automacion;
+    private readonly IEmailService _email;
 
-    public CrmService(IDbConnectionFactory db, IFacturacionService facturacion, IAutomacionService automacion)
+    public CrmService(IDbConnectionFactory db, IFacturacionService facturacion, IAutomacionService automacion, IEmailService email)
     {
         _db = db;
         _facturacion = facturacion;
         _automacion = automacion;
+        _email = email;
     }
 
     public async Task<IEnumerable<ClienteItem>> ListarClientesAsync(int? responsableId, string? tipoCliente, string? fuenteContacto, bool? soloActivos)
@@ -123,7 +127,17 @@ public class CrmService : ICrmService
             OUTPUT INSERTED.ClienteID
             VALUES (@Nombre, @NIT, @Telefono, @Email, @Direccion, @FuenteContacto, @TipoCliente, @ResponsableID)";
 
-        return await connection.ExecuteScalarAsync<int>(sql, r);
+        var id = await connection.ExecuteScalarAsync<int>(sql, r);
+
+        if (!string.IsNullOrWhiteSpace(r.Email))
+        {
+            var empresa = await connection.ExecuteScalarAsync<string>(
+                "SELECT TOP 1 NombreEmpresa FROM Organizacion.ConfiguracionEmpresa") ?? "NEXO ERP";
+            var html = EmailTemplates.Bienvenida(empresa, r.Nombre);
+            _ = _email.SendAsync(new EmailMessage(r.Email, $"Bienvenido/a a {empresa}", html, r.Nombre));
+        }
+
+        return id;
     }
 
     public async Task ActualizarClienteAsync(int clienteId, ActualizarClienteRequest r)
@@ -443,14 +457,21 @@ public class CrmService : ICrmService
             if (lead.Etapa == "CONVERTIDO")
                 throw new InvalidOperationException("Este lead ya fue convertido a cliente antes.");
 
+            // Si el lead tenía empresa: Nombre = persona, Contacto = empresa.
+            // Si no tenía empresa: Nombre = persona, Contacto = null.
+            var nombreCliente  = lead.Nombre;
+            var contactoCliente = lead.Empresa; // null cuando no hay empresa
+
             const string sqlCrearCliente = @"
-                INSERT INTO Crm.Clientes (Nombre, Telefono, Email, FuenteContacto, ResponsableID)
+                INSERT INTO Crm.Clientes (Nombre, Contacto, Telefono, Email, FuenteContacto, ResponsableID)
                 OUTPUT INSERTED.ClienteID
-                VALUES (@Nombre, @Telefono, @Email, @FuenteContacto, @ResponsableID)";
+                VALUES (@Nombre, @Contacto, @Telefono, @Email, @FuenteContacto, @ResponsableID)";
 
             var clienteId = await connection.ExecuteScalarAsync<int>(sqlCrearCliente, new
             {
-                Nombre = lead.Empresa ?? lead.Nombre, lead.Telefono, lead.Email, lead.FuenteContacto, lead.ResponsableID
+                Nombre   = nombreCliente,
+                Contacto = contactoCliente,
+                lead.Telefono, lead.Email, lead.FuenteContacto, lead.ResponsableID
             }, transaction);
 
             await connection.ExecuteAsync(
@@ -516,7 +537,7 @@ public class CrmService : ICrmService
 
         const string sql = @"
             SELECT o.OportunidadID, o.LeadID, l.Nombre AS Lead, o.ClienteID, c.Nombre AS Cliente,
-                   o.Nombre, o.ValorEstimado, o.Probabilidad, o.Etapa, o.FechaCierreEsperada,
+                   o.Nombre, o.ValorEstimado, o.ConfianzaCierre, o.Etapa, o.FechaCierreEsperada,
                    o.ResponsableID, e.Nombres + ' ' + e.Apellidos AS Responsable, o.Notas, o.FechaCreacion, o.FechaCierre
             FROM Crm.Oportunidades o
             LEFT JOIN Crm.Leads l ON l.LeadID = o.LeadID
@@ -537,9 +558,9 @@ public class CrmService : ICrmService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            INSERT INTO Crm.Oportunidades (LeadID, ClienteID, Nombre, ValorEstimado, Probabilidad, FechaCierreEsperada, ResponsableID, Notas)
+            INSERT INTO Crm.Oportunidades (LeadID, ClienteID, Nombre, ValorEstimado, ConfianzaCierre, FechaCierreEsperada, ResponsableID, Notas)
             OUTPUT INSERTED.OportunidadID
-            VALUES (@LeadID, @ClienteID, @Nombre, @ValorEstimado, @Probabilidad, @FechaCierreEsperada, @ResponsableID, @Notas)";
+            VALUES (@LeadID, @ClienteID, @Nombre, @ValorEstimado, @ConfianzaCierre, @FechaCierreEsperada, @ResponsableID, @Notas)";
 
         return await connection.ExecuteScalarAsync<int>(sql, r);
     }
@@ -560,14 +581,14 @@ public class CrmService : ICrmService
 
         const string sql = @"
             UPDATE Crm.Oportunidades
-            SET Nombre = @Nombre, ValorEstimado = @ValorEstimado, Probabilidad = @Probabilidad, Etapa = @Etapa,
+            SET Nombre = @Nombre, ValorEstimado = @ValorEstimado, ConfianzaCierre = @ConfianzaCierre, Etapa = @Etapa,
                 FechaCierreEsperada = @FechaCierreEsperada, ResponsableID = @ResponsableID, Notas = @Notas,
                 FechaCierre = CASE WHEN @Cerrada = 1 THEN ISNULL(FechaCierre, SYSDATETIME()) ELSE NULL END
             WHERE OportunidadID = @OportunidadId";
 
         var filas = await connection.ExecuteAsync(sql, new
         {
-            OportunidadId = oportunidadId, r.Nombre, r.ValorEstimado, r.Probabilidad, r.Etapa,
+            OportunidadId = oportunidadId, r.Nombre, r.ValorEstimado, r.ConfianzaCierre, r.Etapa,
             r.FechaCierreEsperada, r.ResponsableID, r.Notas, Cerrada = cerrada
         });
 
@@ -756,5 +777,37 @@ public class CrmService : ICrmService
             new { FacturaId = facturaId, CotizacionId = cotizacionId });
 
         return facturaId;
+    }
+
+    public async Task<bool> EnviarEmailCotizacionAsync(int cotizacionId)
+    {
+        using var connection = _db.CreateConnection();
+
+        var data = await connection.QueryFirstOrDefaultAsync<(int ClienteID, string Cliente, string? Email,
+            DateTime Fecha, DateTime? ValidoHasta, decimal Total, string? Notas)>(@"
+            SELECT c.ClienteID, cl.Nombre AS Cliente, cl.Email,
+                   c.Fecha, c.ValidoHasta, c.Total, c.Notas
+            FROM Crm.Cotizaciones c
+            JOIN Crm.Clientes cl ON cl.ClienteID = c.ClienteID
+            WHERE c.CotizacionID = @CotizacionId", new { CotizacionId = cotizacionId });
+
+        if (data.Email is null)
+            return false;
+
+        var empresa = await connection.ExecuteScalarAsync<string>(
+            "SELECT TOP 1 NombreEmpresa FROM Organizacion.ConfiguracionEmpresa") ?? "NEXO ERP";
+
+        var html = EmailTemplates.Cotizacion(empresa, data.Cliente, cotizacionId,
+            data.Fecha, data.ValidoHasta ?? data.Fecha.AddDays(30), data.Total, data.Notas);
+
+        var enviado = await _email.SendAsync(new EmailMessage(
+            data.Email, $"Cotización #{cotizacionId} de {empresa}", html, data.Cliente));
+
+        if (enviado)
+            await connection.ExecuteAsync(
+                "UPDATE Crm.Cotizaciones SET Estado = 'ENVIADA' WHERE CotizacionID = @CotizacionId AND Estado = 'BORRADOR'",
+                new { CotizacionId = cotizacionId });
+
+        return enviado;
     }
 }

@@ -45,18 +45,19 @@ public record ClienteFrioItem(int ClienteID, string ExternalId, string Nombre, s
 public record CambiarEtapaLeadRequest(string Etapa);
 
 // ---------- Oportunidades (embudo de ventas, agosto 2026) ----------
+// ConfianzaCierre: OPTIMISTA | NEUTRO | BAJA
 public record OportunidadItem(
     int OportunidadID, int? LeadID, string? Lead, int? ClienteID, string? Cliente,
-    string Nombre, decimal ValorEstimado, int Probabilidad, string Etapa,
+    string Nombre, decimal ValorEstimado, string ConfianzaCierre, string Etapa,
     DateTime? FechaCierreEsperada, int? ResponsableID, string? Responsable, string? Notas,
     DateTime FechaCreacion, DateTime? FechaCierre
 );
 public record CrearOportunidadRequest(
-    int? LeadID, int? ClienteID, string Nombre, decimal ValorEstimado, int Probabilidad,
+    int? LeadID, int? ClienteID, string Nombre, decimal ValorEstimado, string ConfianzaCierre,
     DateTime? FechaCierreEsperada, int? ResponsableID, string? Notas
 );
 public record ActualizarOportunidadRequest(
-    string Nombre, decimal ValorEstimado, int Probabilidad, string Etapa,
+    string Nombre, decimal ValorEstimado, string ConfianzaCierre, string Etapa,
     DateTime? FechaCierreEsperada, int? ResponsableID, string? Notas
 );
 

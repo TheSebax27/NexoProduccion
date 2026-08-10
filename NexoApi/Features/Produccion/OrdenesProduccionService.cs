@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using Dapper;
 using NexoApi.Common.Data;
+using NexoApi.Features.Email;
 using NexoApi.Features.Produccion.Dtos;
 
 namespace NexoApi.Features.Produccion;
@@ -27,10 +28,12 @@ public class OrdenesProduccionService : IOrdenesProduccionService
     private record CerrarResultado(string Resultado, decimal CostoUnitarioReal, int LoteProductoTerminadoID);
 
     private readonly IDbConnectionFactory _db;
+    private readonly IEmailService _email;
 
-    public OrdenesProduccionService(IDbConnectionFactory db)
+    public OrdenesProduccionService(IDbConnectionFactory db, IEmailService email)
     {
         _db = db;
+        _email = email;
     }
 
     public async Task<int> CrearAsync(CrearOrdenProduccionRequest r, int usuarioCreaId)
@@ -189,6 +192,29 @@ public class OrdenesProduccionService : IOrdenesProduccionService
 
         var resultado = await connection.QuerySingleAsync<CerrarResultado>(
             "Produccion.sp_CerrarOrdenProduccion", parametros, commandType: CommandType.StoredProcedure);
+
+        // Notificar al cliente si la orden tiene ClienteID y email
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var info = await connection.QueryFirstOrDefaultAsync<(string? Email, string Nombre, string? Descripcion, string Empresa)>(@"
+                    SELECT cl.Email, cl.Nombre, op.Descripcion,
+                           ISNULL((SELECT TOP 1 NombreEmpresa FROM Organizacion.ConfiguracionEmpresa), 'NEXO ERP') AS Empresa
+                    FROM Produccion.OrdenesProduccion op
+                    LEFT JOIN Crm.Clientes cl ON cl.ClienteID = op.ClienteID
+                    WHERE op.OrdenProduccionID = @ID AND cl.Email IS NOT NULL",
+                    new { ID = ordenProduccionId });
+
+                if (info.Email is not null)
+                {
+                    var html = EmailTemplates.OrdenProduccionLista(info.Empresa, info.Nombre, ordenProduccionId, info.Descripcion);
+                    await _email.SendAsync(new EmailMessage(info.Email,
+                        $"Tu orden #{ordenProduccionId} está lista", html, info.Nombre));
+                }
+            }
+            catch { /* fire-and-forget: no bloquear el cierre de la orden */ }
+        });
 
         return (resultado.CostoUnitarioReal, resultado.LoteProductoTerminadoID);
     }

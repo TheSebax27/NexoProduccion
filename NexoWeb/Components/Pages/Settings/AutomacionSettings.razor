@@ -87,6 +87,17 @@ else
                         <MudNumericField T="int" @bind-Value="vm.DiasMaxSinActividad" Label="Días máximo sin actividades" Min="1" Max="90" Dense="true" />
                     </MudItem>
                 }
+                else if (vm.Regla.Evento == "COTIZACION_POR_VENCER")
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int" @bind-Value="vm.DiasAntes" Label="Días antes del vencimiento" Min="1" Max="14" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-1">
+                            También envía un email al cliente si tiene dirección de email registrada.
+                        </MudAlert>
+                    </MudItem>
+                }
 
                 @* Acción — común a todas las reglas *@
                 <MudItem xs="12" sm="6">
@@ -169,20 +180,22 @@ else
 
     private static string IconoEvento(string e) => e switch
     {
-        "ETAPA_CAMBIADA"          => "⚡",
-        "COTIZACION_PENDIENTE"    => "📄",
-        "CLIENTE_FRIO"            => "🧊",
-        "OPORTUNIDAD_VENCIDA"     => "📅",
+        "ETAPA_CAMBIADA"            => "⚡",
+        "COTIZACION_PENDIENTE"      => "📄",
+        "COTIZACION_POR_VENCER"     => "📧",
+        "CLIENTE_FRIO"              => "🧊",
+        "OPORTUNIDAD_VENCIDA"       => "📅",
         "OPORTUNIDAD_SIN_ACTIVIDAD" => "😴",
         _ => "🔔"
     };
 
     private static string EtiquetaEvento(string e) => e switch
     {
-        "ETAPA_CAMBIADA"          => "Evento inmediato",
-        "COTIZACION_PENDIENTE"    => "Periódico · Cotizaciones",
-        "CLIENTE_FRIO"            => "Periódico · Clientes",
-        "OPORTUNIDAD_VENCIDA"     => "Periódico · Oportunidades",
+        "ETAPA_CAMBIADA"            => "Evento inmediato",
+        "COTIZACION_PENDIENTE"      => "Periódico · Cotizaciones",
+        "COTIZACION_POR_VENCER"     => "Periódico · Email al cliente",
+        "CLIENTE_FRIO"              => "Periódico · Clientes",
+        "OPORTUNIDAD_VENCIDA"       => "Periódico · Oportunidades",
         "OPORTUNIDAD_SIN_ACTIVIDAD" => "Periódico · Oportunidades",
         _ => e
     };
@@ -202,6 +215,7 @@ else
         public int    DiasSinContacto    { get; set; } = 60;
         public int    ProbabilidadMinima { get; set; } = 50;
         public int    DiasMaxSinActividad { get; set; } = 14;
+        public int    DiasAntes           { get; set; } = 2;
 
         // Acción (común)
         public string TipoActividad   { get; set; } = "TAREA";
@@ -222,6 +236,7 @@ else
                 vm.DiasSinContacto     = Int(p, "DiasSinContacto", 60);
                 vm.ProbabilidadMinima  = Int(p, "ProbabilidadMinima", 50);
                 vm.DiasMaxSinActividad = Int(p, "DiasMaxSinActividad", 14);
+                vm.DiasAntes           = Int(p, "DiasAntes", 2);
                 vm.TipoActividad       = Str(p, "TipoActividad") ?? "TAREA";
                 vm.TituloActividad     = Str(p, "TituloActividad") ?? r.Nombre;
                 vm.DiasVencimiento     = Int(p, "DiasVencimiento", 1);
@@ -245,6 +260,7 @@ else
                 case "CLIENTE_FRIO":               dict["DiasSinContacto"]     = DiasSinContacto; break;
                 case "OPORTUNIDAD_VENCIDA":        dict["ProbabilidadMinima"]  = ProbabilidadMinima; break;
                 case "OPORTUNIDAD_SIN_ACTIVIDAD":  dict["DiasMaxSinActividad"] = DiasMaxSinActividad; break;
+                case "COTIZACION_POR_VENCER":       dict["DiasAntes"]           = DiasAntes; break;
             }
             return JsonSerializer.Serialize(dict);
         }

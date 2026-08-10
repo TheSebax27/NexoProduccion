@@ -18,6 +18,7 @@ using NexoApi.Features.Integracion;
 using NexoApi.Features.Inventario;
 using NexoApi.Features.Logistica;
 using NexoApi.Features.Notificaciones;
+using NexoApi.Features.Marketing;
 using NexoApi.Features.Operaciones;
 using NexoApi.Features.Planificacion;
 using NexoApi.Features.Preferencias;
@@ -92,6 +93,8 @@ builder.Services.AddScoped<IDashboardExportService, DashboardExportService>();
 builder.Services.AddScoped<IRrhhService, RrhhService>();
 builder.Services.AddScoped<IAutomacionService, AutomacionService>();
 builder.Services.AddScoped<ICrmService, CrmService>();
+builder.Services.AddScoped<NexoApi.Features.Email.IEmailService, NexoApi.Features.Email.GmailEmailService>();
+builder.Services.AddHttpClient();
 builder.Services.AddHostedService<NexoApi.Infrastructure.AutomationBackgroundService>();
 builder.Services.AddScoped<IPlanificacionService, PlanificacionService>();
 builder.Services.AddScoped<ICalendarioService, CalendarioService>();
@@ -103,6 +106,7 @@ builder.Services.AddScoped<IBusquedaService, BusquedaService>();
 builder.Services.AddScoped<IPreferenciasService, PreferenciasService>();
 builder.Services.AddScoped<IConfiguracionService, ConfiguracionService>();
 builder.Services.AddScoped<IOperacionesService, OperacionesService>();
+builder.Services.AddScoped<IMarketingService, MarketingService>();
 
 // ----------------------------------------------------------------------------
 // AUTENTICACIÓN Y AUTORIZACIÓN (AQUÍ ESTÁ EL CAMBIO)
