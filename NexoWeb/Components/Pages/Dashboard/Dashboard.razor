@@ -134,6 +134,60 @@ else
 
     </div>
 
+    @* ── Próximo evento del calendario ──────────────────────────────── *@
+    @if (_proximoEvento is not null)
+    {
+        var ev     = _proximoEvento;
+        var inicio = ev.FechaInicio.ToLocalTime();
+        var tiempoHasta = ev.TiempoHasta;
+        var colorTipo   = ev.ColorTipo;
+        <MudPaper Class="pa-4 mb-6" Style="@($"border-left: 4px solid {colorTipo};")">
+            <div class="d-flex align-center flex-wrap" style="gap:12px">
+                <div style="@($"width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,{colorTipo} 12%,transparent);flex-shrink:0")">
+                    <MudIcon Icon="@Icons.Material.Filled.Event" Style="@($"color:{colorTipo}")" />
+                </div>
+                <div style="flex:1;min-width:0">
+                    <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:@colorTipo;margin-bottom:2px">
+                        Próximo evento · @ev.TipoEvento
+                    </div>
+                    <div style="font-size:15px;font-weight:500;color:var(--mud-palette-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                        @ev.Titulo
+                    </div>
+                    <div style="font-size:12px;color:var(--mud-palette-text-secondary);margin-top:2px">
+                        @inicio.ToString("dddd d MMM · HH:mm")
+                        @if (!string.IsNullOrEmpty(ev.Lugar)) { <text> · @ev.Lugar</text> }
+                        @if (ev.Asistentes.Count > 0) { <text> · @ev.Asistentes.Count persona(s)</text> }
+                    </div>
+                </div>
+                <div style="text-align:right;flex-shrink:0">
+                    @if (tiempoHasta.TotalMinutes < 0)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning">En curso</MudChip>
+                    }
+                    else if (tiempoHasta.TotalHours < 1)
+                    {
+                        <div style="font-size:22px;font-weight:500;color:@colorTipo;line-height:1">@((int)tiempoHasta.TotalMinutes) min</div>
+                        <div style="font-size:10px;color:var(--mud-palette-text-secondary)">para el evento</div>
+                    }
+                    else if (tiempoHasta.TotalHours < 24)
+                    {
+                        <div style="font-size:22px;font-weight:500;color:@colorTipo;line-height:1">@((int)tiempoHasta.TotalHours)h @(tiempoHasta.Minutes)m</div>
+                        <div style="font-size:10px;color:var(--mud-palette-text-secondary)">para el evento</div>
+                    }
+                    else
+                    {
+                        <div style="font-size:22px;font-weight:500;color:@colorTipo;line-height:1">@((int)tiempoHasta.TotalDays)d</div>
+                        <div style="font-size:10px;color:var(--mud-palette-text-secondary)">para el evento</div>
+                    }
+                </div>
+                <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                           OnClick="@(() => Navigation.NavigateTo("/planificacion/calendario"))">
+                    Ver calendario
+                </MudButton>
+            </div>
+        </MudPaper>
+    }
+
     @if (_alertasProyectos.Count > 0)
     {
         <MudPaper Class="pa-5 mb-6">
@@ -571,7 +625,7 @@ else
     private List<ChartSeries> _seriesPlanVsReal = new();
     private string[] _labelsPlanVsReal = Array.Empty<string>();
     private DateRange _rangoPlanVsReal = new(DateTime.Today.AddDays(-14), DateTime.Today);
-    private List<(DateTime Fecha, double Porcentaje)> _variacionProduccion = new();
+    private List<(DateTime Fecha, double Porcentaje, bool SinPlan)> _variacionProduccion = new();
     private DateRange _rangoVariacion = new(DateTime.Today.AddDays(-30), DateTime.Today);
 
     private List<DistribucionCentroCostoItem> _distribucion = new();
@@ -608,6 +662,7 @@ else
     private int _totalEmpleadosActivos;
     private ResumenPlanificacionItem _resumenPlanificacion = new(0, 0);
     private ResumenInventarioItem _resumenInventario = new(0, 0);
+    private EventoCalendarioItem? _proximoEvento;
 
     protected override async Task OnInitializedAsync()
     {
@@ -637,9 +692,12 @@ else
 
             var variacionHistorico = await tareaVariacionHistorico ?? new();
             _variacionProduccion = variacionHistorico
-                .Select(p => (p.Fecha, Porcentaje: p.TotalPlanificado > 0
-                    ? (double)((p.TotalReal - p.TotalPlanificado) / p.TotalPlanificado * 100)
-                    : 0d))
+                .Select(p => (
+                    p.Fecha,
+                    Porcentaje: p.TotalPlanificado > 0
+                        ? (double)((p.TotalReal - p.TotalPlanificado) / p.TotalPlanificado * 100)
+                        : 0d,
+                    SinPlan: p.TotalPlanificado == 0 && p.TotalReal > 0))
                 .ToList();
 
             _distribucion = await tareaDistribucion ?? new();
@@ -696,10 +754,16 @@ else
             _desviaciones = await ApiClient.GetAsync<List<DesviacionItem>>("api/planificacion/desviaciones?umbral=70") ?? new();
             _alertasProyectos = await ApiClient.GetAsync<List<ProyectoAlertaItem>>("api/proyectos/alertas") ?? new();
         }
-        catch (HttpRequestException)
+        catch
         {
-            // Estos dos si son visibles para todos los roles del Dashboard -- si fallan, se queda en 0.
+            // 403 esperado para Jefes/Empleados (CRM/RRHH son Admin-only) -- se queda en 0.
         }
+
+        try
+        {
+            _proximoEvento = await ApiClient.GetAsync<EventoCalendarioItem>("api/calendario/eventos/proximo");
+        }
+        catch { }
     }
 
     private void ActualizarGraficoPlanVsReal()
@@ -716,7 +780,7 @@ else
     // (coma decimal) globalmente, y un atributo SVG con coma rompe el path.
     private static string Inv(double valor) => valor.ToString("0.##", CultureInfo.InvariantCulture);
 
-    private sealed record BarraVariacion(double X, double Y, double Width, double Height, string Color, string FechaLabel, double Porcentaje);
+    private sealed record BarraVariacion(double X, double Y, double Width, double Height, string Color, string FechaLabel, double Porcentaje, bool SinPlan = false);
 
     // Ancho minimo por barra (con su separacion) para que la fecha y el % no se
     // amontonen cuando hay muchos dias -- el SVG crece y el contenedor scrollea
@@ -734,7 +798,7 @@ else
         const double zeroY = 120;
         const double amplitud = 90;
 
-        var maxAbs = _variacionProduccion.Max(v => Math.Abs(v.Porcentaje));
+        var maxAbs = _variacionProduccion.Where(v => !v.SinPlan).Select(v => Math.Abs(v.Porcentaje)).DefaultIfEmpty(5).Max();
         if (maxAbs < 5) maxAbs = 5;
 
         var slot = svgWidth / n;
@@ -743,11 +807,24 @@ else
         for (var i = 0; i < n; i++)
         {
             var punto = _variacionProduccion[i];
-            var altura = Math.Max(Math.Abs(punto.Porcentaje) / maxAbs * amplitud, 1.5);
-            var x = i * slot + (slot - anchoBarra) / 2;
-            var y = punto.Porcentaje >= 0 ? zeroY - altura : zeroY;
-            var color = punto.Porcentaje >= 0 ? "#10B981" : "#EF4444";
-            resultado.Add(new BarraVariacion(x, y, anchoBarra, altura, color, punto.Fecha.ToString("dd MMM"), punto.Porcentaje));
+            double altura, x, y;
+            string color;
+
+            if (punto.SinPlan)
+            {
+                altura = 30;
+                x = i * slot + (slot - anchoBarra) / 2;
+                y = zeroY - altura;
+                color = "#F59E0B";
+            }
+            else
+            {
+                altura = Math.Max(Math.Abs(punto.Porcentaje) / maxAbs * amplitud, 3);
+                x = i * slot + (slot - anchoBarra) / 2;
+                y = punto.Porcentaje >= 0 ? zeroY - altura : zeroY;
+                color = punto.Porcentaje >= 0 ? "#10B981" : "#EF4444";
+            }
+            resultado.Add(new BarraVariacion(x, y, anchoBarra, altura, color, punto.Fecha.ToString("dd MMM"), punto.Porcentaje, punto.SinPlan));
         }
 
         return resultado;
@@ -765,12 +842,16 @@ else
         foreach (var b in ObtenerBarrasVariacion())
         {
             var signo = b.Porcentaje >= 0 ? "+" : "";
-            var texto = $"{signo}{b.Porcentaje.ToString("N1", CultureInfo.InvariantCulture)}%";
+            var texto = b.SinPlan
+                ? "Sin plan"
+                : $"{signo}{b.Porcentaje.ToString("N1", CultureInfo.InvariantCulture)}%";
+            var tooltip = b.SinPlan
+                ? $"{b.FechaLabel}: producción sin orden planificada"
+                : $"{b.FechaLabel}: {texto}";
 
-            sb.Append($"<rect x=\"{Inv(b.X)}\" y=\"{Inv(b.Y)}\" width=\"{Inv(b.Width)}\" height=\"{Inv(b.Height)}\" rx=\"2\" fill=\"{b.Color}\" class=\"nexo-variacion-chart__bar\"><title>{b.FechaLabel}: {texto}</title></rect>");
+            sb.Append($"<rect x=\"{Inv(b.X)}\" y=\"{Inv(b.Y)}\" width=\"{Inv(b.Width)}\" height=\"{Inv(b.Height)}\" rx=\"2\" fill=\"{b.Color}\" class=\"nexo-variacion-chart__bar\"><title>{tooltip}</title></rect>");
 
-            // Etiqueta en TODAS las barras, clampeada para no salir del SVG
-            var yLabel = b.Porcentaje >= 0
+            var yLabel = b.SinPlan || b.Porcentaje >= 0
                 ? Math.Max(b.Y - 5, 12)
                 : Math.Min(b.Y + b.Height + 14, svgH - 4);
             sb.Append($"<text x=\"{Inv(b.X + b.Width / 2)}\" y=\"{Inv(yLabel)}\" text-anchor=\"middle\" class=\"nexo-variacion-chart__label\">{texto}</text>");
@@ -792,9 +873,12 @@ else
         var datos = await ApiClient.GetAsync<List<PlanVsRealPunto>>(
             $"api/dashboard/plan-vs-real?desde={_rangoVariacion.Start:yyyy-MM-dd}&hasta={_rangoVariacion.End:yyyy-MM-dd}") ?? new();
         _variacionProduccion = datos
-            .Select(p => (p.Fecha, Porcentaje: p.TotalPlanificado > 0
-                ? (double)((p.TotalReal - p.TotalPlanificado) / p.TotalPlanificado * 100)
-                : 0d))
+            .Select(p => (
+                p.Fecha,
+                Porcentaje: p.TotalPlanificado > 0
+                    ? (double)((p.TotalReal - p.TotalPlanificado) / p.TotalPlanificado * 100)
+                    : 0d,
+                SinPlan: p.TotalPlanificado == 0 && p.TotalReal > 0))
             .ToList();
     }
 

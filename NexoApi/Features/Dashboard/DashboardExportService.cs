@@ -3,9 +3,15 @@ using Dapper;
 using NexoApi.Common.Data;
 using NexoApi.Features.Catalogo;
 using NexoApi.Features.Catalogo.Dtos;
+using NexoApi.Features.Crm;
+using NexoApi.Features.Crm.Dtos;
 using NexoApi.Features.Dashboard.Dtos;
 using NexoApi.Features.Inventario;
 using NexoApi.Features.Inventario.Dtos;
+using NexoApi.Features.Planificacion;
+using NexoApi.Features.Planificacion.Dtos;
+using NexoApi.Features.Proyectos;
+using NexoApi.Features.Proyectos.Dtos;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -41,32 +47,46 @@ public class DashboardExportService : IDashboardExportService
     private readonly IDashboardService _dashboardService;
     private readonly ICatalogoService _catalogoService;
     private readonly IInventarioService _inventarioService;
+    private readonly ICrmService _crmService;
+    private readonly IPlanificacionService _planificacionService;
+    private readonly IProyectosService _proyectosService;
 
     public DashboardExportService(
         IDbConnectionFactory db, IDashboardService dashboardService,
-        ICatalogoService catalogoService, IInventarioService inventarioService)
+        ICatalogoService catalogoService, IInventarioService inventarioService,
+        ICrmService crmService, IPlanificacionService planificacionService,
+        IProyectosService proyectosService)
     {
         _db = db;
         _dashboardService = dashboardService;
         _catalogoService = catalogoService;
         _inventarioService = inventarioService;
+        _crmService = crmService;
+        _planificacionService = planificacionService;
+        _proyectosService = proyectosService;
     }
 
     private record DatosReporte(
         string NombreEmpresa,
+        string? NombrePropietario,
         List<PlanVsRealPunto> PlanVsReal,
         List<DistribucionCentroCostoItem> Distribucion,
         List<CumplimientoCentroCostoItem> Cumplimiento,
         List<PerdidaPorMotivoItem> Perdidas,
         List<StockConsolidadoItem> Stock,
-        List<ArticuloItem> Articulos
+        List<ArticuloItem> Articulos,
+        ResumenCrmItem? ResumenCrm,
+        List<ClienteFrioItem> ClientesFrios,
+        List<DesviacionItem> Desviaciones,
+        List<ProyectoAlertaItem> AlertasProyectos
     );
 
     private async Task<DatosReporte> RecolectarDatosAsync(DateTime desde, DateTime hasta)
     {
         using var connection = _db.CreateConnection();
-        var nombreEmpresa = await connection.ExecuteScalarAsync<string?>(
-            "SELECT TOP 1 NombreEmpresa FROM Organizacion.ConfiguracionEmpresa") ?? "NEXO ERP";
+        var (nombreEmpresa, nombrePropietario) = await connection.QuerySingleAsync<(string, string?)>(
+            "SELECT NombreEmpresa, NombrePropietario FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
+        if (string.IsNullOrEmpty(nombreEmpresa)) nombreEmpresa = "NEXO ERP";
 
         var planVsReal = (await _dashboardService.ObtenerPlanVsRealAsync(desde, hasta)).ToList();
         var distribucion = (await _dashboardService.ObtenerDistribucionCentroCostoAsync()).ToList();
@@ -75,7 +95,18 @@ public class DashboardExportService : IDashboardExportService
         var stock = (await _inventarioService.ConsultarStockAsync(null, null, null)).ToList();
         var articulos = (await _catalogoService.ListarArticulosAsync(null, null)).ToList();
 
-        return new DatosReporte(nombreEmpresa, planVsReal, distribucion, cumplimiento, perdidas, stock, articulos);
+        ResumenCrmItem? resumenCrm = null;
+        List<ClienteFrioItem> clientesFrios = new();
+        List<DesviacionItem> desviaciones = new();
+        List<ProyectoAlertaItem> alertasProyectos = new();
+
+        try { resumenCrm = await _dashboardService.ObtenerResumenCrmAsync(desde, hasta); } catch { }
+        try { clientesFrios = (await _crmService.ListarClientesFriosAsync(30)).ToList(); } catch { }
+        try { desviaciones = (await _planificacionService.ListarDesviacionesAsync(70)).ToList(); } catch { }
+        try { alertasProyectos = (await _proyectosService.ListarAlertasAsync()).ToList(); } catch { }
+
+        return new DatosReporte(nombreEmpresa, nombrePropietario, planVsReal, distribucion, cumplimiento, perdidas, stock, articulos,
+            resumenCrm, clientesFrios, desviaciones, alertasProyectos);
     }
 
     // ==================================================================
@@ -92,9 +123,12 @@ public class DashboardExportService : IDashboardExportService
         CrearHojaPlanVsReal(libro, datos);
         CrearHojaDistribucion(libro, datos);
         CrearHojaCumplimiento(libro, datos);
+        CrearHojaDesviaciones(libro, datos);
         CrearHojaPerdidas(libro, datos);
         CrearHojaStock(libro, datos);
         CrearHojaArticulos(libro, datos);
+        CrearHojaCrm(libro, datos);
+        CrearHojaAlertasProyectos(libro, datos);
 
         using var stream = new MemoryStream();
         libro.SaveAs(stream);
@@ -111,9 +145,11 @@ public class DashboardExportService : IDashboardExportService
         hoja.Row(fila).Height = 22;
     }
 
-    private void EstilarTitulo(IXLWorksheet hoja, string titulo, string nombreEmpresa)
+    private void EstilarTitulo(IXLWorksheet hoja, string titulo, string nombreEmpresa, string? propietario = null)
     {
-        hoja.Cell(1, 1).Value = nombreEmpresa;
+        hoja.Cell(1, 1).Value = propietario is not null
+            ? $"{nombreEmpresa}  ·  {propietario}"
+            : nombreEmpresa;
         hoja.Cell(1, 1).Style.Font.Bold = true;
         hoja.Cell(1, 1).Style.Font.FontSize = 16;
         hoja.Cell(1, 1).Style.Font.FontColor = XLColor.FromHtml(ColorPrimarioOscuro);
@@ -131,7 +167,7 @@ public class DashboardExportService : IDashboardExportService
     private void CrearHojaResumen(XLWorkbook libro, DatosReporte d, DateTime desde, DateTime hasta)
     {
         var hoja = libro.Worksheets.Add("Resumen");
-        EstilarTitulo(hoja, $"Reporte de Producción e Inventario ({desde:dd/MM/yyyy} - {hasta:dd/MM/yyyy})", d.NombreEmpresa);
+        EstilarTitulo(hoja, $"Reporte de Producción e Inventario ({desde:dd/MM/yyyy} - {hasta:dd/MM/yyyy})", d.NombreEmpresa, d.NombrePropietario);
 
         var totalPlanificado = d.PlanVsReal.Sum(p => p.TotalPlanificado);
         var totalReal = d.PlanVsReal.Sum(p => p.TotalReal);
@@ -147,6 +183,12 @@ public class DashboardExportService : IDashboardExportService
             ("Pérdidas (período)", totalPerdidas.ToString("C0"), ColorError),
             ("Valor de Stock Actual", valorStock.ToString("C0"), ColorExito),
             ("Artículos en Catálogo", d.Articulos.Count.ToString(), ColorTextoSecundario),
+            ("Clientes Nuevos (CRM)", d.ResumenCrm?.ClientesNuevos.ToString() ?? "-", ColorInfo),
+            ("Interacciones CRM", d.ResumenCrm?.Interacciones.ToString() ?? "-", ColorPrimario),
+            ("Clientes sin contacto (+30d)", d.ClientesFrios.Count.ToString(), d.ClientesFrios.Count > 0 ? ColorError : ColorExito),
+            ("CC con desviación (<70%)", d.Desviaciones.Count.ToString(), d.Desviaciones.Count > 0 ? "#F59E0B" : ColorExito),
+            ("Proyectos atrasados", d.AlertasProyectos.Count(p => p.Atrasado).ToString(), d.AlertasProyectos.Any(p => p.Atrasado) ? ColorError : ColorExito),
+            ("Proyectos con sobrecosto", d.AlertasProyectos.Count(p => p.ConSobrecosto).ToString(), d.AlertasProyectos.Any(p => p.ConSobrecosto) ? ColorError : ColorExito),
         };
 
         var filaBase = 5;
@@ -347,6 +389,133 @@ public class DashboardExportService : IDashboardExportService
         hoja.SheetView.FreezeRows(filaEncabezado);
     }
 
+    private void CrearHojaDesviaciones(XLWorkbook libro, DatosReporte d)
+    {
+        var hoja = libro.Worksheets.Add("Desviaciones");
+        EstilarTitulo(hoja, "Desviaciones de Planificación (CC con cumplimiento < 70%)", d.NombreEmpresa);
+
+        var filaEncabezado = 5;
+        hoja.Cell(filaEncabezado, 1).Value = "Centro de Costo";
+        hoja.Cell(filaEncabezado, 2).Value = "Cumpl. Demanda %";
+        hoja.Cell(filaEncabezado, 3).Value = "Cumpl. Venta %";
+        EstilarEncabezado(hoja, filaEncabezado, 3, "#F59E0B");
+
+        var fila = filaEncabezado + 1;
+        foreach (var item in d.Desviaciones)
+        {
+            hoja.Cell(fila, 1).Value = item.CentroCosto;
+            hoja.Cell(fila, 2).Value = (double)item.CumplimientoDemanda / 100;
+            hoja.Cell(fila, 2).Style.NumberFormat.Format = "0.0%";
+            hoja.Cell(fila, 2).Style.Font.FontColor = XLColor.FromHtml(item.CumplimientoDemanda >= 70 ? ColorExito : ColorError);
+            hoja.Cell(fila, 3).Value = (double)item.CumplimientoVenta / 100;
+            hoja.Cell(fila, 3).Style.NumberFormat.Format = "0.0%";
+            hoja.Cell(fila, 3).Style.Font.FontColor = XLColor.FromHtml(item.CumplimientoVenta >= 70 ? ColorExito : ColorError);
+            fila++;
+        }
+
+        if (fila == filaEncabezado + 1)
+        {
+            hoja.Cell(fila, 1).Value = "Sin desviaciones detectadas.";
+            hoja.Cell(fila, 1).Style.Font.Italic = true;
+            hoja.Cell(fila, 1).Style.Font.FontColor = XLColor.FromHtml(ColorTextoSecundario);
+        }
+        else
+        {
+            AplicarBordesYZebra(hoja, filaEncabezado, fila - 1, 3);
+        }
+
+        hoja.Columns(1, 3).AdjustToContents();
+    }
+
+    private void CrearHojaCrm(XLWorkbook libro, DatosReporte d)
+    {
+        var hoja = libro.Worksheets.Add("CRM");
+        EstilarTitulo(hoja, "CRM – Clientes sin contacto reciente", d.NombreEmpresa);
+
+        if (d.ResumenCrm is not null)
+        {
+            hoja.Cell(5, 1).Value = "Clientes nuevos (período)";
+            hoja.Cell(5, 1).Style.Font.FontColor = XLColor.FromHtml(ColorTextoSecundario);
+            hoja.Cell(5, 2).Value = d.ResumenCrm.ClientesNuevos;
+            hoja.Cell(5, 2).Style.Font.Bold = true;
+
+            hoja.Cell(6, 1).Value = "Interacciones (período)";
+            hoja.Cell(6, 1).Style.Font.FontColor = XLColor.FromHtml(ColorTextoSecundario);
+            hoja.Cell(6, 2).Value = d.ResumenCrm.Interacciones;
+            hoja.Cell(6, 2).Style.Font.Bold = true;
+        }
+
+        var filaEncabezado = 8;
+        hoja.Cell(filaEncabezado, 1).Value = "Cliente";
+        hoja.Cell(filaEncabezado, 2).Value = "Responsable";
+        hoja.Cell(filaEncabezado, 3).Value = "Última Interacción";
+        hoja.Cell(filaEncabezado, 4).Value = "Próximo Contacto";
+        EstilarEncabezado(hoja, filaEncabezado, 4, ColorPrimarioOscuro);
+
+        var fila = filaEncabezado + 1;
+        foreach (var c in d.ClientesFrios)
+        {
+            hoja.Cell(fila, 1).Value = c.Nombre;
+            hoja.Cell(fila, 2).Value = c.Responsable ?? "-";
+            hoja.Cell(fila, 3).Value = c.UltimaInteraccion is not null ? c.UltimaInteraccion.Value.ToString("dd/MM/yyyy") : "Sin registro";
+            hoja.Cell(fila, 4).Value = c.ProximoContacto is not null ? c.ProximoContacto.Value.ToString("dd/MM/yyyy") : "-";
+            hoja.Cell(fila, 3).Style.Font.FontColor = XLColor.FromHtml(ColorError);
+            fila++;
+        }
+
+        if (fila > filaEncabezado + 1)
+            AplicarBordesYZebra(hoja, filaEncabezado, fila - 1, 4);
+
+        hoja.Columns(1, 4).AdjustToContents();
+    }
+
+    private void CrearHojaAlertasProyectos(XLWorkbook libro, DatosReporte d)
+    {
+        var hoja = libro.Worksheets.Add("Alertas Proyectos");
+        EstilarTitulo(hoja, "Proyectos con Alertas", d.NombreEmpresa);
+
+        var filaEncabezado = 5;
+        hoja.Cell(filaEncabezado, 1).Value = "Proyecto";
+        hoja.Cell(filaEncabezado, 2).Value = "Fecha Fin";
+        hoja.Cell(filaEncabezado, 3).Value = "Presupuesto";
+        hoja.Cell(filaEncabezado, 4).Value = "Costo Total";
+        hoja.Cell(filaEncabezado, 5).Value = "Atrasado";
+        hoja.Cell(filaEncabezado, 6).Value = "Sobrecosto";
+        EstilarEncabezado(hoja, filaEncabezado, 6, ColorError);
+
+        var fila = filaEncabezado + 1;
+        foreach (var p in d.AlertasProyectos)
+        {
+            hoja.Cell(fila, 1).Value = p.Nombre;
+            hoja.Cell(fila, 2).Value = p.FechaFin.HasValue ? p.FechaFin.Value.ToString("dd/MM/yyyy") : "-";
+            hoja.Cell(fila, 3).Value = (double)p.Presupuesto;
+            hoja.Cell(fila, 3).Style.NumberFormat.Format = "$#,##0";
+            hoja.Cell(fila, 4).Value = (double)p.CostoTotal;
+            hoja.Cell(fila, 4).Style.NumberFormat.Format = "$#,##0";
+            hoja.Cell(fila, 4).Style.Font.FontColor = XLColor.FromHtml(p.ConSobrecosto ? ColorError : ColorExito);
+            hoja.Cell(fila, 5).Value = p.Atrasado ? "Sí" : "No";
+            hoja.Cell(fila, 5).Style.Font.FontColor = XLColor.FromHtml(p.Atrasado ? ColorError : ColorExito);
+            hoja.Cell(fila, 5).Style.Font.Bold = true;
+            hoja.Cell(fila, 6).Value = p.ConSobrecosto ? "Sí" : "No";
+            hoja.Cell(fila, 6).Style.Font.FontColor = XLColor.FromHtml(p.ConSobrecosto ? ColorError : ColorExito);
+            hoja.Cell(fila, 6).Style.Font.Bold = true;
+            fila++;
+        }
+
+        if (fila == filaEncabezado + 1)
+        {
+            hoja.Cell(fila, 1).Value = "Sin alertas de proyectos.";
+            hoja.Cell(fila, 1).Style.Font.Italic = true;
+            hoja.Cell(fila, 1).Style.Font.FontColor = XLColor.FromHtml(ColorTextoSecundario);
+        }
+        else
+        {
+            AplicarBordesYZebra(hoja, filaEncabezado, fila - 1, 6);
+        }
+
+        hoja.Columns(1, 6).AdjustToContents();
+    }
+
     private void AplicarBordesYZebra(IXLWorksheet hoja, int filaEncabezado, int ultimaFila, int columnas)
     {
         if (ultimaFila < filaEncabezado + 1)
@@ -381,7 +550,7 @@ public class DashboardExportService : IDashboardExportService
                 pagina.Margin(30);
                 pagina.DefaultTextStyle(x => x.FontSize(9).FontColor(ColorTextoOscuro));
 
-                pagina.Header().Element(c => ComponerEncabezado(c, datos.NombreEmpresa, desde, hasta));
+                pagina.Header().Element(c => ComponerEncabezado(c, datos.NombreEmpresa, datos.NombrePropietario, desde, hasta));
                 pagina.Content().Element(c => ComponerContenido(c, datos));
                 pagina.Footer().AlignCenter().Text(t =>
                 {
@@ -395,13 +564,15 @@ public class DashboardExportService : IDashboardExportService
         return documento.GeneratePdf();
     }
 
-    private void ComponerEncabezado(QuestPDF.Infrastructure.IContainer contenedor, string nombreEmpresa, DateTime desde, DateTime hasta)
+    private void ComponerEncabezado(QuestPDF.Infrastructure.IContainer contenedor, string nombreEmpresa, string? nombrePropietario, DateTime desde, DateTime hasta)
     {
         contenedor.Background(ColorPrimarioOscuro).Padding(20).Row(fila =>
         {
             fila.RelativeItem().Column(col =>
             {
                 col.Item().Text(nombreEmpresa).FontSize(18).Bold().FontColor(Colors.White);
+                if (!string.IsNullOrEmpty(nombrePropietario))
+                    col.Item().Text($"Propietario: {nombrePropietario}").FontSize(9).FontColor("#D8D0FF");
                 col.Item().Text("Reporte de Producción e Inventario").FontSize(11).FontColor(Colors.White);
                 col.Item().PaddingTop(3).Text($"Período: {desde:dd/MM/yyyy} — {hasta:dd/MM/yyyy}").FontSize(8).FontColor("#D8D0FF");
             });
@@ -420,7 +591,10 @@ public class DashboardExportService : IDashboardExportService
             col.Item().Element(c => ComponerBarrasPlanVsReal(c, d));
             col.Item().Element(c => ComponerTablaDistribucion(c, d));
             col.Item().Element(c => ComponerTablaCumplimiento(c, d));
+            col.Item().Element(c => ComponerTablaDesviaciones(c, d));
             col.Item().Element(c => ComponerTablaPerdidas(c, d));
+            col.Item().Element(c => ComponerTablaAlertasProyectos(c, d));
+            col.Item().Element(c => ComponerTablaCrm(c, d));
             col.Item().PageBreak();
             col.Item().Element(c => ComponerTablaStock(c, d));
         });
@@ -627,6 +801,107 @@ public class DashboardExportService : IDashboardExportService
                     CeldaTabla(tabla, s.Bodega);
                     CeldaTabla(tabla, $"{s.CantidadActual:N2} {s.Unidad}", alinearDerecha: true);
                     CeldaTabla(tabla, s.ValorTotal.ToString("C0"), alinearDerecha: true);
+                }
+            });
+        });
+    }
+
+    private void ComponerTablaDesviaciones(QuestPDF.Infrastructure.IContainer contenedor, DatosReporte d)
+    {
+        contenedor.Column(col =>
+        {
+            col.Item().Element(c => ComponerTitulo(c, "Desviaciones de Planificación (< 70%)"));
+            col.Item().PaddingTop(6).Table(tabla =>
+            {
+                tabla.ColumnsDefinition(c =>
+                {
+                    c.RelativeColumn(3);
+                    c.RelativeColumn(2);
+                    c.RelativeColumn(2);
+                });
+
+                EncabezadoTabla(tabla, "#F59E0B", "Centro de Costo", "Cumpl. Demanda", "Cumpl. Venta");
+
+                foreach (var item in d.Desviaciones)
+                {
+                    CeldaTabla(tabla, item.CentroCosto);
+                    var colorD = item.CumplimientoDemanda >= 70 ? ColorExito : ColorError;
+                    var colorV = item.CumplimientoVenta >= 70 ? ColorExito : ColorError;
+                    tabla.Cell().Element(CeldaBase).AlignRight().Text($"{item.CumplimientoDemanda:N1}%").FontColor(colorD).Bold();
+                    tabla.Cell().Element(CeldaBase).AlignRight().Text($"{item.CumplimientoVenta:N1}%").FontColor(colorV).Bold();
+                }
+            });
+        });
+    }
+
+    private void ComponerTablaAlertasProyectos(QuestPDF.Infrastructure.IContainer contenedor, DatosReporte d)
+    {
+        contenedor.Column(col =>
+        {
+            col.Item().Element(c => ComponerTitulo(c, "Proyectos con Alertas"));
+            if (d.AlertasProyectos.Count == 0)
+            {
+                col.Item().PaddingTop(4).Text("Sin alertas de proyectos en este período.").FontColor(ColorTextoSecundario).Italic();
+                return;
+            }
+            col.Item().PaddingTop(6).Table(tabla =>
+            {
+                tabla.ColumnsDefinition(c =>
+                {
+                    c.RelativeColumn(3);
+                    c.RelativeColumn(1.5f);
+                    c.RelativeColumn(1.5f);
+                    c.RelativeColumn(1);
+                    c.RelativeColumn(1);
+                });
+
+                EncabezadoTabla(tabla, ColorError, "Proyecto", "Presupuesto", "Costo Real", "Atrasado", "Sobrecosto");
+
+                foreach (var p in d.AlertasProyectos)
+                {
+                    CeldaTabla(tabla, p.Nombre);
+                    CeldaTabla(tabla, p.Presupuesto.ToString("C0"), alinearDerecha: true);
+                    tabla.Cell().Element(CeldaBase).AlignRight()
+                        .Text(p.CostoTotal.ToString("C0")).FontColor(p.ConSobrecosto ? ColorError : ColorExito);
+                    tabla.Cell().Element(CeldaBase).AlignCenter()
+                        .Text(p.Atrasado ? "Sí" : "No").Bold().FontColor(p.Atrasado ? ColorError : ColorExito);
+                    tabla.Cell().Element(CeldaBase).AlignCenter()
+                        .Text(p.ConSobrecosto ? "Sí" : "No").Bold().FontColor(p.ConSobrecosto ? ColorError : ColorExito);
+                }
+            });
+        });
+    }
+
+    private void ComponerTablaCrm(QuestPDF.Infrastructure.IContainer contenedor, DatosReporte d)
+    {
+        contenedor.Column(col =>
+        {
+            col.Item().Element(c => ComponerTitulo(c, $"CRM – Clientes sin contacto (+30 días): {d.ClientesFrios.Count}"));
+            if (d.ClientesFrios.Count == 0)
+            {
+                col.Item().PaddingTop(4).Text("Sin clientes inactivos. Todos con contacto reciente.").FontColor(ColorTextoSecundario).Italic();
+                return;
+            }
+            col.Item().PaddingTop(6).Table(tabla =>
+            {
+                tabla.ColumnsDefinition(c =>
+                {
+                    c.RelativeColumn(2.5f);
+                    c.RelativeColumn(2);
+                    c.RelativeColumn(1.5f);
+                    c.RelativeColumn(1.5f);
+                });
+
+                EncabezadoTabla(tabla, null, "Cliente", "Responsable", "Última Interacción", "Próx. Contacto");
+
+                foreach (var c in d.ClientesFrios)
+                {
+                    CeldaTabla(tabla, c.Nombre);
+                    CeldaTabla(tabla, c.Responsable ?? "-");
+                    tabla.Cell().Element(CeldaBase)
+                        .Text(c.UltimaInteraccion.HasValue ? c.UltimaInteraccion.Value.ToString("dd/MM/yyyy") : "Sin registro")
+                        .FontColor(ColorError).FontSize(8);
+                    CeldaTabla(tabla, c.ProximoContacto.HasValue ? c.ProximoContacto.Value.ToString("dd/MM/yyyy") : "-");
                 }
             });
         });

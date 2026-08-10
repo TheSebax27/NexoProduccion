@@ -648,6 +648,138 @@
         }
       }
     },
+    "/api/crm/automatizacion": {
+      "get": {
+        "tags": [
+          "Automacion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReglaAutomacionItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReglaAutomacionItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReglaAutomacionItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/crm/automatizacion/{id}": {
+      "put": {
+        "tags": [
+          "Automacion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarReglaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarReglaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarReglaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/crm/automatizacion/{id}/ejecutar": {
+      "post": {
+        "tags": [
+          "Automacion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EjecutarReglaResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EjecutarReglaResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EjecutarReglaResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/crm/automatizacion/evaluar": {
+      "post": {
+        "tags": [
+          "Automacion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/catalogo/bodegas": {
       "get": {
         "tags": [
@@ -831,6 +963,221 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/calendario/eventos": {
+      "get": {
+        "tags": [
+          "Calendario"
+        ],
+        "parameters": [
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventoCalendarioItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventoCalendarioItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventoCalendarioItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Calendario"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearEventoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearEventoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearEventoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/calendario/eventos/proximo": {
+      "get": {
+        "tags": [
+          "Calendario"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventoCalendarioItem"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventoCalendarioItem"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventoCalendarioItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/calendario/usuarios": {
+      "get": {
+        "tags": [
+          "Calendario"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UsuarioDisponibleItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UsuarioDisponibleItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UsuarioDisponibleItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/calendario/eventos/{id}": {
+      "put": {
+        "tags": [
+          "Calendario"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarEventoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarEventoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarEventoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Calendario"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -2243,6 +2590,184 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/crm/actividades": {
+      "get": {
+        "tags": [
+          "Crm"
+        ],
+        "parameters": [
+          {
+            "name": "soloActivas",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          {
+            "name": "oportunidadId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "clienteId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActividadItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActividadItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActividadItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Crm"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearActividadRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearActividadRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearActividadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/crm/actividades/{id}/completar": {
+      "patch": {
+        "tags": [
+          "Crm"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompletarActividadRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompletarActividadRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompletarActividadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/crm/actividades/{id}": {
+      "delete": {
+        "tags": [
+          "Crm"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -7187,6 +7712,72 @@
   },
   "components": {
     "schemas": {
+      "ActividadItem": {
+        "type": "object",
+        "properties": {
+          "actividadID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tipo": {
+            "type": "string",
+            "nullable": true
+          },
+          "titulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaVencimiento": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "completada": {
+            "type": "boolean"
+          },
+          "fechaCompletada": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "oportunidadID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "oportunidad": {
+            "type": "string",
+            "nullable": true
+          },
+          "clienteID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "cliente": {
+            "type": "string",
+            "nullable": true
+          },
+          "responsableID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "responsable": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaCreacion": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "ActualizarArticuloRequest": {
         "type": "object",
         "properties": {
@@ -7498,6 +8089,53 @@
         },
         "additionalProperties": false
       },
+      "ActualizarEventoRequest": {
+        "type": "object",
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoEvento": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaInicio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaFin": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lugar": {
+            "type": "string",
+            "nullable": true
+          },
+          "linkVirtual": {
+            "type": "string",
+            "nullable": true
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "asistenteIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ActualizarFotoEmpleadoRequest": {
         "type": "object",
         "properties": {
@@ -7633,6 +8271,10 @@
         "type": "object",
         "properties": {
           "nombreEmpresa": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombrePropietario": {
             "type": "string",
             "nullable": true
           }
@@ -7814,6 +8456,19 @@
             "format": "double"
           },
           "prioridad": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarReglaRequest": {
+        "type": "object",
+        "properties": {
+          "activa": {
+            "type": "boolean"
+          },
+          "parametrosJSON": {
             "type": "string",
             "nullable": true
           }
@@ -8071,6 +8726,24 @@
           "fechaDetectado": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AsistenteEventoItem": {
+        "type": "object",
+        "properties": {
+          "usuarioID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8481,6 +9154,15 @@
         },
         "additionalProperties": false
       },
+      "CompletarActividadRequest": {
+        "type": "object",
+        "properties": {
+          "completada": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "ConfiguracionAgenteResponse": {
         "type": "object",
         "properties": {
@@ -8503,6 +9185,10 @@
         "type": "object",
         "properties": {
           "nombreEmpresa": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombrePropietario": {
             "type": "string",
             "nullable": true
           },
@@ -8741,6 +9427,44 @@
           "subtotal": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CrearActividadRequest": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "nullable": true
+          },
+          "titulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaVencimiento": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "oportunidadID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "clienteID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "responsableID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9225,6 +9949,53 @@
           },
           "comentarios": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CrearEventoRequest": {
+        "type": "object",
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoEvento": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaInicio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaFin": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lugar": {
+            "type": "string",
+            "nullable": true
+          },
+          "linkVirtual": {
+            "type": "string",
+            "nullable": true
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "asistenteIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
             "nullable": true
           }
         },
@@ -10050,6 +10821,16 @@
         },
         "additionalProperties": false
       },
+      "EjecutarReglaResponse": {
+        "type": "object",
+        "properties": {
+          "actividadesCreadas": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "EmpleadoDocumentoItem": {
         "type": "object",
         "properties": {
@@ -10203,6 +10984,68 @@
           },
           "comentarios": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "EventoCalendarioItem": {
+        "type": "object",
+        "properties": {
+          "eventoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "titulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoEvento": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaInicio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaFin": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lugar": {
+            "type": "string",
+            "nullable": true
+          },
+          "linkVirtual": {
+            "type": "string",
+            "nullable": true
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "centroCosto": {
+            "type": "string",
+            "nullable": true
+          },
+          "creadoPorUsuarioID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "creadoPor": {
+            "type": "string",
+            "nullable": true
+          },
+          "asistentes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AsistenteEventoItem"
+            },
             "nullable": true
           }
         },
@@ -11719,6 +12562,39 @@
         },
         "additionalProperties": false
       },
+      "ReglaAutomacionItem": {
+        "type": "object",
+        "properties": {
+          "reglaID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "evento": {
+            "type": "string",
+            "nullable": true
+          },
+          "parametrosJSON": {
+            "type": "string",
+            "nullable": true
+          },
+          "activa": {
+            "type": "boolean"
+          },
+          "fechaCreacion": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "ResetearPasswordRequest": {
         "type": "object",
         "properties": {
@@ -11928,6 +12804,18 @@
           },
           "tieneImagen": {
             "type": "boolean"
+          },
+          "stockMinimo": {
+            "type": "number",
+            "format": "double"
+          },
+          "costoPromedio": {
+            "type": "number",
+            "format": "double"
+          },
+          "precioVenta": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -12189,6 +13077,24 @@
             "nullable": true
           },
           "tipo": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UsuarioDisponibleItem": {
+        "type": "object",
+        "properties": {
+          "usuarioID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
             "type": "string",
             "nullable": true
           }

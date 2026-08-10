@@ -1,0 +1,94 @@
+@page "/crm/actividades"
+@attribute [Authorize(Roles = "Administracion")]
+@inject INexoApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@using NexoWeb.Common.Dtos
+
+<PageTitle>Actividades CRM - NEXO</PageTitle>
+
+<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+    <MudText Typo="Typo.h5">Actividades</MudText>
+    <BotonFavorito Href="/crm/actividades" Etiqueta="Actividades CRM" />
+</div>
+<InfoAyuda Texto="Registro de llamadas, emails, reuniones y tareas de seguimiento vinculadas a oportunidades y clientes. Las actividades vencidas o de hoy aparecen resaltadas." />
+
+<div class="d-flex align-center mb-3" style="gap:12px; flex-wrap:wrap;">
+    <MudChipSet T="string" SelectionMode="SelectionMode.SingleSelection"
+                @bind-SelectedValue="_filtroTipo">
+        <MudChip T="string" Value="@("")">Todas</MudChip>
+        <MudChip T="string" Value="@("LLAMADA")">📞 Llamadas</MudChip>
+        <MudChip T="string" Value="@("EMAIL")">📧 Emails</MudChip>
+        <MudChip T="string" Value="@("REUNION")">🤝 Reuniones</MudChip>
+        <MudChip T="string" Value="@("TAREA")">✅ Tareas</MudChip>
+    </MudChipSet>
+    <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+        <MudSwitch T="bool" @bind-Value="_soloActivas" Color="Color.Primary" Label="Solo pendientes" />
+    </div>
+</div>
+
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else
+{
+    var visibles = ActividadesVisibles.ToList();
+    var vencidas    = visibles.Where(a => !a.Completada && a.FechaVencimiento.HasValue && a.FechaVencimiento.Value.ToLocalTime().Date < DateTime.Today).ToList();
+    var hoy         = visibles.Where(a => !a.Completada && a.FechaVencimiento.HasValue && a.FechaVencimiento.Value.ToLocalTime().Date == DateTime.Today).ToList();
+    var proximas    = visibles.Where(a => !a.Completada && (!a.FechaVencimiento.HasValue || a.FechaVencimiento.Value.ToLocalTime().Date > DateTime.Today)).ToList();
+    var completadas = visibles.Where(a => a.Completada).ToList();
+
+    @if (vencidas.Any())
+    {
+        <MudText Typo="Typo.subtitle2" Class="mb-1" Style="color:var(--mud-palette-error);">⚠ Vencidas (@vencidas.Count)</MudText>
+        @foreach (var a in vencidas) { <ActividadRow Item="a" OnCambio="CargarAsync" /> }
+        <MudDivider Class="my-3" />
+    }
+    @if (hoy.Any())
+    {
+        <MudText Typo="Typo.subtitle2" Class="mb-1" Style="color:var(--mud-palette-warning);">🔔 Para hoy (@hoy.Count)</MudText>
+        @foreach (var a in hoy) { <ActividadRow Item="a" OnCambio="CargarAsync" /> }
+        <MudDivider Class="my-3" />
+    }
+    @if (proximas.Any())
+    {
+        <MudText Typo="Typo.subtitle2" Class="mb-1">Próximas (@proximas.Count)</MudText>
+        @foreach (var a in proximas) { <ActividadRow Item="a" OnCambio="CargarAsync" /> }
+    }
+    @if (completadas.Any() && !_soloActivas)
+    {
+        <MudDivider Class="my-3" />
+        <MudText Typo="Typo.subtitle2" Class="mb-1" Style="color:var(--n-text-3);">Completadas (@completadas.Count)</MudText>
+        @foreach (var a in completadas) { <ActividadRow Item="a" OnCambio="CargarAsync" /> }
+    }
+    @if (!visibles.Any())
+    {
+        <MudText Typo="Typo.body2" Style="color:var(--n-text-3);">Sin actividades para mostrar.</MudText>
+    }
+}
+
+@code {
+    private List<ActividadItem> _actividades = new();
+    private bool _cargando = true;
+    private bool _soloActivas = true;
+    private string _filtroTipo = "";
+
+    private IEnumerable<ActividadItem> ActividadesVisibles =>
+        _actividades
+            .Where(a => !_soloActivas || !a.Completada)
+            .Where(a => string.IsNullOrEmpty(_filtroTipo) || a.Tipo == _filtroTipo);
+
+    protected override async Task OnInitializedAsync() => await CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        _cargando = true;
+        try
+        {
+            _actividades = await ApiClient.GetAsync<List<ActividadItem>>("api/crm/actividades?soloActivas=false") ?? new();
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _cargando = false; }
+    }
+}

@@ -31,7 +31,12 @@ else
     <div class="nexo-embudo mb-6">
         @foreach (var columna in _columnas)
         {
-            <div class="nexo-embudo__columna">
+            var esDestino = _sobreColumna == columna.Etapa;
+            <div class="nexo-embudo__columna @(esDestino ? "nexo-embudo__columna--drop" : "")"
+                 @ondragover:preventDefault="true"
+                 @ondragenter="@(() => _sobreColumna = columna.Etapa)"
+                 @ondragleave="@(() => { if (_sobreColumna == columna.Etapa) _sobreColumna = null; })"
+                 @ondrop="@(async () => await SoltarAsync(columna.Etapa))">
                 <div class="nexo-embudo__columna-titulo">
                     @columna.Titulo
                     <span class="nexo-embudo__contador">@OportunidadesActivas.Count(o => o.Etapa == columna.Etapa)</span>
@@ -41,13 +46,25 @@ else
                 </div>
                 @foreach (var op in OportunidadesActivas.Where(o => o.Etapa == columna.Etapa))
                 {
-                    <div class="nexo-embudo__tarjeta">
+                    var arrastrandoEsta = _draggingId == op.OportunidadID;
+                    <div class="nexo-embudo__tarjeta @(arrastrandoEsta ? "nexo-embudo__tarjeta--arrastrando" : "")"
+                         draggable="true"
+                         @ondragstart="@(() => { _draggingId = op.OportunidadID; _sobreColumna = null; })"
+                         @ondragend="@(() => { _draggingId = null; _sobreColumna = null; })">
                         <div class="nexo-embudo__tarjeta-titulo" @onclick="@(() => AbrirEdicionAsync(op))" style="cursor:pointer;">@op.Nombre</div>
                         <div class="nexo-embudo__tarjeta-meta">@(op.Cliente ?? op.Lead ?? "-")</div>
                         <div class="nexo-embudo__tarjeta-meta">@op.ValorEstimado.ToString("C0") · @op.Probabilidad%</div>
+                        @if (op.FechaCierreEsperada.HasValue)
+                        {
+                            var dias = (op.FechaCierreEsperada.Value.Date - DateTime.Today).Days;
+                            var colorCierre = dias < 0 ? "var(--mud-palette-error)" : dias <= 7 ? "var(--mud-palette-warning)" : "var(--n-text-3)";
+                            <div class="nexo-embudo__tarjeta-meta" style="color:@colorCierre;">
+                                @(dias < 0 ? "⚠ Venció " : "📅 ") @op.FechaCierreEsperada.Value.ToString("dd/MM/yyyy")
+                            </div>
+                        }
                         @if (op.Responsable is not null)
                         {
-                            <div class="nexo-embudo__tarjeta-meta">@op.Responsable</div>
+                            <div class="nexo-embudo__tarjeta-meta">👤 @op.Responsable</div>
                         }
                         <div class="nexo-embudo__tarjeta-acciones">
                             @if (columna.Etapa != "PROSPECCION")
@@ -113,6 +130,10 @@ else
     private List<EmpleadoItem> _empleados = new();
     private bool _cargando = true;
     private string? _errorCarga;
+
+    // Drag-and-drop
+    private int? _draggingId;
+    private string? _sobreColumna;
 
     private IEnumerable<OportunidadItem> OportunidadesActivas => _oportunidades.Where(o => o.Etapa is not "GANADA" and not "PERDIDA");
     private List<OportunidadItem> OportunidadesCerradas => _oportunidades.Where(o => o.Etapa is "GANADA" or "PERDIDA").OrderByDescending(o => o.FechaCierre).ToList();
@@ -220,6 +241,16 @@ else
         {
             Snackbar.Add(ex.Message, Severity.Error);
         }
+    }
+
+    private async Task SoltarAsync(string etapaDestino)
+    {
+        _sobreColumna = null;
+        if (_draggingId is null) return;
+        var op = _oportunidades.FirstOrDefault(o => o.OportunidadID == _draggingId);
+        _draggingId = null;
+        if (op is null || op.Etapa == etapaDestino) return;
+        await MoverEtapaAsync(op, etapaDestino);
     }
 
     private async Task MoverEtapaAsync(OportunidadItem op, string nuevaEtapa)

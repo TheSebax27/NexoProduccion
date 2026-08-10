@@ -218,6 +218,130 @@
     ]
   },
   {
+    "ContainingType": "NexoApi.Features.Calendario.CalendarioController",
+    "Method": "ListarEventos",
+    "RelativePath": "api/calendario/eventos",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "desde",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      },
+      {
+        "Name": "hasta",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Calendario.Dtos.EventoCalendarioItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Calendario.CalendarioController",
+    "Method": "CrearEvento",
+    "RelativePath": "api/calendario/eventos",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Calendario.Dtos.CrearEventoRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Calendario.CalendarioController",
+    "Method": "ActualizarEvento",
+    "RelativePath": "api/calendario/eventos/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Calendario.Dtos.ActualizarEventoRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Calendario.CalendarioController",
+    "Method": "EliminarEvento",
+    "RelativePath": "api/calendario/eventos/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Calendario.CalendarioController",
+    "Method": "ProximoEvento",
+    "RelativePath": "api/calendario/eventos/proximo",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Calendario.Dtos.EventoCalendarioItem",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Calendario.CalendarioController",
+    "Method": "ListarUsuarios",
+    "RelativePath": "api/calendario/usuarios",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Calendario.Dtos.UsuarioDisponibleItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
     "ContainingType": "NexoApi.Features.Catalogo.ArticulosController",
     "Method": "Listar",
     "RelativePath": "api/catalogo/articulos",
@@ -805,6 +929,182 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Crm.CrmController",
+    "Method": "ListarActividades",
+    "RelativePath": "api/crm/actividades",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "soloActivas",
+        "Type": "System.Boolean",
+        "IsRequired": false
+      },
+      {
+        "Name": "oportunidadId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "clienteId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Crm.Dtos.ActividadItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Crm.CrmController",
+    "Method": "CrearActividad",
+    "RelativePath": "api/crm/actividades",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Crm.Dtos.CrearActividadRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Int32",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Crm.CrmController",
+    "Method": "EliminarActividad",
+    "RelativePath": "api/crm/actividades/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Crm.CrmController",
+    "Method": "CompletarActividad",
+    "RelativePath": "api/crm/actividades/{id}/completar",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Crm.Dtos.CompletarActividadRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Crm.AutomacionController",
+    "Method": "Listar",
+    "RelativePath": "api/crm/automatizacion",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Crm.Dtos.ReglaAutomacionItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Crm.AutomacionController",
+    "Method": "Actualizar",
+    "RelativePath": "api/crm/automatizacion/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Crm.Dtos.ActualizarReglaRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Crm.AutomacionController",
+    "Method": "EjecutarAhora",
+    "RelativePath": "api/crm/automatizacion/{id}/ejecutar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Crm.Dtos.EjecutarReglaResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Crm.AutomacionController",
+    "Method": "EvaluarTodas",
+    "RelativePath": "api/crm/automatizacion/evaluar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {

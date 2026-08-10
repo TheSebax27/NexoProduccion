@@ -47,8 +47,8 @@ wwwroot\lib\bootstrap\dist\js\bootstrap.js
 wwwroot\lib\bootstrap\dist\js\bootstrap.js.map
 wwwroot\lib\bootstrap\dist\js\bootstrap.min.js
 wwwroot\lib\bootstrap\dist\js\bootstrap.min.js.map
-wwwroot\tailwind.css
 wwwroot\tailwind.input.css
+wwwroot\tailwind.css
 Components\Layout\ReconnectModal.razor.js
 C:\Users\ASROCK\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.10\build\..\_framework\blazor.web.js
 C:\Users\ASROCK\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.10\build\..\_framework\blazor.server.js
@@ -98,8 +98,8 @@ C:\Produccion\NexoWeb\wwwroot\lib\bootstrap\dist\js\bootstrap.js
 C:\Produccion\NexoWeb\wwwroot\lib\bootstrap\dist\js\bootstrap.js.map
 C:\Produccion\NexoWeb\wwwroot\lib\bootstrap\dist\js\bootstrap.min.js
 C:\Produccion\NexoWeb\wwwroot\lib\bootstrap\dist\js\bootstrap.min.js.map
-C:\Produccion\NexoWeb\wwwroot\tailwind.css
 C:\Produccion\NexoWeb\wwwroot\tailwind.input.css
 C:\Produccion\NexoWeb\Components\Layout\ReconnectModal.razor.js
 C:\Users\ASROCK\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.10\_framework\blazor.web.js
 C:\Users\ASROCK\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.10\_framework\blazor.server.js
+C:\Produccion\NexoWeb\wwwroot\tailwind.css

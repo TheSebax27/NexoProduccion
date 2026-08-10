@@ -1,4 +1,5 @@
 @using NexoWeb.Common.Dtos
+@inject NexoWeb.Common.ApiClient.INexoApiClient ApiClient
 
 <MudDialog>
     <DialogContent>
@@ -58,6 +59,13 @@
 
             <MudTextField @bind-Value="_notas" Label="Notas" Lines="2" Class="mb-3" />
         </MudForm>
+
+        @if (EsEdicion)
+        {
+            <MudDivider Class="my-3" />
+            <ActividadesPanel OportunidadID="@Oportunidad!.OportunidadID"
+                              ResponsableIDPorDefecto="@Oportunidad.ResponsableID" />
+        }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancelar">Cancelar</MudButton>

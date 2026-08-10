@@ -25,7 +25,7 @@ public class ConfiguracionController : ControllerBase
     [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> ActualizarNombre(ActualizarNombreEmpresaRequest request)
     {
-        await _service.ActualizarNombreEmpresaAsync(request.NombreEmpresa);
+        await _service.ActualizarNombreEmpresaAsync(request.NombreEmpresa, request.NombrePropietario);
         return NoContent();
     }
 

@@ -4,7 +4,9 @@
 <MudDialog>
     <DialogContent>
         <MudForm @ref="_form" Model="@this">
-            <MudSelect T="int?" @bind-Value="_clienteId" Label="Cliente" Required="true"
+            <MudSelect T="int?" Value="_clienteId"
+                       ValueChanged="@((int? v) => { _clienteId = v; _oportunidadId = null; })"
+                       Label="Cliente" Required="true"
                        RequiredError="Selecciona un cliente" Class="mb-3">
                 @foreach (var c in Clientes)
                 {
@@ -12,8 +14,9 @@
                 }
             </MudSelect>
 
-            <MudSelect T="int?" @bind-Value="_oportunidadId" Label="Oportunidad (opcional)" Clearable="true" Class="mb-3">
-                @foreach (var o in Oportunidades)
+            <MudSelect T="int?" @bind-Value="_oportunidadId" Label="Oportunidad (opcional)" Clearable="true" Class="mb-3"
+                       HelperText="@(_clienteId is not null && !OportunidadesFiltradas.Any() ? "Sin oportunidades activas para este cliente" : null)">
+                @foreach (var o in OportunidadesFiltradas)
                 {
                     <MudSelectItem T="int?" Value="@o.OportunidadID">@o.Nombre</MudSelectItem>
                 }
@@ -78,6 +81,11 @@
     private MudForm _form = default!;
     private int? _clienteId;
     private int? _oportunidadId;
+
+    private IEnumerable<OportunidadItem> OportunidadesFiltradas =>
+        _clienteId is null
+            ? Oportunidades
+            : Oportunidades.Where(o => o.ClienteID == _clienteId);
     private DateTime? _fecha = DateTime.Today;
     private DateTime? _validoHasta = DateTime.Today.AddDays(15);
     private string? _notas;

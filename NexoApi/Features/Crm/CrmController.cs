@@ -251,6 +251,43 @@ public class CrmController : ControllerBase
         }
     }
 
+    // ---------- Actividades CRM (agosto 2026) ----------
+
+    [HttpGet("actividades")]
+    public async Task<ActionResult<IEnumerable<ActividadItem>>> ListarActividades(
+        [FromQuery] bool soloActivas = true,
+        [FromQuery] int? oportunidadId = null,
+        [FromQuery] int? clienteId = null)
+        => Ok(await _service.ListarActividadesAsync(soloActivas, oportunidadId, clienteId));
+
+    [HttpPost("actividades")]
+    public async Task<ActionResult<int>> CrearActividad(CrearActividadRequest request)
+    {
+        try
+        {
+            var id = await _service.CrearActividadAsync(request);
+            return Ok(id);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPatch("actividades/{id:int}/completar")]
+    public async Task<ActionResult> CompletarActividad(int id, CompletarActividadRequest request)
+    {
+        await _service.CompletarActividadAsync(id, request.Completada);
+        return NoContent();
+    }
+
+    [HttpDelete("actividades/{id:int}")]
+    public async Task<ActionResult> EliminarActividad(int id)
+    {
+        await _service.EliminarActividadAsync(id);
+        return NoContent();
+    }
+
     // ---------- Cotizaciones (agosto 2026) ----------
 
     [HttpGet("cotizaciones")]

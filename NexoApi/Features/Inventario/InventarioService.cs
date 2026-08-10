@@ -31,7 +31,10 @@ public class InventarioService : IInventarioService
             SELECT s.ArticuloID, s.SKU, s.Articulo, s.TipoArticulo, s.Unidad, s.UnidadesPorEmbalaje, s.BodegaID, s.Bodega,
                    s.CentroCostoID, s.CentroCosto, s.LoteID, s.NumeroLote, s.FechaVencimiento,
                    s.CantidadActual, s.CostoUnitarioLote, s.ValorTotal, s.RequierePedido,
-                   CAST(CASE WHEN a.Imagen IS NULL THEN 0 ELSE 1 END AS BIT) AS TieneImagen
+                   CAST(CASE WHEN a.Imagen IS NULL THEN 0 ELSE 1 END AS BIT) AS TieneImagen,
+                   ISNULL(a.StockMinimo, 0) AS StockMinimo,
+                   ISNULL(a.CostoPromedio, 0) AS CostoPromedio,
+                   ISNULL(a.PrecioVenta, 0) AS PrecioVenta
             FROM Inventario.vw_StockConsolidado s
             JOIN Catalogo.Articulos a ON a.ArticuloID = s.ArticuloID
             WHERE (@CentroCostoId IS NULL OR s.CentroCostoID = @CentroCostoId)

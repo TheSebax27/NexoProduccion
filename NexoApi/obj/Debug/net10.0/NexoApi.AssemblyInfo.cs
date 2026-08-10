@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NexoApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5b665d8603b314c26a2484dd38794bdeb4db0f28")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1343b72b53b79566f3166a3ccec55546d604c670")]
 [assembly: System.Reflection.AssemblyProductAttribute("NexoApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NexoApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

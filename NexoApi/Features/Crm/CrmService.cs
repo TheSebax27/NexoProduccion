@@ -40,6 +40,12 @@ public interface ICrmService
     Task<int> CrearOportunidadAsync(CrearOportunidadRequest request);
     Task ActualizarOportunidadAsync(int oportunidadId, ActualizarOportunidadRequest request);
 
+    // ---------- Actividades CRM (agosto 2026) ----------
+    Task<IEnumerable<ActividadItem>> ListarActividadesAsync(bool soloActivas, int? oportunidadId, int? clienteId);
+    Task<int> CrearActividadAsync(CrearActividadRequest request);
+    Task CompletarActividadAsync(int actividadId, bool completada);
+    Task EliminarActividadAsync(int actividadId);
+
     // ---------- Cotizaciones (agosto 2026) ----------
     Task<IEnumerable<CotizacionItem>> ListarCotizacionesAsync(int? clienteId, string? estado);
     Task<int> CrearCotizacionAsync(CrearCotizacionRequest request, int usuarioId);
@@ -52,11 +58,13 @@ public class CrmService : ICrmService
 {
     private readonly IDbConnectionFactory _db;
     private readonly IFacturacionService _facturacion;
+    private readonly IAutomacionService _automacion;
 
-    public CrmService(IDbConnectionFactory db, IFacturacionService facturacion)
+    public CrmService(IDbConnectionFactory db, IFacturacionService facturacion, IAutomacionService automacion)
     {
         _db = db;
         _facturacion = facturacion;
+        _automacion = automacion;
     }
 
     public async Task<IEnumerable<ClienteItem>> ListarClientesAsync(int? responsableId, string? tipoCliente, string? fuenteContacto, bool? soloActivos)
@@ -543,6 +551,11 @@ public class CrmService : ICrmService
     {
         using var connection = _db.CreateConnection();
 
+        // Capturar estado anterior para detectar cambio de etapa (hook de automatización).
+        var anterior = await connection.QueryFirstOrDefaultAsync<(string Etapa, int? ClienteID)>(
+            "SELECT Etapa, ClienteID FROM Crm.Oportunidades WHERE OportunidadID = @Id",
+            new { Id = oportunidadId });
+
         var cerrada = r.Etapa is "GANADA" or "PERDIDA";
 
         const string sql = @"
@@ -560,6 +573,65 @@ public class CrmService : ICrmService
 
         if (filas == 0)
             throw new KeyNotFoundException($"No existe la oportunidad {oportunidadId}.");
+
+        // Disparar automatización si cambió la etapa a una etapa activa.
+        if (!string.IsNullOrEmpty(anterior.Etapa) && anterior.Etapa != r.Etapa && !cerrada)
+            await _automacion.EvaluarEtapaCambiadaAsync(oportunidadId, anterior.ClienteID, r.ResponsableID, r.Etapa);
+    }
+
+    // ---------- Actividades CRM ----------
+
+    public async Task<IEnumerable<ActividadItem>> ListarActividadesAsync(bool soloActivas, int? oportunidadId, int? clienteId)
+    {
+        using var connection = _db.CreateConnection();
+        var sql = @"
+            SELECT a.ActividadID, a.Tipo, a.Titulo, a.Notas,
+                   a.FechaVencimiento, a.Completada, a.FechaCompletada,
+                   a.OportunidadID, op.Nombre AS Oportunidad,
+                   a.ClienteID, c.Nombre AS Cliente,
+                   a.ResponsableID, CONCAT(u.Nombres, ' ', u.Apellidos) AS Responsable,
+                   a.FechaCreacion
+            FROM Crm.Actividades a
+            LEFT JOIN Crm.Oportunidades op ON op.OportunidadID = a.OportunidadID
+            LEFT JOIN Crm.Clientes c       ON c.ClienteID = a.ClienteID
+            LEFT JOIN Seguridad.Usuarios u ON u.UsuarioID  = a.ResponsableID
+            WHERE (@SoloActivas = 0 OR a.Completada = 0)
+              AND (@OportunidadID IS NULL OR a.OportunidadID = @OportunidadID)
+              AND (@ClienteID    IS NULL OR a.ClienteID    = @ClienteID)
+            ORDER BY CASE WHEN a.FechaVencimiento IS NULL THEN 1 ELSE 0 END,
+                     a.FechaVencimiento, a.FechaCreacion DESC";
+        return await connection.QueryAsync<ActividadItem>(sql,
+            new { SoloActivas = soloActivas ? 1 : 0, OportunidadID = oportunidadId, ClienteID = clienteId });
+    }
+
+    public async Task<int> CrearActividadAsync(CrearActividadRequest r)
+    {
+        if (r.OportunidadID is null && r.ClienteID is null)
+            throw new InvalidOperationException("La actividad debe estar vinculada a una oportunidad o a un cliente.");
+        using var connection = _db.CreateConnection();
+        return await connection.ExecuteScalarAsync<int>(@"
+            INSERT INTO Crm.Actividades (Tipo, Titulo, Notas, FechaVencimiento, OportunidadID, ClienteID, ResponsableID)
+            OUTPUT INSERTED.ActividadID
+            VALUES (@Tipo, @Titulo, @Notas, @FechaVencimiento, @OportunidadID, @ClienteID, @ResponsableID)",
+            new { r.Tipo, r.Titulo, r.Notas, r.FechaVencimiento, r.OportunidadID, r.ClienteID, r.ResponsableID });
+    }
+
+    public async Task CompletarActividadAsync(int actividadId, bool completada)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(@"
+            UPDATE Crm.Actividades
+            SET Completada = @Completada,
+                FechaCompletada = CASE WHEN @Completada = 1 THEN SYSUTCDATETIME() ELSE NULL END
+            WHERE ActividadID = @ActividadID",
+            new { Completada = completada, ActividadID = actividadId });
+    }
+
+    public async Task EliminarActividadAsync(int actividadId)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync("DELETE FROM Crm.Actividades WHERE ActividadID = @ActividadID",
+            new { ActividadID = actividadId });
     }
 
     // ---------- Cotizaciones ----------

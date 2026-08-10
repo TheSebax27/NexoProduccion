@@ -131,6 +131,26 @@
     </Authorized>
 </AuthorizeView>
 
+@* Automatización CRM -- solo Administracion *@
+<AuthorizeView Roles="Administracion">
+    <Authorized>
+        <MudPaper Class="pa-5 mt-4" Style="max-width: 640px;">
+            <div class="nexo-chart-header mb-3">
+                <MudIcon Icon="@Icons.Material.Outlined.Autorenew" Size="Size.Small" Class="nexo-chart-header__icon" />
+                <div>
+                    <div class="nexo-chart-header__title">Automatización CRM</div>
+                    <div class="nexo-chart-header__sub">Reglas automáticas de seguimiento: actividades, alertas y triggers</div>
+                </div>
+            </div>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true"
+                       StartIcon="@Icons.Material.Outlined.Settings"
+                       OnClick="@(() => Navegacion.NavigateTo("/settings/automatizacion"))">
+                Configurar reglas de automatización
+            </MudButton>
+        </MudPaper>
+    </Authorized>
+</AuthorizeView>
+
 @* Solo Administracion -- afecta a TODOS los usuarios (nombre/logo del sidebar), no es una preferencia personal. *@
 <AuthorizeView Roles="Administracion">
     <Authorized>
@@ -166,9 +186,12 @@
 
             <MudTextField T="string" @bind-Value="_nombreEmpresa" Label="Nombre del negocio" Variant="Variant.Outlined"
                           Margin="Margin.Dense" Class="mt-4" />
+            <MudTextField T="string" @bind-Value="_nombrePropietario" Label="Nombre del propietario (opcional)"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-3"
+                          Placeholder="Ej: Juan Pérez" />
             <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-3"
                        OnClick="GuardarNombreEmpresaAsync" Disabled="@(_procesandoLogo || string.IsNullOrWhiteSpace(_nombreEmpresa))">
-                Guardar nombre
+                Guardar
             </MudButton>
         </MudPaper>
     </Authorized>
@@ -219,19 +242,23 @@
 
     // ── Mi Negocio (Administracion) ───────────────────────────────────
     private string _nombreEmpresa = "";
+    private string? _nombrePropietario;
     private bool _procesandoLogo;
 
     protected override void OnInitialized()
     {
         _nombreEmpresa = ConfiguracionEmpresa.NombreEmpresa;
+        _nombrePropietario = ConfiguracionEmpresa.NombrePropietario;
     }
 
     private async Task GuardarNombreEmpresaAsync()
     {
         try
         {
-            await ConfiguracionEmpresa.ActualizarNombreAsync(_nombreEmpresa.Trim());
-            Snackbar.Add("Nombre del negocio actualizado.", Severity.Success);
+            await ConfiguracionEmpresa.ActualizarNombreAsync(
+                _nombreEmpresa.Trim(),
+                string.IsNullOrWhiteSpace(_nombrePropietario) ? null : _nombrePropietario.Trim());
+            Snackbar.Add("Datos del negocio actualizados.", Severity.Success);
         }
         catch (HttpRequestException ex)
         {

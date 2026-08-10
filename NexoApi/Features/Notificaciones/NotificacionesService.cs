@@ -38,9 +38,17 @@ public class NotificacionesService : INotificacionesService
         using var connection = _db.CreateConnection();
         var items = new List<NotificacionItem>();
 
-        var sinStock = (await connection.QueryAsync<string>(
-            "SELECT DISTINCT Articulo FROM Inventario.vw_StockConsolidado WHERE CantidadActual = 0 ORDER BY Articulo"))
-            .ToList();
+        // Sin stock: total agrupado por artículo = 0
+        const string sqlSinStock = @"
+            SELECT g.Articulo
+            FROM (
+                SELECT ArticuloID, MAX(Articulo) AS Articulo, SUM(CantidadActual) AS TotalStock
+                FROM Inventario.vw_StockConsolidado
+                GROUP BY ArticuloID
+            ) g
+            WHERE g.TotalStock = 0
+            ORDER BY g.Articulo";
+        var sinStock = (await connection.QueryAsync<string>(sqlSinStock)).ToList();
         if (sinStock.Count > 0)
         {
             items.Add(new NotificacionItem(
@@ -50,14 +58,25 @@ public class NotificacionesService : INotificacionesService
                 "/inventario/stock"));
         }
 
-        var bajoStock = (await connection.QueryAsync<string>(
-            "SELECT DISTINCT Articulo FROM Inventario.vw_StockConsolidado WHERE CantidadActual > 0 AND RequierePedido = 1 ORDER BY Articulo"))
-            .ToList();
+        // Bajo reorden: total agrupado > 0 pero <= StockMinimo del catálogo
+        const string sqlBajoStock = @"
+            SELECT g.Articulo
+            FROM (
+                SELECT s.ArticuloID, MAX(s.Articulo) AS Articulo, SUM(s.CantidadActual) AS TotalStock
+                FROM Inventario.vw_StockConsolidado s
+                GROUP BY s.ArticuloID
+            ) g
+            JOIN Catalogo.Articulos a ON a.ArticuloID = g.ArticuloID
+            WHERE a.StockMinimo > 0
+              AND g.TotalStock > 0
+              AND g.TotalStock <= a.StockMinimo
+            ORDER BY g.Articulo";
+        var bajoStock = (await connection.QueryAsync<string>(sqlBajoStock)).ToList();
         if (bajoStock.Count > 0)
         {
             items.Add(new NotificacionItem(
                 "BajoStock", "warning",
-                $"{bajoStock.Count} artículo{(bajoStock.Count == 1 ? "" : "s")} bajo el punto de reorden",
+                $"{bajoStock.Count} artículo{(bajoStock.Count == 1 ? "" : "s")} bajo el stock mínimo",
                 ResumirNombres(bajoStock),
                 "/inventario/stock"));
         }

@@ -78,6 +78,21 @@ public record ActualizarOportunidadRequest(
     DateTime? FechaCierreEsperada, int? ResponsableID, string? Notas
 );
 
+// ---------- Actividades CRM (agosto 2026) ----------
+public record ActividadItem(
+    int ActividadID, string Tipo, string Titulo, string? Notas,
+    DateTime? FechaVencimiento, bool Completada, DateTime? FechaCompletada,
+    int? OportunidadID, string? Oportunidad,
+    int? ClienteID, string? Cliente,
+    int? ResponsableID, string? Responsable,
+    DateTime FechaCreacion
+);
+public record CrearActividadRequest(
+    string Tipo, string Titulo, string? Notas, DateTime? FechaVencimiento,
+    int? OportunidadID, int? ClienteID, int? ResponsableID
+);
+public record CompletarActividadRequest(bool Completada);
+
 // ---------- Cotizaciones (agosto 2026) ----------
 public record LineaCotizacionInput(int ArticuloID, decimal Cantidad, decimal PrecioUnitario);
 public record CotizacionItem(

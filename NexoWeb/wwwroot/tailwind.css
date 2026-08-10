@@ -118,6 +118,11 @@
   position: static
 }
 
+.my-3 {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem
+}
+
 .mb-1 {
   margin-bottom: 0.25rem
 }
@@ -170,6 +175,10 @@
   margin-top: 1rem
 }
 
+.inline {
+  display: inline
+}
+
 .flex {
   display: flex
 }
@@ -186,12 +195,26 @@
   align-items: center
 }
 
+.justify-end {
+  justify-content: flex-end
+}
+
 .justify-center {
   justify-content: center
 }
 
 .gap-3 {
   gap: 0.75rem
+}
+
+.px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem
+}
+
+.py-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem
 }
 
 .py-2 {

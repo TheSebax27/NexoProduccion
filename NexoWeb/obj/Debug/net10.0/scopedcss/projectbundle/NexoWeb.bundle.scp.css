@@ -1189,8 +1189,7 @@
         color: #FFFFFF;
     }
 /* /Components/Pages/Crm/Oportunidades.razor.rz.scp.css */
-/* Embudo de ventas -- mismo espiritu que el Kanban de Tareas de Proyectos
-   (GestionProyectoDialog.razor.css), sin drag&drop, con botones de mover. */
+/* Embudo de ventas con drag-and-drop nativo de HTML5. */
 .nexo-embudo[b-gvrdtdo5pd] {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1233,12 +1232,26 @@
   padding: 0.1rem 0.15rem 0.5rem;
 }
 
+.nexo-embudo__columna--drop[b-gvrdtdo5pd] {
+  background: rgba(124,92,255,0.08);
+  outline: 2px dashed rgba(124,92,255,0.5);
+  outline-offset: -2px;
+}
+
 .nexo-embudo__tarjeta[b-gvrdtdo5pd] {
   background: var(--n-bg-1, #FFFFFF);
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   padding: 0.55rem 0.65rem;
   margin-bottom: 0.5rem;
+  cursor: grab;
+  transition: opacity .15s, box-shadow .15s;
+}
+
+.nexo-embudo__tarjeta--arrastrando[b-gvrdtdo5pd] {
+  opacity: 0.4;
+  box-shadow: none;
+  cursor: grabbing;
 }
 
 .nexo-embudo__tarjeta-titulo[b-gvrdtdo5pd] {

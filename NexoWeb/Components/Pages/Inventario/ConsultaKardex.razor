@@ -23,7 +23,7 @@
                 }
             </MudSelect>
         </MudItem>
-        <MudItem xs="12" sm="6" md="3">
+        <MudItem xs="12" sm="6" md="2">
             <MudSelect T="int?" @bind-Value="_bodegaId" Label="Bodega" Clearable="true">
                 @foreach (var b in _bodegas)
                 {
@@ -36,6 +36,16 @@
         </MudItem>
         <MudItem xs="12" sm="6" md="2">
             <MudDatePicker @bind-Date="_hasta" Label="Hasta" DateFormat="dd/MM/yyyy" PickerVariant="PickerVariant.Dialog" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="2">
+            <MudSelect T="string" @bind-Value="_filtroCategoria" Label="Tipo" Clearable="true">
+                <MudSelectItem T="string" Value="@("Entrada")">Entradas</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Salida")">Salidas</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Producción")">Producción</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Ajuste")">Ajustes</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Baja")">Bajas / Pérdidas</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Traspaso")">Traspasos</MudSelectItem>
+            </MudSelect>
         </MudItem>
         <MudItem xs="12" md="2" Class="d-flex align-end">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConsultarAsync"
@@ -56,22 +66,22 @@
 }
 else if (_movimientos.Count > 0)
 {
+    var mostrados = MovimientosFiltrados.ToList();
     <div class="d-flex align-center justify-space-between mb-2">
         <MudText Typo="Typo.caption">
-            @_movimientos.Count movimientos (máximo 500 por consulta)
+            @mostrados.Count movimiento(s)
+            @if (!string.IsNullOrEmpty(_filtroCategoria)) { <text> de tipo "@_filtroCategoria"</text> }
+            (máximo 500 por consulta)
         </MudText>
-        @if (_movimientos.Count > 0)
-        {
-            <MudText Typo="Typo.caption" Style="color:var(--n-text-3);">
-                Valor total consultado: @_movimientos.Sum(m => m.ValorMovimiento).ToString("C0")
-            </MudText>
-        }
+        <MudText Typo="Typo.caption" Style="color:var(--n-text-3);">
+            Valor total: @mostrados.Sum(m => m.ValorMovimiento).ToString("C0")
+        </MudText>
     </div>
 
     @if (Preferencias.VistaListado == "tarjetas")
     {
         <div class="nexo-card-grid">
-            @foreach (var mov in _movimientos)
+            @foreach (var mov in mostrados)
             {
                 <div class="nexo-item-card">
                     <div class="d-flex align-center justify-space-between mb-1">
@@ -105,7 +115,10 @@ else if (_movimientos.Count > 0)
     }
     else
     {
-        <MudTable Items="_movimientos" Hover="true" Dense="true" Striped="true" FixedHeader="true" Height="500px">
+        <MudTable Items="mostrados" Hover="true" Dense="true" Striped="true" RowsPerPage="25">
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 25, 50, 100 }" />
+            </PagerContent>
             <HeaderContent>
                 <MudTh>Fecha</MudTh>
                 <MudTh>SKU / Artículo</MudTh>
@@ -158,9 +171,26 @@ else if (_consultaEjecutada)
     private int? _bodegaId;
     private DateTime? _desde;
     private DateTime? _hasta;
+    private string? _filtroCategoria;
     private bool _cargando;
     private bool _consultaEjecutada;
     private string? _errorCarga;
+
+    private IEnumerable<KardexMovimientoItem> MovimientosFiltrados =>
+        string.IsNullOrEmpty(_filtroCategoria)
+            ? _movimientos
+            : _movimientos.Where(m => CategoriaDe(m.TipoMovimiento) == _filtroCategoria);
+
+    private static string CategoriaDe(string tipo) => tipo switch
+    {
+        var t when t.Contains("Ajuste")                                              => "Ajuste",
+        var t when t.Contains("Baja") || t.Contains("Pérdida")                      => "Baja",
+        var t when t.Contains("Traspaso")                                            => "Traspaso",
+        var t when t.Contains("Compra") || t.Contains("Entrada")                    => "Entrada",
+        var t when t.Contains("Venta") || t.Contains("Salida") || t.Contains("Despacho") => "Salida",
+        var t when t.Contains("Produccion") || t.Contains("Producción")             => "Producción",
+        _ => "Otro"
+    };
 
     protected override async Task OnInitializedAsync()
     {

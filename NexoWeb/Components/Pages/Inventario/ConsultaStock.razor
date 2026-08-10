@@ -75,8 +75,16 @@ else if (Preferencias.VistaListado == "tarjetas")
                     <strong>@FormatearCantidad(grupo.CantidadTotal, grupo.Unidad, grupo.UnidadesPorEmbalaje)</strong>
                 </div>
                 <div class="nexo-item-card__row">
-                    <span>Valor total</span>
+                    <span style="color:var(--n-text-3); font-size:0.78rem;">Valor stock (lote)</span>
                     <strong>@grupo.ValorTotal.ToString("C0")</strong>
+                </div>
+                <div class="nexo-item-card__row">
+                    <span style="color:var(--n-text-3); font-size:0.78rem;">Costo promedio</span>
+                    <span style="font-size:0.85rem;">@grupo.CostoPromedio.ToString("C0")</span>
+                </div>
+                <div class="nexo-item-card__row">
+                    <span style="color:var(--n-text-3); font-size:0.78rem;">Precio venta</span>
+                    <span style="font-size:0.85rem; color:var(--mud-palette-success);">@grupo.PrecioVenta.ToString("C0")</span>
                 </div>
                 @if (grupo.Lotes.Count > 1)
                 {
@@ -98,19 +106,23 @@ else if (Preferencias.VistaListado == "tarjetas")
                 }
                 @if (grupo.CantidadTotal <= 0)
                 {
+                    var esPt0 = grupo.TipoArticulo == "Producto Terminado";
                     <div class="nexo-item-card__actions">
-                        <MudChip T="string" Color="Color.Error" Size="Size.Small" Icon="@Icons.Material.Filled.ShoppingCart"
-                                 OnClick="@(() => IrAOrdenarAsync(grupo.ArticuloID))" Style="cursor:pointer;">
-                            Sin stock
+                        <MudChip T="string" Color="Color.Error" Size="Size.Small"
+                                 Icon="@(esPt0 ? Icons.Material.Filled.Factory : Icons.Material.Filled.ShoppingCart)"
+                                 OnClick="@(() => IrAlertaAsync(grupo.ArticuloID, grupo.TipoArticulo))" Style="cursor:pointer;">
+                            @(esPt0 ? "Sin stock · Producir" : "Sin stock")
                         </MudChip>
                     </div>
                 }
                 else if (grupo.RequierePedido)
                 {
+                    var esPt1 = grupo.TipoArticulo == "Producto Terminado";
                     <div class="nexo-item-card__actions">
-                        <MudChip T="string" Color="Color.Warning" Size="Size.Small" Icon="@Icons.Material.Filled.ShoppingCart"
-                                 OnClick="@(() => IrAOrdenarAsync(grupo.ArticuloID))" Style="cursor:pointer;">
-                            Requiere pedido
+                        <MudChip T="string" Color="Color.Warning" Size="Size.Small"
+                                 Icon="@(esPt1 ? Icons.Material.Filled.Factory : Icons.Material.Filled.ShoppingCart)"
+                                 OnClick="@(() => IrAlertaAsync(grupo.ArticuloID, grupo.TipoArticulo))" Style="cursor:pointer;">
+                            @(esPt1 ? "Nueva producción" : "Requiere pedido")
                         </MudChip>
                     </div>
                 }
@@ -120,7 +132,8 @@ else if (Preferencias.VistaListado == "tarjetas")
 }
 else
 {
-    <MudTable Items="_grupos" Hover="true" Dense="true" Striped="true">
+    <MudTable Items="_grupos" Hover="true" Dense="true" Striped="true"
+              RowsPerPage="50" AllowUnsorted="false">
         <HeaderContent>
             <MudTh></MudTh>
             <MudTh></MudTh>
@@ -129,7 +142,17 @@ else
             <MudTh>Bodega</MudTh>
             <MudTh>Centro de Costo</MudTh>
             <MudTh Style="text-align:right">Cantidad</MudTh>
-            <MudTh Style="text-align:right">Valor Total</MudTh>
+            <MudTh Style="text-align:right">
+                <MudTooltip Text="Suma del stock valorado al costo de cada lote (FEFO/FIFO)">
+                    Valor Stock ⓘ
+                </MudTooltip>
+            </MudTh>
+            <MudTh Style="text-align:right">
+                <MudTooltip Text="Promedio ponderado histórico del catálogo">
+                    Costo Prom. ⓘ
+                </MudTooltip>
+            </MudTh>
+            <MudTh Style="text-align:right">P. Venta</MudTh>
             <MudTh>Alerta</MudTh>
         </HeaderContent>
         <RowTemplate>
@@ -162,20 +185,26 @@ else
                     </MudText>
                 }
             </MudTd>
-            <MudTd DataLabel="Valor Total" Style="text-align:right">@context.ValorTotal.ToString("C0")</MudTd>
+            <MudTd DataLabel="Valor Stock" Style="text-align:right">@context.ValorTotal.ToString("C0")</MudTd>
+            <MudTd DataLabel="Costo Prom." Style="text-align:right; color:var(--n-text-3);">@context.CostoPromedio.ToString("C0")</MudTd>
+            <MudTd DataLabel="P. Venta" Style="text-align:right; color:var(--mud-palette-success);">@context.PrecioVenta.ToString("C0")</MudTd>
             <MudTd DataLabel="Alerta">
                 @if (context.CantidadTotal <= 0)
                 {
-                    <MudChip T="string" Color="Color.Error" Size="Size.Small" Icon="@Icons.Material.Filled.ShoppingCart"
-                             OnClick="@(() => IrAOrdenarAsync(context.ArticuloID))" Style="cursor:pointer;">
-                        Sin stock
+                    var esPtL0 = context.TipoArticulo == "Producto Terminado";
+                    <MudChip T="string" Color="Color.Error" Size="Size.Small"
+                             Icon="@(esPtL0 ? Icons.Material.Filled.Factory : Icons.Material.Filled.ShoppingCart)"
+                             OnClick="@(() => IrAlertaAsync(context.ArticuloID, context.TipoArticulo))" Style="cursor:pointer;">
+                        @(esPtL0 ? "Sin stock · Producir" : "Sin stock")
                     </MudChip>
                 }
                 else if (context.RequierePedido)
                 {
-                    <MudChip T="string" Color="Color.Warning" Size="Size.Small" Icon="@Icons.Material.Filled.ShoppingCart"
-                             OnClick="@(() => IrAOrdenarAsync(context.ArticuloID))" Style="cursor:pointer;">
-                        Requiere pedido
+                    var esPtL1 = context.TipoArticulo == "Producto Terminado";
+                    <MudChip T="string" Color="Color.Warning" Size="Size.Small"
+                             Icon="@(esPtL1 ? Icons.Material.Filled.Factory : Icons.Material.Filled.ShoppingCart)"
+                             OnClick="@(() => IrAlertaAsync(context.ArticuloID, context.TipoArticulo))" Style="cursor:pointer;">
+                        @(esPtL1 ? "Nueva producción" : "Requiere pedido")
                     </MudChip>
                 }
             </MudTd>
@@ -211,6 +240,9 @@ else
                 }
             }
         </ChildRowContent>
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[] { 25, 50, 100 }" />
+        </PagerContent>
         <NoRecordsContent>
             <MudText>No hay stock que coincida con el filtro.</MudText>
         </NoRecordsContent>
@@ -224,7 +256,8 @@ else
         string? Unidad, decimal? UnidadesPorEmbalaje,
         int BodegaID, string Bodega, int CentroCostoID, string CentroCosto,
         decimal CantidadTotal, decimal ValorTotal, bool RequierePedido, bool TieneImagen,
-        List<StockConsolidadoItem> Lotes
+        List<StockConsolidadoItem> Lotes,
+        decimal CostoPromedio, decimal PrecioVenta
     );
 
     private List<StockConsolidadoItem> _stock = new();
@@ -266,8 +299,13 @@ else
         await CargarAsync();
     }
 
-    private void IrAOrdenarAsync(int articuloId) =>
-        Navegacion.NavigateTo($"/compras/ordenes?articuloId={articuloId}");
+    private void IrAlertaAsync(int articuloId, string tipoArticulo)
+    {
+        if (tipoArticulo == "Producto Terminado")
+            Navegacion.NavigateTo("/produccion/ordenes/crear");
+        else
+            Navegacion.NavigateTo($"/compras/ordenes?articuloId={articuloId}");
+    }
 
     private async Task OnCentroCostoCambiadoAsync(int? nuevoCentroCostoId)
     {
@@ -311,8 +349,8 @@ else
                         first.Unidad, first.UnidadesPorEmbalaje,
                         first.BodegaID, first.Bodega, first.CentroCostoID, first.CentroCosto,
                         g.Sum(s => s.CantidadActual), g.Sum(s => s.ValorTotal),
-                        g.Any(s => s.RequierePedido), first.TieneImagen,
-                        g.ToList()
+                        first.StockMinimo > 0 && g.Sum(s => s.CantidadActual) <= first.StockMinimo, first.TieneImagen,
+                        g.ToList(), first.CostoPromedio, first.PrecioVenta
                     );
                 })
                 .ToList();

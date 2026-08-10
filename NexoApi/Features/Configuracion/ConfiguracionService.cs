@@ -7,7 +7,7 @@ namespace NexoApi.Features.Configuracion;
 public interface IConfiguracionService
 {
     Task<ConfiguracionEmpresaResponse> ObtenerEmpresaAsync();
-    Task ActualizarNombreEmpresaAsync(string nombreEmpresa);
+    Task ActualizarNombreEmpresaAsync(string nombreEmpresa, string? nombrePropietario);
     Task ActualizarLogoEmpresaAsync(string base64, string contentType);
     Task EliminarLogoEmpresaAsync();
     Task ActualizarUsaVisionsAsync(bool usaVisions);
@@ -30,22 +30,23 @@ public class ConfiguracionService : IConfiguracionService
     {
         using var connection = _db.CreateConnection();
 
-        var fila = await connection.QuerySingleAsync<(string NombreEmpresa, byte[]? Logo, string? LogoContentType, bool UsaVisions)>(
-            "SELECT NombreEmpresa, Logo, LogoContentType, UsaVisions FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
+        var fila = await connection.QuerySingleAsync<(string NombreEmpresa, string? NombrePropietario, byte[]? Logo, string? LogoContentType, bool UsaVisions)>(
+            "SELECT NombreEmpresa, NombrePropietario, Logo, LogoContentType, UsaVisions FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
 
         return new ConfiguracionEmpresaResponse(
             fila.NombreEmpresa,
+            fila.NombrePropietario,
             fila.Logo is null ? null : Convert.ToBase64String(fila.Logo),
             fila.LogoContentType,
             fila.UsaVisions);
     }
 
-    public async Task ActualizarNombreEmpresaAsync(string nombreEmpresa)
+    public async Task ActualizarNombreEmpresaAsync(string nombreEmpresa, string? nombrePropietario)
     {
         using var connection = _db.CreateConnection();
         await connection.ExecuteAsync(
-            "UPDATE Organizacion.ConfiguracionEmpresa SET NombreEmpresa = @NombreEmpresa WHERE ConfiguracionID = 1",
-            new { NombreEmpresa = nombreEmpresa });
+            "UPDATE Organizacion.ConfiguracionEmpresa SET NombreEmpresa = @NombreEmpresa, NombrePropietario = @NombrePropietario WHERE ConfiguracionID = 1",
+            new { NombreEmpresa = nombreEmpresa, NombrePropietario = nombrePropietario });
     }
 
     // El UPDATE reemplaza el logo anterior -- no es un archivo en disco, es

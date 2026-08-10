@@ -18,7 +18,10 @@ public record StockConsolidadoItem(
     decimal CostoUnitarioLote,
     decimal ValorTotal,
     bool RequierePedido,
-    bool TieneImagen
+    bool TieneImagen,
+    decimal StockMinimo,
+    decimal CostoPromedio,
+    decimal PrecioVenta
 );
 
 public record MotivoPerdidaItem(int MotivoID, string Nombre);

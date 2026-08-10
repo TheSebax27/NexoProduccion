@@ -14,6 +14,7 @@ public class ConfiguracionEmpresaState
     private bool _cargado;
 
     public string NombreEmpresa { get; private set; } = "NEXO ERP";
+    public string? NombrePropietario { get; private set; }
     public string? LogoBase64 { get; private set; }
     public string? LogoContentType { get; private set; }
     public bool UsaVisions { get; private set; } = true;
@@ -38,6 +39,7 @@ public class ConfiguracionEmpresaState
             if (respuesta is not null)
             {
                 NombreEmpresa = respuesta.NombreEmpresa;
+                NombrePropietario = respuesta.NombrePropietario;
                 LogoBase64 = respuesta.LogoBase64;
                 LogoContentType = respuesta.LogoContentType;
                 UsaVisions = respuesta.UsaVisions;
@@ -51,11 +53,12 @@ public class ConfiguracionEmpresaState
         _cargado = true;
     }
 
-    public async Task ActualizarNombreAsync(string nombreEmpresa)
+    public async Task ActualizarNombreAsync(string nombreEmpresa, string? nombrePropietario = null)
     {
         await _apiClient.PutAsync<ActualizarNombreEmpresaRequest, object>(
-            "api/configuracion/empresa", new ActualizarNombreEmpresaRequest(nombreEmpresa));
+            "api/configuracion/empresa", new ActualizarNombreEmpresaRequest(nombreEmpresa, nombrePropietario));
         NombreEmpresa = nombreEmpresa;
+        NombrePropietario = nombrePropietario;
         OnCambio?.Invoke();
     }
 

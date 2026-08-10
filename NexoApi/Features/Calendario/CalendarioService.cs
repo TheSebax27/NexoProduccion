@@ -1,3 +1,4 @@
+using System.Data;
 using Dapper;
 using NexoApi.Common.Data;
 using NexoApi.Features.Calendario.Dtos;
@@ -119,7 +120,7 @@ public class CalendarioService : ICalendarioService
         const string sql = @"
             SELECT u.UsuarioID, u.Nombres + ' ' + u.Apellidos AS Nombre, u.Email
             FROM Seguridad.Usuarios u
-            WHERE u.Activo = 1
+            WHERE u.Estado = 1
             ORDER BY u.Nombres, u.Apellidos";
         return await connection.QueryAsync<UsuarioDisponibleItem>(sql);
     }
@@ -183,7 +184,7 @@ public class CalendarioService : ICalendarioService
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private static async Task<Dictionary<int, List<AsistenteEventoItem>>> CargarAsistentesAsync(
-        System.Data.IDbConnection connection, IEnumerable<int> eventoIds)
+        IDbConnection connection, IEnumerable<int> eventoIds)
     {
         var ids = eventoIds.ToList();
         if (ids.Count == 0) return [];
@@ -202,20 +203,20 @@ public class CalendarioService : ICalendarioService
     }
 
     private static EventoCalendarioItem MapearEvento(
-        EventoCalendarioRow row, Dictionary<int, List<AsistenteEventoItem>> asistentesPorEvento)
+        EventoCalendarioRow e, Dictionary<int, List<AsistenteEventoItem>> asistentesPorEvento)
     {
-        asistentesPorEvento.TryGetValue(row.EventoID, out var asistentes);
+        asistentesPorEvento.TryGetValue(e.EventoID, out var asistentes);
         return new EventoCalendarioItem(
-            row.EventoID, row.Titulo, row.TipoEvento,
-            row.FechaInicio, row.FechaFin,
-            row.Lugar, row.LinkVirtual, row.Descripcion,
-            row.CentroCostoID, row.CentroCosto,
-            row.CreadoPorUsuarioID, row.CreadoPor,
+            e.EventoID, e.Titulo, e.TipoEvento,
+            e.FechaInicio, e.FechaFin,
+            e.Lugar, e.LinkVirtual, e.Descripcion,
+            e.CentroCostoID, e.CentroCosto,
+            e.CreadoPorUsuarioID, e.CreadoPor,
             asistentes ?? []);
     }
 
     private static async Task InsertarAsistentesAsync(
-        System.Data.IDbConnection connection, int eventoId, List<int> usuarioIds)
+        IDbConnection connection, int eventoId, List<int> usuarioIds)
     {
         if (usuarioIds.Count == 0) return;
 

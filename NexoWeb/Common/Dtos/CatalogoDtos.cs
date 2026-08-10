@@ -1,4 +1,5 @@
-﻿namespace NexoWeb.Common.Dtos;
+﻿
+namespace NexoWeb.Common.Dtos;
 
 // Clientes se movio a Common/Dtos/CrmDtos.cs (agosto 2026).
 
