@@ -23,6 +23,7 @@ public class AuthStateService
     public int? CentroCostoId { get; private set; }
     public string? FotoPerfilBase64 { get; private set; }
     public string? FotoPerfilContentType { get; private set; }
+    public DateTime? ExpiraEn { get; private set; }
     public bool EstaLogueado => !string.IsNullOrEmpty(Token);
 
     // Data URI listo para <img src="..."> -- null si el usuario no tiene foto.
@@ -58,6 +59,7 @@ public class AuthStateService
                 CentroCostoId = datos.CentroCostoId;
                 FotoPerfilBase64 = datos.FotoPerfilBase64;
                 FotoPerfilContentType = datos.FotoPerfilContentType;
+                ExpiraEn = datos.ExpiraEn;
             }
         }
         catch (InvalidOperationException)
@@ -78,10 +80,18 @@ public class AuthStateService
         CentroCostoId = respuesta.CentroCostoId;
         FotoPerfilBase64 = respuesta.FotoPerfilBase64;
         FotoPerfilContentType = respuesta.FotoPerfilContentType;
+        ExpiraEn = respuesta.ExpiraEn;
 
         await GuardarSesionAsync();
 
         OnChange?.Invoke();
+    }
+
+    public async Task ActualizarTokenAsync(string nuevoToken, DateTime expiraEn)
+    {
+        Token = nuevoToken;
+        ExpiraEn = expiraEn;
+        await GuardarSesionAsync();
     }
 
     public async Task CerrarSesionAsync()
@@ -95,6 +105,7 @@ public class AuthStateService
         CentroCostoId = null;
         FotoPerfilBase64 = null;
         FotoPerfilContentType = null;
+        ExpiraEn = null;
 
         await _storage.DeleteAsync(ClaveStorage);
 
@@ -132,9 +143,9 @@ public class AuthStateService
     public Task<string?> ObtenerTokenAsync() => Task.FromResult(Token);
 
     private ValueTask GuardarSesionAsync() => _storage.SetAsync(ClaveStorage,
-        new DatosSesion(Token!, UsuarioId, Nombres!, Apellidos!, NombreCompleto!, Rol!, CentroCostoId, FotoPerfilBase64, FotoPerfilContentType));
+        new DatosSesion(Token!, UsuarioId, Nombres!, Apellidos!, NombreCompleto!, Rol!, CentroCostoId, FotoPerfilBase64, FotoPerfilContentType, ExpiraEn));
 
     private record DatosSesion(
         string Token, int? UsuarioId, string Nombres, string Apellidos, string NombreCompleto, string Rol, int? CentroCostoId,
-        string? FotoPerfilBase64, string? FotoPerfilContentType);
+        string? FotoPerfilBase64, string? FotoPerfilContentType, DateTime? ExpiraEn = null);
 }

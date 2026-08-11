@@ -8,10 +8,20 @@
 
 <PageTitle>Campañas de Email</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">Campañas de Email</MudText>
-
 <MudStack Row AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h5">Campañas de Email</MudText>
     <MudSpacer />
+    @if (_contador is not null)
+    {
+        var pct = (double)_contador.EmailsHoy / _contador.LimiteGmail * 100;
+        var col = pct >= 90 ? Color.Error : pct >= 70 ? Color.Warning : Color.Success;
+        <MudTooltip Text="@($"Emails enviados hoy: {_contador.EmailsHoy}/{_contador.LimiteGmail} (límite Gmail diario)")">
+            <MudChip T="string" Size="Size.Small" Color="@col" Variant="Variant.Outlined"
+                     Icon="@Icons.Material.Filled.Email">
+                @_contador.EmailsHoy / @_contador.LimiteGmail emails hoy
+            </MudChip>
+        </MudTooltip>
+    }
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
                OnClick="@(() => Nav.NavigateTo("/crm/campanas/nueva"))">
         Nueva campaña
@@ -128,8 +138,13 @@ else
 @code {
     List<CampanaResumen> _campanas = [];
     bool _cargando = true;
+    EmailContadorItem? _contador;
 
-    protected override async Task OnInitializedAsync() => await Cargar();
+    protected override async Task OnInitializedAsync()
+    {
+        await Cargar();
+        try { _contador = await Api.GetAsync<EmailContadorItem>("api/email/contador"); } catch { }
+    }
 
     async Task Cargar()
     {

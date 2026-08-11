@@ -21,10 +21,12 @@ else
     <MudPaper Class="pa-6 mb-4" MaxWidth="700px">
         @if (!EsNuevaVersion)
         {
-            <MudSelect T="int" @bind-Value="_productoTerminadoId" Label="Producto Terminado" Class="mb-4" Required="true">
+            <MudSelect T="int?" Value="_productoTerminadoId" ValueChanged="@((int? v) => _productoTerminadoId = v)"
+                       Label="Producto Terminado" Placeholder="Selecciona el artículo que produce esta receta"
+                       Class="mb-4" Required="true">
                 @foreach (var articulo in _productosTerminados)
                 {
-                    <MudSelectItem T="int" Value="@articulo.ArticuloID">@articulo.Nombre</MudSelectItem>
+                    <MudSelectItem T="int?" Value="@((int?)articulo.ArticuloID)">@articulo.Nombre</MudSelectItem>
                 }
             </MudSelect>
         }
@@ -39,14 +41,27 @@ else
         <MudTextField @bind-Value="_nombreReceta" Label="Nombre de la Receta" Class="mb-4" Required="true" />
 
         <MudNumericField @bind-Value="_cantidadRendimientoBase" Label="Cantidad de Rendimiento Base"
-                         Min="0.001m" Format="N2" Class="mb-4" Required="true" />
+                         Min="0.001m" Format="N2" Class="mb-4" Required="true"
+                         HelperText="¿Cuántas unidades produce una corrida de esta receta?" />
 
-        <MudSelect T="int" @bind-Value="_unidadRendimientoId" Label="Unidad de Rendimiento" Class="mb-4" Required="true">
+        <MudSelect T="int?" Value="_unidadRendimientoId" ValueChanged="@((int? v) => _unidadRendimientoId = v)"
+                   Label="Unidad de Rendimiento" Placeholder="Selecciona unidad de medida"
+                   Class="mb-2" Required="true">
             @foreach (var unidad in _unidadesMedida)
             {
-                <MudSelectItem T="int" Value="@unidad.UnidadID">@unidad.Nombre (@unidad.Abreviatura)</MudSelectItem>
+                <MudSelectItem T="int?" Value="@((int?)unidad.UnidadID)">@unidad.Nombre (@unidad.Abreviatura)</MudSelectItem>
             }
         </MudSelect>
+        @if (EsUnidadCajaRendimiento)
+        {
+            <MudNumericField @bind-Value="_unidadesPorCaja" Label="Unidades individuales por caja (opcional)"
+                             Min="1m" Format="N0" Class="mb-4"
+                             HelperText="Si esta receta produce cajas, indica cuántas unidades trae cada caja para facilitar el cálculo de costos." />
+        }
+        else
+        {
+            <div class="mb-4" />
+        }
     </MudPaper>
 
     <MudText Typo="Typo.h6" Class="mb-2">Insumos de la Receta</MudText>
@@ -61,24 +76,48 @@ else
             <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
+            @{
+                var art = _insumosDisponibles.FirstOrDefault(a => a.ArticuloID == context.InsumoID);
+                var esCaja = art?.EsUnidadCaja == true;
+            }
             <MudTd DataLabel="Insumo">
-                <MudSelect T="int" @bind-Value="context.InsumoID" Dense="true">
+                <MudSelect T="int?" Value="@((int?)context.InsumoID)"
+                           ValueChanged="@((int? v) => OnInsumoSeleccionado(context, v))"
+                           Dense="true" Placeholder="Selecciona un insumo">
                     @foreach (var articulo in _insumosDisponibles)
                     {
-                        <MudSelectItem T="int" Value="@articulo.ArticuloID">@articulo.Nombre (@articulo.TipoArticulo)</MudSelectItem>
+                        <MudSelectItem T="int?" Value="@((int?)articulo.ArticuloID)">
+                            @articulo.Nombre
+                            @if (articulo.EsUnidadCaja)
+                            {
+                                <text> (@articulo.UnidadesPorEmbalaje.Value.ToString("N0") u/cja)</text>
+                            }
+                        </MudSelectItem>
                     }
                 </MudSelect>
             </MudTd>
             <MudTd DataLabel="Cantidad">
-                <MudNumericField @bind-Value="context.CantidadRequerida" Min="0.001m" Format="N2" Dense="true" />
+                @if (esCaja)
+                {
+                    <div>
+                        <MudNumericField @bind-Value="context.CantidadRequerida" Min="0.001m" Format="N3" Dense="true"
+                                         HelperText="@($"cajas · {(context.CantidadRequerida * (art!.UnidadesPorEmbalaje ?? 1)).ToString("N0")} u")" />
+                    </div>
+                }
+                else
+                {
+                    <MudNumericField @bind-Value="context.CantidadRequerida" Min="0.001m" Format="N3" Dense="true" />
+                }
             </MudTd>
             <MudTd DataLabel="Unidad">
-                <MudSelect T="int" @bind-Value="context.UnidadID" Dense="true">
-                    @foreach (var unidad in _unidadesMedida)
-                    {
-                        <MudSelectItem T="int" Value="@unidad.UnidadID">@unidad.Abreviatura</MudSelectItem>
-                    }
-                </MudSelect>
+                @if (art is not null)
+                {
+                    <MudText Typo="Typo.body2">@(art.Unidad ?? "-")</MudText>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">—</MudText>
+                }
             </MudTd>
             <MudTd DataLabel="% Merma Std.">
                 <MudNumericField @bind-Value="context.PorcentajeMermaEstandar" Min="0m" Max="100m" Format="N1" Dense="true" />
@@ -133,10 +172,14 @@ else
     private List<ArticuloItem> _insumosDisponibles => _articulos.Where(a => a.TipoArticulo is "Materia Prima" or "Insumo" or "Servicio").ToList();
 
     // Encabezado del formulario
-    private int _productoTerminadoId;
+    private int? _productoTerminadoId;
     private string _nombreReceta = string.Empty;
     private decimal _cantidadRendimientoBase = 1;
-    private int _unidadRendimientoId;
+    private int? _unidadRendimientoId;
+    private decimal? _unidadesPorCaja;
+
+    private bool EsUnidadCajaRendimiento =>
+        _unidadesMedida.FirstOrDefault(u => u.UnidadID == _unidadRendimientoId)?.Abreviatura == "cja";
 
     // Lineas dinamicas: se manejan como clase mutable en la UI y se convierten
     // a record inmutable (DetalleRecetaRequest) recien al enviar, siguiendo la
@@ -157,7 +200,7 @@ else
 
     private bool FormularioValido =>
         !string.IsNullOrWhiteSpace(_nombreReceta) && _cantidadRendimientoBase > 0 &&
-        _unidadRendimientoId > 0 && (EsNuevaVersion || _productoTerminadoId > 0) &&
+        _unidadRendimientoId is > 0 && (EsNuevaVersion || _productoTerminadoId is > 0) &&
         _lineas.Count > 0 && _lineas.All(l => l.InsumoID > 0 && l.CantidadRequerida > 0 && l.UnidadID > 0);
 
     protected override async Task OnInitializedAsync()
@@ -203,6 +246,15 @@ else
 
     private void QuitarLinea(LineaRecetaEditable linea) => _lineas.Remove(linea);
 
+    private void OnInsumoSeleccionado(LineaRecetaEditable linea, int? articuloId)
+    {
+        linea.InsumoID = articuloId ?? 0;
+        // Auto-rellena la unidad del artículo seleccionado
+        var art = _insumosDisponibles.FirstOrDefault(a => a.ArticuloID == articuloId);
+        if (art is not null)
+            linea.UnidadID = _unidadesMedida.FirstOrDefault(u => u.Abreviatura == art.Unidad)?.UnidadID ?? 0;
+    }
+
     private async Task GuardarAsync()
     {
         _guardando = true;
@@ -218,7 +270,7 @@ else
             if (EsNuevaVersion)
             {
                 var request = new CrearNuevaVersionRequest(
-                    _nombreReceta, _cantidadRendimientoBase, _unidadRendimientoId, detalle);
+                    _nombreReceta, _cantidadRendimientoBase, _unidadRendimientoId!.Value, detalle);
 
                 await ApiClient.PostAsync<CrearNuevaVersionRequest, object?>(
                     $"api/produccion/recetas/{RecetaBaseId}/nueva-version", request);
@@ -226,7 +278,7 @@ else
             else
             {
                 var request = new CrearRecetaRequest(
-                    _productoTerminadoId, _nombreReceta, _cantidadRendimientoBase, _unidadRendimientoId, detalle);
+                    _productoTerminadoId!.Value, _nombreReceta, _cantidadRendimientoBase, _unidadRendimientoId!.Value, detalle);
 
                 await ApiClient.PostAsync<CrearRecetaRequest, object?>("api/produccion/recetas", request);
             }

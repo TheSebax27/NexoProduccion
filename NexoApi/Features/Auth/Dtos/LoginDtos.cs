@@ -61,3 +61,5 @@ public record ResetearPasswordRequest(string NuevaPassword);
 public record ActualizarPerfilRequest(string Nombres, string Apellidos);
 public record ActualizarFotoPerfilRequest(string Base64, string ContentType);
 public record PerfilActualizadoResponse(string NombreCompleto);
+
+public record RenovarResponse(string AccessToken, DateTime ExpiraEn);

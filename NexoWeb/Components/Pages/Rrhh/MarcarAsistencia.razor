@@ -1,0 +1,123 @@
+@page "/rrhh/marcar"
+@using NexoWeb.Common.Dtos
+@using NexoWeb.Common.ApiClient
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject INexoApiClient Api
+@inject ISnackbar Snackbar
+
+<PageTitle>Marcar Asistencia</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-10">
+    @if (_cargando)
+    {
+        <MudPaper Class="pa-8 text-center" Elevation="2">
+            <MudProgressCircular Indeterminate Color="Color.Primary" />
+            <MudText Typo="Typo.body1" Class="mt-3">Verificando...</MudText>
+        </MudPaper>
+    }
+    else if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Icon="@Icons.Material.Filled.ErrorOutline">
+            @_error
+        </MudAlert>
+    }
+    else if (_exito)
+    {
+        <MudPaper Class="pa-8 text-center" Elevation="3">
+            <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                     Style="font-size:5rem; color:var(--mud-palette-success)" />
+            <MudText Typo="Typo.h5" Class="mt-2 mb-1">¡Registrado!</MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary">@_mensajeExito</MudText>
+        </MudPaper>
+    }
+    else if (_estado is not null)
+    {
+        var jaCompleto = _estado.TieneEntrada && _estado.TieneSalida;
+        var esSalida   = _estado.TieneEntrada && !_estado.TieneSalida;
+        var tipo       = esSalida ? "SALIDA" : "ENTRADA";
+        var color      = esSalida ? Color.Warning : Color.Success;
+        var icono      = esSalida ? Icons.Material.Filled.Logout : Icons.Material.Filled.Login;
+
+        <MudPaper Class="pa-6" Elevation="3">
+            <MudText Typo="Typo.h6" Align="Align.Center">@_estado.Empleado</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Align="Align.Center" Class="mb-4 d-block">
+                @DateTime.Now.ToString("dddd dd/MM/yyyy", new System.Globalization.CultureInfo("es-CO"))
+            </MudText>
+
+            @if (_estado.TieneEntrada)
+            {
+                <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true">
+                    Entrada: @_estado.HoraEntrada?.ToString("HH:mm")
+                    <MudChip T="string" Size="Size.Small" Class="ml-2"
+                             Color="@(_estado.MetodoEntrada == "QR" ? Color.Success : Color.Warning)">
+                        @_estado.MetodoEntrada
+                    </MudChip>
+                </MudAlert>
+            }
+
+            @if (jaCompleto)
+            {
+                <MudAlert Severity="Severity.Success">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-1" />
+                    Salida: @_estado.HoraSalida?.ToString("HH:mm") · Jornada completa
+                </MudAlert>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Color="@color" StartIcon="@icono"
+                           Size="Size.Large" FullWidth="true"
+                           OnClick="@(() => MarcarAsync(tipo))" Disabled="_marcando">
+                    @(_marcando ? "Registrando..." : $"Marcar {tipo} — {DateTime.Now:HH:mm}")
+                </MudButton>
+            }
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [SupplyParameterFromQuery(Name = "t")] public string? T { get; set; }
+
+    EstadoAsistenciaHoy? _estado;
+    bool _cargando = true, _marcando, _exito;
+    string? _error, _mensajeExito;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(T))
+        {
+            _error = "Código QR inválido. Escanea el código de la pantalla del kiosco.";
+            _cargando = false;
+            return;
+        }
+        try
+        {
+            _estado = await Api.GetAsync<EstadoAsistenciaHoy>("api/rrhh/asistencia/estado-hoy");
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message.Contains("vinculado") || ex.Message.Contains("empleado")
+                ? ex.Message
+                : "No se pudo cargar tu estado de asistencia.";
+        }
+        finally { _cargando = false; }
+    }
+
+    async Task MarcarAsync(string tipo)
+    {
+        _marcando = true;
+        try
+        {
+            await Api.PostAsync<MarcarQrRequest, object?>(
+                "api/rrhh/asistencia/marcar/qr",
+                new MarcarQrRequest(T!, tipo));
+
+            _mensajeExito = $"{tipo} registrada a las {DateTime.Now:HH:mm}";
+            _exito = true;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally { _marcando = false; }
+    }
+}

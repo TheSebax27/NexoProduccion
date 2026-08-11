@@ -291,6 +291,320 @@
         }
       }
     },
+    "/api/rrhh/asistencia/qr-imagen": {
+      "get": {
+        "tags": [
+          "Asistencia"
+        ],
+        "parameters": [
+          {
+            "name": "wb",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/rrhh/asistencia/token": {
+      "get": {
+        "tags": [
+          "Asistencia"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenQrResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenQrResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenQrResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rrhh/asistencia/estado-hoy": {
+      "get": {
+        "tags": [
+          "Asistencia"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoAsistenciaHoy"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoAsistenciaHoy"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoAsistenciaHoy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rrhh/asistencia/marcar/qr": {
+      "post": {
+        "tags": [
+          "Asistencia"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarcarQrRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarcarQrRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarcarQrRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/rrhh/asistencia/marcar/manual": {
+      "post": {
+        "tags": [
+          "Asistencia"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarcarManualRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarcarManualRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarcarManualRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/rrhh/asistencia/lista": {
+      "get": {
+        "tags": [
+          "Asistencia"
+        ],
+        "parameters": [
+          {
+            "name": "empleadoId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RegistroAsistenciaItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RegistroAsistenciaItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RegistroAsistenciaItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rrhh/asistencia/horarios": {
+      "get": {
+        "tags": [
+          "Asistencia"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HorarioItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HorarioItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HorarioItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Asistencia"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearHorarioRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearHorarioRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearHorarioRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/rrhh/asistencia/empleados/{empleadoId}/horario": {
+      "post": {
+        "tags": [
+          "Asistencia"
+        ],
+        "parameters": [
+          {
+            "name": "empleadoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsignarHorarioRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsignarHorarioRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsignarHorarioRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/auth/login": {
       "post": {
         "tags": [
@@ -332,6 +646,35 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/renovar": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenovarResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenovarResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenovarResponse"
                 }
               }
             }
@@ -3510,6 +3853,35 @@
         }
       }
     },
+    "/api/email/contador": {
+      "get": {
+        "tags": [
+          "Email"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailContadorItem"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailContadorItem"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailContadorItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/email/test": {
       "post": {
         "tags": [
@@ -4315,6 +4687,104 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/facturacion/facturas/{id}/verificar-produccion": {
+      "get": {
+        "tags": [
+          "Facturacion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VerificarProduccionItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VerificarProduccionItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VerificarProduccionItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/facturacion/facturas/{id}/auto-producir": {
+      "post": {
+        "tags": [
+          "Facturacion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AutoProducirResultItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AutoProducirResultItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AutoProducirResultItem"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -9262,6 +9732,20 @@
         },
         "additionalProperties": false
       },
+      "AsignarHorarioRequest": {
+        "type": "object",
+        "properties": {
+          "horarioID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "desde": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "AsistenteEventoItem": {
         "type": "object",
         "properties": {
@@ -9318,6 +9802,32 @@
           "fechaCreacion": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AutoProducirResultItem": {
+        "type": "object",
+        "properties": {
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "exitoso": {
+            "type": "boolean"
+          },
+          "ordenProduccionID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10580,6 +11090,31 @@
         },
         "additionalProperties": false
       },
+      "CrearHorarioRequest": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "toleranciaTardanzaMin": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tipoCiclo": {
+            "type": "string",
+            "nullable": true
+          },
+          "dias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HorarioDiaInput"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CrearInteraccionRequest": {
         "type": "object",
         "properties": {
@@ -11388,6 +11923,24 @@
         },
         "additionalProperties": false
       },
+      "EmailContadorItem": {
+        "type": "object",
+        "properties": {
+          "emailsHoy": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "limiteGmail": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "additionalProperties": false
+      },
       "EmpleadoDocumentoItem": {
         "type": "object",
         "properties": {
@@ -11515,6 +12068,44 @@
         "type": "object",
         "properties": {
           "emailDestino": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "EstadoAsistenciaHoy": {
+        "type": "object",
+        "properties": {
+          "empleadoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "empleado": {
+            "type": "string",
+            "nullable": true
+          },
+          "tieneEntrada": {
+            "type": "boolean"
+          },
+          "horaEntrada": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "metodoEntrada": {
+            "type": "string",
+            "nullable": true
+          },
+          "tieneSalida": {
+            "type": "boolean"
+          },
+          "horaSalida": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "metodoSalida": {
             "type": "string",
             "nullable": true
           }
@@ -11728,6 +12319,9 @@
             "nullable": true
           },
           "stockDescontado": {
+            "type": "boolean"
+          },
+          "produccionAutoEjecutada": {
             "type": "boolean"
           }
         },
@@ -11965,6 +12559,138 @@
           "orden": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "HorarioDiaInput": {
+        "type": "object",
+        "properties": {
+          "diaSemana": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "semana": {
+            "type": "string",
+            "nullable": true
+          },
+          "horaEntrada": {
+            "type": "string",
+            "format": "date-span"
+          },
+          "horaSalida": {
+            "type": "string",
+            "format": "date-span"
+          },
+          "tieneAlmuerzo": {
+            "type": "boolean"
+          },
+          "horaInicioAlmuerzo": {
+            "type": "string",
+            "format": "date-span",
+            "nullable": true
+          },
+          "horaFinAlmuerzo": {
+            "type": "string",
+            "format": "date-span",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "HorarioDiaItem": {
+        "type": "object",
+        "properties": {
+          "diaSemana": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "semana": {
+            "type": "string",
+            "nullable": true
+          },
+          "horaEntrada": {
+            "type": "string",
+            "format": "time"
+          },
+          "horaSalida": {
+            "type": "string",
+            "format": "time"
+          },
+          "tieneAlmuerzo": {
+            "type": "boolean"
+          },
+          "horaInicioAlmuerzo": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "horaFinAlmuerzo": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "HorarioItem": {
+        "type": "object",
+        "properties": {
+          "horarioID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "toleranciaTardanzaMin": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tipoCiclo": {
+            "type": "string",
+            "nullable": true
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "dias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HorarioDiaItem"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "InsumoVerificacionItem": {
+        "type": "object",
+        "properties": {
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "unidad": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidadRequerida": {
+            "type": "number",
+            "format": "double"
+          },
+          "stockDisponible": {
+            "type": "number",
+            "format": "double"
+          },
+          "esInsuficiente": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "additionalProperties": false
@@ -12272,6 +12998,42 @@
           "fechaCreacion": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MarcarManualRequest": {
+        "type": "object",
+        "properties": {
+          "empleadoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tipo": {
+            "type": "string",
+            "nullable": true
+          },
+          "hora": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nota": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MarcarQrRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipo": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -13173,6 +13935,72 @@
         },
         "additionalProperties": false
       },
+      "RegistroAsistenciaItem": {
+        "type": "object",
+        "properties": {
+          "registroID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "empleadoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "empleado": {
+            "type": "string",
+            "nullable": true
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "horaEntrada": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "metodoEntrada": {
+            "type": "string",
+            "nullable": true
+          },
+          "entradaRegistradaPor": {
+            "type": "string",
+            "nullable": true
+          },
+          "entradaNota": {
+            "type": "string",
+            "nullable": true
+          },
+          "horaSalida": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "metodoSalida": {
+            "type": "string",
+            "nullable": true
+          },
+          "salidaRegistradaPor": {
+            "type": "string",
+            "nullable": true
+          },
+          "salidaNota": {
+            "type": "string",
+            "nullable": true
+          },
+          "minutosTardanza": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "horasEfectivas": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ReglaAutomacionItem": {
         "type": "object",
         "properties": {
@@ -13200,6 +14028,20 @@
             "type": "boolean"
           },
           "fechaCreacion": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RenovarResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiraEn": {
             "type": "string",
             "format": "date-time"
           }
@@ -13623,6 +14465,20 @@
         },
         "additionalProperties": false
       },
+      "TokenQrResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundosRestantes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "TraspasoDetalleItem": {
         "type": "object",
         "properties": {
@@ -13782,6 +14638,51 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "VerificarProduccionItem": {
+        "type": "object",
+        "properties": {
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidadFacturada": {
+            "type": "number",
+            "format": "double"
+          },
+          "tieneReceta": {
+            "type": "boolean"
+          },
+          "recetaID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "insumos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InsumoVerificacionItem"
+            },
+            "nullable": true
+          },
+          "tieneStockCompleto": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "tieneInsuficientes": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "additionalProperties": false

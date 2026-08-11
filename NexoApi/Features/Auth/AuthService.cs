@@ -21,6 +21,8 @@ public interface IAuthService
     Task<string> ActualizarPerfilAsync(int usuarioId, ActualizarPerfilRequest request);
     Task ActualizarFotoPerfilAsync(int usuarioId, ActualizarFotoPerfilRequest request);
     Task EliminarFotoPerfilAsync(int usuarioId);
+
+    Task<RenovarResponse?> RenovarTokenAsync(int usuarioId);
 }
 
 public class AuthService : IAuthService
@@ -271,5 +273,33 @@ public class AuthService : IAuthService
 
         if (filas == 0)
             throw new KeyNotFoundException($"No existe el usuario {usuarioId}.");
+    }
+
+    private record UsuarioRenewData(string Username, string Rol, int? CentroCostoID);
+
+    public async Task<RenovarResponse?> RenovarTokenAsync(int usuarioId)
+    {
+        using var conn = _db.CreateConnection();
+
+        var usuario = await conn.QuerySingleOrDefaultAsync<UsuarioRenewData>("""
+            SELECT u.Username, r.Nombre AS Rol, u.CentroCostoID
+            FROM Seguridad.Usuarios u
+            JOIN Seguridad.Roles r ON r.RolID = u.RolID
+            WHERE u.UsuarioID = @usuarioId AND u.Estado = 1
+            """, new { usuarioId });
+
+        if (usuario is null) return null;
+
+        var accessToken = _jwt.GenerateAccessToken(usuarioId, usuario.Username, usuario.Rol, usuario.CentroCostoID);
+        var refreshToken = _jwt.GenerateRefreshToken();
+        var expiraEn = DateTime.UtcNow.AddMinutes(double.Parse(_config["Jwt:ExpirationMinutes"]!));
+        var refreshExpira = DateTime.UtcNow.AddDays(double.Parse(_config["Jwt:RefreshTokenExpirationDays"]!));
+
+        await conn.ExecuteAsync("""
+            INSERT INTO Seguridad.SesionesUsuario (UsuarioID, Token, RefreshToken, FechaExpiracion, Activa)
+            VALUES (@usuarioId, @accessToken, @refreshToken, @refreshExpira, 1)
+            """, new { usuarioId, accessToken, refreshToken, refreshExpira });
+
+        return new RenovarResponse(accessToken, expiraEn);
     }
 }

@@ -1,5 +1,6 @@
 @page "/crm/campanas/nueva"
 @page "/crm/campanas/{Id:int}"
+@implements IDisposable
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Common.ApiClient
 @using System.Text.Json
@@ -31,6 +32,13 @@ else
                 <MudTextField @bind-Value="_descripcion" Label="Descripción (opcional)" Variant="Variant.Outlined" Class="mb-3" />
                 <MudTextField @bind-Value="_asunto" Label="Asunto del email" Required Variant="Variant.Outlined" Class="mb-2"
                               HelperText="Puedes usar {{nombre}} y {{empresa}} para personalizar" />
+                <MudStack Row Spacing="1" Class="mb-1" AlignItems="AlignItems.Center">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Insertar:</MudText>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                             OnClick="@(() => _asunto += " {{nombre}}")">{{nombre}}</MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                             OnClick="@(() => _asunto += " {{empresa}}")">{{empresa}}</MudChip>
+                </MudStack>
             </MudPaper>
 
             <!-- Segmento -->
@@ -120,15 +128,27 @@ else
                             case "titulo":
                                 <MudTextField Value="@bloque["texto"]?.ToString()"
                                               ValueChanged="@((string v) => bloque["texto"] = v)"
-                                              Label="Texto del título" Variant="Variant.Outlined" FullWidth
-                                              HelperText="{{nombre}} y {{empresa}} se reemplazan al enviar" />
+                                              Label="Texto del título" Variant="Variant.Outlined" FullWidth Class="mb-1" />
+                                <MudStack Row Spacing="1" Class="mb-1" AlignItems="AlignItems.Center">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Insertar:</MudText>
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                                             OnClick="@(() => { var t = bloque["texto"]?.ToString() ?? ""; bloque["texto"] = t + " {{nombre}}"; })">{{nombre}}</MudChip>
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                                             OnClick="@(() => { var t = bloque["texto"]?.ToString() ?? ""; bloque["texto"] = t + " {{empresa}}"; })">{{empresa}}</MudChip>
+                                </MudStack>
                                 break;
 
                             case "parrafo":
                                 <MudTextField Value="@bloque["texto"]?.ToString()"
                                               ValueChanged="@((string v) => bloque["texto"] = v)"
-                                              Label="Texto" Variant="Variant.Outlined" FullWidth Lines="4"
-                                              HelperText="{{nombre}} y {{empresa}} se reemplazan al enviar" />
+                                              Label="Texto" Variant="Variant.Outlined" FullWidth Lines="4" Class="mb-1" />
+                                <MudStack Row Spacing="1" Class="mb-1" AlignItems="AlignItems.Center">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Insertar:</MudText>
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                                             OnClick="@(() => { var t = bloque["texto"]?.ToString() ?? ""; bloque["texto"] = t + " {{nombre}}"; })">{{nombre}}</MudChip>
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                                             OnClick="@(() => { var t = bloque["texto"]?.ToString() ?? ""; bloque["texto"] = t + " {{empresa}}"; })">{{empresa}}</MudChip>
+                                </MudStack>
                                 break;
 
                             case "imagen":
@@ -218,6 +238,34 @@ else
                     <MudAlert Severity="@_severidadPrueba" Dense Class="mt-2">@_resultadoPrueba</MudAlert>
                 }
             </MudPaper>
+
+            <!-- Contador diario -->
+            @if (_contador is not null)
+            {
+                var pct = _contador.LimiteGmail > 0 ? (double)_contador.EmailsHoy / _contador.LimiteGmail * 100 : 0;
+                var colorContador = pct >= 90 ? Color.Error : pct >= 70 ? Color.Warning : Color.Success;
+                <MudPaper Class="pa-4 mb-4" Elevation="2">
+                    <MudStack Row AlignItems="AlignItems.Center" Class="mb-2">
+                        <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Color="@colorContador" />
+                        <MudText Typo="Typo.subtitle2" Style="font-weight:600">Emails enviados hoy</MudText>
+                        <MudSpacer />
+                        <MudText Typo="Typo.body2"><b>@_contador.EmailsHoy</b> / @_contador.LimiteGmail</MudText>
+                    </MudStack>
+                    <MudProgressLinear Value="@pct" Color="@colorContador" Rounded />
+                    @if (pct >= 90)
+                    {
+                        <MudAlert Severity="Severity.Error" Dense Class="mt-2">
+                            Límite casi alcanzado — evita enviar campañas grandes hoy para no bloquear la cuenta.
+                        </MudAlert>
+                    }
+                    else if (pct >= 70)
+                    {
+                        <MudAlert Severity="Severity.Warning" Dense Class="mt-2">
+                            Ya van @_contador.EmailsHoy emails. Considera el tamaño del segmento antes de enviar.
+                        </MudAlert>
+                    }
+                </MudPaper>
+            }
 
             <!-- Envío masivo -->
             @if (!_esNueva && _campana?.Estado == "BORRADOR")
@@ -393,7 +441,8 @@ else
     bool _mostrarPreview;
     bool _mostrarGaleria;
     bool _cargandoImagenes;
-    int _bloqueImagenActivo = -1;   // índice del bloque al que se insertará la imagen
+    int _bloqueImagenActivo = -1;
+    System.Timers.Timer? _timerContador;
 
     string _nombre = "";
     string? _descripcion;
@@ -410,6 +459,7 @@ else
     CampanaDetalle? _campana;
     List<JsonObject> _bloques = [];
     List<ImagenVm> _imagenes = [];
+    EmailContadorItem? _contador;
 
     List<BreadcrumbItem> _migas =
     [
@@ -421,6 +471,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         await CargarImagenes();
+        try { _contador = await Api.GetAsync<EmailContadorItem>("api/email/contador"); } catch { }
         if (!_esNueva)
         {
             _campana = await Api.GetAsync<CampanaDetalle>($"api/marketing/campanas/{Id}");
@@ -438,6 +489,17 @@ else
         }
         await ContarDestinatarios();
         _cargando = false;
+
+        // Refresca el contador cada 2 minutos para mantenerlo actualizado
+        _timerContador = new System.Timers.Timer(120_000);
+        _timerContador.Elapsed += async (_, _) =>
+        {
+            try { _contador = await Api.GetAsync<EmailContadorItem>("api/email/contador"); }
+            catch { }
+            await InvokeAsync(StateHasChanged);
+        };
+        _timerContador.AutoReset = true;
+        _timerContador.Start();
     }
 
     async Task ContarDestinatarios()
@@ -655,5 +717,11 @@ else
             return arr?.Select(n => n?.AsObject() ?? new JsonObject()).ToList() ?? [];
         }
         catch { return []; }
+    }
+
+    public void Dispose()
+    {
+        _timerContador?.Stop();
+        _timerContador?.Dispose();
     }
 }

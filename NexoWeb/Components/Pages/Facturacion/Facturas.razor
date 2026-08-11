@@ -107,7 +107,7 @@ else
         try
         {
             var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
-            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos?tipoArticuloId=2");
             var tareaFacturas = ApiClient.GetAsync<List<FacturaItem>>("api/facturacion/facturas");
 
             await Task.WhenAll(tareaClientes, tareaArticulos, tareaFacturas);

@@ -120,13 +120,111 @@
                                 }
                             }
                         }
+                        else if (_mostrandoProduccion)
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="mb-2">Verificación de ingredientes</MudText>
+                            @if (_cargandoProduccion)
+                            {
+                                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                            }
+                            else if (_lineasProduccion.Count == 0)
+                            {
+                                <MudAlert Severity="Severity.Info" Dense="true">
+                                    Ningún artículo de esta factura tiene receta de producción configurada.
+                                </MudAlert>
+                                <MudButton Variant="Variant.Outlined" Class="mt-2" OnClick="OcultarProduccion">Cerrar</MudButton>
+                            }
+                            else
+                            {
+                                @foreach (var pt in _lineasProduccion)
+                                {
+                                    <MudPaper Outlined="true" Class="pa-3 mb-3">
+                                        <div class="d-flex align-center mb-1" style="gap:0.5rem">
+                                            <MudText Typo="Typo.subtitle2">@pt.SKU — @pt.Nombre</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">(@pt.CantidadFacturada und)</MudText>
+                                            @if (!pt.TieneReceta)
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Default">Sin receta</MudChip>
+                                            }
+                                            else if (pt.TieneInsuficientes)
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Error" Icon="@Icons.Material.Filled.Warning">Faltan insumos</MudChip>
+                                            }
+                                            else
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.CheckCircle">Stock OK</MudChip>
+                                            }
+                                        </div>
+                                        @if (pt.TieneReceta)
+                                        {
+                                            <MudTable Items="pt.Insumos" Dense="true" Elevation="0">
+                                                <HeaderContent>
+                                                    <MudTh>Insumo</MudTh>
+                                                    <MudTh Style="text-align:right">Necesario</MudTh>
+                                                    <MudTh Style="text-align:right">Disponible</MudTh>
+                                                </HeaderContent>
+                                                <RowTemplate>
+                                                    <MudTd DataLabel="Insumo">@context.Nombre</MudTd>
+                                                    <MudTd DataLabel="Necesario" Style="text-align:right">@context.CantidadRequerida.ToString("0.##") @context.Unidad</MudTd>
+                                                    <MudTd DataLabel="Disponible" Style="text-align:right">
+                                                        <span style="color: @(context.EsInsuficiente ? "var(--mud-palette-error)" : "var(--mud-palette-success)");">
+                                                            @context.StockDisponible.ToString("0.##") @context.Unidad
+                                                        </span>
+                                                    </MudTd>
+                                                </RowTemplate>
+                                            </MudTable>
+                                        }
+                                    </MudPaper>
+                                }
+
+                                @if (_lineasProduccion.Any(p => p.TieneInsuficientes))
+                                {
+                                    <MudAlert Severity="Severity.Warning" Class="mb-2" Dense="true">
+                                        Hay insumos insuficientes. Se crearán órdenes igualmente pero pueden fallar al iniciar o cerrar.
+                                    </MudAlert>
+                                }
+
+                                @if (_resultadosAutoProduccion.Count > 0)
+                                {
+                                    <MudAlert Severity="@(_resultadosAutoProduccion.All(r => r.Exitoso) ? Severity.Success : Severity.Warning)" Class="mb-2" Dense="true">
+                                        @_resultadosAutoProduccion.Count(r => r.Exitoso) de @_resultadosAutoProduccion.Count producidos correctamente.
+                                    </MudAlert>
+                                    @foreach (var r in _resultadosAutoProduccion.Where(r => !r.Exitoso))
+                                    {
+                                        <MudAlert Severity="Severity.Error" Dense="true" Class="mb-1">@r.Nombre: @r.Error</MudAlert>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="d-flex align-center" style="gap: 0.5rem; margin-top: 0.5rem;">
+                                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                                   StartIcon="@Icons.Material.Filled.Factory"
+                                                   Disabled="_ejecutandoProduccion"
+                                                   OnClick="EjecutarAutoProduccionAsync">
+                                            @(_ejecutandoProduccion ? "Produciendo..." : "Ejecutar auto-producción")
+                                        </MudButton>
+                                        <MudButton Variant="Variant.Outlined" OnClick="OcultarProduccion" Disabled="_ejecutandoProduccion">Cancelar</MudButton>
+                                    </div>
+                                }
+                            }
+                        }
                         else
                         {
-                            <MudButton Variant="Variant.Outlined" Color="Color.Default"
-                                       StartIcon="@Icons.Material.Filled.Inventory2"
-                                       OnClick="MostrarStockAsync">
-                                ¿Descontar del stock?
-                            </MudButton>
+                            <div class="d-flex flex-wrap" style="gap:0.5rem">
+                                <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                                           StartIcon="@Icons.Material.Filled.Inventory2"
+                                           OnClick="MostrarStockAsync">
+                                    ¿Descontar del stock?
+                                </MudButton>
+                                @if (!_facturaActual.ProduccionAutoEjecutada)
+                                {
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                               StartIcon="@Icons.Material.Filled.Factory"
+                                               OnClick="MostrarProduccionAsync">
+                                        Auto-producir
+                                    </MudButton>
+                                }
+                            </div>
                         }
                     </div>
                 }
@@ -201,6 +299,11 @@
     private bool _mostrandoStock;
     private bool _cargandoStock;
     private bool _descontando;
+    private bool _mostrandoProduccion;
+    private bool _cargandoProduccion;
+    private bool _ejecutandoProduccion;
+    private List<VerificarProduccionItem> _lineasProduccion = [];
+    private List<AutoProducirResultItem> _resultadosAutoProduccion = [];
 
     private decimal _montoPago;
     private string _metodoPago = "EFECTIVO";
@@ -262,6 +365,50 @@
     {
         _mostrandoStock = false;
         _lineasStock = new();
+    }
+
+    private async Task MostrarProduccionAsync()
+    {
+        _mostrandoProduccion = true;
+        _cargandoProduccion = true;
+        _lineasProduccion = [];
+        _resultadosAutoProduccion = [];
+        try
+        {
+            _lineasProduccion = await ApiClient.GetAsync<List<VerificarProduccionItem>>(
+                $"api/facturacion/facturas/{_facturaActual.FacturaID}/verificar-produccion") ?? [];
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+            _mostrandoProduccion = false;
+        }
+        finally { _cargandoProduccion = false; }
+    }
+
+    private void OcultarProduccion()
+    {
+        _mostrandoProduccion = false;
+        _lineasProduccion = [];
+        _resultadosAutoProduccion = [];
+    }
+
+    private async Task EjecutarAutoProduccionAsync()
+    {
+        _ejecutandoProduccion = true;
+        try
+        {
+            _resultadosAutoProduccion = await ApiClient.PostAsync<object, List<AutoProducirResultItem>>(
+                $"api/facturacion/facturas/{_facturaActual.FacturaID}/auto-producir", new { }) ?? [];
+            var exitosos = _resultadosAutoProduccion.Count(r => r.Exitoso);
+            if (exitosos > 0)
+                Snackbar.Add($"{exitosos} orden(es) de producción ejecutadas automáticamente.", Severity.Success);
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally { _ejecutandoProduccion = false; }
     }
 
     private async Task ConfirmarDescuentoAsync()

@@ -1,0 +1,88 @@
+@page "/rrhh/kiosco"
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+@inject NavigationManager Nav
+@inject IConfiguration Config
+@implements IDisposable
+@layout NexoWeb.Components.Layout.EmptyLayout
+
+<PageTitle>Control de Asistencia</PageTitle>
+
+<style>
+    .kiosco { display:flex; flex-direction:column; align-items:center; justify-content:center;
+              min-height:100vh; background:#0f172a; color:#f1f5f9; text-align:center; padding:2rem; }
+    .k-time { font-size:4rem; font-weight:700; letter-spacing:.1em; font-variant-numeric:tabular-nums; }
+    .k-date { font-size:1.2rem; color:#94a3b8; margin-bottom:1.5rem; }
+    .k-qr   { background:#fff; padding:16px; border-radius:16px; margin:1.5rem 0;
+              box-shadow:0 20px 60px rgba(0,0,0,.5); }
+    .k-qr img { display:block; width:280px; height:280px; }
+    .k-hint { font-size:.9rem; color:#64748b; margin-top:.5rem; }
+    .k-counter { display:inline-flex; align-items:center; gap:6px; margin-top:1rem;
+                 background:#1e293b; border-radius:20px; padding:4px 14px; font-size:.85rem; color:#94a3b8; }
+</style>
+
+<div class="kiosco">
+    <MudText Typo="Typo.h5" Style="color:#e2e8f0; font-weight:600; margin-bottom:.25rem">
+        Control de Asistencia
+    </MudText>
+
+    <div class="k-time">@_hora</div>
+    <div class="k-date">@_fecha</div>
+
+    <div class="k-qr">
+        <img src="@_qrSrc" alt="QR de asistencia" />
+    </div>
+
+    <MudText Typo="Typo.body1" Style="color:#e2e8f0">
+        Escanea el código con la cámara de tu celular
+    </MudText>
+    <MudText Typo="Typo.caption" Style="color:#64748b">
+        Debes tener sesión iniciada en NEXO para marcar asistencia
+    </MudText>
+    <div class="k-counter">
+        <MudIcon Icon="@Icons.Material.Filled.Refresh" Style="font-size:14px" />
+        Código nuevo en @_segsRestantes s
+    </div>
+</div>
+
+@code {
+    string _hora = "", _fecha = "", _qrSrc = "";
+    int _segsRestantes = 300;
+    System.Timers.Timer? _timerReloj, _timerQr;
+
+    protected override void OnInitialized()
+    {
+        RefrescarReloj();
+        RefrescarQr();
+
+        _timerReloj = new(1000);
+        _timerReloj.Elapsed += (_, _) => InvokeAsync(() => { RefrescarReloj(); StateHasChanged(); });
+        _timerReloj.Start();
+
+        _timerQr = new(30_000);
+        _timerQr.Elapsed += (_, _) => InvokeAsync(() => { RefrescarQr(); StateHasChanged(); });
+        _timerQr.Start();
+    }
+
+    void RefrescarReloj()
+    {
+        var now = DateTime.Now;
+        _hora = now.ToString("HH:mm:ss");
+        _fecha = now.ToString("dddd, dd 'de' MMMM 'de' yyyy",
+            new System.Globalization.CultureInfo("es-CO"));
+        _segsRestantes = (int)(300 - DateTimeOffset.UtcNow.ToUnixTimeSeconds() % 300);
+    }
+
+    void RefrescarQr()
+    {
+        var ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var wb = Uri.EscapeDataString(Nav.BaseUri);
+        var apiBase = (Config["NexoApi:BaseUrl"] ?? "").TrimEnd('/');
+        _qrSrc = $"{apiBase}/api/rrhh/asistencia/qr-imagen?wb={wb}&ts={ts}";
+    }
+
+    public void Dispose()
+    {
+        _timerReloj?.Stop(); _timerReloj?.Dispose();
+        _timerQr?.Stop(); _timerQr?.Dispose();
+    }
+}

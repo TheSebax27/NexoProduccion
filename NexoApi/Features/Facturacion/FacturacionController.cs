@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexoApi.Features.Facturacion.Dtos;
+using NexoApi.Features.Produccion.Dtos;
 
 namespace NexoApi.Features.Facturacion;
 
@@ -56,6 +57,17 @@ public class FacturacionController : ControllerBase
         }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
         catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
+    }
+
+    [HttpGet("facturas/{id:int}/verificar-produccion")]
+    public async Task<ActionResult<List<VerificarProduccionItem>>> VerificarProduccion(int id)
+        => Ok(await _service.VerificarProduccionFacturaAsync(id));
+
+    [HttpPost("facturas/{id:int}/auto-producir")]
+    public async Task<ActionResult<List<AutoProducirResultItem>>> AutoProducir(int id)
+    {
+        var resultado = await _service.AutoProducirFacturaAsync(id, UsuarioActualId);
+        return Ok(resultado);
     }
 
     [HttpGet("facturas/{id:int}/pagos")]

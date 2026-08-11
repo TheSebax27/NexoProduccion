@@ -58,8 +58,32 @@ public class GmailEmailService(IDbConnectionFactory db) : IEmailService
         };
 
         await smtp.SendMailAsync(mail);
+        await IncrementarContadorAsync();
         return true;
     }
 
+    public async Task<EmailContadorItem> ObtenerContadorAsync()
+    {
+        using var conn = _db.CreateConnection();
+        var row = await conn.QueryFirstOrDefaultAsync<ContadorRow>(
+            "SELECT EmailsHoy, FechaContador FROM Organizacion.ConfiguracionEmail WHERE ConfiguracionID = 1");
+        if (row is null) return new EmailContadorItem(0, 500, DateOnly.FromDateTime(DateTime.Now));
+        var hoy = DateOnly.FromDateTime(DateTime.Now);
+        var emailsHoy = row.FechaContador == hoy ? row.EmailsHoy : 0;
+        return new EmailContadorItem(emailsHoy, 500, hoy);
+    }
+
+    public async Task IncrementarContadorAsync()
+    {
+        using var conn = _db.CreateConnection();
+        await conn.ExecuteAsync("""
+            UPDATE Organizacion.ConfiguracionEmail
+            SET EmailsHoy   = CASE WHEN FechaContador = CAST(GETDATE() AS DATE) THEN EmailsHoy + 1 ELSE 1 END,
+                FechaContador = CAST(GETDATE() AS DATE)
+            WHERE ConfiguracionID = 1
+            """);
+    }
+
     private record ConfigRow(string Proveedor, string? ApiKey, string? EmailFrom, string? NombreFrom, bool Activo);
+    private record ContadorRow(int EmailsHoy, DateOnly? FechaContador);
 }

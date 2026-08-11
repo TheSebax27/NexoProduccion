@@ -28,13 +28,45 @@ else
                       Class="mb-4" Required="true" Disabled="@EsEdicion"
                       HelperText="@(EsEdicion ? "No se puede cambiar una vez creada la orden." : null)" />
 
-        <MudSelect T="int?" Value="_tipoProduccionId" ValueChanged="OnTipoProduccionCambiadoAsync"
-                   Label="Tipo de Produccion" Placeholder="Selecciona un tipo" Class="mb-4" Required="true">
-            @foreach (var tipo in _tiposProduccion)
-            {
-                <MudSelectItem T="int?" Value="@((int?)tipo.TipoProduccionID)">@tipo.Nombre</MudSelectItem>
-            }
-        </MudSelect>
+        @{
+            var mtoItem = _tiposProduccion.FirstOrDefault(t => t.Codigo == "MTO");
+        }
+        @if (!EsEdicion && mtoItem is not null)
+        {
+            <!-- Elección visual: General vs Por Cliente -->
+            <MudText Typo="Typo.subtitle2" Class="mb-2">¿Esta orden es para un cliente específico?</MudText>
+            <MudGrid Spacing="2" Class="mb-3">
+                <MudItem xs="6">
+                    <div @onclick="@(() => OnModoCambiadoAsync(false))"
+                         style="cursor:pointer;border-radius:12px;border:2px solid @(!_esMto ? "var(--mud-palette-primary)" : "var(--mud-palette-lines-default)");
+                                padding:16px;text-align:center;transition:border-color .15s">
+                        <MudIcon Icon="@Icons.Material.Filled.Factory" Color="@(!_esMto ? Color.Primary : Color.Default)" Size="Size.Large" Class="mb-1" />
+                        <MudText Typo="Typo.subtitle2" Color="@(!_esMto ? Color.Primary : Color.Default)">Producción General</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Stock para bodega</MudText>
+                    </div>
+                </MudItem>
+                <MudItem xs="6">
+                    <div @onclick="@(() => OnModoCambiadoAsync(true))"
+                         style="cursor:pointer;border-radius:12px;border:2px solid @(_esMto ? "var(--mud-palette-primary)" : "var(--mud-palette-lines-default)");
+                                padding:16px;text-align:center;transition:border-color .15s">
+                        <MudIcon Icon="@Icons.Material.Filled.Person" Color="@(_esMto ? Color.Primary : Color.Default)" Size="Size.Large" Class="mb-1" />
+                        <MudText Typo="Typo.subtitle2" Color="@(_esMto ? Color.Primary : Color.Default)">Por Cliente</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Pedido específico</MudText>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        }
+
+        @if (!_esMto)
+        {
+            <MudSelect T="int?" Value="_tipoProduccionId" ValueChanged="OnTipoProduccionCambiadoAsync"
+                       Label="Tipo de Produccion" Placeholder="Selecciona un tipo" Class="mb-4" Required="true">
+                @foreach (var tipo in _tiposProduccion.Where(t => t.Codigo != "MTO"))
+                {
+                    <MudSelectItem T="int?" Value="@((int?)tipo.TipoProduccionID)">@tipo.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+        }
 
         @if (_esMto)
         {
@@ -173,7 +205,7 @@ else
     private bool _guardando;
 
     private bool FormularioValido =>
-        !string.IsNullOrWhiteSpace(_codigoOp) && _tipoProduccionId.HasValue &&
+        !string.IsNullOrWhiteSpace(_codigoOp) && (_esMto || _tipoProduccionId.HasValue) &&
         _productoTerminadoId.HasValue && _recetaId.HasValue && _cantidadProgramada > 0 &&
         _centroCostoDestinoId.HasValue && _bodegaOrigenMpId.HasValue && _bodegaDestinoPtId.HasValue &&
         (!_esMto || _clienteId.HasValue);
@@ -265,6 +297,28 @@ else
         return Task.CompletedTask;
     }
 
+    // Cambia entre modo General y Por Cliente desde las tarjetas visuales
+    private Task OnModoCambiadoAsync(bool esMto)
+    {
+        _esMto = esMto;
+        if (!esMto)
+        {
+            _clienteId = null;
+            // Si el tipo actual era MTO, limpiar la selección
+            var tipoActual = _tiposProduccion.FirstOrDefault(t => t.TipoProduccionID == _tipoProduccionId);
+            if (tipoActual?.Codigo == "MTO")
+                _tipoProduccionId = null;
+        }
+        else
+        {
+            // Preseleccionar MTO
+            var mto = _tiposProduccion.FirstOrDefault(t => t.Codigo == "MTO");
+            if (mto is not null)
+                _tipoProduccionId = mto.TipoProduccionID;
+        }
+        return Task.CompletedTask;
+    }
+
     private Task OnTipoProduccionCambiadoAsync(int? nuevoTipoId)
     {
         _tipoProduccionId = nuevoTipoId;
@@ -296,10 +350,13 @@ else
 
         try
         {
+            var mtoId = _tiposProduccion.FirstOrDefault(t => t.Codigo == "MTO")?.TipoProduccionID;
+            var tipoEfectivo = _esMto ? (mtoId ?? _tipoProduccionId!.Value) : _tipoProduccionId!.Value;
+
             if (EsEdicion)
             {
                 var request = new ActualizarOrdenProduccionRequest(
-                    _tipoProduccionId!.Value, _productoTerminadoId!.Value, _recetaId!.Value, _cantidadProgramada,
+                    tipoEfectivo, _productoTerminadoId!.Value, _recetaId!.Value, _cantidadProgramada,
                     _esMto ? _clienteId : null, _centroCostoDestinoId!.Value, _bodegaOrigenMpId!.Value, _bodegaDestinoPtId!.Value,
                     _centroTrabajoId, _fechaPlanificada, _observaciones);
 
@@ -311,7 +368,7 @@ else
             else
             {
                 var request = new CrearOrdenProduccionRequest(
-                    _codigoOp, _tipoProduccionId!.Value, _productoTerminadoId!.Value, _recetaId!.Value, _cantidadProgramada,
+                    _codigoOp, tipoEfectivo, _productoTerminadoId!.Value, _recetaId!.Value, _cantidadProgramada,
                     _esMto ? _clienteId : null, _centroCostoDestinoId!.Value, _bodegaOrigenMpId!.Value, _bodegaDestinoPtId!.Value,
                     _centroTrabajoId, _fechaPlanificada, _observaciones);
 

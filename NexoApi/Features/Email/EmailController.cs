@@ -21,6 +21,11 @@ public class EmailController(IEmailService emailService) : ControllerBase
         return Ok();
     }
 
+    [HttpGet("contador")]
+    [Authorize(Roles = "Administracion,Ventas")]
+    public async Task<EmailContadorItem> ObtenerContador() =>
+        await emailService.ObtenerContadorAsync();
+
     [HttpPost("test")]
     [Authorize(Roles = "Administracion")]
     public async Task<IActionResult> EnviarTest([FromQuery] string to)

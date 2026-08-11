@@ -40,6 +40,28 @@
     </div>
 </MudPaper>
 
+<MudPaper Class="pa-5 mb-4" Style="max-width: 640px;">
+    <div class="nexo-chart-header mb-4">
+        <MudIcon Icon="@Icons.Material.Outlined.LockOpen" Size="Size.Small" Class="nexo-chart-header__icon" />
+        <div>
+            <div class="nexo-chart-header__title">Sesión</div>
+            <div class="nexo-chart-header__sub">Control de cuánto tiempo permanece activa tu sesión</div>
+        </div>
+    </div>
+
+    <div class="d-flex align-center justify-space-between py-2">
+        <div>
+            <div style="font-weight:600; font-size:0.9rem;">Mantener sesión activa</div>
+            <div style="font-size:0.78rem; color:var(--n-text-3);">
+                Renueva el token automáticamente antes de que expire (útil para pantallas de kiosco o trabajo continuo).
+                Sin esta opción, la sesión cierra al vencer el token (~60 min de inactividad).
+            </div>
+        </div>
+        <MudSwitch T="bool" Value="Preferencias.MantenerSesionActiva"
+                   ValueChanged="OnMantenerSesionCambiadoAsync" Color="Color.Primary" />
+    </div>
+</MudPaper>
+
 <MudPaper Class="pa-5" Style="max-width: 640px;">
     <div class="nexo-chart-header mb-4">
         <MudIcon Icon="@Icons.Material.Outlined.ViewModule" Size="Size.Small" Class="nexo-chart-header__icon" />
@@ -234,6 +256,14 @@
     private async Task OnMostrarAyudaCambiadoAsync(bool nuevoValor)
     {
         await Preferencias.EstablecerMostrarAyudaAsync(nuevoValor);
+    }
+
+    private async Task OnMantenerSesionCambiadoAsync(bool nuevoValor)
+    {
+        await Preferencias.EstablecerMantenerSesionActivaAsync(nuevoValor);
+        Snackbar.Add(nuevoValor
+            ? "Sesión activa: el token se renovará automáticamente."
+            : "Sesión normal: cerrará al vencer el token.", Severity.Info);
     }
 
     // ── Integraciones (Administracion) ───────────────────────────────

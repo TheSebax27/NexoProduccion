@@ -5,6 +5,7 @@
 @inject NexoWeb.Common.Auth.ConfiguracionEmpresaState ConfiguracionEmpresa
 @inject NavigationManager Navegacion
 @inject NexoWeb.Common.ApiClient.INexoApiClient ApiClient
+@inject ISnackbar Snackbar
 @using NexoWeb.Common.Dtos
 
 @* El toggle de tema oscuro (Settings) solo debe afectar el contenido de las
@@ -224,6 +225,9 @@
 
     private ResumenNotificaciones _notificaciones = new(0, new());
     private System.Timers.Timer? _timerNotificaciones;
+    private System.Timers.Timer? _timerEmailAlert;
+    private System.Timers.Timer? _timerRenovarToken;
+    private int _ultimoEmailsHoy = -1;
 
     // Busqueda global de la barra superior
     private string _terminoBusqueda = "";
@@ -247,6 +251,18 @@
             _timerNotificaciones.Elapsed += async (_, _) => await CargarNotificacionesAsync();
             _timerNotificaciones.AutoReset = true;
             _timerNotificaciones.Start();
+
+            // Cada 30 minutos: alerta si se está acercando al límite diario de Gmail (500/día).
+            _timerEmailAlert = new System.Timers.Timer(1_800_000);
+            _timerEmailAlert.Elapsed += async (_, _) => await VerificarContadorEmailAsync();
+            _timerEmailAlert.AutoReset = true;
+            _timerEmailAlert.Start();
+
+            // Cada 45 minutos: renueva el JWT si MantenerSesionActiva está activo.
+            _timerRenovarToken = new System.Timers.Timer(2_700_000);
+            _timerRenovarToken.Elapsed += async (_, _) => await RenovarTokenSiActivoAsync();
+            _timerRenovarToken.AutoReset = true;
+            _timerRenovarToken.Start();
         }
     }
 
@@ -261,6 +277,40 @@
     }
 
     private void OnPreferenciasCambiaronAsync() => InvokeAsync(StateHasChanged);
+
+    private async Task VerificarContadorEmailAsync()
+    {
+        try
+        {
+            var c = await ApiClient.GetAsync<EmailContadorItem>("api/email/contador");
+            if (c is null || c.EmailsHoy == _ultimoEmailsHoy) return;
+            _ultimoEmailsHoy = c.EmailsHoy;
+
+            await InvokeAsync(() =>
+            {
+                if (c.EmailsHoy >= c.LimiteGmail)
+                    Snackbar.Add($"⛔ Límite Gmail alcanzado: {c.EmailsHoy}/{c.LimiteGmail} emails hoy. Los envíos adicionales pueden bloquear la cuenta.", Severity.Error, o => { o.VisibleStateDuration = 10000; });
+                else if (c.EmailsHoy >= (int)(c.LimiteGmail * 0.9))
+                    Snackbar.Add($"⚠️ Límite Gmail casi alcanzado: {c.EmailsHoy}/{c.LimiteGmail} emails enviados hoy.", Severity.Warning, o => { o.VisibleStateDuration = 8000; });
+                else if (c.EmailsHoy >= (int)(c.LimiteGmail * 0.7))
+                    Snackbar.Add($"📧 Aviso: ya van {c.EmailsHoy}/{c.LimiteGmail} emails enviados hoy por Gmail.", Severity.Info, o => { o.VisibleStateDuration = 6000; });
+                StateHasChanged();
+            });
+        }
+        catch { }
+    }
+
+    private async Task RenovarTokenSiActivoAsync()
+    {
+        if (!AuthState.EstaLogueado || !Preferencias.MantenerSesionActiva) return;
+        try
+        {
+            var resp = await ApiClient.PostAsync<object, RenovarResponse>("api/auth/renovar", (object)null!);
+            if (resp is not null)
+                await AuthState.ActualizarTokenAsync(resp.AccessToken, resp.ExpiraEn);
+        }
+        catch { }
+    }
 
     private async Task CargarNotificacionesAsync()
     {
@@ -394,5 +444,9 @@
         ConfiguracionEmpresa.OnCambio -= OnPreferenciasCambiaronAsync;
         _timerNotificaciones?.Stop();
         _timerNotificaciones?.Dispose();
+        _timerEmailAlert?.Stop();
+        _timerEmailAlert?.Dispose();
+        _timerRenovarToken?.Stop();
+        _timerRenovarToken?.Dispose();
     }
 }

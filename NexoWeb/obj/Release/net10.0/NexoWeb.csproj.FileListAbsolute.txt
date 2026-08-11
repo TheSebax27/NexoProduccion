@@ -96,4 +96,4 @@ C:\Produccion\NexoWeb\obj\Release\net10.0\NexoWeb.genruntimeconfig.cache
 C:\Produccion\NexoWeb\obj\Release\net10.0\ref\NexoWeb.dll
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\mohx22tfow-{0}-d70zhl0xjx-d70zhl0xjx.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\fidee3c6o4-{0}-d70zhl0xjx-d70zhl0xjx.gz
-C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\rkatry7cmk-{0}-s32djgew61-s32djgew61.gz
+C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\rkatry7cmk-{0}-qwbwl1prd3-qwbwl1prd3.gz

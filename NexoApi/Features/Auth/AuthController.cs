@@ -30,6 +30,15 @@ public class AuthController : ControllerBase
 
         return Ok(resultado);
     }
+    [HttpPost("renovar")]
+    [Authorize]
+    public async Task<ActionResult<RenovarResponse>> RenovarToken()
+    {
+        var resultado = await _authService.RenovarTokenAsync(UsuarioActualId);
+        if (resultado is null) return Unauthorized(new { error = "Usuario inactivo o no encontrado." });
+        return Ok(resultado);
+    }
+
     [HttpPost("registrar")]
     [AllowAnonymous]
     public async Task<ActionResult> RegistrarPrimerAdmin(RegistrarUsuarioRequest request)

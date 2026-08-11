@@ -28,12 +28,15 @@ using NexoApi.Features.Recetas;
 using NexoApi.Features.Rrhh;
 using NexoApi.Features.Traspasos;
 using System.Text;
+using Dapper;
 
 // QuestPDF exige declarar el tipo de licencia antes de generar cualquier PDF.
 // Community es gratuita para empresas con ingresos anuales menores a 1M USD
 // (ver https://www.questpdf.com/license/) -- si el negocio crece mas alla de
 // ese umbral, hay que comprar la licencia comercial de QuestPDF.
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
+SqlMapper.AddTypeHandler(new TimeOnlyTypeHandler());
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -91,6 +94,7 @@ builder.Services.AddScoped<IIntegracionService, IntegracionService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IDashboardExportService, DashboardExportService>();
 builder.Services.AddScoped<IRrhhService, RrhhService>();
+builder.Services.AddScoped<IAsistenciaService, AsistenciaService>();
 builder.Services.AddScoped<IAutomacionService, AutomacionService>();
 builder.Services.AddScoped<ICrmService, CrmService>();
 builder.Services.AddScoped<NexoApi.Features.Email.IEmailService, NexoApi.Features.Email.GmailEmailService>();

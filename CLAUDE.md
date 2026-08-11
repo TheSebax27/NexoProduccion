@@ -848,6 +848,10 @@ Dos features nuevas que reutilizan la infraestructura de "foto de perfil" (20.28
 
 **Regla**: nunca usar `ValueTuple` como tipo genérico de un `Query*Async<T>` de Dapper para una sola fila con varias columnas — declarar un `private record NombreDescriptivo(TipoA CampoA, TipoB CampoB)` (con los mismos nombres que el `SELECT`, o alias `AS` si no calzan) y usar eso como `T`. Si el resultado puede no existir, comparar contra `null` (el record), no contra un tuple `?`.
 
+### 20.32 — Dapper mapea SQL `TIME` → `TimeSpan`, NO a `TimeOnly` (sin handler explícito)
+
+Si un `record` Dapper tiene `TimeOnly HoraX` y la columna SQL es `TIME`, Dapper falla en runtime porque el driver devuelve `TimeSpan`. Solución: registrar `SqlMapper.AddTypeHandler(new TimeOnlyTypeHandler())` en `Program.cs` **una vez, globalmente**. El handler vive en `NexoApi/Common/Data/DapperTypeHandlers.cs`. Mismo problema aplica para `DateOnly` (Dapper devuelve `DateTime` para `DATE`) — en ese caso la solución preferida hasta ahora ha sido mantener el campo como `DateTime` en el DTO y usar `.Date` en el servicio, pero se puede resolver igual con un `DateOnlyTypeHandler`.
+
 ### 20.31 — Gráfico "Variación de Producción vs Plan" (Dashboard): el pico no se etiquetaba si el valor era exactamente 0%
 
 `ObtenerBarrasVariacion()` en `Dashboard.razor` marca como "pico" (con etiqueta de %) solo el día con mayor variación positiva y el de mayor variación negativa — pero el filtro tenía `&& punto.Porcentaje != 0`, así que si el "mejor día" (`indiceMax`) resultaba tener exactamente `0%` de variación (cumplimiento exacto del plan, ni más ni menos), **no se le pintaba ninguna etiqueta y ningún otro día la reemplazaba** — visualmente parecía que las barras verdes nunca mostraban su porcentaje, mientras que la roja (variación negativa, casi nunca exactamente 0) sí. Corregido quitando ese filtro — un día en 0% es información válida y debe etiquetarse igual si es el pico.
@@ -1235,3 +1239,105 @@ El módulo de Facturación nació sin afectar inventario (diseño original, secc
   - Si todo OK: botón "Confirmar descuento de stock" + "Cancelar".
   - Tras confirmar: `POST /descontar-stock` → snackbar éxito → `_facturaActual with { StockDescontado = true }` (actualización optimista) → oculta la sección de verificación.
 - **El chip "Stock descontado" se muestra en el header del diálogo** (junto a Estado, Total, Pagado, Saldo) cuando `StockDescontado = true`, para visibilidad inmediata sin necesidad de ir a la tab Artículos.
+
+## 36. RRHH Asistencia con QR rotativo + Horarios + Keep-alive de sesión (agosto 2026)
+
+### 36.1 — Sistema de asistencia con QR (TOTP-style)
+
+Módulo completo de control de asistencia; tablas creadas con `create_rrhh_asistencia.sql`.
+
+- **`Rrhh.QrAsistenciaConfig`**: una fila con `Secreto` (NEWID() uuid) — se usa en SHA256(`secreto:ventana`) donde `ventana = UnixTime/300`.
+- **`Rrhh.Horarios`** / **`Rrhh.EmpleadoHorario`**: horarios por negocio, asignables por empleado con vigencia desde/hasta.
+- **`Rrhh.RegistroAsistencia`**: UNIQUE(EmpleadoID, Fecha). Columnas `MetodoEntrada`/`MetodoSalida` CHECK IN ('QR','MANUAL'). Columnas `EntradaRegistradaPor`/`SalidaRegistradaPor` → FK a `Seguridad.Usuarios.UsuarioID`.
+
+Archivos clave:
+- `NexoApi/Features/Rrhh/Dtos/AsistenciaDtos.cs` — todos los DTOs de asistencia (usa `DateTime Fecha`, no `DateOnly`)
+- `NexoApi/Features/Rrhh/AsistenciaService.cs` — lógica completa
+- `NexoApi/Features/Rrhh/AsistenciaController.cs` — rutas `api/rrhh/asistencia/*`
+- `NexoWeb/Components/Pages/Rrhh/Kiosco.razor` (`/rrhh/kiosco`, `@layout EmptyLayout`) — pantalla de QR rotatva fullscreen
+- `NexoWeb/Components/Pages/Rrhh/MarcarAsistencia.razor` (`/rrhh/marcar?t={token}`) — el empleado escanea y confirma
+- `NexoWeb/Components/Pages/Rrhh/Asistencia.razor` (`/rrhh/asistencia`) — listado + registro manual admin
+
+**Bug histórico resuelto**: `DateOnly Fecha` en el DTO causaba error Dapper al mapear SQL `DATE` → `DateTime`. Corregido usando `DateTime Fecha` en todos los DTOs de asistencia.
+
+**Bug histórico resuelto**: `AsignarHorarioRequest.Desde` era `DateOnly`; el JSON desde el web enviaba `DateTime` → mismatch. Cambiado a `DateTime Desde`; el servicio usa `.Date` para la consulta.
+
+### 36.2 — Dapper TypeHandler para `TimeOnly`
+
+SQL `TIME` → Dapper → `TimeOnly` falla sin TypeHandler (Dapper devuelve `TimeSpan` por defecto).
+
+- Archivo: `NexoApi/Common/Data/DapperTypeHandlers.cs` — clase `TimeOnlyTypeHandler : SqlMapper.TypeHandler<TimeOnly>`
+- Registro en `Program.cs`: `SqlMapper.AddTypeHandler(new TimeOnlyTypeHandler());` (antes del `WebApplication.CreateBuilder`)
+- Aplica a `Rrhh.Horarios.HoraEntrada`/`HoraSalida` al deserializar con Dapper
+
+**Regla**: cualquier columna SQL `TIME` que se mapee a `TimeOnly` en un record Dapper requiere este handler. Si se agrega un nuevo campo `TIME`, verificar que el handler esté registrado.
+
+### 36.3 — Horarios admin (`/rrhh/horarios`)
+
+Nueva página `NexoWeb/Components/Pages/Rrhh/Horarios.razor` (rol Administracion):
+- Lista de horarios con MudTable (Nombre, Entrada, Salida, Tolerancia, Días, Estado)
+- Crear horario → dialog con MudTimePicker (`TimeSpan?` en web, JSON `"HH:mm:ss"` compatible con `TimeOnly` en API)
+- Asignar horario a empleado: select empleado + select horario + fecha "desde" → `POST api/rrhh/asistencia/empleados/{id}/horario`
+- Endpoints: `GET/POST api/rrhh/asistencia/horarios`, `POST api/rrhh/asistencia/empleados/{id}/horario`
+
+DTOs web nuevos en `RrhhDtos.cs`: `CrearHorarioRequest` (usa `TimeSpan`), `AsignarHorarioEmpleadoRequest` (usa `DateTime`)
+
+### 36.4 — "Mantener sesión activa" (`MantenerSesionActiva`)
+
+Preferencia por usuario que renueva el JWT automáticamente antes del vencimiento (60 min).
+
+- **API**: `POST api/auth/renovar` (`[Authorize]`, sin body) → genera nuevo JWT para el mismo usuario, inserta en `Seguridad.SesionesUsuario`, retorna `RenovarResponse(string AccessToken, DateTime ExpiraEn)`
+- **`AuthStateService`**: nueva propiedad `DateTime? ExpiraEn`, método `ActualizarTokenAsync(nuevoToken, expiraEn)`, `DatosSesion` extendido con `DateTime? ExpiraEn = null` (retro-compatible)
+- **`PreferenciasState`**: propiedad `MantenerSesionActiva` + `EstablecerMantenerSesionActivaAsync(bool)`
+- **`MainLayout.razor`**: timer `_timerRenovarToken` cada 45 min → llama `POST api/auth/renovar` si `MantenerSesionActiva && EstaLogueado` → actualiza token en `AuthStateService`
+- **`Settings.razor`**: toggle "Mantener sesión activa" en nueva sección "Sesión"
+
+### 36.5 — MudBlazor v7: dialogs deben ser componentes `.razor` separados
+
+`MudDialog @bind-IsVisible` fue **eliminado en MudBlazor v7.15.0** — todo diálogo inline en la misma página ya no funciona. Patrón obligatorio:
+
+1. Crear un nuevo archivo `.razor` con `[CascadingParameter] MudDialogInstance MudDialog` y `[Parameter]` para inputs.
+2. El padre usa `await Dialog.ShowAsync<TDialog>(titulo, params, opts)` y después `await dialogo.Result`.
+3. El diálogo cierra con `MudDialog.Close(DialogResult.Ok(dato))` o `MudDialog.Cancel()`.
+4. Atributo `Disabled="@(!Valido)"` — siempre con paréntesis (`@(!Valido)`), no `@!Valido` (error de compilación Blazor).
+
+Afectó a: `Asistencia.razor` (RegistrarManualAsistenciaDialog), `Horarios.razor` (NuevoHorarioDialog).
+
+## 37. Datos de prueba y Auto-producción (agosto 2026)
+
+### 37.1 — Datos de prueba: Hamburguesa Doble Carne
+
+Script `C:\Produccion\sql\test_hamburguesa.sql` — insertar con:
+
+```
+sqlcmd -S DESKTOP-V83PQ7M\JONATHAN -d NEXO_ERP -i C:\Produccion\sql\test_hamburguesa.sql
+```
+
+Inserta (idempotente por SKU):
+- **Materias primas** (TipoArticuloID=1): MP-PAN-001, MP-CARNE-001, MP-QUESO-001, MP-LECH-001, MP-TOM-001, MP-SALSA-001
+- **Producto terminado** (TipoArticuloID=2): PT-HAMB-DC-001 "Hamburguesa Doble Carne" ($25.000)
+- **RecetaBOM**: 1 pan + 2 carnes + 2 quesos + 1 lechuga + 1 tomate + 30g salsa
+- **Stock inicial**: 50/100/80/60/60/2000 und en BodegaID=1
+- **Cliente prueba**: NIT 9999999999
+
+**Nota de esquema verificada**: `catalogo.TiposArticulo` tiene MP=1, **PT=2**, INS=3, SER=4. El CLAUDE.md original decía incorrectamente PT=3 — corregido aquí.
+
+### 37.2 — Auto-producción al facturar
+
+Cuando se factura un Producto Terminado que tiene receta BOM, el sistema puede crear, liberar, iniciar y cerrar la OP automáticamente.
+
+**API**:
+- `GET api/facturacion/facturas/{id}/verificar-produccion` → `List<VerificarProduccionItem>`: para cada línea PT, lista qué insumos necesita (con stock disponible vs. requerido)
+- `POST api/facturacion/facturas/{id}/auto-producir` → `List<AutoProducirResultItem>`: ejecuta el ciclo completo por cada PT con receta
+
+**Implementación**:
+- `FacturacionService` inyecta `IOrdenesProduccionService` para delegar la ejecución de cada OP
+- Usa primer `TipoProduccionID`, primer `CentroCostoID` activo y primera `BodegaID` activa como defaults
+- CodigoOP: `AP-{facturaId}-{articuloId}-{unixtime}`; LoteOP: `AUTO-{codigoOP}`
+- DTOs nuevos en `FacturacionDtos.cs` (API y Web): `VerificarProduccionItem`, `InsumoVerificacionItem`, `AutoProducirResultItem`
+
+**UI** (`GestionFacturaDialog.razor`):
+- Botón "Auto-producir" junto a "¿Descontar del stock?" (solo visible cuando stock NO ha sido descontado y la factura no muestra aún la sección de producción)
+- Muestra tabla de insumos por producto terminado con semáforo verde/rojo
+- Si hay insuficientes, advierte pero deja ejecutar igualmente
+- Tras ejecutar, muestra resultados con errores individuales si los hay

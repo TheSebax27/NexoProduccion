@@ -1,4 +1,5 @@
 @page "/settings/email"
+@implements IDisposable
 @attribute [Authorize(Roles = "Administracion")]
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -148,6 +149,35 @@ else
             </div>
         </div>
     </MudPaper>
+
+    @* ── Contador diario ──────────────────────────────────────────────── *@
+    @if (_contador is not null)
+    {
+        var pct = _contador.LimiteGmail > 0 ? (double)_contador.EmailsHoy / _contador.LimiteGmail * 100 : 0;
+        var colorContador = pct >= 90 ? Color.Error : pct >= 70 ? Color.Warning : Color.Success;
+        <MudPaper Class="pa-5 mb-4" Style="max-width:740px;">
+            <div class="nexo-chart-header mb-3">
+                <MudIcon Icon="@Icons.Material.Outlined.Speed" Size="Size.Small" Class="nexo-chart-header__icon" />
+                <div>
+                    <div class="nexo-chart-header__title">Emails enviados hoy</div>
+                    <div class="nexo-chart-header__sub">El límite de Gmail es 500 emails por día. Se reinicia a medianoche UTC.</div>
+                </div>
+            </div>
+            <div class="d-flex justify-space-between mb-1">
+                <MudText Typo="Typo.body2">@_contador.EmailsHoy de @_contador.LimiteGmail enviados</MudText>
+                <MudText Typo="Typo.body2" Color="@colorContador">@pct.ToString("0")%</MudText>
+            </div>
+            <MudProgressLinear Value="@pct" Color="@colorContador" Rounded Class="mb-2" />
+            @if (pct >= 90)
+            {
+                <MudAlert Severity="Severity.Error" Dense>Límite casi alcanzado. Evita enviar más emails hoy para no bloquear la cuenta.</MudAlert>
+            }
+            else if (pct >= 70)
+            {
+                <MudAlert Severity="Severity.Warning" Dense>Ya usaste el @pct.ToString("0")% del límite diario. Procede con precaución.</MudAlert>
+            }
+        </MudPaper>
+    }
 
     @* ── Formulario ───────────────────────────────────────────────────── *@
     <MudPaper Class="pa-5 mb-4" Style="max-width:740px;">
@@ -352,6 +382,8 @@ else
     private string? _apiKey;
     private string? _emailFrom;
     private string? _nombreFrom;
+    private EmailContadorItem? _contador;
+    private System.Timers.Timer? _timerContador;
 
     private bool     _enviandoPrueba;
     private string?  _emailPrueba;
@@ -362,7 +394,11 @@ else
     {
         try
         {
-            var config = await ApiClient.GetAsync<EmailConfigItem>("api/email/config");
+            var tareaConfig   = ApiClient.GetAsync<EmailConfigItem>("api/email/config");
+            var tareaContador = ApiClient.GetAsync<EmailContadorItem>("api/email/contador");
+            await Task.WhenAll(tareaConfig, tareaContador);
+
+            var config = await tareaConfig;
             if (config is not null)
             {
                 _activo     = config.Activo;
@@ -370,9 +406,20 @@ else
                 _emailFrom  = config.EmailFrom;
                 _nombreFrom = config.NombreFrom;
             }
+            _contador = await tareaContador;
         }
         catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
         finally { _cargando = false; }
+
+        _timerContador = new System.Timers.Timer(120_000);
+        _timerContador.Elapsed += async (_, _) =>
+        {
+            try { _contador = await ApiClient.GetAsync<EmailContadorItem>("api/email/contador"); }
+            catch { }
+            await InvokeAsync(StateHasChanged);
+        };
+        _timerContador.AutoReset = true;
+        _timerContador.Start();
     }
 
     private async Task GuardarAsync()
@@ -405,5 +452,11 @@ else
             _severidadPrueba = Severity.Error;
         }
         finally { _enviandoPrueba = false; }
+    }
+
+    public void Dispose()
+    {
+        _timerContador?.Stop();
+        _timerContador?.Dispose();
     }
 }

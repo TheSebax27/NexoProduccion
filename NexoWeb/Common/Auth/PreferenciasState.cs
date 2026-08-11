@@ -34,6 +34,8 @@ public class PreferenciasState
     // nuevos desde el primer login, sin tener que descubrir el toggle antes).
     public bool MostrarAyuda => ObtenerValor("MostrarAyuda", "true") == "true";
 
+    public bool MantenerSesionActiva => ObtenerValor("MantenerSesionActiva") == "true";
+
     // Paginas marcadas como favoritas (menu lateral) -- se guardan como JSON
     // bajo la clave generica "Favoritos". Requiere que Seguridad.PreferenciasUsuario.Valor
     // sea NVARCHAR(MAX) (ampliado agosto 2026 -- antes era nvarchar(50), muy chico para una lista).
@@ -97,6 +99,11 @@ public class PreferenciasState
     public async Task EstablecerMostrarAyudaAsync(bool valor)
     {
         await EstablecerAsync("MostrarAyuda", valor ? "true" : "false");
+    }
+
+    public async Task EstablecerMantenerSesionActivaAsync(bool valor)
+    {
+        await EstablecerAsync("MantenerSesionActiva", valor ? "true" : "false");
     }
 
     private async Task EstablecerAsync(string clave, string valor)

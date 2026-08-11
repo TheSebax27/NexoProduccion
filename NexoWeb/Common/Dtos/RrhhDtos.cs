@@ -75,3 +75,49 @@ public record CrearCapacitacionRequest(int EmpleadoID, string Nombre, string? In
 // ---------- Organigrama (agosto 2026, RRHH v2) ----------
 
 public record OrganigramaNodo(int EmpleadoID, string Nombres, string Apellidos, string? Cargo, int? JefeDirectoID);
+
+// ---------- Asistencia con QR rotativo ----------
+
+public record TokenQrResponse(string Token, int SegundosRestantes);
+
+public record EstadoAsistenciaHoy(
+    int EmpleadoID, string Empleado,
+    bool TieneEntrada, DateTime? HoraEntrada, string? MetodoEntrada,
+    bool TieneSalida, DateTime? HoraSalida, string? MetodoSalida
+);
+
+public record MarcarQrRequest(string Token, string Tipo);
+public record MarcarManualRequest(int EmpleadoID, string Tipo, DateTime Hora, string Nota);
+
+// DiaSemana: 1=Lunes...7=Domingo; Semana: null=FIJO, "A"/"B"=SEMANA_AB
+public record HorarioDiaItem(
+    int DiaSemana, string? Semana,
+    TimeOnly HoraEntrada, TimeOnly HoraSalida,
+    bool TieneAlmuerzo, TimeOnly? HoraInicioAlmuerzo, TimeOnly? HoraFinAlmuerzo
+);
+
+public record HorarioItem(
+    int HorarioID, string Nombre, int ToleranciaTardanzaMin,
+    string TipoCiclo, bool Activo,
+    List<HorarioDiaItem> Dias
+);
+
+public record HorarioDiaInput(
+    int DiaSemana, string? Semana,
+    TimeSpan HoraEntrada, TimeSpan HoraSalida,
+    bool TieneAlmuerzo, TimeSpan? HoraInicioAlmuerzo, TimeSpan? HoraFinAlmuerzo
+);
+
+public record CrearHorarioRequest(
+    string Nombre, int ToleranciaTardanzaMin, string TipoCiclo,
+    List<HorarioDiaInput> Dias
+);
+
+public record AsignarHorarioEmpleadoRequest(int HorarioID, DateTime Desde);
+
+public record RegistroAsistenciaItem(
+    int RegistroID, int EmpleadoID, string Empleado, DateTime Fecha,
+    DateTime? HoraEntrada, string? MetodoEntrada, string? EntradaRegistradaPor, string? EntradaNota,
+    DateTime? HoraSalida, string? MetodoSalida, string? SalidaRegistradaPor, string? SalidaNota,
+    int? MinutosTardanza, double? HorasEfectivas
+);

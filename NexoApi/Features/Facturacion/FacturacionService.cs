@@ -1,6 +1,8 @@
 using Dapper;
 using NexoApi.Common.Data;
 using NexoApi.Features.Facturacion.Dtos;
+using NexoApi.Features.Produccion;
+using NexoApi.Features.Produccion.Dtos;
 
 namespace NexoApi.Features.Facturacion;
 
@@ -15,18 +17,23 @@ public interface IFacturacionService
 
     Task<IEnumerable<PagoItem>> ListarPagosAsync(int facturaId);
     Task<int> CrearPagoAsync(CrearPagoRequest request, int usuarioId);
+
+    Task<List<VerificarProduccionItem>> VerificarProduccionFacturaAsync(int facturaId);
+    Task<List<AutoProducirResultItem>> AutoProducirFacturaAsync(int facturaId, int usuarioId);
 }
 
 public class FacturacionService : IFacturacionService
 {
     private readonly IDbConnectionFactory _db;
+    private readonly IOrdenesProduccionService _produccion;
 
-    public FacturacionService(IDbConnectionFactory db)
+    public FacturacionService(IDbConnectionFactory db, IOrdenesProduccionService produccion)
     {
         _db = db;
+        _produccion = produccion;
     }
 
-    private record FacturaCruda(int FacturaID, int ClienteID, string Cliente, DateTime Fecha, string? Notas, decimal Total, decimal TotalPagado, bool StockDescontado);
+    private record FacturaCruda(int FacturaID, int ClienteID, string Cliente, DateTime Fecha, string? Notas, decimal Total, decimal TotalPagado, bool StockDescontado, bool ProduccionAutoEjecutada);
 
     // Estado (PAGADA/PARCIAL/PENDIENTE) y SaldoPendiente se calculan aca, en
     // C#, a partir de Total y TotalPagado -- nunca se guardan como columna
@@ -39,7 +46,7 @@ public class FacturacionService : IFacturacionService
             SELECT f.FacturaID, f.ClienteID, c.Nombre AS Cliente, f.Fecha, f.Notas,
                    ISNULL(ROUND((SELECT SUM(l.Cantidad * l.PrecioUnitario) FROM Facturacion.FacturaLineas l WHERE l.FacturaID = f.FacturaID), 0), 0) AS Total,
                    ISNULL((SELECT SUM(p.Monto) FROM Facturacion.Pagos p WHERE p.FacturaID = f.FacturaID), 0) AS TotalPagado,
-                   f.StockDescontado
+                   f.StockDescontado, f.ProduccionAutoEjecutada
             FROM Facturacion.Facturas f
             JOIN Crm.Clientes c ON c.ClienteID = f.ClienteID
             WHERE (@ClienteId IS NULL OR f.ClienteID = @ClienteId)
@@ -51,7 +58,7 @@ public class FacturacionService : IFacturacionService
         {
             var saldo = f.Total - f.TotalPagado;
             var estadoCalculado = f.TotalPagado <= 0 ? "PENDIENTE" : saldo > 0 ? "PARCIAL" : "PAGADA";
-            return new FacturaItem(f.FacturaID, f.ClienteID, f.Cliente, f.Fecha, f.Notas, f.Total, f.TotalPagado, saldo, estadoCalculado, f.StockDescontado);
+            return new FacturaItem(f.FacturaID, f.ClienteID, f.Cliente, f.Fecha, f.Notas, f.Total, f.TotalPagado, saldo, estadoCalculado, f.StockDescontado, f.ProduccionAutoEjecutada);
         });
 
         if (estado is not null)
@@ -187,5 +194,138 @@ public class FacturacionService : IFacturacionService
         {
             throw new KeyNotFoundException(ex.Message);
         }
+    }
+
+    private record LineaPTCruda(int ArticuloID, string SKU, string Nombre, decimal Cantidad, int? RecetaID);
+    private record InsumoCrudo(int RecetaID, int ArticuloID, string InsumoNombre, string Unidad, decimal CantidadRequerida);
+    private record StockCrudo(int ArticuloID, decimal StockTotal);
+
+    public async Task<List<VerificarProduccionItem>> VerificarProduccionFacturaAsync(int facturaId)
+    {
+        using var conn = _db.CreateConnection();
+
+        var lineasPT = await conn.QueryAsync<LineaPTCruda>("""
+            SELECT fl.ArticuloID, a.SKU, a.Nombre, fl.Cantidad,
+                   (SELECT TOP 1 r.RecetaID FROM Produccion.RecetaBOM r
+                    WHERE r.ProductoTerminadoID = fl.ArticuloID AND r.Estado = 1) AS RecetaID
+            FROM Facturacion.FacturaLineas fl
+            JOIN catalogo.Articulos a ON a.ArticuloID = fl.ArticuloID
+            WHERE fl.FacturaID = @facturaId
+              AND a.TipoArticuloID = 2
+            """, new { facturaId });
+
+        var resultado = new List<VerificarProduccionItem>();
+
+        foreach (var linea in lineasPT)
+        {
+            if (linea.RecetaID is null)
+            {
+                resultado.Add(new VerificarProduccionItem(
+                    linea.ArticuloID, linea.SKU, linea.Nombre,
+                    linea.Cantidad, false, null, []));
+                continue;
+            }
+
+            var insumos = await conn.QueryAsync<InsumoCrudo>("""
+                SELECT rd.RecetaID, rd.InsumoID AS ArticuloID, a.Nombre AS InsumoNombre,
+                       ISNULL(u.Abreviatura, '') AS Unidad,
+                       rd.CantidadRequerida * @cantidad AS CantidadRequerida
+                FROM Produccion.RecetaBOM_Detalle rd
+                JOIN catalogo.Articulos a ON a.ArticuloID = rd.InsumoID
+                LEFT JOIN catalogo.UnidadesMedida u ON u.UnidadID = rd.UnidadID
+                WHERE rd.RecetaID = @recetaId
+                """, new { recetaId = linea.RecetaID, cantidad = linea.Cantidad });
+
+            var insumoIds = insumos.Select(i => i.ArticuloID).Distinct().ToList();
+            var stocks = insumoIds.Count == 0 ? []
+                : (await conn.QueryAsync<StockCrudo>("""
+                    SELECT ArticuloID, ISNULL(SUM(CantidadActual), 0) AS StockTotal
+                    FROM Inventario.InventarioStock
+                    WHERE ArticuloID IN @ids
+                    GROUP BY ArticuloID
+                    """, new { ids = insumoIds })).ToList();
+
+            var stockDict = stocks.ToDictionary(s => s.ArticuloID, s => s.StockTotal);
+
+            var listaInsumos = insumos.Select(i => new InsumoVerificacionItem(
+                i.ArticuloID, i.InsumoNombre, i.Unidad,
+                i.CantidadRequerida,
+                stockDict.GetValueOrDefault(i.ArticuloID, 0)
+            )).ToList();
+
+            resultado.Add(new VerificarProduccionItem(
+                linea.ArticuloID, linea.SKU, linea.Nombre,
+                linea.Cantidad, true, linea.RecetaID, listaInsumos));
+        }
+
+        return resultado;
+    }
+
+    public async Task<List<AutoProducirResultItem>> AutoProducirFacturaAsync(int facturaId, int usuarioId)
+    {
+        using var conn = _db.CreateConnection();
+
+        var items = await VerificarProduccionFacturaAsync(facturaId);
+        var resultado = new List<AutoProducirResultItem>();
+
+        var defaultTipoProduccion = await conn.ExecuteScalarAsync<int>(
+            "SELECT TOP 1 TipoProduccionID FROM Produccion.TiposProduccion ORDER BY TipoProduccionID");
+        var defaultCentroCosto = await conn.ExecuteScalarAsync<int>(
+            "SELECT TOP 1 CentroCostoID FROM Organizacion.CentrosCosto WHERE Estado = 1");
+        var defaultBodega = await conn.ExecuteScalarAsync<int>(
+            "SELECT TOP 1 BodegaID FROM Inventario.Bodegas WHERE Estado = 1");
+
+        foreach (var item in items.Where(i => i.TieneReceta))
+        {
+            try
+            {
+                var codigoOP = $"AP-{facturaId}-{item.ArticuloID}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+                var opId = await _produccion.CrearAsync(new CrearOrdenProduccionRequest(
+                    CodigoOP: codigoOP,
+                    TipoProduccionID: defaultTipoProduccion,
+                    ProductoTerminadoID: item.ArticuloID,
+                    RecetaID: item.RecetaID!.Value,
+                    CantidadProgramada: item.CantidadFacturada,
+                    ClienteID: null,
+                    CentroCostoDestinoID: defaultCentroCosto,
+                    BodegaOrigenMPID: defaultBodega,
+                    BodegaDestinoPTID: defaultBodega,
+                    CentroTrabajoID: null,
+                    FechaPlanificada: DateTime.Today,
+                    Observaciones: $"Auto-generada desde factura #{facturaId}"
+                ), usuarioId);
+
+                await _produccion.LiberarAsync(opId, usuarioId);
+                await _produccion.IniciarAsync(opId, usuarioId);
+                await _produccion.CerrarAsync(opId, new CerrarOrdenProduccionRequest(
+                    CantidadProducidaReal: item.CantidadFacturada,
+                    HorasManoObra: 0,
+                    HorasCIF: 0,
+                    NumeroLotePT: $"AUTO-{codigoOP}",
+                    FechaVencimientoPT: null
+                ), usuarioId);
+
+                resultado.Add(new AutoProducirResultItem(
+                    item.ArticuloID, item.Nombre, true, opId, null));
+            }
+            catch (Exception ex)
+            {
+                resultado.Add(new AutoProducirResultItem(
+                    item.ArticuloID, item.Nombre, false, null, ex.Message));
+            }
+        }
+
+        if (resultado.Any(r => r.Exitoso))
+        {
+            try { await DescontarStockAsync(facturaId, usuarioId); }
+            catch { /* el stock se descuenta best-effort; puede fallar si ya fue descontado */ }
+
+            using var conn2 = _db.CreateConnection();
+            await conn2.ExecuteAsync(
+                "UPDATE Facturacion.Facturas SET ProduccionAutoEjecutada=1 WHERE FacturaID=@facturaId",
+                new { facturaId });
+        }
+
+        return resultado;
     }
 }

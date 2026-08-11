@@ -1,0 +1,46 @@
+namespace NexoApi.Features.Rrhh.Dtos;
+
+// DiaSemana: 1=Lunes ... 7=Domingo
+// Semana: null=aplica siempre (TipoCiclo=FIJO), "A"/"B" para TipoCiclo=SEMANA_AB
+public record HorarioDiaItem(
+    int DiaSemana, string? Semana,
+    TimeOnly HoraEntrada, TimeOnly HoraSalida,
+    bool TieneAlmuerzo, TimeOnly? HoraInicioAlmuerzo, TimeOnly? HoraFinAlmuerzo
+);
+
+public record HorarioItem(
+    int HorarioID, string Nombre, int ToleranciaTardanzaMin, string TipoCiclo, bool Activo,
+    List<HorarioDiaItem> Dias
+);
+
+// En el request se usa TimeSpan (compatible con MudTimePicker en web)
+public record HorarioDiaInput(
+    int DiaSemana, string? Semana,
+    TimeSpan HoraEntrada, TimeSpan HoraSalida,
+    bool TieneAlmuerzo, TimeSpan? HoraInicioAlmuerzo, TimeSpan? HoraFinAlmuerzo
+);
+
+public record CrearHorarioRequest(
+    string Nombre, int ToleranciaTardanzaMin, string TipoCiclo,
+    List<HorarioDiaInput> Dias
+);
+
+public record AsignarHorarioRequest(int HorarioID, DateTime Desde);
+
+public record TokenQrResponse(string Token, int SegundosRestantes);
+
+public record EstadoAsistenciaHoy(
+    int EmpleadoID, string Empleado,
+    bool TieneEntrada, DateTime? HoraEntrada, string? MetodoEntrada,
+    bool TieneSalida, DateTime? HoraSalida, string? MetodoSalida
+);
+
+public record MarcarQrRequest(string Token, string Tipo);       // Tipo = ENTRADA | SALIDA
+public record MarcarManualRequest(int EmpleadoID, string Tipo, DateTime Hora, string Nota);
+
+public record RegistroAsistenciaItem(
+    int RegistroID, int EmpleadoID, string Empleado, DateTime Fecha,
+    DateTime? HoraEntrada, string? MetodoEntrada, string? EntradaRegistradaPor, string? EntradaNota,
+    DateTime? HoraSalida, string? MetodoSalida, string? SalidaRegistradaPor, string? SalidaNota,
+    int? MinutosTardanza, double? HorasEfectivas
+);

@@ -136,12 +136,24 @@
                         </div>
                         @if (_esAdminOJefe)
                         {
-                            <div class="d-flex" style="gap:4px">
-                                <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Edit"
-                                               OnClick="@(() => AbrirDialogoAsync(ev, null))" />
-                                <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Delete"
-                                               Color="Color.Error"
-                                               OnClick="@(() => EliminarEventoAsync(ev))" />
+                            var yaOcurrio = ev.FechaFin.ToLocalTime() < DateTime.Now;
+                            <div class="d-flex align-center" style="gap:4px">
+                                @if (yaOcurrio)
+                                {
+                                    <MudTooltip Text="El evento ya ocurrió y no se puede modificar">
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">
+                                            Finalizado
+                                        </MudChip>
+                                    </MudTooltip>
+                                }
+                                else
+                                {
+                                    <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Edit"
+                                                   OnClick="@(() => AbrirDialogoAsync(ev, null))" />
+                                    <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Delete"
+                                                   Color="Color.Error"
+                                                   OnClick="@(() => EliminarEventoAsync(ev))" />
+                                }
                             </div>
                         }
                     </div>

@@ -95,6 +95,26 @@
   },
   {
     "ContainingType": "NexoApi.Features.Auth.AuthController",
+    "Method": "RenovarToken",
+    "RelativePath": "api/auth/renovar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Auth.Dtos.RenovarResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Auth.AuthController",
     "Method": "ListarRoles",
     "RelativePath": "api/auth/roles",
     "HttpMethod": "GET",
@@ -2060,6 +2080,26 @@
   },
   {
     "ContainingType": "NexoApi.Features.Email.EmailController",
+    "Method": "ObtenerContador",
+    "RelativePath": "api/email/contador",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Email.EmailContadorItem",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Email.EmailController",
     "Method": "EnviarTest",
     "RelativePath": "api/email/test",
     "HttpMethod": "POST",
@@ -2120,6 +2160,32 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Facturacion.FacturacionController",
+    "Method": "AutoProducir",
+    "RelativePath": "api/facturacion/facturas/{id}/auto-producir",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[NexoApi.Features.Facturacion.Dtos.AutoProducirResultItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "NexoApi.Features.Facturacion.FacturacionController",
@@ -2206,6 +2272,32 @@
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Facturacion.Dtos.FacturaLineaStockItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Facturacion.FacturacionController",
+    "Method": "VerificarProduccion",
+    "RelativePath": "api/facturacion/facturas/{id}/verificar-produccion",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[NexoApi.Features.Facturacion.Dtos.VerificarProduccionItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4119,6 +4211,187 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Rrhh.AsistenciaController",
+    "Method": "AsignarHorario",
+    "RelativePath": "api/rrhh/asistencia/empleados/{empleadoId}/horario",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "empleadoId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Rrhh.Dtos.AsignarHorarioRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Rrhh.AsistenciaController",
+    "Method": "EstadoHoy",
+    "RelativePath": "api/rrhh/asistencia/estado-hoy",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Rrhh.Dtos.EstadoAsistenciaHoy",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Rrhh.AsistenciaController",
+    "Method": "Horarios",
+    "RelativePath": "api/rrhh/asistencia/horarios",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Rrhh.Dtos.HorarioItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Rrhh.AsistenciaController",
+    "Method": "CrearHorario",
+    "RelativePath": "api/rrhh/asistencia/horarios",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Rrhh.Dtos.CrearHorarioRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Rrhh.AsistenciaController",
+    "Method": "Lista",
+    "RelativePath": "api/rrhh/asistencia/lista",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "empleadoId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "desde",
+        "Type": "System.Nullable\u00601[[System.DateOnly, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "hasta",
+        "Type": "System.Nullable\u00601[[System.DateOnly, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Rrhh.Dtos.RegistroAsistenciaItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Rrhh.AsistenciaController",
+    "Method": "MarcarManual",
+    "RelativePath": "api/rrhh/asistencia/marcar/manual",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Rrhh.Dtos.MarcarManualRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Rrhh.AsistenciaController",
+    "Method": "MarcarQr",
+    "RelativePath": "api/rrhh/asistencia/marcar/qr",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Rrhh.Dtos.MarcarQrRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Rrhh.AsistenciaController",
+    "Method": "QrImagen",
+    "RelativePath": "api/rrhh/asistencia/qr-imagen",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "wb",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Rrhh.AsistenciaController",
+    "Method": "Token",
+    "RelativePath": "api/rrhh/asistencia/token",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Rrhh.Dtos.TokenQrResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "NexoApi.Features.Rrhh.RrhhCatalogosController",

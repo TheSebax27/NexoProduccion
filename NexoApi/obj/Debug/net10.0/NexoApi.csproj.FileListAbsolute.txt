@@ -1,5 +1,8 @@
 C:\Produccion\NexoApi\bin\Debug\net10.0\appsettings.Development.json
 C:\Produccion\NexoApi\bin\Debug\net10.0\appsettings.json
+C:\Produccion\NexoApi\bin\Debug\net10.0\obj2\Debug\net10.0\rpswa.dswa.cache.json
+C:\Produccion\NexoApi\bin\Debug\net10.0\obj2\NexoApi.csproj.nuget.dgspec.json
+C:\Produccion\NexoApi\bin\Debug\net10.0\obj2\project.assets.json
 C:\Produccion\NexoApi\bin\Debug\net10.0\NexoApi.staticwebassets.endpoints.json
 C:\Produccion\NexoApi\bin\Debug\net10.0\LatoFont\Lato-Black.ttf
 C:\Produccion\NexoApi\bin\Debug\net10.0\LatoFont\Lato-BlackItalic.ttf
@@ -44,6 +47,7 @@ C:\Produccion\NexoApi\bin\Debug\net10.0\Microsoft.IdentityModel.Protocols.OpenId
 C:\Produccion\NexoApi\bin\Debug\net10.0\Microsoft.IdentityModel.Tokens.dll
 C:\Produccion\NexoApi\bin\Debug\net10.0\Microsoft.OpenApi.dll
 C:\Produccion\NexoApi\bin\Debug\net10.0\Microsoft.SqlServer.Server.dll
+C:\Produccion\NexoApi\bin\Debug\net10.0\QRCoder.dll
 C:\Produccion\NexoApi\bin\Debug\net10.0\QuestPDF.dll
 C:\Produccion\NexoApi\bin\Debug\net10.0\RBush.dll
 C:\Produccion\NexoApi\bin\Debug\net10.0\SixLabors.Fonts.dll
