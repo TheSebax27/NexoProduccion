@@ -69,7 +69,8 @@ public class GmailEmailService(IDbConnectionFactory db) : IEmailService
             "SELECT EmailsHoy, FechaContador FROM Organizacion.ConfiguracionEmail WHERE ConfiguracionID = 1");
         if (row is null) return new EmailContadorItem(0, 500, DateOnly.FromDateTime(DateTime.Now));
         var hoy = DateOnly.FromDateTime(DateTime.Now);
-        var emailsHoy = row.FechaContador == hoy ? row.EmailsHoy : 0;
+        var fechaContador = row.FechaContador.HasValue ? DateOnly.FromDateTime(row.FechaContador.Value) : (DateOnly?)null;
+        var emailsHoy = fechaContador == hoy ? row.EmailsHoy : 0;
         return new EmailContadorItem(emailsHoy, 500, hoy);
     }
 
@@ -85,5 +86,5 @@ public class GmailEmailService(IDbConnectionFactory db) : IEmailService
     }
 
     private record ConfigRow(string Proveedor, string? ApiKey, string? EmailFrom, string? NombreFrom, bool Activo);
-    private record ContadorRow(int EmailsHoy, DateOnly? FechaContador);
+    private record ContadorRow(int EmailsHoy, DateTime? FechaContador);
 }

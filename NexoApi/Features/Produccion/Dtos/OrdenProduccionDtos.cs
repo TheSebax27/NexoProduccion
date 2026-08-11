@@ -1,10 +1,13 @@
 ﻿namespace NexoApi.Features.Produccion.Dtos;
 
+public record MaquinariaOrdenInput(int MaquinariaID, decimal? HorasReales, string? Notas);
+
 public record CrearOrdenProduccionRequest(
     string CodigoOP, int TipoProduccionID, int ProductoTerminadoID, int RecetaID,
     decimal CantidadProgramada, int? ClienteID, int CentroCostoDestinoID,
     int BodegaOrigenMPID, int BodegaDestinoPTID, int? CentroTrabajoID,
-    DateTime? FechaPlanificada, string? Observaciones
+    DateTime? FechaPlanificada, string? Observaciones,
+    List<MaquinariaOrdenInput>? Maquinas = null
 );
 
 // El codigo de la OP no se puede editar (es el identificador de negocio, igual

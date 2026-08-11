@@ -165,8 +165,10 @@ public class AutomacionService : IAutomacionService
         var p = Params(r);
         var dias = Int(p, "DiasSinContacto", 60);
         var entidades = await con.QueryAsync<(int ClienteID, int? ResponsableID)>(@"
-            SELECT c.ClienteID, c.ResponsableID
+            SELECT c.ClienteID,
+                   CASE WHEN u.UsuarioID IS NOT NULL THEN c.ResponsableID ELSE NULL END AS ResponsableID
             FROM Crm.Clientes c
+            LEFT JOIN Seguridad.Usuarios u ON u.UsuarioID = c.ResponsableID
             WHERE c.Estado = 1
               AND ISNULL(
                 (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID),

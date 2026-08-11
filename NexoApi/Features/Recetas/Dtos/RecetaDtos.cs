@@ -1,5 +1,7 @@
 ﻿namespace NexoApi.Features.Recetas.Dtos;
 
+public record MaquinariaRecetaInput(int MaquinariaID, decimal? HorasEstimadasPorLote, string? Notas);
+
 public record DetalleRecetaRequest(
     int InsumoID,
     decimal CantidadRequerida,
@@ -14,14 +16,16 @@ public record CrearRecetaRequest(
     string NombreReceta,
     decimal CantidadRendimientoBase,
     int UnidadRendimientoID,
-    List<DetalleRecetaRequest> Detalle
+    List<DetalleRecetaRequest> Detalle,
+    List<MaquinariaRecetaInput>? Maquinas = null
 );
 
 public record CrearNuevaVersionRequest(
     string NombreReceta,
     decimal CantidadRendimientoBase,
     int UnidadRendimientoID,
-    List<DetalleRecetaRequest> Detalle
+    List<DetalleRecetaRequest> Detalle,
+    List<MaquinariaRecetaInput>? Maquinas = null
 );
 
 public record RecetaResumen(

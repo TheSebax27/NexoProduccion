@@ -70,7 +70,10 @@ public class FacturacionService : IFacturacionService
     public async Task<int> CrearFacturaAsync(CrearFacturaRequest r, int usuarioId)
     {
         if (r.Lineas.Count == 0)
-            throw new InvalidOperationException("La factura debe tener al menos un artículo.");
+            throw new InvalidOperationException("La factura debe tener al menos una línea.");
+
+        if (r.Lineas.Any(l => l.ArticuloID is null && l.ComboID is null))
+            throw new InvalidOperationException("Cada línea debe tener un artículo o un combo.");
 
         if (r.Lineas.Any(l => l.Cantidad <= 0))
             throw new InvalidOperationException("Todas las cantidades deben ser mayores a cero.");
@@ -90,13 +93,13 @@ public class FacturacionService : IFacturacionService
                 new { r.ClienteID, r.Fecha, r.Notas, UsuarioID = usuarioId }, transaction);
 
             const string sqlLinea = @"
-                INSERT INTO Facturacion.FacturaLineas (FacturaID, ArticuloID, Cantidad, PrecioUnitario)
-                VALUES (@FacturaId, @ArticuloID, @Cantidad, @PrecioUnitario)";
+                INSERT INTO Facturacion.FacturaLineas (FacturaID, ArticuloID, ComboID, DescripcionLinea, Cantidad, PrecioUnitario)
+                VALUES (@FacturaId, @ArticuloID, @ComboID, @DescripcionLinea, @Cantidad, @PrecioUnitario)";
 
             foreach (var linea in r.Lineas)
             {
                 await connection.ExecuteAsync(sqlLinea,
-                    new { FacturaId = facturaId, linea.ArticuloID, linea.Cantidad, linea.PrecioUnitario }, transaction);
+                    new { FacturaId = facturaId, linea.ArticuloID, linea.ComboID, linea.DescripcionLinea, linea.Cantidad, linea.PrecioUnitario }, transaction);
             }
 
             transaction.Commit();
@@ -114,11 +117,15 @@ public class FacturacionService : IFacturacionService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT l.LineaID, l.FacturaID, l.ArticuloID, a.SKU AS SkuArticulo, a.Nombre AS NombreArticulo,
+            SELECT l.LineaID, l.FacturaID, l.ArticuloID,
+                   a.SKU AS SkuArticulo,
+                   COALESCE(a.Nombre, l.DescripcionLinea, c.Nombre) AS NombreArticulo,
+                   l.ComboID, l.DescripcionLinea,
                    l.Cantidad, l.PrecioUnitario, ROUND(l.Cantidad * l.PrecioUnitario, 0) AS Subtotal,
                    um.Abreviatura AS Unidad, a.UnidadesPorEmbalaje
             FROM Facturacion.FacturaLineas l
-            JOIN Catalogo.Articulos a ON a.ArticuloID = l.ArticuloID
+            LEFT JOIN Catalogo.Articulos a ON a.ArticuloID = l.ArticuloID
+            LEFT JOIN Marketing.Combos c ON c.ComboID = l.ComboID
             LEFT JOIN Catalogo.UnidadesMedida um ON um.UnidadID = a.UnidadID
             WHERE l.FacturaID = @FacturaId
             ORDER BY l.LineaID";
@@ -166,7 +173,7 @@ public class FacturacionService : IFacturacionService
                    ISNULL((SELECT SUM(s.CantidadActual) FROM Inventario.InventarioStock s WHERE s.ArticuloID = fl.ArticuloID), 0) AS StockDisponible
             FROM Facturacion.FacturaLineas fl
             JOIN Catalogo.Articulos a ON a.ArticuloID = fl.ArticuloID
-            WHERE fl.FacturaID = @FacturaId
+            WHERE fl.FacturaID = @FacturaId AND fl.ArticuloID IS NOT NULL
             ORDER BY fl.LineaID";
 
         return await connection.QueryAsync<FacturaLineaStockItem>(sql, new { FacturaId = facturaId });

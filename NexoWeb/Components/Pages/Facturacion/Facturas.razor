@@ -83,6 +83,7 @@ else
     private List<FacturaItem> _facturas = new();
     private List<ClienteItem> _clientes = new();
     private List<ArticuloItem> _articulos = new();
+    private List<ComboItem> _combosActivos = new();
     private bool _cargando = true;
     private string? _errorCarga;
     private int? _filtroClienteId;
@@ -109,12 +110,14 @@ else
             var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
             var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos?tipoArticuloId=2");
             var tareaFacturas = ApiClient.GetAsync<List<FacturaItem>>("api/facturacion/facturas");
+            var tareaCombos = ApiClient.GetAsync<List<ComboItem>>("api/marketing/combos");
 
-            await Task.WhenAll(tareaClientes, tareaArticulos, tareaFacturas);
+            await Task.WhenAll(tareaClientes, tareaArticulos, tareaFacturas, tareaCombos);
 
             _clientes = (await tareaClientes ?? new()).Where(c => c.Estado).ToList();
             _articulos = (await tareaArticulos ?? new()).Where(a => a.Estado).ToList();
             _facturas = await tareaFacturas ?? new();
+            _combosActivos = (await tareaCombos ?? new()).Where(c => c.Estado != "Inactivo").ToList();
         }
         catch (Exception ex)
         {
@@ -161,7 +164,8 @@ else
         var parametros = new DialogParameters<FacturaDialog>
         {
             { x => x.Clientes, _clientes },
-            { x => x.Articulos, _articulos }
+            { x => x.Articulos, _articulos },
+            { x => x.CombosActivos, _combosActivos }
         };
 
         var dialogo = await DialogService.ShowAsync<FacturaDialog>("Nueva Factura", parametros,

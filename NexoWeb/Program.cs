@@ -33,6 +33,10 @@ builder.Services.AddHttpClient<INexoApiClient, NexoApiClient>((sp, client) =>
     client.BaseAddress = new Uri(config["NexoApi:BaseUrl"]!);
 });
 
+// Cliente sin-auth para proxy de imágenes (los endpoints de imagen son AllowAnonymous en la API)
+builder.Services.AddHttpClient("img-proxy").ConfigurePrimaryHttpMessageHandler(() =>
+    new HttpClientHandler { ServerCertificateCustomValidationCallback = (_, _, _, _) => true });
+
 builder.Services.AddAuthorizationCore(); // el "motor" de autorizacion de Blazor (distinto al AddAuthorization de la API)
 builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
@@ -59,6 +63,34 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
+
+// ── Proxy de imágenes hacia NexoApi ──────────────────────────────────────────
+// Los <img src="api/..."> del browser no pueden mandar el JWT.
+// NexoWeb recibe la petición y la reenvía al API (cuyos endpoints de imagen ya son AllowAnonymous).
+{
+    var apiBase = app.Configuration["NexoApi:BaseUrl"]!.TrimEnd('/');
+
+    static async Task<IResult> ProxyImagen(string apiUrl, IHttpClientFactory hf)
+    {
+        var client = hf.CreateClient("img-proxy");
+        HttpResponseMessage resp;
+        try { resp = await client.GetAsync(apiUrl); }
+        catch { return Results.NotFound(); }
+        if (!resp.IsSuccessStatusCode) return Results.NotFound();
+        var bytes = await resp.Content.ReadAsByteArrayAsync();
+        var mime  = resp.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+        return Results.File(bytes, mime);
+    }
+
+    app.MapGet("api/catalogo/articulos/{id:int}/imagen",
+        (int id, IHttpClientFactory hf) => ProxyImagen($"{apiBase}/api/catalogo/articulos/{id}/imagen", hf));
+
+    app.MapGet("api/rrhh/empleados/{id:int}/foto",
+        (int id, IHttpClientFactory hf) => ProxyImagen($"{apiBase}/api/rrhh/empleados/{id}/foto", hf));
+
+    app.MapGet("api/marketing/combos/{id:int}/imagen",
+        (int id, IHttpClientFactory hf) => ProxyImagen($"{apiBase}/api/marketing/combos/{id}/imagen", hf));
+}
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()

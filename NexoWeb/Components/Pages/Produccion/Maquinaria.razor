@@ -1,0 +1,236 @@
+@page "/produccion/maquinaria"
+@using NexoWeb.Common.Dtos
+@using NexoWeb.Common.ApiClient
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administracion,Jefes")]
+@inject INexoApiClient Api
+@inject ISnackbar Snackbar
+@inject IDialogService Dialog
+
+<PageTitle>Maquinaria — NEXO</PageTitle>
+
+<div class="nexo-page-hero">
+    <div class="nexo-page-hero__left">
+        <div class="nexo-page-hero__accent"></div>
+        <div>
+            <p class="nexo-page-hero__module">Producción</p>
+            <h1 class="nexo-page-hero__title">Maquinaria</h1>
+        </div>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirCrear">
+        Nueva Máquina
+    </MudButton>
+</div>
+
+@* ── Filtros ── *@
+<MudPaper Class="pa-3 mb-4" Elevation="1">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" sm="4">
+            <MudSelect T="int?" @bind-Value="_filtroTipo" Label="Tipo" Placeholder="Todos"
+                       Clearable OnClearButtonClick="@(() => { _filtroTipo = null; _ = CargarAsync(); })">
+                @foreach (var t in _tipos)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)t.TipoMaquinariaID)">@t.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudSelect T="string?" @bind-Value="_filtroEstado" Label="Estado" Placeholder="Todos"
+                       Clearable OnClearButtonClick="@(() => { _filtroEstado = null; _ = CargarAsync(); })">
+                <MudSelectItem T="string?" Value="@("Activa")">Activa</MudSelectItem>
+                <MudSelectItem T="string?" Value="@("EnMantenimiento")">En Mantenimiento</MudSelectItem>
+                <MudSelectItem T="string?" Value="@("Inactiva")">Inactiva</MudSelectItem>
+                <MudSelectItem T="string?" Value="@("BajaDefinitiva")">Baja Definitiva</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudButton Variant="Variant.Outlined" OnClick="CargarAsync" StartIcon="@Icons.Material.Filled.FilterAlt">
+                Filtrar
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@* ── Tabla ── *@
+<MudPaper Elevation="1">
+    @if (_cargando)
+    {
+        <MudProgressLinear Indeterminate Color="Color.Primary" />
+    }
+    else if (_maquinas.Count == 0)
+    {
+        <div class="pa-6 text-center">
+            <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Size="Size.Large" Class="mb-2" Style="opacity:.3" />
+            <MudText Color="Color.Secondary">No hay máquinas registradas con los filtros actuales.</MudText>
+        </div>
+    }
+    else
+    {
+        <MudTable Items="_maquinas" Dense Hover Bordered>
+            <HeaderContent>
+                <MudTh>Código</MudTh>
+                <MudTh>Nombre</MudTh>
+                <MudTh>Tipo</MudTh>
+                <MudTh>Centro de trabajo</MudTh>
+                <MudTh>Estado</MudTh>
+                <MudTh>Prox. mantenimiento</MudTh>
+                <MudTh>Acciones</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Código"><code>@context.Codigo</code></MudTd>
+                <MudTd DataLabel="Nombre"><strong>@context.Nombre</strong>
+                    @if (context.Marca is not null || context.Modelo is not null)
+                    {
+                        <br /><small style="opacity:.6">@context.Marca @context.Modelo</small>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Tipo">@context.TipoMaquinaria</MudTd>
+                <MudTd DataLabel="Centro">@(context.CentroTrabajo ?? "—")</MudTd>
+                <MudTd DataLabel="Estado">
+                    <MudChip T="string" Size="Size.Small" Color="@ColorEstado(context.Estado)">
+                        @EtiquetaEstado(context.Estado)
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Prox.mant">
+                    @if (context.ProximoMantenimiento.HasValue)
+                    {
+                        <MudChip T="string" Size="Size.Small"
+                                 Color="@(context.MantenimientoVencido ? Color.Error : Color.Success)">
+                            @context.ProximoMantenimiento.Value.ToString("dd/MM/yyyy")
+                        </MudChip>
+                    }
+                    else { <span style="opacity:.4">—</span> }
+                </MudTd>
+                <MudTd>
+                    <MudTooltip Text="Editar">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                       OnClick="@(() => AbrirEditar(context))" />
+                    </MudTooltip>
+                    <MudTooltip Text="Registrar mantenimiento">
+                        <MudIconButton Icon="@Icons.Material.Filled.Build" Size="Size.Small"
+                                       Color="Color.Warning"
+                                       OnClick="@(() => AbrirMantenimiento(context))" />
+                    </MudTooltip>
+                    <MudTooltip Text="Historial de mantenimiento">
+                        <MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small"
+                                       OnClick="@(() => VerHistorial(context))" />
+                    </MudTooltip>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudPaper>
+
+@code {
+    List<TipoMaquinariaItem> _tipos = [];
+    List<MaquinariaItem> _maquinas = [];
+    bool _cargando;
+    int? _filtroTipo;
+    string? _filtroEstado;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _cargando = true;
+        try
+        {
+            var tTipos = Api.GetAsync<List<TipoMaquinariaItem>>("api/produccion/tipos-maquinaria");
+            var tMaq   = Api.GetAsync<List<MaquinariaItem>>("api/produccion/maquinaria");
+            await Task.WhenAll(tTipos, tMaq);
+            _tipos    = tTipos.Result  ?? [];
+            _maquinas = tMaq.Result    ?? [];
+        }
+        finally { _cargando = false; }
+    }
+
+    async Task CargarAsync()
+    {
+        _cargando = true;
+        try
+        {
+            var url = "api/produccion/maquinaria";
+            var parms = new List<string>();
+            if (_filtroTipo.HasValue)    parms.Add($"tipoId={_filtroTipo}");
+            if (_filtroEstado is not null) parms.Add($"estado={Uri.EscapeDataString(_filtroEstado)}");
+            if (parms.Count > 0) url += "?" + string.Join("&", parms);
+            _maquinas = await Api.GetAsync<List<MaquinariaItem>>(url) ?? [];
+        }
+        finally { _cargando = false; }
+    }
+
+    async Task AbrirCrear()
+    {
+        var opts   = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var params_ = new DialogParameters<MaquinariaDialog>
+        {
+            { x => x.Tipos, _tipos },
+            { x => x.Maquina, null }
+        };
+        var dlg = await Dialog.ShowAsync<MaquinariaDialog>("Nueva Máquina", params_, opts);
+        var res = await dlg.Result;
+        if (res is { Canceled: false }) await CargarAsync();
+    }
+
+    async Task AbrirEditar(MaquinariaItem m)
+    {
+        var detalle = await Api.GetAsync<MaquinariaDetalle>($"api/produccion/maquinaria/{m.MaquinariaID}");
+        if (detalle is null) { Snackbar.Add("No se pudo cargar el detalle.", Severity.Error); return; }
+
+        var opts   = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var params_ = new DialogParameters<MaquinariaDialog>
+        {
+            { x => x.Tipos, _tipos },
+            { x => x.Maquina, detalle }
+        };
+        var dlg = await Dialog.ShowAsync<MaquinariaDialog>("Editar Máquina", params_, opts);
+        var res = await dlg.Result;
+        if (res is { Canceled: false }) await CargarAsync();
+    }
+
+    async Task AbrirMantenimiento(MaquinariaItem m)
+    {
+        var opts = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+        var params_ = new DialogParameters<MantenimientoMaquinariaDialog>
+        {
+            { x => x.MaquinariaID, m.MaquinariaID },
+            { x => x.NombreMaquina, m.Nombre }
+        };
+        var dlg = await Dialog.ShowAsync<MantenimientoMaquinariaDialog>(
+            $"Registrar mantenimiento — {m.Nombre}", params_, opts);
+        var res = await dlg.Result;
+        if (res is { Canceled: false }) await CargarAsync();
+    }
+
+    async Task VerHistorial(MaquinariaItem m)
+    {
+        var historial = await Api.GetAsync<List<MantenimientoItem>>(
+            $"api/produccion/maquinaria/{m.MaquinariaID}/mantenimientos");
+        if (historial is null || historial.Count == 0)
+        {
+            Snackbar.Add($"«{m.Nombre}» no tiene mantenimientos registrados.", Severity.Info);
+            return;
+        }
+        var opts = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
+        var params_ = new DialogParameters<HistorialMantenimientoDialog>
+        {
+            { x => x.NombreMaquina, m.Nombre },
+            { x => x.Historial, historial }
+        };
+        await Dialog.ShowAsync<HistorialMantenimientoDialog>(
+            $"Historial — {m.Nombre}", params_, opts);
+    }
+
+    static Color ColorEstado(string e) => e switch
+    {
+        "EnMantenimiento" => Color.Warning,
+        "Inactiva"        => Color.Default,
+        "BajaDefinitiva"  => Color.Error,
+        _                 => Color.Success
+    };
+
+    static string EtiquetaEstado(string e) => e switch
+    {
+        "EnMantenimiento" => "En mantenimiento",
+        "BajaDefinitiva"  => "Baja definitiva",
+        _                 => e
+    };
+}

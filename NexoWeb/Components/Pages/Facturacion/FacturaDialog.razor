@@ -5,13 +5,20 @@
 <MudDialog>
     <DialogContent>
         <MudForm @ref="_form" Model="@this">
-            <MudSelect T="int?" @bind-Value="_clienteId" Label="Cliente" Required="true"
-                       RequiredError="Selecciona un cliente" Class="mb-3">
-                @foreach (var c in Clientes)
-                {
-                    <MudSelectItem T="int?" Value="@c.ClienteID">@c.Nombre</MudSelectItem>
-                }
-            </MudSelect>
+            <div class="d-flex align-center mb-2" style="gap:1rem">
+                <MudSwitch @bind-Value="_consumidorFinal" Color="Color.Primary"
+                           Label="Consumidor Final" />
+            </div>
+            @if (!_consumidorFinal)
+            {
+                <MudSelect T="int?" @bind-Value="_clienteId" Label="Cliente" Required="true"
+                           RequiredError="Selecciona un cliente" Class="mb-3">
+                    @foreach (var c in Clientes)
+                    {
+                        <MudSelectItem T="int?" Value="@c.ClienteID">@c.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+            }
 
             <MudDatePicker @bind-Date="_fecha" Label="Fecha" Required="true" Class="mb-3" />
             <MudTextField @bind-Value="_notas" Label="Notas (opcional)" Lines="2" Class="mb-3" />
@@ -95,10 +102,40 @@
                 </MudPaper>
             }
 
-            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add"
-                       OnClick="@(() => _lineas.Add(new LineaEditable()))" Class="mt-1 mb-3">
-                Agregar Artículo
-            </MudButton>
+            <div class="d-flex flex-wrap mt-1 mb-3" style="gap:.5rem">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="@(() => _lineas.Add(new LineaEditable()))">
+                    Agregar Artículo
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.LocalOffer"
+                           Color="Color.Secondary"
+                           OnClick="@(() => _combosLineas.Add(new ComboLinea()))">
+                    Agregar Combo
+                </MudButton>
+            </div>
+
+            @if (_combosLineas.Count > 0)
+            {
+                <MudDivider Class="mb-2"/>
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Combos</MudText>
+                @foreach (var cl in _combosLineas)
+                {
+                    <MudPaper Elevation="0" Class="mb-2 pa-2" Style="border:1px solid var(--mud-palette-secondary); border-radius:8px;">
+                        <div class="d-flex align-center" style="gap:.5rem">
+                            <MudSelect T="int?" Value="cl.ComboID" ValueChanged="@((int? v) => OnComboCambiado(cl, v))"
+                                       Label="Combo" Style="flex:1">
+                                @foreach (var c in _combosActivos)
+                                {
+                                    <MudSelectItem T="int?" Value="@c.ComboID">@c.Nombre (@c.PrecioEfectivo.ToString("C0"))</MudSelectItem>
+                                }
+                            </MudSelect>
+                            <MudNumericField T="decimal" @bind-Value="cl.PrecioUnitario" Label="Precio" Min="0m" Format="N0" Style="width:130px" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                           OnClick="@(() => _combosLineas.Remove(cl))" />
+                        </div>
+                    </MudPaper>
+                }
+            }
 
             <MudText Typo="Typo.subtitle1" Class="d-block" Style="text-align: right;">
                 Total: @_lineas.Sum(l => CantidadFinal(l) * l.PrecioUnitario).ToString("C0")
@@ -118,6 +155,7 @@
 
     [Parameter] public List<ClienteItem> Clientes { get; set; } = new();
     [Parameter] public List<ArticuloItem> Articulos { get; set; } = new();
+    [Parameter] public List<ComboItem> CombosActivos { get; set; } = new();
 
     private class LineaEditable
     {
@@ -129,11 +167,23 @@
         public bool    UsarPrecioCatalogo { get; set; } = true;
     }
 
+    private class ComboLinea
+    {
+        public int?    ComboID       { get; set; }
+        public string? NombreCombo   { get; set; }
+        public decimal PrecioUnitario { get; set; }
+    }
+
+    private const int ClienteConsumidorFinalId = 11;
+
     private MudForm _form = default!;
+    private bool _consumidorFinal;
     private int? _clienteId;
     private DateTime? _fecha = DateTime.Today;
     private string? _notas;
     private List<LineaEditable> _lineas = new() { new LineaEditable() };
+    private List<ComboLinea> _combosLineas = new();
+    private List<ComboItem> _combosActivos => CombosActivos;
 
     private decimal CantidadFinal(LineaEditable linea)
     {
@@ -154,24 +204,38 @@
         linea.UsarPrecioCatalogo = true;
     }
 
+    private void OnComboCambiado(ComboLinea cl, int? comboId)
+    {
+        cl.ComboID = comboId;
+        var combo = _combosActivos.FirstOrDefault(c => c.ComboID == comboId);
+        cl.NombreCombo = combo?.Nombre;
+        cl.PrecioUnitario = combo?.PrecioEfectivo ?? 0;
+    }
+
     private async Task GuardarAsync()
     {
         await _form.Validate();
-        if (!_form.IsValid || _clienteId is null || _fecha is null)
+        var clienteIdFinal = _consumidorFinal ? ClienteConsumidorFinalId : _clienteId;
+        if (!_form.IsValid || clienteIdFinal is null || _fecha is null)
             return;
 
-        var lineasValidas = _lineas
+        var lineasArticulos = _lineas
             .Where(l => l.ArticuloID is not null && CantidadFinal(l) > 0)
-            .Select(l => new LineaFacturaInput(l.ArticuloID!.Value, CantidadFinal(l), l.PrecioUnitario))
-            .ToList();
+            .Select(l => new LineaFacturaInput(l.ArticuloID, null, null, CantidadFinal(l), l.PrecioUnitario));
+
+        var lineasCombos = _combosLineas
+            .Where(c => c.ComboID.HasValue && c.PrecioUnitario > 0)
+            .Select(c => new LineaFacturaInput(null, c.ComboID, c.NombreCombo, 1, c.PrecioUnitario));
+
+        var lineasValidas = lineasArticulos.Concat(lineasCombos).ToList();
 
         if (lineasValidas.Count == 0)
         {
-            Snackbar.Add("Agrega al menos un artículo con cantidad mayor a cero.", Severity.Warning);
+            Snackbar.Add("Agrega al menos un artículo o combo con cantidad mayor a cero.", Severity.Warning);
             return;
         }
 
-        var request = new CrearFacturaRequest(_clienteId.Value, _fecha.Value, _notas, lineasValidas);
+        var request = new CrearFacturaRequest(clienteIdFinal!.Value, _fecha.Value, _notas, lineasValidas);
         MudDialog.Close(DialogResult.Ok(request));
     }
 

@@ -3023,6 +3023,117 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "NexoApi.Features.Marketing.ComboController",
+    "Method": "Listar",
+    "RelativePath": "api/marketing/combos",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "estado",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.ComboController",
+    "Method": "Crear",
+    "RelativePath": "api/marketing/combos",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "r",
+        "Type": "NexoApi.Features.Marketing.Dtos.CrearComboRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.ComboController",
+    "Method": "Obtener",
+    "RelativePath": "api/marketing/combos/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.ComboController",
+    "Method": "Actualizar",
+    "RelativePath": "api/marketing/combos/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "r",
+        "Type": "NexoApi.Features.Marketing.Dtos.ActualizarComboRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.ComboController",
+    "Method": "ObtenerImagen",
+    "RelativePath": "api/marketing/combos/{id}/imagen",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.ComboController",
+    "Method": "PrecioCalculado",
+    "RelativePath": "api/marketing/combos/{id}/precio-calculado",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Marketing.ComboController",
+    "Method": "ListarActivos",
+    "RelativePath": "api/marketing/combos/activos",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "NexoApi.Features.Marketing.MarketingController",
     "Method": "ListarImagenes",
     "RelativePath": "api/marketing/imagenes",
@@ -3461,6 +3572,148 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "NexoApi.Features.Produccion.MaquinariaController",
+    "Method": "Listar",
+    "RelativePath": "api/produccion/maquinaria",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "tipoId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "estado",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "centroTrabajoId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.MaquinariaController",
+    "Method": "Crear",
+    "RelativePath": "api/produccion/maquinaria",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "r",
+        "Type": "NexoApi.Features.Produccion.Dtos.CrearMaquinariaRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.MaquinariaController",
+    "Method": "Obtener",
+    "RelativePath": "api/produccion/maquinaria/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.MaquinariaController",
+    "Method": "Actualizar",
+    "RelativePath": "api/produccion/maquinaria/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "r",
+        "Type": "NexoApi.Features.Produccion.Dtos.ActualizarMaquinariaRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.MaquinariaController",
+    "Method": "Estadisticas",
+    "RelativePath": "api/produccion/maquinaria/{id}/estadisticas",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.MaquinariaController",
+    "Method": "ListarMantenimientos",
+    "RelativePath": "api/produccion/maquinaria/{id}/mantenimientos",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.MaquinariaController",
+    "Method": "RegistrarMantenimiento",
+    "RelativePath": "api/produccion/maquinaria/{id}/mantenimientos",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "r",
+        "Type": "NexoApi.Features.Produccion.Dtos.CrearMantenimientoRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.MaquinariaController",
+    "Method": "EnMantenimiento",
+    "RelativePath": "api/produccion/maquinaria/en-mantenimiento",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "NexoApi.Features.Produccion.OrdenesProduccionController",
     "Method": "Listar",
     "RelativePath": "api/produccion/ordenes",
@@ -3676,6 +3929,43 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "NexoApi.Features.Produccion.MaquinariaController",
+    "Method": "MaquinasOrden",
+    "RelativePath": "api/produccion/ordenes/{ordenId}/maquinaria",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "ordenId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.MaquinariaController",
+    "Method": "GuardarMaquinasOrden",
+    "RelativePath": "api/produccion/ordenes/{ordenId}/maquinaria",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "ordenId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "maquinas",
+        "Type": "System.Collections.Generic.List\u00601[[NexoApi.Features.Produccion.Dtos.MaquinariaOrdenInput, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "NexoApi.Features.Produccion.OrdenesProduccionController",
     "Method": "AjustarConsumo",
     "RelativePath": "api/produccion/ordenes/consumo/{consumoId}",
@@ -3841,6 +4131,48 @@
       {
         "Name": "request",
         "Type": "NexoApi.Features.Recetas.Dtos.CrearNuevaVersionRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.MaquinariaController",
+    "Method": "MaquinasReceta",
+    "RelativePath": "api/produccion/recetas/{recetaId}/maquinaria",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "recetaId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.MaquinariaController",
+    "Method": "ListarTipos",
+    "RelativePath": "api/produccion/tipos-maquinaria",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.MaquinariaController",
+    "Method": "CrearTipo",
+    "RelativePath": "api/produccion/tipos-maquinaria",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "r",
+        "Type": "NexoApi.Features.Produccion.Dtos.CrearTipoMaquinariaRequest",
         "IsRequired": true
       }
     ],

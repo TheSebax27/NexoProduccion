@@ -30,11 +30,15 @@ public record RecetaResumen(
     decimal CantidadRendimientoBase, string UnidadRendimiento, bool Estado
 );
 
+public record MaquinariaRecetaInput(int MaquinariaID, decimal? HorasEstimadasPorLote, string? Notas);
+public record MaquinariaOrdenInput(int MaquinariaID, decimal? HorasReales, string? Notas);
+
 public record CrearOrdenProduccionRequest(
     string CodigoOP, int TipoProduccionID, int ProductoTerminadoID, int RecetaID,
     decimal CantidadProgramada, int? ClienteID, int CentroCostoDestinoID,
     int BodegaOrigenMPID, int BodegaDestinoPTID, int? CentroTrabajoID,
-    DateTime? FechaPlanificada, string? Observaciones
+    DateTime? FechaPlanificada, string? Observaciones,
+    List<MaquinariaOrdenInput>? Maquinas = null
 );
 
 // Solo aplica cuando la orden esta en estado Planificada; el codigo de la OP
@@ -80,14 +84,16 @@ public record CrearRecetaRequest(
     string NombreReceta,
     decimal CantidadRendimientoBase,
     int UnidadRendimientoID,
-    List<DetalleRecetaRequest> Detalle
+    List<DetalleRecetaRequest> Detalle,
+    List<MaquinariaRecetaInput>? Maquinas = null
 );
 
 public record CrearNuevaVersionRequest(
     string NombreReceta,
     decimal CantidadRendimientoBase,
     int UnidadRendimientoID,
-    List<DetalleRecetaRequest> Detalle
+    List<DetalleRecetaRequest> Detalle,
+    List<MaquinariaRecetaInput>? Maquinas = null
 );
 
 public record ConsumoOpItem(

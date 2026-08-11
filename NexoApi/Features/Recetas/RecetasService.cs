@@ -45,6 +45,7 @@ public class RecetasService : IRecetasService
             }, transaction);
 
             await InsertarDetalleAsync(connection, transaction, recetaId, r.Detalle);
+            await InsertarMaquinariaAsync(connection, transaction, recetaId, r.Maquinas);
 
             transaction.Commit();
             return recetaId;
@@ -91,6 +92,7 @@ public class RecetasService : IRecetasService
             }, transaction);
 
             await InsertarDetalleAsync(connection, transaction, nuevaRecetaId, r.Detalle);
+            await InsertarMaquinariaAsync(connection, transaction, nuevaRecetaId, r.Maquinas);
 
             await connection.ExecuteAsync(
                 "UPDATE Produccion.RecetaBOM SET Estado = 0 WHERE RecetaID = @RecetaBaseId",
@@ -129,6 +131,19 @@ public class RecetasService : IRecetasService
                 linea.Orden
             }, transaction);
         }
+    }
+
+    private static async Task InsertarMaquinariaAsync(
+        System.Data.IDbConnection conn, System.Data.IDbTransaction tx,
+        int recetaId, List<MaquinariaRecetaInput>? maquinas)
+    {
+        if (maquinas is null || maquinas.Count == 0) return;
+        const string sql = """
+            INSERT INTO Produccion.RecetaMaquinaria (RecetaID, MaquinariaID, HorasEstimadasPorLote, Notas)
+            VALUES (@RecetaID, @MaquinariaID, @HorasEstimadasPorLote, @Notas)
+            """;
+        foreach (var m in maquinas)
+            await conn.ExecuteAsync(sql, new { RecetaID = recetaId, m.MaquinariaID, m.HorasEstimadasPorLote, m.Notas }, tx);
     }
 
     public async Task<IEnumerable<RecetaResumen>> ListarAsync(int? productoTerminadoId, bool soloActivas)

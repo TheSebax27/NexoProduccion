@@ -118,6 +118,11 @@
   position: static
 }
 
+.my-1 {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem
+}
+
 .my-3 {
   margin-top: 0.75rem;
   margin-bottom: 0.75rem
@@ -189,6 +194,10 @@
 
 .flex {
   display: flex
+}
+
+.table {
+  display: table
 }
 
 .flex-1 {

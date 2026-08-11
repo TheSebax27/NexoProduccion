@@ -32,11 +32,13 @@
     }
     else if (_estado is not null)
     {
-        var jaCompleto = _estado.TieneEntrada && _estado.TieneSalida;
-        var esSalida   = _estado.TieneEntrada && !_estado.TieneSalida;
-        var tipo       = esSalida ? "SALIDA" : "ENTRADA";
-        var color      = esSalida ? Color.Warning : Color.Success;
-        var icono      = esSalida ? Icons.Material.Filled.Logout : Icons.Material.Filled.Login;
+        // Si el horario no requiere salida, la jornada está completa en cuanto hay entrada
+        var jornadaCompleta = (_estado.TieneEntrada && _estado.TieneSalida)
+                           || (_estado.TieneEntrada && !_estado.RegistraSalida);
+        var esSalida = _estado.TieneEntrada && !_estado.TieneSalida && _estado.RegistraSalida;
+        var tipo     = esSalida ? "SALIDA" : "ENTRADA";
+        var color    = esSalida ? Color.Warning : Color.Success;
+        var icono    = esSalida ? Icons.Material.Filled.Logout : Icons.Material.Filled.Login;
 
         <MudPaper Class="pa-6" Elevation="3">
             <MudText Typo="Typo.h6" Align="Align.Center">@_estado.Empleado</MudText>
@@ -55,12 +57,22 @@
                 </MudAlert>
             }
 
-            @if (jaCompleto)
+            @if (jornadaCompleta)
             {
-                <MudAlert Severity="Severity.Success">
-                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-1" />
-                    Salida: @_estado.HoraSalida?.ToString("HH:mm") · Jornada completa
-                </MudAlert>
+                @if (_estado.TieneSalida)
+                {
+                    <MudAlert Severity="Severity.Success">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-1" />
+                        Salida: @_estado.HoraSalida?.ToString("HH:mm") · Jornada completa
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Success">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-1" />
+                        Entrada registrada · Tu horario no requiere marcar salida
+                    </MudAlert>
+                }
             }
             else
             {

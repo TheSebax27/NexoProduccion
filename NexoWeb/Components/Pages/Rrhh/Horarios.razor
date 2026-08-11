@@ -45,18 +45,28 @@
         <MudTable Items="_horarios" Dense Hover Bordered>
             <HeaderContent>
                 <MudTh>Nombre</MudTh>
-                <MudTh>Entrada</MudTh>
-                <MudTh>Salida</MudTh>
+                <MudTh>Ciclo</MudTh>
+                <MudTh>Marcaje</MudTh>
                 <MudTh>Tolerancia</MudTh>
-                <MudTh>Días activos</MudTh>
+                <MudTh>Días configurados</MudTh>
                 <MudTh>Estado</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Nombre"><strong>@context.Nombre</strong></MudTd>
-                <MudTd DataLabel="Entrada">@context.HoraEntrada.ToString("HH:mm")</MudTd>
-                <MudTd DataLabel="Salida">@context.HoraSalida.ToString("HH:mm")</MudTd>
+                <MudTd DataLabel="Ciclo">
+                    <MudChip T="string" Size="Size.Small" Color="@(context.TipoCiclo == "FIJO" ? Color.Default : Color.Secondary)">
+                        @(context.TipoCiclo switch { "SEMANA_AB" => "A/B", "SEMANA_4" => "A/B/C/D", _ => "Fijo" })
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Marcaje">
+                    <MudChip T="string" Size="Size.Small"
+                             Color="@(context.RegistraSalida ? Color.Info : Color.Default)"
+                             Icon="@(context.RegistraSalida ? Icons.Material.Filled.SwapHoriz : Icons.Material.Filled.Login)">
+                        @(context.RegistraSalida ? "Entrada y salida" : "Solo entrada")
+                    </MudChip>
+                </MudTd>
                 <MudTd DataLabel="Tolerancia">@context.ToleranciaTardanzaMin min</MudTd>
-                <MudTd DataLabel="Días">@DiasActivos(context)</MudTd>
+                <MudTd DataLabel="Días">@ResumenDias(context)</MudTd>
                 <MudTd DataLabel="Estado">
                     <MudChip T="string" Size="Size.Small"
                              Color="@(context.Activo ? Color.Success : Color.Default)">
@@ -96,7 +106,7 @@
                 @foreach (var h in _horarios.Where(x => x.Activo))
                 {
                     <MudSelectItem T="int?" Value="@((int?)h.HorarioID)">
-                        @h.Nombre (@h.HoraEntrada.ToString("HH:mm") - @h.HoraSalida.ToString("HH:mm"))
+                        @h.Nombre
                     </MudSelectItem>
                 }
             </MudSelect>
@@ -145,7 +155,7 @@
 
     async Task AbrirNuevoHorario()
     {
-        var opts = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialogo = await Dialog.ShowAsync<NuevoHorarioDialog>("Nuevo Horario", opts);
         var resultado = await dialogo.Result;
         if (resultado is { Canceled: false, Data: CrearHorarioRequest req })
@@ -181,16 +191,14 @@
         finally { _asignando = false; }
     }
 
-    static string DiasActivos(HorarioItem h)
+    static string ResumenDias(HorarioItem h)
     {
-        var dias = new List<string>();
-        if (h.LunesActivo) dias.Add("Lun");
-        if (h.MartesActivo) dias.Add("Mar");
-        if (h.MiercolesActivo) dias.Add("Mié");
-        if (h.JuevesActivo) dias.Add("Jue");
-        if (h.ViernesActivo) dias.Add("Vie");
-        if (h.SabadoActivo) dias.Add("Sáb");
-        if (h.DomingoActivo) dias.Add("Dom");
-        return dias.Count == 0 ? "—" : string.Join(", ", dias);
+        if (h.Dias.Count == 0) return "—";
+        var n = new[] { "", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom" };
+        if (h.TipoCiclo == "FIJO")
+            return string.Join(", ", h.Dias.Select(d => n[d.DiaSemana]));
+        var semanas = h.Dias.Select(d => d.Semana).Distinct().OrderBy(s => s).ToList();
+        return string.Join(" / ", semanas.Select(s =>
+            $"{s}: {string.Join(",", h.Dias.Where(d => d.Semana == s).Select(d => n[d.DiaSemana]))}"));
     }
 }

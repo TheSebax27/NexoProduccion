@@ -36,9 +36,19 @@
                             <MudTh Style="text-align:right">Subtotal</MudTh>
                         </HeaderContent>
                         <RowTemplate>
-                            <MudTd DataLabel="Articulo">@context.SkuArticulo - @context.NombreArticulo</MudTd>
+                            <MudTd DataLabel="Articulo">
+                                @if (context.EsCombo)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Icon="@Icons.Material.Filled.LocalOffer" Class="mr-1">COMBO</MudChip>
+                                    @context.NombreArticulo
+                                }
+                                else
+                                {
+                                    @($"{context.SkuArticulo} - {context.NombreArticulo}")
+                                }
+                            </MudTd>
                             <MudTd DataLabel="Cantidad" Style="text-align:right">
-                                @if (context.EsUnidadCaja)
+                                @if (!context.EsCombo && context.EsUnidadCaja)
                                 {
                                     @StockHelper.FormatearCajaUnidades(context.Cantidad, context.UnidadesPorEmbalaje!.Value)
                                 }

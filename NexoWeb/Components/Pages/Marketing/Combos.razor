@@ -1,0 +1,146 @@
+@page "/marketing/combos"
+@using NexoWeb.Common.Dtos
+@attribute [Authorize(Roles = "Administracion,Jefes,Marketing,Ventas")]
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Combos / Ofertas</PageTitle>
+
+<div class="d-flex align-center justify-space-between mb-3 flex-wrap" style="gap:.5rem">
+    <MudText Typo="Typo.h5">Combos y Ofertas</MudText>
+    <AuthorizeView Roles="Administracion,Jefes,Marketing">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="NuevoCombo">
+            Nuevo combo
+        </MudButton>
+    </AuthorizeView>
+</div>
+
+<MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" sm="4">
+            <MudSelect T="string?" @bind-Value="_filtroEstado" Label="Estado" Clearable="true"
+                       Placeholder="Todos">
+                <MudSelectItem T="string?" Value="@("Activo")">Activo</MudSelectItem>
+                <MudSelectItem T="string?" Value="@("Inactivo")">Inactivo</MudSelectItem>
+                <MudSelectItem T="string?" Value="@("Borrador")">Borrador</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" Class="d-flex align-end">
+            <MudButton Variant="Variant.Outlined" OnClick="CargarAsync">Filtrar</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_cargando)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_combos.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">No hay combos registrados.</MudAlert>
+}
+else
+{
+    <MudGrid Spacing="3">
+        @foreach (var combo in _combos)
+        {
+            <MudItem xs="12" sm="6" md="4" lg="3">
+                <MudCard Elevation="2" Style="height:100%; display:flex; flex-direction:column;">
+                    @if (combo.TieneImagen)
+                    {
+                        <img src="@combo.ImagenDataUri"
+                             style="width:100%; height:160px; object-fit:cover; display:block;" />
+                    }
+                    else
+                    {
+                        <div style="height:80px; display:flex; align-items:center; justify-content:center; background:var(--mud-palette-background-grey);">
+                            <MudIcon Icon="@Icons.Material.Filled.LocalOffer" Style="font-size:2.5rem; color:var(--mud-palette-text-disabled);" />
+                        </div>
+                    }
+                    <MudCardContent Style="flex:1">
+                        <div class="d-flex align-center justify-space-between mb-1">
+                            <MudText Typo="Typo.subtitle1" Style="font-weight:600">@combo.Nombre</MudText>
+                            <MudChip T="string" Size="Size.Small" Color="@ChipEstado(combo.Estado)">@combo.Estado</MudChip>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(combo.Descripcion))
+                        {
+                            <MudText Typo="Typo.body2" Style="color:var(--mud-palette-text-secondary)">@combo.Descripcion</MudText>
+                        }
+                        <div class="mt-2">
+                            <MudText Typo="Typo.h6" Color="Color.Primary">@combo.PrecioEfectivo.ToString("C0")</MudText>
+                            @if (combo.PorcentajeDescuento > 0)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success">-@combo.PorcentajeDescuento%</MudChip>
+                            }
+                        </div>
+                        @if (combo.FechaInicio.HasValue || combo.FechaFin.HasValue)
+                        {
+                            <MudText Typo="Typo.caption" Style="color:var(--mud-palette-text-secondary)">
+                                @(combo.FechaInicio?.ToString("dd/MM") ?? "…") — @(combo.FechaFin?.ToString("dd/MM/yyyy") ?? "…")
+                            </MudText>
+                        }
+                    </MudCardContent>
+                    <MudCardActions>
+                        <AuthorizeView Roles="Administracion,Jefes,Marketing">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                           OnClick="@(() => EditarCombo(combo))" />
+                        </AuthorizeView>
+                        <MudIconButton Icon="@Icons.Material.Filled.Info" Size="Size.Small"
+                                       OnClick="@(() => VerCombo(combo))" />
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private List<ComboItem> _combos = [];
+    private bool _cargando;
+    private string? _filtroEstado;
+
+    protected override async Task OnInitializedAsync() => await CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        _cargando = true;
+        try
+        {
+            var url = "api/marketing/combos" + (_filtroEstado is not null ? $"?estado={_filtroEstado}" : "");
+            _combos = await ApiClient.GetAsync<List<ComboItem>>(url) ?? [];
+        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _cargando = false; }
+    }
+
+    private async Task NuevoCombo()
+    {
+        var dialog = await DialogService.ShowAsync<ComboDialog>("Nuevo combo", new DialogParameters(), new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result!.Canceled) await CargarAsync();
+    }
+
+    private async Task EditarCombo(ComboItem combo)
+    {
+        var params_ = new DialogParameters { ["ComboId"] = combo.ComboID };
+        var dialog = await DialogService.ShowAsync<ComboDialog>($"Editar — {combo.Nombre}", params_, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result!.Canceled) await CargarAsync();
+    }
+
+    private async Task VerCombo(ComboItem combo)
+    {
+        var params_ = new DialogParameters { ["ComboId"] = combo.ComboID, ["SoloVer"] = true };
+        await DialogService.ShowAsync<ComboDialog>(combo.Nombre, params_, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+    }
+
+    private static Color ChipEstado(string estado) => estado switch
+    {
+        "Activo"   => Color.Success,
+        "Inactivo" => Color.Default,
+        _          => Color.Warning
+    };
+}

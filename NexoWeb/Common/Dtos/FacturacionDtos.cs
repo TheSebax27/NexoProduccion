@@ -14,16 +14,18 @@ public record FacturaLineaStockItem(
     public bool EsInsuficiente => StockDisponible < CantidadFacturada;
 };
 
-public record LineaFacturaInput(int ArticuloID, decimal Cantidad, decimal PrecioUnitario);
+public record LineaFacturaInput(int? ArticuloID, int? ComboID, string? DescripcionLinea, decimal Cantidad, decimal PrecioUnitario);
 public record CrearFacturaRequest(int ClienteID, DateTime Fecha, string? Notas, List<LineaFacturaInput> Lineas);
 
 public record FacturaLineaItem(
-    int LineaID, int FacturaID, int ArticuloID, string SkuArticulo, string NombreArticulo,
+    int LineaID, int FacturaID, int? ArticuloID, string? SkuArticulo, string NombreArticulo,
+    int? ComboID, string? DescripcionLinea,
     decimal Cantidad, decimal PrecioUnitario, decimal Subtotal,
     string? Unidad, decimal? UnidadesPorEmbalaje
 )
 {
     public bool EsUnidadCaja => Unidad == "cja" && UnidadesPorEmbalaje is > 0;
+    public bool EsCombo => ComboID.HasValue;
 };
 
 public record PagoItem(int PagoID, int FacturaID, decimal Monto, DateTime FechaPago, string MetodoPago, string? Notas, string? Usuario);

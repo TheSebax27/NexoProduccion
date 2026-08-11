@@ -53,7 +53,8 @@ public class OrdenesProduccionService : IOrdenesProduccionService
                  @ClienteID, @CentroCostoDestinoID, @BodegaOrigenMPID, @BodegaDestinoPTID, @CentroTrabajoID,
                  @FechaPlanificada, @UsuarioCreaID, @Observaciones)";
 
-        return await connection.ExecuteScalarAsync<int>(sql, new
+        connection.Open();
+        var ordenId = await connection.ExecuteScalarAsync<int>(sql, new
         {
             r.CodigoOP,
             r.TipoProduccionID,
@@ -69,6 +70,18 @@ public class OrdenesProduccionService : IOrdenesProduccionService
             UsuarioCreaID = usuarioCreaId,
             r.Observaciones
         });
+
+        if (r.Maquinas is { Count: > 0 })
+        {
+            const string sqlMaq = """
+                INSERT INTO Produccion.OrdenMaquinaria (OrdenProduccionID, MaquinariaID, HorasReales, Notas)
+                VALUES (@OrdenProduccionID, @MaquinariaID, @HorasReales, @Notas)
+                """;
+            foreach (var m in r.Maquinas)
+                await connection.ExecuteAsync(sqlMaq, new { OrdenProduccionID = ordenId, m.MaquinariaID, m.HorasReales, m.Notas });
+        }
+
+        return ordenId;
     }
 
     public async Task<IEnumerable<OrdenProduccionResumen>> ListarAsync(int? centroCostoId, string? estado)

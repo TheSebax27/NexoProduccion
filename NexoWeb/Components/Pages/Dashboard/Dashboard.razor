@@ -92,6 +92,28 @@ else
 
     </div>
 
+    @* ── Combos activos ──────────────────────────────────────── *@
+    @if (_combosActivos.Count > 0)
+    {
+        <MudText Typo="Typo.subtitle1" Class="mb-2 mt-2">Combos y Ofertas Vigentes</MudText>
+        <div class="nexo-kpi-grid mb-6">
+            @foreach (var combo in _combosActivos.Take(4))
+            {
+                <div class="nexo-kpi nexo-kpi--indigo" style="cursor:pointer" @onclick="@(() => Navigation.NavigateTo("/marketing/combos"))">
+                    <div class="nexo-kpi__icon">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalOffer" Size="Size.Small" />
+                    </div>
+                    <div class="nexo-kpi__value">@combo.PrecioEfectivo.ToString("C0")</div>
+                    <div class="nexo-kpi__label">@combo.Nombre</div>
+                    <div class="nexo-kpi__sub">
+                        @if (combo.PorcentajeDescuento > 0) { <text>-@combo.PorcentajeDescuento% · </text> }
+                        @(combo.FechaFin.HasValue ? $"Hasta {combo.FechaFin:dd/MM}" : "Sin vencimiento")
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
     @* ── Resumen General (transversal a todos los modulos) ──────── *@
     <MudText Typo="Typo.subtitle1" Class="mb-2 mt-2">Resumen General</MudText>
     <div class="nexo-kpi-grid mb-6">
@@ -663,6 +685,7 @@ else
     private ResumenPlanificacionItem _resumenPlanificacion = new(0, 0);
     private ResumenInventarioItem _resumenInventario = new(0, 0);
     private EventoCalendarioItem? _proximoEvento;
+    private List<ComboItem> _combosActivos = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -730,6 +753,8 @@ else
         }
 
         await CargarResumenGeneralAsync();
+        try { _combosActivos = (await ApiClient.GetAsync<List<ComboItem>>("api/marketing/combos/activos") ?? new()); }
+        catch { /* no bloquea el resto del dashboard */ }
     }
 
     private async Task CargarResumenGeneralAsync()

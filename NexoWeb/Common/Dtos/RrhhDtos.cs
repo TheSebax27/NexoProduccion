@@ -83,7 +83,8 @@ public record TokenQrResponse(string Token, int SegundosRestantes);
 public record EstadoAsistenciaHoy(
     int EmpleadoID, string Empleado,
     bool TieneEntrada, DateTime? HoraEntrada, string? MetodoEntrada,
-    bool TieneSalida, DateTime? HoraSalida, string? MetodoSalida
+    bool TieneSalida, DateTime? HoraSalida, string? MetodoSalida,
+    bool RegistraSalida
 );
 
 public record MarcarQrRequest(string Token, string Tipo);
@@ -98,7 +99,7 @@ public record HorarioDiaItem(
 
 public record HorarioItem(
     int HorarioID, string Nombre, int ToleranciaTardanzaMin,
-    string TipoCiclo, bool Activo,
+    string TipoCiclo, bool Activo, bool RegistraSalida,
     List<HorarioDiaItem> Dias
 );
 
@@ -109,7 +110,7 @@ public record HorarioDiaInput(
 );
 
 public record CrearHorarioRequest(
-    string Nombre, int ToleranciaTardanzaMin, string TipoCiclo,
+    string Nombre, int ToleranciaTardanzaMin, string TipoCiclo, bool RegistraSalida,
     List<HorarioDiaInput> Dias
 );
 

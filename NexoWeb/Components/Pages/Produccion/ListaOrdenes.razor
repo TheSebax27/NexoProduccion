@@ -13,7 +13,7 @@
     <MudText Typo="Typo.h5">Ordenes de Produccion</MudText>
     <BotonFavorito Href="/produccion/ordenes" Etiqueta="Ordenes de Produccion" />
 </div>
-<InfoAyuda Texto="Una orden pasa por 4 etapas: Planificada (aún no descuenta nada) ? Liberada (descuenta la materia prima de la receta) ? En Proceso ? Cerrada (registra cuánto se produjo y su costo). Solo se puede cancelar mientras está Planificada." />
+<InfoAyuda Texto="Una orden pasa por 4 etapas: Planificada (aï¿½n no descuenta nada) ? Liberada (descuenta la materia prima de la receta) ? En Proceso ? Cerrada (registra cuï¿½nto se produjo y su costo). Solo se puede cancelar mientras estï¿½ Planificada." />
 @if (_puedeGestionar)
 {
     <MudButton Variant="Variant.Filled" Color="Color.Success" Href="/produccion/ordenes/crear"
@@ -21,6 +21,16 @@
         Nueva Orden
     </MudButton>
 }
+@if (_enMantenimiento.Count > 0)
+{
+    <MudAlert Severity="Severity.Warning" Class="mb-3" Icon="@Icons.Material.Filled.Build">
+        <strong>MÃ¡quinas en mantenimiento:</strong>
+        @string.Join(", ", _enMantenimiento.Select(m => m.Nombre))
+        â€” algunas tareas de producciÃ³n pueden verse afectadas.
+        <MudLink Href="/produccion/maquinaria" Class="ml-2">Ver maquinaria</MudLink>
+    </MudAlert>
+}
+
 <MudGrid Class="mb-4">
     <MudItem xs="12" sm="4">
         <MudSelect T="string" @bind-Value="_filtroEstado" Label="Filtrar por estado" Clearable="true">
@@ -56,7 +66,7 @@ else if (Preferencias.VistaListado == "tarjetas")
                     <div class="nexo-item-card__title">@orden.CodigoOP</div>
                     <MudChip T="string" Color="@ColorSegunEstado(orden.Estado)" Size="Size.Small">@orden.Estado</MudChip>
                 </div>
-                <div class="nexo-item-card__sub">@orden.Producto · @orden.CentroCosto</div>
+                <div class="nexo-item-card__sub">@orden.Producto ï¿½ @orden.CentroCosto</div>
                 <div class="nexo-item-card__row">
                     <span>Programada</span>
                     <strong>@orden.CantidadProgramada.ToString("N2")</strong>
@@ -175,6 +185,7 @@ else
     private bool _cargando = true;
     private bool _puedeGestionar;
     private bool _puedeCerrar;
+    private List<MaquinariaEnMantenimientoItem> _enMantenimiento = [];
 
     protected override void OnInitialized()
     {
@@ -197,7 +208,9 @@ else
             _puedeCerrar = _puedeGestionar; // cerrar tiene la misma restriccion que liberar
         }
 
-        await CargarAsync();
+        var tOrdenes = CargarAsync();
+        var tMant    = CargarMaquinariaEnMantenimientoAsync();
+        await Task.WhenAll(tOrdenes, tMant);
     }
 
     private async Task CargarAsync()
@@ -222,6 +235,16 @@ else
         }
     }
 
+    private async Task CargarMaquinariaEnMantenimientoAsync()
+    {
+        try
+        {
+            _enMantenimiento = await ApiClient.GetAsync<List<MaquinariaEnMantenimientoItem>>(
+                "api/produccion/maquinaria/en-mantenimiento") ?? [];
+        }
+        catch { _enMantenimiento = []; }
+    }
+
     private async Task LiberarAsync(int id) =>
         await EjecutarAccionAsync(() => ApiClient.PostAsync($"api/produccion/ordenes/{id}/liberar"), "Orden liberada correctamente.");
 
@@ -230,7 +253,7 @@ else
         var confirmacion = await DialogService.ShowMessageBox(
             "Cancelar Orden de Produccion",
             "La orden quedara marcada como Cancelada. No se puede deshacer, pero no se toca inventario " +
-            "porque la orden todavia no habia sido liberada.\n\n¿Confirmar la cancelacion?",
+            "porque la orden todavia no habia sido liberada.\n\nï¿½Confirmar la cancelacion?",
             yesText: "Si, cancelar orden",
             noText: "No");
 
@@ -247,7 +270,7 @@ else
         var confirmacion = await DialogService.ShowMessageBox(
             "Confirmar Inicio de Orden",
             "Esta accion consumira la materia prima de forma PERMANENTE segun la receta y el FEFO.\n\n" +
-            "¿Desea iniciar la orden de produccion?",
+            "ï¿½Desea iniciar la orden de produccion?",
             yesText: "Si, iniciar orden",
             noText: "Cancelar");
 

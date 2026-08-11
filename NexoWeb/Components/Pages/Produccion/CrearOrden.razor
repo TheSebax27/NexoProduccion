@@ -86,7 +86,8 @@ else
             }
         </MudSelect>
 
-        <MudSelect T="int?" @bind-Value="_recetaId" Label="Receta (BOM)" Placeholder="Selecciona una receta" Class="mb-4" Required="true"
+        <MudSelect T="int?" Value="_recetaId" ValueChanged="@((int? v) => OnRecetaCambiadaAsync(v))"
+                   Label="Receta (BOM)" Placeholder="Selecciona una receta" Class="mb-4" Required="true"
                    Disabled="@(!_productoTerminadoId.HasValue)">
             @foreach (var receta in _recetas)
             {
@@ -158,7 +159,73 @@ else
         <MudDatePicker @bind-Date="_fechaPlanificada" Label="Fecha planificada" Class="mb-4" PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy" />
 
         <MudTextField @bind-Value="_observaciones" Label="Observaciones (opcional)" Lines="2" Class="mb-4" />
+    </MudPaper>
 
+    @* ── Maquinaria (opcional) ── *@
+    <MudPaper Class="pa-6 mb-4" MaxWidth="700px">
+        <MudText Typo="Typo.subtitle1" Class="mb-1">
+            <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Size="Size.Small" Class="mr-1" />
+            Maquinaria utilizada <MudChip T="string" Size="Size.Small">opcional</MudChip>
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+            Se pre-carga desde la receta seleccionada. Podés agregar, quitar o ajustar horas.
+        </MudText>
+
+        @if (_maquinasOrden.Count > 0)
+        {
+            <div style="overflow-x:auto" class="mb-2">
+                <table style="width:100%; border-collapse:collapse; font-size:0.85rem">
+                    <thead>
+                        <tr style="background:var(--mud-palette-background-grey)">
+                            <th style="padding:6px 8px; text-align:left">Máquina</th>
+                            <th style="padding:6px 8px; min-width:130px">Horas reales</th>
+                            <th style="padding:6px 8px; min-width:180px">Notas</th>
+                            <th style="padding:6px 8px; width:48px"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var fila in _maquinasOrden)
+                        {
+                            <tr style="border-bottom:1px solid var(--mud-palette-lines-default)">
+                                <td style="padding:4px 8px">
+                                    <MudSelect T="int?" Value="@((int?)fila.MaquinariaID)"
+                                               ValueChanged="@((int? v) => fila.MaquinariaID = v ?? 0)"
+                                               Placeholder="Selecciona máquina" Margin="Margin.Dense">
+                                        @foreach (var m in _maquinasDisponibles)
+                                        {
+                                            <MudSelectItem T="int?" Value="@((int?)m.MaquinariaID)">
+                                                @m.Nombre <small style="opacity:.6">(@m.TipoMaquinaria)</small>
+                                            </MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </td>
+                                <td style="padding:4px 8px">
+                                    <MudNumericField @bind-Value="fila.HorasReales" T="decimal?"
+                                                     Placeholder="—" Format="0.##" Min="0" Margin="Margin.Dense" />
+                                </td>
+                                <td style="padding:4px 8px">
+                                    <MudTextField @bind-Value="fila.Notas" Placeholder="Opcional" Margin="Margin.Dense" />
+                                </td>
+                                <td style="padding:4px 8px">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                                   Size="Size.Small" OnClick="@(() => _maquinasOrden.Remove(fila))" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        @if (_maquinasDisponibles.Count > 0)
+        {
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="@(() => _maquinasOrden.Add(new FilaMaquinaOrden()))">
+                Agregar máquina
+            </MudButton>
+        }
+    </MudPaper>
+
+    <MudPaper Class="pa-6" MaxWidth="700px">
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GuardarAsync"
                    Disabled="@(!FormularioValido || _guardando)" StartIcon="@Icons.Material.Filled.Save">
             @(_guardando ? "Guardando..." : (EsEdicion ? "Guardar Cambios" : "Crear Orden"))
@@ -181,6 +248,16 @@ else
     private List<BodegaItem> _bodegasProductoTerminado = new();
     private List<BodegaItem> _todasLasBodegas = new();
     private List<CentroTrabajoItem> _centrosTrabajo = new();
+    private List<MaquinariaItem> _maquinasDisponibles = [];
+
+    private class FilaMaquinaOrden
+    {
+        public int MaquinariaID { get; set; }
+        public decimal? HorasReales { get; set; }
+        public string? Notas { get; set; }
+    }
+
+    private List<FilaMaquinaOrden> _maquinasOrden = [];
 
     // Valores del formulario. Los desplegables obligatorios se manejan como
     // int? (en vez de int) para que MudSelect muestre el Placeholder mientras
@@ -221,8 +298,9 @@ else
         var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
         var tareaBodegas = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
         var tareaCentrosTrabajo = ApiClient.GetAsync<List<CentroTrabajoItem>>("api/catalogo/centros-trabajo");
+        var tareaMaquinas = ApiClient.GetAsync<List<MaquinariaItem>>("api/produccion/maquinaria?estado=Activa");
 
-        await Task.WhenAll(tareaTipos, tareaClientes, tareaProductos, tareaCentrosCosto, tareaBodegas, tareaCentrosTrabajo);
+        await Task.WhenAll(tareaTipos, tareaClientes, tareaProductos, tareaCentrosCosto, tareaBodegas, tareaCentrosTrabajo, tareaMaquinas);
 
         _tiposProduccion = await tareaTipos ?? new();
         _clientes = await tareaClientes ?? new();
@@ -231,6 +309,7 @@ else
             .ToList();
         _centrosCosto = await tareaCentrosCosto ?? new();
         _centrosTrabajo = await tareaCentrosTrabajo ?? new();
+        _maquinasDisponibles = await tareaMaquinas ?? [];
 
         _todasLasBodegas = await tareaBodegas ?? new();
         _bodegasMateriaPrima = _todasLasBodegas.Where(b => b.TipoBodega == "MATERIA_PRIMA").ToList();
@@ -261,6 +340,13 @@ else
                 _recetas = await ApiClient.GetAsync<List<RecetaResumen>>(
                     $"api/produccion/recetas?productoTerminadoId={detalle.ProductoTerminadoID}&soloActivas=false") ?? new();
                 _recetaId = detalle.RecetaID;
+
+                // Cargar máquinas ya guardadas en la orden
+                var maqOrden = await ApiClient.GetAsync<List<OrdenMaquinariaItem>>(
+                    $"api/produccion/ordenes/{OrdenProduccionId}/maquinaria") ?? [];
+                _maquinasOrden = maqOrden
+                    .Select(m => new FilaMaquinaOrden { MaquinariaID = m.MaquinariaID, HorasReales = m.HorasReales, Notas = m.Notas })
+                    .ToList();
 
                 if (detalle.BodegaOrigenMPID == detalle.BodegaDestinoPTID)
                 {
@@ -335,10 +421,28 @@ else
     {
         _productoTerminadoId = nuevoProductoId;
         _recetaId = null;
+        _maquinasOrden = [];
         _recetas = nuevoProductoId.HasValue
             ? await ApiClient.GetAsync<List<RecetaResumen>>(
                 $"api/produccion/recetas?productoTerminadoId={nuevoProductoId}&soloActivas=true") ?? new()
             : new();
+    }
+
+    private async Task OnRecetaCambiadaAsync(int? recetaId)
+    {
+        _recetaId = recetaId;
+        if (recetaId.HasValue)
+        {
+            var maqReceta = await ApiClient.GetAsync<List<RecetaMaquinariaItem>>(
+                $"api/produccion/recetas/{recetaId}/maquinaria") ?? [];
+            _maquinasOrden = maqReceta
+                .Select(m => new FilaMaquinaOrden { MaquinariaID = m.MaquinariaID, HorasReales = m.HorasEstimadasPorLote })
+                .ToList();
+        }
+        else
+        {
+            _maquinasOrden = [];
+        }
     }
 
     private async Task GuardarAsync()
@@ -353,6 +457,11 @@ else
             var mtoId = _tiposProduccion.FirstOrDefault(t => t.Codigo == "MTO")?.TipoProduccionID;
             var tipoEfectivo = _esMto ? (mtoId ?? _tipoProduccionId!.Value) : _tipoProduccionId!.Value;
 
+            var maquinas = _maquinasOrden
+                .Where(m => m.MaquinariaID > 0)
+                .Select(m => new MaquinariaOrdenInput(m.MaquinariaID, m.HorasReales, m.Notas))
+                .ToList();
+
             if (EsEdicion)
             {
                 var request = new ActualizarOrdenProduccionRequest(
@@ -363,6 +472,11 @@ else
                 await ApiClient.PutAsync<ActualizarOrdenProduccionRequest, object?>(
                     $"api/produccion/ordenes/{OrdenProduccionId}", request);
 
+                // Actualizar máquinas por separado (el SP no las maneja)
+                if (maquinas.Count > 0 || _maquinasOrden.Count == 0)
+                    await ApiClient.PutAsync<List<MaquinariaOrdenInput>, object?>(
+                        $"api/produccion/ordenes/{OrdenProduccionId}/maquinaria", maquinas);
+
                 Snackbar.Add("Orden de produccion actualizada correctamente.", Severity.Success);
             }
             else
@@ -370,7 +484,7 @@ else
                 var request = new CrearOrdenProduccionRequest(
                     _codigoOp, tipoEfectivo, _productoTerminadoId!.Value, _recetaId!.Value, _cantidadProgramada,
                     _esMto ? _clienteId : null, _centroCostoDestinoId!.Value, _bodegaOrigenMpId!.Value, _bodegaDestinoPtId!.Value,
-                    _centroTrabajoId, _fechaPlanificada, _observaciones);
+                    _centroTrabajoId, _fechaPlanificada, _observaciones, maquinas.Count > 0 ? maquinas : null);
 
                 await ApiClient.PostAsync<CrearOrdenProduccionRequest, object?>("api/produccion/ordenes", request);
 

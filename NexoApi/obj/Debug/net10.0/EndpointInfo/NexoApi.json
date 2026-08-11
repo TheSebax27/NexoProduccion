@@ -1872,6 +1872,177 @@
         }
       }
     },
+    "/api/marketing/combos": {
+      "get": {
+        "tags": [
+          "Combo"
+        ],
+        "parameters": [
+          {
+            "name": "estado",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Combo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearComboRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearComboRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearComboRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/combos/activos": {
+      "get": {
+        "tags": [
+          "Combo"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/combos/{id}": {
+      "get": {
+        "tags": [
+          "Combo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Combo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarComboRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarComboRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarComboRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/combos/{id}/imagen": {
+      "get": {
+        "tags": [
+          "Combo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/marketing/combos/{id}/precio-calculado": {
+      "get": {
+        "tags": [
+          "Combo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/configuracion/empresa": {
       "get": {
         "tags": [
@@ -5672,6 +5843,369 @@
         }
       }
     },
+    "/api/produccion/tipos-maquinaria": {
+      "get": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearTipoMaquinariaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearTipoMaquinariaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearTipoMaquinariaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/produccion/maquinaria": {
+      "get": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "parameters": [
+          {
+            "name": "tipoId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "centroTrabajoId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearMaquinariaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearMaquinariaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearMaquinariaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/produccion/maquinaria/en-mantenimiento": {
+      "get": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/produccion/maquinaria/{id}": {
+      "get": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarMaquinariaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarMaquinariaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarMaquinariaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/produccion/maquinaria/{id}/estadisticas": {
+      "get": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/produccion/recetas/{recetaId}/maquinaria": {
+      "get": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "parameters": [
+          {
+            "name": "recetaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/produccion/ordenes/{ordenId}/maquinaria": {
+      "get": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "parameters": [
+          {
+            "name": "ordenId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "parameters": [
+          {
+            "name": "ordenId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MaquinariaOrdenInput"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MaquinariaOrdenInput"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MaquinariaOrdenInput"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/produccion/maquinaria/{id}/mantenimientos": {
+      "get": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearMantenimientoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearMantenimientoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearMantenimientoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/marketing/campanas": {
       "get": {
         "tags": [
@@ -8971,6 +9505,62 @@
         },
         "additionalProperties": false
       },
+      "ActualizarComboRequest": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "imagenBase64": {
+            "type": "string",
+            "nullable": true
+          },
+          "imagenContentType": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string",
+            "nullable": true
+          },
+          "modoPrecio": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaInicio": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "fechaFin": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "precioManual": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "porcentajeDescuento": {
+            "type": "number",
+            "format": "double"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComboItemInput"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ActualizarContactoRequest": {
         "type": "object",
         "properties": {
@@ -9249,6 +9839,82 @@
             "nullable": true
           },
           "contentType": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarMaquinariaRequest": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoMaquinariaID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "centroTrabajoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string",
+            "nullable": true
+          },
+          "marca": {
+            "type": "string",
+            "nullable": true
+          },
+          "modelo": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroSerie": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaAdquisicion": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "vidaUtilAnios": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "costoAdquisicion": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "costoHoraOperacion": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "capacidadMaxima": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "unidadCapacidad": {
+            "type": "string",
+            "nullable": true
+          },
+          "ubicacionFisica": {
+            "type": "string",
+            "nullable": true
+          },
+          "notas": {
             "type": "string",
             "nullable": true
           }
@@ -10170,6 +10836,20 @@
         },
         "additionalProperties": false
       },
+      "ComboItemInput": {
+        "type": "object",
+        "properties": {
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cantidad": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "ComentarioProyectoItem": {
         "type": "object",
         "properties": {
@@ -10745,6 +11425,62 @@
         },
         "additionalProperties": false
       },
+      "CrearComboRequest": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "imagenBase64": {
+            "type": "string",
+            "nullable": true
+          },
+          "imagenContentType": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string",
+            "nullable": true
+          },
+          "modoPrecio": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaInicio": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "fechaFin": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "precioManual": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "porcentajeDescuento": {
+            "type": "number",
+            "format": "double"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComboItemInput"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CrearComentarioRequest": {
         "type": "object",
         "properties": {
@@ -11105,6 +11841,9 @@
             "type": "string",
             "nullable": true
           },
+          "registraSalida": {
+            "type": "boolean"
+          },
           "dias": {
             "type": "array",
             "items": {
@@ -11173,6 +11912,51 @@
         },
         "additionalProperties": false
       },
+      "CrearMantenimientoRequest": {
+        "type": "object",
+        "properties": {
+          "tipoMantenimiento": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaRealizado": {
+            "type": "string",
+            "format": "date"
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "costo": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "horasFueraServicio": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "tecnico": {
+            "type": "string",
+            "nullable": true
+          },
+          "proximoMantenimiento": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "nuevoEstadoMaquinaria": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CrearMapeoArticuloRequest": {
         "type": "object",
         "properties": {
@@ -11185,6 +11969,78 @@
             "format": "int32"
           },
           "codigoArticuloVisions": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CrearMaquinariaRequest": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoMaquinariaID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "centroTrabajoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "marca": {
+            "type": "string",
+            "nullable": true
+          },
+          "modelo": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroSerie": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaAdquisicion": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "vidaUtilAnios": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "costoAdquisicion": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "costoHoraOperacion": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "capacidadMaxima": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "unidadCapacidad": {
+            "type": "string",
+            "nullable": true
+          },
+          "ubicacionFisica": {
+            "type": "string",
+            "nullable": true
+          },
+          "notas": {
             "type": "string",
             "nullable": true
           }
@@ -11232,6 +12088,13 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DetalleRecetaRequest"
+            },
+            "nullable": true
+          },
+          "maquinas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaquinariaRecetaInput"
             },
             "nullable": true
           }
@@ -11357,6 +12220,13 @@
           },
           "observaciones": {
             "type": "string",
+            "nullable": true
+          },
+          "maquinas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaquinariaOrdenInput"
+            },
             "nullable": true
           }
         },
@@ -11484,6 +12354,13 @@
               "$ref": "#/components/schemas/DetalleRecetaRequest"
             },
             "nullable": true
+          },
+          "maquinas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaquinariaRecetaInput"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11515,6 +12392,20 @@
               "type": "integer",
               "format": "int32"
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CrearTipoMaquinariaRequest": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "descripcion": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -12108,6 +12999,9 @@
           "metodoSalida": {
             "type": "string",
             "nullable": true
+          },
+          "registraSalida": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -12340,13 +13234,23 @@
           },
           "articuloID": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "nullable": true
           },
           "skuArticulo": {
             "type": "string",
             "nullable": true
           },
           "nombreArticulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "comboID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "descripcionLinea": {
             "type": "string",
             "nullable": true
           },
@@ -12655,6 +13559,9 @@
           "activo": {
             "type": "boolean"
           },
+          "registraSalida": {
+            "type": "boolean"
+          },
           "dias": {
             "type": "array",
             "items": {
@@ -12887,7 +13794,17 @@
         "properties": {
           "articuloID": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "nullable": true
+          },
+          "comboID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "descripcionLinea": {
+            "type": "string",
+            "nullable": true
           },
           "cantidad": {
             "type": "number",
@@ -12998,6 +13915,44 @@
           "fechaCreacion": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MaquinariaOrdenInput": {
+        "type": "object",
+        "properties": {
+          "maquinariaID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "horasReales": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MaquinariaRecetaInput": {
+        "type": "object",
+        "properties": {
+          "maquinariaID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "horasEstimadasPorLote": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

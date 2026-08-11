@@ -57,14 +57,14 @@ public class AsistenciaService(IDbConnectionFactory db) : IAsistenciaService
 
     // ---- Horarios ----
 
-    private record HorarioRow(int HorarioID, string Nombre, int ToleranciaTardanzaMin, string TipoCiclo, bool Activo);
-    private record HorarioDiaRow(int HorarioID, int DiaSemana, string? Semana, TimeSpan HoraEntrada, TimeSpan HoraSalida, bool TieneAlmuerzo, TimeSpan? HoraInicioAlmuerzo, TimeSpan? HoraFinAlmuerzo);
+    private record HorarioRow(int HorarioID, string Nombre, int ToleranciaTardanzaMin, string TipoCiclo, bool Activo, bool RegistraSalida);
+    private record HorarioDiaRow(int HorarioID, byte DiaSemana, string? Semana, TimeSpan HoraEntrada, TimeSpan HoraSalida, bool TieneAlmuerzo, TimeSpan? HoraInicioAlmuerzo, TimeSpan? HoraFinAlmuerzo);
 
     public async Task<IEnumerable<HorarioItem>> ListarHorariosAsync()
     {
         using var conn = db.CreateConnection();
         var horarios = (await conn.QueryAsync<HorarioRow>(
-            "SELECT HorarioID, Nombre, ToleranciaTardanzaMin, TipoCiclo, Activo FROM Rrhh.Horarios ORDER BY Nombre"
+            "SELECT HorarioID, Nombre, ToleranciaTardanzaMin, TipoCiclo, Activo, RegistraSalida FROM Rrhh.Horarios ORDER BY Nombre"
         )).ToList();
 
         if (horarios.Count == 0) return [];
@@ -88,7 +88,7 @@ public class AsistenciaService(IDbConnectionFactory db) : IAsistenciaService
             )).ToList());
 
         return horarios.Select(h => new HorarioItem(
-            h.HorarioID, h.Nombre, h.ToleranciaTardanzaMin, h.TipoCiclo, h.Activo,
+            h.HorarioID, h.Nombre, h.ToleranciaTardanzaMin, h.TipoCiclo, h.Activo, h.RegistraSalida,
             diasPorHorario.TryGetValue(h.HorarioID, out var ds) ? ds : []
         ));
     }
@@ -97,10 +97,10 @@ public class AsistenciaService(IDbConnectionFactory db) : IAsistenciaService
     {
         using var conn = db.CreateConnection();
         var horarioId = await conn.ExecuteScalarAsync<int>("""
-            INSERT INTO Rrhh.Horarios (Nombre, ToleranciaTardanzaMin, TipoCiclo, Activo)
+            INSERT INTO Rrhh.Horarios (Nombre, ToleranciaTardanzaMin, TipoCiclo, RegistraSalida, Activo)
             OUTPUT INSERTED.HorarioID
-            VALUES (@Nombre, @ToleranciaTardanzaMin, @TipoCiclo, 1)
-            """, new { r.Nombre, r.ToleranciaTardanzaMin, r.TipoCiclo });
+            VALUES (@Nombre, @ToleranciaTardanzaMin, @TipoCiclo, @RegistraSalida, 1)
+            """, new { r.Nombre, r.ToleranciaTardanzaMin, r.TipoCiclo, r.RegistraSalida });
 
         foreach (var dia in r.Dias)
         {
@@ -151,17 +151,24 @@ public class AsistenciaService(IDbConnectionFactory db) : IAsistenciaService
         using var conn = db.CreateConnection();
         var fila = await conn.QueryFirstOrDefaultAsync<FilaEstado>("""
             SELECT e.EmpleadoID, e.Nombres+' '+e.Apellidos AS Empleado,
-                   r.HoraEntrada, r.MetodoEntrada, r.HoraSalida, r.MetodoSalida
+                   r.HoraEntrada, r.MetodoEntrada, r.HoraSalida, r.MetodoSalida,
+                   ISNULL(h.RegistraSalida, 1) AS RegistraSalida
             FROM Rrhh.Empleados e
             LEFT JOIN Rrhh.RegistroAsistencia r
                 ON r.EmpleadoID=e.EmpleadoID AND r.Fecha=CAST(GETDATE() AS DATE)
+            LEFT JOIN Rrhh.EmpleadoHorario eh
+                ON eh.EmpleadoID=e.EmpleadoID
+                AND eh.Desde <= CAST(GETDATE() AS DATE)
+                AND (eh.Hasta IS NULL OR eh.Hasta >= CAST(GETDATE() AS DATE))
+            LEFT JOIN Rrhh.Horarios h ON h.HorarioID=eh.HorarioID AND h.Activo=1
             WHERE e.EmpleadoID=@empleadoId
             """, new { empleadoId }) ?? throw new InvalidOperationException("Empleado no encontrado.");
 
         return new EstadoAsistenciaHoy(
             fila.EmpleadoID, fila.Empleado,
             fila.HoraEntrada is not null, fila.HoraEntrada, fila.MetodoEntrada,
-            fila.HoraSalida is not null, fila.HoraSalida, fila.MetodoSalida);
+            fila.HoraSalida is not null, fila.HoraSalida, fila.MetodoSalida,
+            fila.RegistraSalida);
     }
 
     public async Task MarcarQrAsync(int usuarioId, MarcarQrRequest request)
@@ -231,7 +238,8 @@ public class AsistenciaService(IDbConnectionFactory db) : IAsistenciaService
         var dow = fecha.DayOfWeek;
         var diaSemana = dow == DayOfWeek.Sunday ? 7 : (int)dow;
         var isoWeek = System.Globalization.ISOWeek.GetWeekOfYear(fecha.ToDateTime(TimeOnly.MinValue));
-        var semana = isoWeek % 2 == 0 ? "A" : "B";
+        // FIJO usa Semana=NULL (match por IS NULL en la query). AB: par=A,impar=B. 4: mod4→A/B/C/D
+        var semana = (isoWeek % 4) switch { 0 => "A", 1 => "B", 2 => "C", _ => "D" };
 
         var horario = await conn.QueryFirstOrDefaultAsync<HorarioSchedule>("""
             SELECT hd.HoraEntrada, h.ToleranciaTardanzaMin
@@ -282,7 +290,8 @@ public class AsistenciaService(IDbConnectionFactory db) : IAsistenciaService
     }
 
     private record FilaEstado(int EmpleadoID, string Empleado,
-        DateTime? HoraEntrada, string? MetodoEntrada, DateTime? HoraSalida, string? MetodoSalida);
+        DateTime? HoraEntrada, string? MetodoEntrada, DateTime? HoraSalida, string? MetodoSalida,
+        bool RegistraSalida);
 
     private record HorarioSchedule(TimeSpan HoraEntrada, int ToleranciaTardanzaMin);
 }

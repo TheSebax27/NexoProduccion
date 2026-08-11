@@ -1,0 +1,187 @@
+@using NexoWeb.Common.Dtos
+@using NexoWeb.Common.ApiClient
+@inject INexoApiClient Api
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Class="mr-2" />
+            @(Maquina is null ? "Nueva Máquina" : "Editar Máquina")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @* ── Datos básicos ── *@
+        <MudText Typo="Typo.subtitle2" Class="mb-2" Color="Color.Primary">Datos básicos</MudText>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="4">
+                <MudTextField @bind-Value="_codigo" Label="Código *" Required
+                              Placeholder="Ej: HOR-001" />
+            </MudItem>
+            <MudItem xs="12" sm="8">
+                <MudTextField @bind-Value="_nombre" Label="Nombre *" Required
+                              Placeholder="Ej: Horno rotativo principal" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSelect T="int?" @bind-Value="_tipoId" Label="Tipo *" Required
+                           Placeholder="Selecciona tipo">
+                    @foreach (var t in Tipos)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)t.TipoMaquinariaID)">@t.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSelect T="string" @bind-Value="_estado" Label="Estado">
+                    <MudSelectItem Value="@("Activa")">Activa</MudSelectItem>
+                    <MudSelectItem Value="@("EnMantenimiento")">En Mantenimiento</MudSelectItem>
+                    <MudSelectItem Value="@("Inactiva")">Inactiva</MudSelectItem>
+                    <MudSelectItem Value="@("BajaDefinitiva")">Baja Definitiva</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+
+        @* ── Identificación (opcional) ── *@
+        <MudDivider Class="my-3" />
+        <MudText Typo="Typo.subtitle2" Class="mb-2" Color="Color.Primary">Identificación (opcional)</MudText>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="4">
+                <MudTextField @bind-Value="_marca" Label="Marca" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudTextField @bind-Value="_modelo" Label="Modelo" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudTextField @bind-Value="_numeroSerie" Label="N.º de serie" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_ubicacion" Label="Ubicación física"
+                              Placeholder="Ej: Nave 2, línea B" />
+            </MudItem>
+        </MudGrid>
+
+        @* ── Capacidad (opcional) ── *@
+        <MudDivider Class="my-3" />
+        <MudText Typo="Typo.subtitle2" Class="mb-2" Color="Color.Primary">Capacidad (opcional)</MudText>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6">
+                <MudNumericField @bind-Value="_capacidadMaxima" T="decimal?" Label="Capacidad máxima"
+                                 Format="0.##" Min="0" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_unidadCapacidad" Label="Unidad" Placeholder="Ej: kg, L, pzas" />
+            </MudItem>
+        </MudGrid>
+
+        @* ── Costos y vida útil (opcional) ── *@
+        <MudDivider Class="my-3" />
+        <MudText Typo="Typo.subtitle2" Class="mb-2" Color="Color.Primary">Costos y vida útil (opcional)</MudText>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6">
+                <MudDatePicker @bind-Date="_fechaAdquisicionDt" Label="Fecha adquisición"
+                               DateFormat="dd/MM/yyyy" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField @bind-Value="_vidaUtilAnios" T="int?" Label="Vida útil (años)" Min="0" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField @bind-Value="_costoAdquisicion" T="decimal?" Label="Costo adquisición ($)"
+                                 Format="0.00" Min="0" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField @bind-Value="_costoHora" T="decimal?" Label="Costo/hora operación ($)"
+                                 Format="0.0000" Min="0" />
+            </MudItem>
+        </MudGrid>
+
+        @* ── Notas ── *@
+        <MudDivider Class="my-3" />
+        <MudTextField @bind-Value="_notas" Label="Notas" Lines="3" AutoGrow />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   Disabled="@(!Valido || _guardando)" OnClick="GuardarAsync">
+            @(_guardando ? "Guardando..." : (Maquina is null ? "Crear" : "Guardar cambios"))
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public List<TipoMaquinariaItem> Tipos { get; set; } = [];
+    [Parameter] public MaquinariaDetalle? Maquina { get; set; }
+
+    string _codigo = "";
+    string _nombre = "";
+    int? _tipoId;
+    string _estado = "Activa";
+    string? _marca, _modelo, _numeroSerie, _ubicacion, _unidadCapacidad, _notas;
+    decimal? _capacidadMaxima, _costoAdquisicion, _costoHora;
+    int? _vidaUtilAnios;
+    DateTime? _fechaAdquisicionDt;
+    bool _guardando;
+
+    bool Valido => !string.IsNullOrWhiteSpace(_codigo)
+                && !string.IsNullOrWhiteSpace(_nombre)
+                && _tipoId.HasValue;
+
+    protected override void OnParametersSet()
+    {
+        if (Maquina is null) return;
+        _codigo = Maquina.Codigo;
+        _nombre = Maquina.Nombre;
+        _tipoId = Maquina.TipoMaquinariaID;
+        _estado = Maquina.Estado;
+        _marca  = Maquina.Marca;
+        _modelo = Maquina.Modelo;
+        _numeroSerie = Maquina.NumeroSerie;
+        _ubicacion   = Maquina.UbicacionFisica;
+        _unidadCapacidad  = Maquina.UnidadCapacidad;
+        _notas            = Maquina.Notas;
+        _capacidadMaxima  = Maquina.CapacidadMaxima;
+        _costoAdquisicion = Maquina.CostoAdquisicion;
+        _costoHora        = Maquina.CostoHoraOperacion;
+        _vidaUtilAnios    = Maquina.VidaUtilAnios;
+        _fechaAdquisicionDt = Maquina.FechaAdquisicion.HasValue
+            ? Maquina.FechaAdquisicion.Value.ToDateTime(TimeOnly.MinValue)
+            : null;
+    }
+
+    async Task GuardarAsync()
+    {
+        if (!Valido) return;
+        _guardando = true;
+        var fecha = _fechaAdquisicionDt.HasValue
+            ? DateOnly.FromDateTime(_fechaAdquisicionDt.Value) : (DateOnly?)null;
+        try
+        {
+            if (Maquina is null)
+            {
+                var req = new CrearMaquinariaRequest(
+                    _codigo.Trim(), _nombre.Trim(), _tipoId!.Value, null,
+                    _marca, _modelo, _numeroSerie,
+                    fecha, _vidaUtilAnios,
+                    _costoAdquisicion, _costoHora,
+                    _capacidadMaxima, _unidadCapacidad, _ubicacion, _notas);
+                await Api.PostAsync<CrearMaquinariaRequest>("api/produccion/maquinaria", req);
+                Snackbar.Add($"Máquina «{_nombre}» creada.", Severity.Success);
+            }
+            else
+            {
+                var req = new ActualizarMaquinariaRequest(
+                    _codigo.Trim(), _nombre.Trim(), _tipoId!.Value, null, _estado,
+                    _marca, _modelo, _numeroSerie,
+                    fecha, _vidaUtilAnios,
+                    _costoAdquisicion, _costoHora,
+                    _capacidadMaxima, _unidadCapacidad, _ubicacion, _notas);
+                await Api.PutAsync<ActualizarMaquinariaRequest, object>(
+                    $"api/produccion/maquinaria/{Maquina.MaquinariaID}", req);
+                Snackbar.Add($"Máquina «{_nombre}» actualizada.", Severity.Success);
+            }
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _guardando = false; }
+    }
+}
