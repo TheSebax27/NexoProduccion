@@ -1,0 +1,184 @@
+@using NexoWeb.Common.Dtos
+@using NexoWeb.Common.ApiClient
+@inject INexoApiClient Api
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center" style="gap:8px">
+            <MudIcon Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">Modulos — @RolNombre</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        @if (_cargando)
+        {
+            <div class="d-flex justify-center pa-6">
+                <MudProgressCircular Indeterminate Color="Color.Primary" />
+            </div>
+        }
+        else
+        {
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3 d-block">
+                Activa o desactiva que modulos aparecen en el menu para este rol.
+                Los cambios son efectivos en el proximo inicio de sesion o recarga.
+            </MudText>
+            @RenderGrupos()
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancelar">Cerrar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   OnClick="Guardar" Disabled="_guardando">
+            Guardar cambios
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int RolId { get; set; }
+    [Parameter] public string RolNombre { get; set; } = "";
+
+    private List<ModuloVisibilidadItem> _modulos = [];
+    private Dictionary<int, bool> _pending = [];
+    private bool _cargando = true;
+    private bool _guardando;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _modulos = await Api.GetAsync<List<ModuloVisibilidadItem>>(
+                $"api/seguridad/roles/{RolId}/modulos") ?? [];
+            foreach (var m in _modulos)
+                _pending[m.ModuloID] = m.Visible ?? true;
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _cargando = false; }
+    }
+
+    private RenderFragment RenderGrupos() => __builder =>
+    {
+        var grupos = _modulos.Where(m => !m.Codigo.Contains('.')).OrderBy(m => m.Codigo).ToList();
+        var hojas  = _modulos.Where(m =>  m.Codigo.Contains('.')).ToList();
+
+        var sinGrupo = _modulos.Where(m => !m.Codigo.Contains('.') &&
+            !hojas.Any(h => h.Codigo.StartsWith(m.Codigo + ".")));
+
+        int seq = 0;
+
+        // Modulos raiz sin hijos
+        foreach (var raiz in sinGrupo)
+        {
+            __builder.OpenElement(seq++, "div");
+            __builder.AddAttribute(seq++, "style", "padding:6px 0; border-bottom:1px solid var(--mud-palette-lines-default); margin-bottom:8px");
+            FilaModulo(__builder, raiz, ref seq, null);
+            __builder.CloseElement();
+        }
+
+        // Grupos con sus hijos
+        foreach (var grupo in grupos)
+        {
+            if (sinGrupo.Any(s => s.ModuloID == grupo.ModuloID)) continue;
+
+            var hijos = hojas.Where(h => h.Codigo.StartsWith(grupo.Codigo + ".")).OrderBy(h => h.Codigo).ToList();
+
+            __builder.OpenElement(seq++, "div");
+            __builder.AddAttribute(seq++, "style", "margin-bottom:16px");
+
+            // Cabecera del grupo
+            __builder.OpenElement(seq++, "div");
+            __builder.AddAttribute(seq++, "style",
+                "font-size:0.72rem; font-weight:700; text-transform:uppercase; " +
+                "color:var(--mud-palette-primary); margin-bottom:4px; letter-spacing:0.05em");
+            __builder.AddContent(seq++, grupo.Nombre);
+            __builder.CloseElement();
+
+            // Fila del grupo — con lista de hijos para cascade
+            FilaModulo(__builder, grupo, ref seq, hijos);
+
+            // Hojas
+            foreach (var hoja in hijos)
+            {
+                __builder.OpenElement(seq++, "div");
+                __builder.AddAttribute(seq++, "style", "padding-left:16px");
+                FilaModulo(__builder, hoja, ref seq, null);
+                __builder.CloseElement();
+            }
+
+            __builder.CloseElement();
+        }
+    };
+
+    private void FilaModulo(
+        Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b,
+        ModuloVisibilidadItem m, ref int seq,
+        List<ModuloVisibilidadItem>? hijos)
+    {
+        var activo = _pending.TryGetValue(m.ModuloID, out var v) ? v : (m.Visible ?? true);
+        var moduloId = m.ModuloID;
+        var hijosCaptura = hijos;
+
+        b.OpenElement(seq++, "div");
+        b.AddAttribute(seq++, "style",
+            "display:flex; align-items:center; gap:8px; padding:3px 0; " +
+            "border-bottom:1px solid var(--mud-palette-lines-default)");
+
+        b.OpenComponent<MudSwitch<bool>>(seq++);
+        b.AddAttribute(seq++, "Value", activo);
+        b.AddAttribute(seq++, "ValueChanged", EventCallback.Factory.Create<bool>(this, async val =>
+        {
+            if (val && m.Codigo.StartsWith("RRHH"))
+            {
+                var ok = await DialogService.ShowMessageBox(
+                    "Modulo sensible - Recursos Humanos",
+                    $"El modulo '{m.Nombre}' forma parte de Recursos Humanos, un area con informacion " +
+                    $"confidencial (empleados, salarios, asistencia). " +
+                    $"Seguro que deseas habilitarlo para el rol '{RolNombre}'?",
+                    yesText: "Si, habilitar", cancelText: "Cancelar");
+                if (ok != true) { StateHasChanged(); return; }
+            }
+            _pending[moduloId] = val;
+            // Cascade a todos los hijos cuando se activa/desactiva el grupo
+            if (hijosCaptura is not null)
+                foreach (var h in hijosCaptura)
+                    _pending[h.ModuloID] = val;
+            StateHasChanged();
+        }));
+        b.AddAttribute(seq++, "Color", Color.Primary);
+        b.AddAttribute(seq++, "Size", Size.Small);
+        b.CloseComponent();
+
+        b.OpenElement(seq++, "span");
+        b.AddAttribute(seq++, "style", "font-size:0.87rem");
+        b.AddContent(seq++, m.Nombre);
+        if (hijosCaptura is { Count: > 0 })
+        {
+            b.OpenElement(seq++, "span");
+            b.AddAttribute(seq++, "style", "font-size:0.72rem; opacity:0.5; margin-left:4px");
+            b.AddContent(seq++, $"({hijosCaptura.Count})");
+            b.CloseElement();
+        }
+        b.CloseElement();
+
+        b.CloseElement();
+    }
+
+    private async Task Guardar()
+    {
+        _guardando = true;
+        try
+        {
+            var items = _pending.Select(kv => new ItemVisibilidad(kv.Key, kv.Value)).ToList();
+            await Api.PutAsync($"api/seguridad/roles/{RolId}/modulos",
+                new ActualizarVisibilidadRolRequest(items));
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _guardando = false; }
+    }
+
+    private void Cancelar() => MudDialog.Cancel();
+}

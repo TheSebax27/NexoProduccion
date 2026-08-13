@@ -22,7 +22,6 @@ public class EmailController(IEmailService emailService) : ControllerBase
     }
 
     [HttpGet("contador")]
-    [Authorize(Roles = "Administracion,Ventas")]
     public async Task<EmailContadorItem> ObtenerContador() =>
         await emailService.ObtenerContadorAsync();
 

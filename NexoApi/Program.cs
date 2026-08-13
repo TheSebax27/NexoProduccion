@@ -26,6 +26,7 @@ using NexoApi.Features.Produccion;
 using NexoApi.Features.Proyectos;
 using NexoApi.Features.Recetas;
 using NexoApi.Features.Rrhh;
+using NexoApi.Features.Seguridad;
 using NexoApi.Features.Traspasos;
 using System.Text;
 using Dapper;
@@ -113,6 +114,7 @@ builder.Services.AddScoped<IOperacionesService, OperacionesService>();
 builder.Services.AddScoped<IMarketingService, MarketingService>();
 builder.Services.AddScoped<IMaquinariaService, MaquinariaService>();
 builder.Services.AddScoped<IComboService, ComboService>();
+builder.Services.AddScoped<ISeguridadService, SeguridadService>();
 
 // ----------------------------------------------------------------------------
 // AUTENTICACIÓN Y AUTORIZACIÓN (AQUÍ ESTÁ EL CAMBIO)
@@ -144,6 +146,7 @@ builder.Services.AddAuthentication(options =>
 );
 
 builder.Services.AddAuthorization();
+builder.Services.AddMemoryCache();
 
 // ----------------------------------------------------------------------------
 // PIPELINE DE LA APLICACIÓN

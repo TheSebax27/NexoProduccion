@@ -6,7 +6,7 @@ namespace NexoApi.Features.Operaciones;
 
 [ApiController]
 [Route("api/operaciones")]
-[Authorize(Roles = "Administracion,Empleados")]
+[Authorize]
 public class OperacionesController : ControllerBase
 {
     private readonly IOperacionesService _svc;

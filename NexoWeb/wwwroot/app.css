@@ -761,6 +761,75 @@ a, .btn-link { color: var(--n-purple); }
   border-top-color: var(--n-border) !important;
 }
 
+/* ── Settings Workspace ──────────────────────────────────────────────── */
+.nexo-settings-layout {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+.nexo-settings-sidebar {
+  position: sticky;
+  top: 1rem;
+}
+.nexo-settings-nav-group {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--n-text-3);
+  padding: 0.7rem 0.75rem 0.3rem;
+}
+.nexo-settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.86rem;
+  color: var(--n-text-2);
+  transition: background 0.14s, color 0.14s;
+  user-select: none;
+}
+.nexo-settings-nav-item:hover {
+  background: rgba(124,92,255,0.07);
+  color: var(--n-text-1);
+}
+.nexo-settings-nav-item.ns-active {
+  background: rgba(124,92,255,0.12);
+  color: #7C5CFF;
+  font-weight: 600;
+}
+.nexo-settings-nav-item .ns-chevron {
+  margin-left: auto;
+  opacity: 0.45;
+}
+.nexo-settings-nav-divider {
+  height: 1px;
+  background: var(--n-border);
+  margin: 0.5rem 0.75rem;
+}
+.nexo-settings-content {
+  min-width: 0;
+}
+.nexo-settings-panel-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--n-text-1);
+  margin-bottom: 1rem;
+}
+@media (max-width: 700px) {
+  .nexo-settings-layout { grid-template-columns: 1fr; }
+  .nexo-settings-sidebar { position: static; }
+}
+
+/* dark-mode overrides for settings sidebar */
+#nexo-app-root.nexo-tema-oscuro .nexo-settings-nav-item.ns-active {
+  background: rgba(167,139,255,0.18) !important;
+  color: #A78BFF !important;
+}
+
 /* Inputs / selects -- fondo transparente sobre --n-card ya cubre la
    mayoria via variables, esto ajusta el borde por defecto (no enfocado) */
 #nexo-app-root.nexo-tema-oscuro .mud-input-outlined .mud-input-outlined-border {

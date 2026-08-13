@@ -34,8 +34,13 @@ public record EstadoAsistenciaHoy(
     int EmpleadoID, string Empleado,
     bool TieneEntrada, DateTime? HoraEntrada, string? MetodoEntrada,
     bool TieneSalida, DateTime? HoraSalida, string? MetodoSalida,
-    bool RegistraSalida
+    bool RegistraSalida,
+    bool TieneAlmuerzo,
+    bool TieneEntrada2, DateTime? HoraEntrada2, string? MetodoEntrada2,
+    bool TieneSalida2, DateTime? HoraSalida2, string? MetodoSalida2
 );
+
+public record EmpleadoSimpleItem(int EmpleadoID, string Nombres, string Apellidos);
 
 public record MarcarQrRequest(string Token, string Tipo);       // Tipo = ENTRADA | SALIDA
 public record MarcarManualRequest(int EmpleadoID, string Tipo, DateTime Hora, string Nota);

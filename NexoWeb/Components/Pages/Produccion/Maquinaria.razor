@@ -1,7 +1,7 @@
 @page "/produccion/maquinaria"
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Common.ApiClient
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administracion,Jefes")]
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject INexoApiClient Api
 @inject ISnackbar Snackbar
 @inject IDialogService Dialog
@@ -123,6 +123,7 @@
 
 @code {
     List<TipoMaquinariaItem> _tipos = [];
+    List<CentroTrabajoItem> _centros = [];
     List<MaquinariaItem> _maquinas = [];
     bool _cargando;
     int? _filtroTipo;
@@ -133,11 +134,13 @@
         _cargando = true;
         try
         {
-            var tTipos = Api.GetAsync<List<TipoMaquinariaItem>>("api/produccion/tipos-maquinaria");
-            var tMaq   = Api.GetAsync<List<MaquinariaItem>>("api/produccion/maquinaria");
-            await Task.WhenAll(tTipos, tMaq);
-            _tipos    = tTipos.Result  ?? [];
-            _maquinas = tMaq.Result    ?? [];
+            var tTipos   = Api.GetAsync<List<TipoMaquinariaItem>>("api/produccion/tipos-maquinaria");
+            var tCentros = Api.GetAsync<List<CentroTrabajoItem>>("api/catalogo/centros-trabajo?soloActivos=true");
+            var tMaq     = Api.GetAsync<List<MaquinariaItem>>("api/produccion/maquinaria");
+            await Task.WhenAll(tTipos, tCentros, tMaq);
+            _tipos    = tTipos.Result   ?? [];
+            _centros  = tCentros.Result ?? [];
+            _maquinas = tMaq.Result     ?? [];
         }
         finally { _cargando = false; }
     }
@@ -163,6 +166,7 @@
         var params_ = new DialogParameters<MaquinariaDialog>
         {
             { x => x.Tipos, _tipos },
+            { x => x.CentrosTrabajo, _centros },
             { x => x.Maquina, null }
         };
         var dlg = await Dialog.ShowAsync<MaquinariaDialog>("Nueva Máquina", params_, opts);
@@ -179,6 +183,7 @@
         var params_ = new DialogParameters<MaquinariaDialog>
         {
             { x => x.Tipos, _tipos },
+            { x => x.CentrosTrabajo, _centros },
             { x => x.Maquina, detalle }
         };
         var dlg = await Dialog.ShowAsync<MaquinariaDialog>("Editar Máquina", params_, opts);

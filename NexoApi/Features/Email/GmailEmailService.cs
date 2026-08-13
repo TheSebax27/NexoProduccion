@@ -86,5 +86,11 @@ public class GmailEmailService(IDbConnectionFactory db) : IEmailService
     }
 
     private record ConfigRow(string Proveedor, string? ApiKey, string? EmailFrom, string? NombreFrom, bool Activo);
-    private record ContadorRow(int EmailsHoy, DateTime? FechaContador);
+
+    // Dapper no puede materializar positional records privados en .NET 10 — clase con setters públicos
+    private class ContadorRow
+    {
+        public int EmailsHoy { get; set; }
+        public DateTime? FechaContador { get; set; }
+    }
 }

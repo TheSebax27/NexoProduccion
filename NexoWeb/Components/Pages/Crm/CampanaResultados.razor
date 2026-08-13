@@ -1,9 +1,9 @@
-@page "/crm/campanas/{Id:int}/resultados"
+﻿@page "/crm/campanas/{Id:int}/resultados"
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Common.ApiClient
 @inject INexoApiClient Api
 @inject NavigationManager Nav
-@attribute [Authorize(Roles = "Administracion,Ventas")]
+@attribute [Authorize]
 
 <PageTitle>Resultados de campaña</PageTitle>
 

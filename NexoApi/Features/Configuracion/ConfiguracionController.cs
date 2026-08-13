@@ -55,4 +55,17 @@ public class ConfiguracionController : ControllerBase
         await _service.ActualizarUsaVisionsAsync(request.UsaVisions);
         return NoContent();
     }
+
+    [HttpPut("empresa/inventario")]
+    [Authorize(Roles = "Administracion")]
+    public async Task<ActionResult> ActualizarConfigInventario(ActualizarConfigInventarioRequest request)
+    {
+        try
+        {
+            await _service.ActualizarConfigInventarioAsync(
+                request.ManejarVencimientos, request.DiasAlertaVencimiento, request.ModoLotes);
+            return NoContent();
+        }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+    }
 }

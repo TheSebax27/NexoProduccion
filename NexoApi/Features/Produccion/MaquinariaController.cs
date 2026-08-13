@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexoApi.Features.Produccion.Dtos;
@@ -15,7 +16,7 @@ public class MaquinariaController(IMaquinariaService svc) : ControllerBase
         => Ok(await svc.ListarTiposAsync());
 
     [HttpPost("api/produccion/tipos-maquinaria")]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<IActionResult> CrearTipo([FromBody] CrearTipoMaquinariaRequest r)
     {
         if (string.IsNullOrWhiteSpace(r.Nombre)) return BadRequest("El nombre es obligatorio.");
@@ -44,7 +45,7 @@ public class MaquinariaController(IMaquinariaService svc) : ControllerBase
     }
 
     [HttpPost("api/produccion/maquinaria")]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<IActionResult> Crear([FromBody] CrearMaquinariaRequest r)
     {
         try
@@ -56,7 +57,7 @@ public class MaquinariaController(IMaquinariaService svc) : ControllerBase
     }
 
     [HttpPut("api/produccion/maquinaria/{id:int}")]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<IActionResult> Actualizar(int id, [FromBody] ActualizarMaquinariaRequest r)
     {
         try
@@ -87,7 +88,7 @@ public class MaquinariaController(IMaquinariaService svc) : ControllerBase
         => Ok(await svc.ListarMaquinasOrdenAsync(ordenId));
 
     [HttpPut("api/produccion/ordenes/{ordenId:int}/maquinaria")]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<IActionResult> GuardarMaquinasOrden(int ordenId, [FromBody] List<MaquinariaOrdenInput> maquinas)
     {
         await svc.GuardarMaquinasOrdenAsync(ordenId, maquinas);
@@ -101,11 +102,11 @@ public class MaquinariaController(IMaquinariaService svc) : ControllerBase
         => Ok(await svc.ListarMantenimientosAsync(id));
 
     [HttpPost("api/produccion/maquinaria/{id:int}/mantenimientos")]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<IActionResult> RegistrarMantenimiento(
         int id, [FromBody] CrearMantenimientoRequest r)
     {
-        var usuarioIdStr = User.FindFirst("UsuarioID")?.Value;
+        var usuarioIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!int.TryParse(usuarioIdStr, out var usuarioId)) return Unauthorized();
         try
         {

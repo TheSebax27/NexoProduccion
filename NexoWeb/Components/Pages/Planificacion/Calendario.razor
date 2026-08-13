@@ -1,5 +1,5 @@
-@page "/planificacion/calendario"
-@attribute [Authorize(Roles = "Administracion,Jefes,Empleados")]
+﻿@page "/planificacion/calendario"
+@attribute [Authorize]
 @implements IDisposable
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService

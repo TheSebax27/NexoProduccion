@@ -11,6 +11,7 @@ public interface IConfiguracionService
     Task ActualizarLogoEmpresaAsync(string base64, string contentType);
     Task EliminarLogoEmpresaAsync();
     Task ActualizarUsaVisionsAsync(bool usaVisions);
+    Task ActualizarConfigInventarioAsync(bool manejarVencimientos, int diasAlerta, string modoLotes);
 }
 
 // Configuracion global de la empresa (nombre + logo del sidebar) -- a
@@ -30,15 +31,19 @@ public class ConfiguracionService : IConfiguracionService
     {
         using var connection = _db.CreateConnection();
 
-        var fila = await connection.QuerySingleAsync<(string NombreEmpresa, string? NombrePropietario, byte[]? Logo, string? LogoContentType, bool UsaVisions)>(
-            "SELECT NombreEmpresa, NombrePropietario, Logo, LogoContentType, UsaVisions FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
+        var fila = await connection.QuerySingleAsync<(
+            string NombreEmpresa, string? NombrePropietario,
+            byte[]? Logo, string? LogoContentType, bool UsaVisions,
+            bool ManejarVencimientos, int DiasAlertaVencimiento, string ModoLotes)>(
+            @"SELECT NombreEmpresa, NombrePropietario, Logo, LogoContentType, UsaVisions,
+                     ManejarVencimientos, DiasAlertaVencimiento, ModoLotes
+              FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
 
         return new ConfiguracionEmpresaResponse(
-            fila.NombreEmpresa,
-            fila.NombrePropietario,
+            fila.NombreEmpresa, fila.NombrePropietario,
             fila.Logo is null ? null : Convert.ToBase64String(fila.Logo),
-            fila.LogoContentType,
-            fila.UsaVisions);
+            fila.LogoContentType, fila.UsaVisions,
+            fila.ManejarVencimientos, fila.DiasAlertaVencimiento, fila.ModoLotes);
     }
 
     public async Task ActualizarNombreEmpresaAsync(string nombreEmpresa, string? nombrePropietario)
@@ -74,5 +79,22 @@ public class ConfiguracionService : IConfiguracionService
         await connection.ExecuteAsync(
             "UPDATE Organizacion.ConfiguracionEmpresa SET UsaVisions = @UsaVisions WHERE ConfiguracionID = 1",
             new { UsaVisions = usaVisions });
+    }
+
+    public async Task ActualizarConfigInventarioAsync(bool manejarVencimientos, int diasAlerta, string modoLotes)
+    {
+        if (modoLotes != "FIFO" && modoLotes != "MANUAL")
+            throw new ArgumentException("ModoLotes debe ser FIFO o MANUAL.");
+        if (diasAlerta < 1 || diasAlerta > 365)
+            throw new ArgumentException("DiasAlertaVencimiento debe estar entre 1 y 365.");
+
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            @"UPDATE Organizacion.ConfiguracionEmpresa
+              SET ManejarVencimientos = @ManejarVencimientos,
+                  DiasAlertaVencimiento = @DiasAlertaVencimiento,
+                  ModoLotes = @ModoLotes
+              WHERE ConfiguracionID = 1",
+            new { ManejarVencimientos = manejarVencimientos, DiasAlertaVencimiento = diasAlerta, ModoLotes = modoLotes });
     }
 }

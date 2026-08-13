@@ -47,4 +47,22 @@ public class NexoApiClient : INexoApiClient
         var configuracion = await respuesta.Content.ReadFromJsonAsync<ConfiguracionAgenteResponse>(cancellationToken: ct);
         return configuracion ?? throw new InvalidOperationException("La API no devolvio configuracion para este agente.");
     }
+
+    public async Task<LatidoResponse> EnviarLatidoAsync(CancellationToken ct)
+    {
+        var respuesta = await _http.PostAsync("api/integracion/latido", null, ct);
+        respuesta.EnsureSuccessStatusCode();
+
+        var latido = await respuesta.Content.ReadFromJsonAsync<LatidoResponse>(cancellationToken: ct);
+        return latido ?? throw new InvalidOperationException("La API no devolvio respuesta de latido.");
+    }
+
+    public async Task RegistrarFalloEventoAsync(long eventoId, string mensajeError, CancellationToken ct)
+    {
+        var respuesta = await _http.PostAsJsonAsync(
+            $"api/integracion/eventos-salientes/{eventoId}/fallar",
+            new { MensajeError = mensajeError },
+            ct);
+        respuesta.EnsureSuccessStatusCode();
+    }
 }

@@ -1,26 +1,33 @@
 @page "/rrhh/asistencia"
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Common.ApiClient
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administracion,Jefes")]
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject INexoApiClient Api
 @inject ISnackbar Snackbar
 @inject IDialogService Dialog
 
 <PageTitle>Asistencia — NEXO</PageTitle>
 
-<MudStack Row AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h5">Control de Asistencia</MudText>
-    <MudSpacer />
-    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Tv"
-               Href="/rrhh/kiosco" Target="_blank">
-        Abrir Kiosco
-    </MudButton>
-    <MudButton Variant="Variant.Filled" Color="Color.Warning"
-               StartIcon="@Icons.Material.Filled.EditNote"
-               OnClick="AbrirManual">
-        Registrar Manual
-    </MudButton>
-</MudStack>
+<div class="nexo-page-hero">
+    <div class="nexo-page-hero__left">
+        <div class="nexo-page-hero__accent"></div>
+        <div>
+            <p class="nexo-page-hero__module">Recursos Humanos</p>
+            <h1 class="nexo-page-hero__title">Control de Asistencia</h1>
+        </div>
+    </div>
+    <div class="d-flex align-center" style="gap:8px">
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Tv"
+                   Href="/rrhh/kiosco" Target="_blank">
+            Abrir Kiosco
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                   StartIcon="@Icons.Material.Filled.EditNote"
+                   OnClick="AbrirManual">
+            Registrar Manual
+        </MudButton>
+    </div>
+</div>
 
 @* Filtros *@
 <MudPaper Class="pa-4 mb-4" Elevation="1">

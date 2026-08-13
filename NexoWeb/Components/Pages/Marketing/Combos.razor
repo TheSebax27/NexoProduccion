@@ -1,6 +1,6 @@
-@page "/marketing/combos"
+﻿@page "/marketing/combos"
 @using NexoWeb.Common.Dtos
-@attribute [Authorize(Roles = "Administracion,Jefes,Marketing,Ventas")]
+@attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -67,13 +67,31 @@ else
                         </div>
                         @if (!string.IsNullOrWhiteSpace(combo.Descripcion))
                         {
-                            <MudText Typo="Typo.body2" Style="color:var(--mud-palette-text-secondary)">@combo.Descripcion</MudText>
+                            <MudText Typo="Typo.body2" Style="color:var(--mud-palette-text-secondary)" Class="mb-1">@combo.Descripcion</MudText>
                         }
-                        <div class="mt-2">
+
+                        @* Artículos incluidos *@
+                        @if (combo.Items.Count > 0)
+                        {
+                            <div style="border-top:1px solid var(--mud-palette-divider); margin:6px 0 6px; padding-top:6px;">
+                                @foreach (var item in combo.Items)
+                                {
+                                    <div class="d-flex align-center justify-space-between"
+                                         style="font-size:0.78rem; padding:2px 0; color:var(--mud-palette-text-secondary)">
+                                        <span>@item.NombreArticulo</span>
+                                        <span style="font-weight:600; color:var(--mud-palette-text-primary); white-space:nowrap; margin-left:8px;">
+                                            ×@item.Cantidad.ToString("G29") @item.Unidad
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <div class="mt-1 d-flex align-center" style="gap:8px;">
                             <MudText Typo="Typo.h6" Color="Color.Primary">@combo.PrecioEfectivo.ToString("C0")</MudText>
                             @if (combo.PorcentajeDescuento > 0)
                             {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Success">-@combo.PorcentajeDescuento%</MudChip>
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success">-@combo.PorcentajeDescuento.ToString("G29")%</MudChip>
                             }
                         </div>
                         @if (combo.FechaInicio.HasValue || combo.FechaFin.HasValue)

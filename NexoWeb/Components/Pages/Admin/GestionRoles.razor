@@ -1,0 +1,370 @@
+@page "/admin/roles"
+@attribute [Authorize(Roles = "Administracion")]
+@using NexoWeb.Common.Dtos
+@using NexoWeb.Common.ApiClient
+@inject INexoApiClient Api
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Roles y Modulos — NEXO ERP</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-1">Roles y Modulos del Sistema</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    Crea y edita roles, configura que modulos ve cada rol, y aplica overrides por usuario.
+</MudText>
+
+<MudTabs Elevation="0" Rounded ApplyEffectsToContainer Class="mb-4">
+
+    @* ── TAB 1: Roles ────────────────────────────────────────────────────────── *@
+    <MudTabPanel Text="Roles" Icon="@Icons.Material.Filled.Shield">
+        <div class="d-flex justify-end mb-3 mt-3">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="AbrirCrearRol">
+                Nuevo rol
+            </MudButton>
+        </div>
+
+        @if (_cargandoRoles)
+        {
+            <div class="d-flex justify-center pa-6">
+                <MudProgressCircular Indeterminate Color="Color.Primary" />
+            </div>
+        }
+        else
+        {
+            <MudTable Items="_roles" Dense Hover Striped Elevation="1">
+                <HeaderContent>
+                    <MudTh>Nombre</MudTh>
+                    <MudTh>Descripcion</MudTh>
+                    <MudTh Style="text-align:center">Usuarios</MudTh>
+                    <MudTh Style="text-align:center">Estado</MudTh>
+                    <MudTh Style="width:120px"></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <div class="d-flex align-center" style="gap:6px">
+                            @if (context.Nombre == "Administracion")
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small"
+                                         Style="color:var(--mud-palette-warning)" />
+                            }
+                            <MudText Style="font-weight:600">@context.Nombre</MudText>
+                        </div>
+                    </MudTd>
+                    <MudTd>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            @(context.Descripcion ?? "—")
+                        </MudText>
+                    </MudTd>
+                    <MudTd Style="text-align:center">
+                        <MudChip T="string" Size="Size.Small"
+                                 Color="@(context.CantidadUsuarios > 0 ? Color.Info : Color.Default)">
+                            @context.CantidadUsuarios usuario@(context.CantidadUsuarios == 1 ? "" : "s")
+                        </MudChip>
+                    </MudTd>
+                    <MudTd Style="text-align:center">
+                        <MudChip T="string" Size="Size.Small"
+                                 Color="@(context.Estado ? Color.Success : Color.Error)">
+                            @(context.Estado ? "Activo" : "Inactivo")
+                        </MudChip>
+                    </MudTd>
+                    <MudTd>
+                        <div class="d-flex" style="gap:2px; justify-content:flex-end">
+                            <MudTooltip Text="Editar">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                               OnClick="@(() => AbrirEditarRol(context))" />
+                            </MudTooltip>
+                            <MudTooltip Text="Configurar modulos visibles">
+                                <MudIconButton Icon="@Icons.Material.Filled.Tune" Size="Size.Small"
+                                               Color="Color.Primary"
+                                               OnClick="@(() => AbrirConfigModulos(context))" />
+                            </MudTooltip>
+                            <MudTooltip Text="@(context.Nombre == "Administracion" ? "El rol Administracion no se puede eliminar" : context.CantidadUsuarios > 0 ? $"Tiene {context.CantidadUsuarios} usuario(s) asignados" : "Eliminar")">
+                                <span>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                                   Color="Color.Error"
+                                                   Disabled="@(context.Nombre == "Administracion" || context.CantidadUsuarios > 0)"
+                                                   OnClick="@(() => EliminarRol(context))" />
+                                </span>
+                            </MudTooltip>
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+            <MudAlert Severity="Severity.Info" Dense Class="mt-3" Icon="@Icons.Material.Filled.Info">
+                Para eliminar un rol que tiene usuarios asignados, primero reasigna los usuarios a otro rol desde
+                <b>Usuarios del Sistema</b>.
+            </MudAlert>
+        }
+    </MudTabPanel>
+
+    @* ── TAB 2: Override por usuario ─────────────────────────────────────────── *@
+    <MudTabPanel Text="Override por usuario" Icon="@Icons.Material.Filled.PersonOff">
+        <div class="mt-3">
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                Ajusta la visibilidad de modulos para un usuario especifico, por encima de la configuracion de su rol.
+                Los toggles muestran el estado <b>actual efectivo</b>; los que tienen badge "override" tienen configuracion propia.
+            </MudText>
+
+            <MudSelect T="int?" Label="Usuario" Variant="Variant.Outlined"
+                       Value="_usuarioSeleccionado"
+                       ValueChanged="CargarModulosUsuario"
+                       Placeholder="Selecciona un usuario..."
+                       AnchorOrigin="Origin.BottomLeft"
+                       Style="max-width:420px" Class="mb-4">
+                @foreach (var u in _usuarios)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)u.UsuarioID)">
+                        @u.NombreCompleto (@u.Rol)
+                    </MudSelectItem>
+                }
+            </MudSelect>
+
+            @if (_cargandoModulosUsuario)
+            {
+                <MudProgressLinear Indeterminate Color="Color.Primary" />
+            }
+            else if (_modulosUsuario.Count > 0)
+            {
+                <MudPaper Elevation="1" Class="pa-4">
+                    <div class="d-flex justify-space-between align-center mb-3">
+                        <MudText Typo="Typo.subtitle2">Modulos del usuario</MudText>
+                        <div class="d-flex" style="gap:8px">
+                            <MudButton Size="Size.Small" OnClick="LimpiarOverridesUsuario"
+                                       StartIcon="@Icons.Material.Filled.RestartAlt">
+                                Limpiar overrides
+                            </MudButton>
+                            <MudButton Variant="Variant.Filled" Size="Size.Small"
+                                       Color="Color.Primary"
+                                       OnClick="GuardarOverridesUsuario"
+                                       Disabled="_guardandoUsuario">
+                                Guardar cambios
+                            </MudButton>
+                        </div>
+                    </div>
+
+                    @{
+                        var hojas  = _modulosUsuario.Where(m => m.Codigo.Contains('.')).ToList();
+                        var grupos = _modulosUsuario.Where(m => !m.Codigo.Contains('.') && hojas.Any(h => h.Codigo.StartsWith(m.Codigo + "."))).OrderBy(m => m.Codigo).ToList();
+                        var raices = _modulosUsuario.Where(m => !m.Codigo.Contains('.') && !grupos.Contains(m)).ToList();
+                    }
+
+                    @* items sin grupo (ej. BI) *@
+                    @foreach (var raiz in raices)
+                    {
+                        <FilaOverride Item="raiz" Pending="_pendingUsuario"
+                                      OnChange="@((kv) => { _pendingUsuario[kv.Key] = kv.Value; StateHasChanged(); })" />
+                    }
+
+                    @* grupos con sus hijos *@
+                    @foreach (var grupo in grupos)
+                    {
+                        var hijos = hojas.Where(h => h.Codigo.StartsWith(grupo.Codigo + ".")).OrderBy(h => h.Codigo).ToList();
+
+                        <div style="margin-bottom:16px">
+                            <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase;
+                                        color:var(--mud-palette-primary); margin-bottom:4px; letter-spacing:0.05em">
+                                @grupo.Nombre
+                            </div>
+
+                            <FilaOverride Item="grupo" Pending="_pendingUsuario" Hijos="hijos"
+                                          OnChange="@((kv) => { _pendingUsuario[kv.Key] = kv.Value; StateHasChanged(); })" />
+
+                            @foreach (var hoja in hijos)
+                            {
+                                <div style="padding-left:16px">
+                                    <FilaOverride Item="hoja" Pending="_pendingUsuario"
+                                                  OnChange="@((kv) => { _pendingUsuario[kv.Key] = kv.Value; StateHasChanged(); })" />
+                                </div>
+                            }
+                        </div>
+                    }
+                </MudPaper>
+            }
+        </div>
+    </MudTabPanel>
+</MudTabs>
+
+@* ── Componente inline para fila de override ──────────────────────────────── *@
+@* (declarado en la seccion @code como private class no es posible en Razor;
+   se usa como componente inlinado con RenderFragment helper) *@
+
+@code {
+    // ── Estado general ──────────────────────────────────────────────────────
+    private List<RolDetalleItem> _roles = [];
+    private bool _cargandoRoles = true;
+
+    // ── Override por usuario ────────────────────────────────────────────────
+    private List<UsuarioSimple> _usuarios = [];
+    private int? _usuarioSeleccionado;
+    private List<ModuloVisibilidadItem> _modulosUsuario = [];
+    private Dictionary<int, bool> _pendingUsuario = [];
+    private bool _cargandoModulosUsuario;
+    private bool _guardandoUsuario;
+
+    private record UsuarioSimple(int UsuarioID, string NombreCompleto, string Rol);
+
+    private class UsuarioItemApi
+    {
+        public int UsuarioID { get; set; }
+        public string Nombres { get; set; } = "";
+        public string Apellidos { get; set; } = "";
+        public string Rol { get; set; } = "";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(CargarRoles(), CargarUsuarios());
+    }
+
+    private async Task CargarRoles()
+    {
+        _cargandoRoles = true;
+        try { _roles = await Api.GetAsync<List<RolDetalleItem>>("api/seguridad/roles") ?? []; }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _cargandoRoles = false; }
+    }
+
+    private async Task CargarUsuarios()
+    {
+        try
+        {
+            var lista = await Api.GetAsync<List<UsuarioItemApi>>("api/auth/usuarios") ?? [];
+            _usuarios = lista.Select(u => new UsuarioSimple(
+                u.UsuarioID, $"{u.Nombres} {u.Apellidos}", u.Rol)).ToList();
+        }
+        catch { /* silencioso */ }
+    }
+
+    // ── Roles ────────────────────────────────────────────────────────────────
+
+    private async Task AbrirCrearRol()
+    {
+        var dlg = await DialogService.ShowAsync<CrearEditarRolDialog>(
+            "Nuevo rol",
+            new DialogParameters<CrearEditarRolDialog> { { x => x.Rol, null } },
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+
+        var result = await dlg.Result;
+        if (result?.Canceled == false) await CargarRoles();
+    }
+
+    private async Task AbrirEditarRol(RolDetalleItem rol)
+    {
+        var dlg = await DialogService.ShowAsync<CrearEditarRolDialog>(
+            "Editar rol",
+            new DialogParameters<CrearEditarRolDialog> { { x => x.Rol, rol } },
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+
+        var result = await dlg.Result;
+        if (result?.Canceled == false) await CargarRoles();
+    }
+
+    private async Task AbrirConfigModulos(RolDetalleItem rol)
+    {
+        var dlg = await DialogService.ShowAsync<ConfigModulosRolDialog>(
+            "Modulos",
+            new DialogParameters<ConfigModulosRolDialog>
+            {
+                { x => x.RolId, rol.RolID },
+                { x => x.RolNombre, rol.Nombre }
+            },
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+
+        await dlg.Result;
+    }
+
+    private async Task EliminarRol(RolDetalleItem rol)
+    {
+        // Administracion nunca se puede eliminar
+        if (rol.Nombre == "Administracion") return;
+
+        var usuarios = rol.CantidadUsuarios;
+        var msg = usuarios > 0
+            ? $"El rol '{rol.Nombre}' tiene {usuarios} usuario(s) asignado(s). " +
+              "Al eliminarlo, esos usuarios quedaran sin rol hasta que se les reasigne uno. ¿Continuar?"
+            : $"Se eliminara el rol '{rol.Nombre}'. Esta accion no se puede deshacer.";
+
+        var confirm = await DialogService.ShowMessageBox(
+            $"Eliminar '{rol.Nombre}'", msg,
+            yesText: "Eliminar y desvincular", cancelText: "Cancelar");
+
+        if (confirm != true) return;
+
+        try
+        {
+            await Api.DeleteAsync($"api/seguridad/roles/{rol.RolID}");
+            Snackbar.Add("Rol eliminado correctamente.", Severity.Success);
+            await CargarRoles();
+            if (_usuarioSeleccionado.HasValue) await CargarModulosUsuario(_usuarioSeleccionado);
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+    }
+
+    // ── Override por usuario ─────────────────────────────────────────────────
+
+    private async Task CargarModulosUsuario(int? usuarioId)
+    {
+        _usuarioSeleccionado = usuarioId;
+        _modulosUsuario      = [];
+        _pendingUsuario      = [];
+        if (usuarioId is null) return;
+
+        _cargandoModulosUsuario = true;
+        try
+        {
+            // El endpoint devuelve visibilidad efectiva (rol + override combinados)
+            _modulosUsuario = await Api.GetAsync<List<ModuloVisibilidadItem>>(
+                $"api/seguridad/usuarios/{usuarioId}/modulos") ?? [];
+
+            foreach (var m in _modulosUsuario)
+                _pendingUsuario[m.ModuloID] = m.Visible ?? true;
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _cargandoModulosUsuario = false; }
+    }
+
+    private async Task GuardarOverridesUsuario()
+    {
+        if (_usuarioSeleccionado is null) return;
+        _guardandoUsuario = true;
+        try
+        {
+            var items = _pendingUsuario.Select(kv => new ItemVisibilidad(kv.Key, kv.Value)).ToList();
+            await Api.PutAsync(
+                $"api/seguridad/usuarios/{_usuarioSeleccionado}/modulos",
+                new ActualizarVisibilidadUsuarioRequest(items));
+            Snackbar.Add("Configuracion de usuario guardada.", Severity.Success);
+            // Recargar para reflejar overrides actualizados
+            await CargarModulosUsuario(_usuarioSeleccionado);
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _guardandoUsuario = false; }
+    }
+
+    private async Task LimpiarOverridesUsuario()
+    {
+        if (_usuarioSeleccionado is null) return;
+        var confirm = await DialogService.ShowMessageBox(
+            "Limpiar overrides",
+            "Se eliminaran todos los overrides de este usuario. Volvera a usar la configuracion de su rol.",
+            yesText: "Limpiar", cancelText: "Cancelar");
+        if (confirm != true) return;
+
+        _guardandoUsuario = true;
+        try
+        {
+            await Api.DeleteAsync($"api/seguridad/usuarios/{_usuarioSeleccionado}/modulos");
+            Snackbar.Add("Overrides eliminados.", Severity.Success);
+            await CargarModulosUsuario(_usuarioSeleccionado);
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _guardandoUsuario = false; }
+    }
+}
+
+@* ── Componente auxiliar de fila ─────────────────────────────────────────── *@
+@* Declarado como clase anidada de Razor no es posible; se implementa como    *@
+@* bloque de markup inline usando un helper en el foreach arriba.             *@

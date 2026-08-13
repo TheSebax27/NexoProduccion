@@ -37,10 +37,15 @@ public class TareaAplicarEntradasInventario
             }
             catch (Exception ex)
             {
-                // No propagamos el error: un evento que falla no debe tumbar
-                // el procesamiento de los demas. Se queda PENDIENTE y se
-                // reintenta solo en la proxima ronda.
                 _logger.LogError(ex, "No se pudo aplicar el evento {EventoID}", evento.EventoID);
+                try
+                {
+                    await _apiClient.RegistrarFalloEventoAsync(evento.EventoID, ex.Message, ct);
+                }
+                catch (Exception exFallo)
+                {
+                    _logger.LogWarning(exFallo, "No se pudo registrar el fallo del evento {EventoID} en la API", evento.EventoID);
+                }
             }
         }
     }

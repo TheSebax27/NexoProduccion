@@ -26,19 +26,52 @@
         <MudPaper Class="pa-8 text-center" Elevation="3">
             <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
                      Style="font-size:5rem; color:var(--mud-palette-success)" />
-            <MudText Typo="Typo.h5" Class="mt-2 mb-1">¡Registrado!</MudText>
+            <MudText Typo="Typo.h5" Class="mt-2 mb-1">Registrado!</MudText>
             <MudText Typo="Typo.body1" Color="Color.Secondary">@_mensajeExito</MudText>
         </MudPaper>
     }
     else if (_estado is not null)
     {
-        // Si el horario no requiere salida, la jornada está completa en cuanto hay entrada
-        var jornadaCompleta = (_estado.TieneEntrada && _estado.TieneSalida)
-                           || (_estado.TieneEntrada && !_estado.RegistraSalida);
-        var esSalida = _estado.TieneEntrada && !_estado.TieneSalida && _estado.RegistraSalida;
-        var tipo     = esSalida ? "SALIDA" : "ENTRADA";
-        var color    = esSalida ? Color.Warning : Color.Success;
-        var icono    = esSalida ? Icons.Material.Filled.Logout : Icons.Material.Filled.Login;
+        // Determinar la acción pendiente
+        // Prioridad: sin entrada → ENTRADA. Si hay entrada y sin salida y RegistraSalida → SALIDA.
+        // Con entrada+salida y TieneAlmuerzo y sin entrada2 → ENTRADA (regreso).
+        // Con entrada2 y sin salida2 y RegistraSalida → SALIDA (final).
+        // De lo contrario: jornada completa.
+        bool jornadaCompleta;
+        string tipo;
+        Color color;
+        string icono;
+        string etiqueta;
+
+        if (!_estado.TieneEntrada)
+        {
+            jornadaCompleta = false;
+            tipo = "ENTRADA"; color = Color.Success;
+            icono = Icons.Material.Filled.Login; etiqueta = "Marcar ENTRADA";
+        }
+        else if (!_estado.TieneSalida && _estado.RegistraSalida)
+        {
+            jornadaCompleta = false;
+            tipo = "SALIDA"; color = Color.Warning;
+            icono = Icons.Material.Filled.Logout; etiqueta = "Marcar SALIDA (almuerzo)";
+        }
+        else if (_estado.TieneSalida && _estado.TieneAlmuerzo && !_estado.TieneEntrada2)
+        {
+            jornadaCompleta = false;
+            tipo = "ENTRADA"; color = Color.Info;
+            icono = Icons.Material.Filled.RestaurantMenu; etiqueta = "Marcar ENTRADA (regreso de almuerzo)";
+        }
+        else if (_estado.TieneEntrada2 && !_estado.TieneSalida2 && _estado.RegistraSalida)
+        {
+            jornadaCompleta = false;
+            tipo = "SALIDA"; color = Color.Warning;
+            icono = Icons.Material.Filled.Logout; etiqueta = "Marcar SALIDA (salida final)";
+        }
+        else
+        {
+            jornadaCompleta = true;
+            tipo = ""; color = Color.Default; icono = ""; etiqueta = "";
+        }
 
         <MudPaper Class="pa-6" Elevation="3">
             <MudText Typo="Typo.h6" Align="Align.Center">@_estado.Empleado</MudText>
@@ -48,7 +81,7 @@
 
             @if (_estado.TieneEntrada)
             {
-                <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true">
+                <MudAlert Severity="Severity.Success" Class="mb-2" Dense="true">
                     Entrada: @_estado.HoraEntrada?.ToString("HH:mm")
                     <MudChip T="string" Size="Size.Small" Class="ml-2"
                              Color="@(_estado.MetodoEntrada == "QR" ? Color.Success : Color.Warning)">
@@ -56,10 +89,37 @@
                     </MudChip>
                 </MudAlert>
             }
+            @if (_estado.TieneSalida)
+            {
+                <MudAlert Severity="Severity.Warning" Class="mb-2" Dense="true">
+                    Salida almuerzo: @_estado.HoraSalida?.ToString("HH:mm")
+                    <MudChip T="string" Size="Size.Small" Class="ml-2"
+                             Color="@(_estado.MetodoSalida == "QR" ? Color.Success : Color.Warning)">
+                        @_estado.MetodoSalida
+                    </MudChip>
+                </MudAlert>
+            }
+            @if (_estado.TieneEntrada2)
+            {
+                <MudAlert Severity="Severity.Success" Class="mb-2" Dense="true">
+                    Regreso almuerzo: @_estado.HoraEntrada2?.ToString("HH:mm")
+                    <MudChip T="string" Size="Size.Small" Class="ml-2"
+                             Color="@(_estado.MetodoEntrada2 == "QR" ? Color.Success : Color.Warning)">
+                        @_estado.MetodoEntrada2
+                    </MudChip>
+                </MudAlert>
+            }
 
             @if (jornadaCompleta)
             {
-                @if (_estado.TieneSalida)
+                @if (_estado.TieneSalida2)
+                {
+                    <MudAlert Severity="Severity.Success">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-1" />
+                        Salida final: @_estado.HoraSalida2?.ToString("HH:mm") · Jornada completa
+                    </MudAlert>
+                }
+                else if (_estado.TieneSalida && !_estado.TieneAlmuerzo)
                 {
                     <MudAlert Severity="Severity.Success">
                         <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-1" />
@@ -79,7 +139,7 @@
                 <MudButton Variant="Variant.Filled" Color="@color" StartIcon="@icono"
                            Size="Size.Large" FullWidth="true"
                            OnClick="@(() => MarcarAsync(tipo))" Disabled="_marcando">
-                    @(_marcando ? "Registrando..." : $"Marcar {tipo} — {DateTime.Now:HH:mm}")
+                    @(_marcando ? "Registrando..." : $"{etiqueta} — {DateTime.Now:HH:mm}")
                 </MudButton>
             }
         </MudPaper>
@@ -97,7 +157,7 @@
     {
         if (string.IsNullOrWhiteSpace(T))
         {
-            _error = "Código QR inválido. Escanea el código de la pantalla del kiosco.";
+            _error = "Codigo QR invalido. Escanea el codigo de la pantalla del kiosco.";
             _cargando = false;
             return;
         }

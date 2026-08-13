@@ -26,6 +26,9 @@ public class RecetasService : IRecetasService
     {
         using var connection = _db.CreateConnection();
         connection.Open();
+
+        await ValidarInsumosPTAsync(connection, null, r.ProductoTerminadoID, r.Detalle);
+
         using var transaction = connection.BeginTransaction();
 
         try
@@ -63,6 +66,14 @@ public class RecetasService : IRecetasService
     {
         using var connection = _db.CreateConnection();
         connection.Open();
+
+        var ptId = await connection.ExecuteScalarAsync<int?>(
+            "SELECT ProductoTerminadoID FROM Produccion.RecetaBOM WHERE RecetaID = @RecetaBaseId",
+            new { RecetaBaseId = recetaBaseId });
+
+        if (ptId.HasValue)
+            await ValidarInsumosPTAsync(connection, recetaBaseId, ptId.Value, r.Detalle);
+
         using var transaction = connection.BeginTransaction();
 
         try
@@ -181,6 +192,46 @@ public class RecetasService : IRecetasService
             ORDER BY d.Orden";
 
         return await connection.QueryAsync<RecetaDetalleItem>(sql, new { RecetaId = recetaId });
+    }
+
+    // Valida que ningun insumo PT cause auto-referencia ni ciclo directo (A→B, B→A).
+    // Se llama antes de abrir la transaccion para que el error sea limpio.
+    private static async Task ValidarInsumosPTAsync(
+        System.Data.IDbConnection connection,
+        int? recetaBaseId,
+        int productoTerminadoID,
+        List<DetalleRecetaRequest> detalle)
+    {
+        var ptInsumos = detalle.Select(d => d.InsumoID).Where(id => id == productoTerminadoID).ToList();
+        if (ptInsumos.Count > 0)
+            throw new InvalidOperationException(
+                "Un producto terminado no puede ser insumo de su propia receta (auto-referencia).");
+
+        // Ciclo directo: si alguno de los PT-insumos tiene una receta activa
+        // que usa el PT actual como insumo.
+        var insumoIds = detalle.Select(d => d.InsumoID).Distinct().ToList();
+        if (insumoIds.Count == 0) return;
+
+        const string sqlCiclo = @"
+            SELECT TOP 1 a.Nombre
+            FROM Produccion.RecetaBOM r
+            JOIN Produccion.RecetaBOM_Detalle bd ON bd.RecetaID = r.RecetaID
+            JOIN Catalogo.Articulos a ON a.ArticuloID = r.ProductoTerminadoID
+            WHERE r.Estado = 1
+              AND (@RecetaBaseId IS NULL OR r.RecetaID <> @RecetaBaseId)
+              AND r.ProductoTerminadoID IN @InsumoIds
+              AND bd.InsumoID = @ProductoTerminadoID";
+
+        var nombreCiclo = await connection.ExecuteScalarAsync<string?>(sqlCiclo, new
+        {
+            InsumoIds = insumoIds,
+            ProductoTerminadoID = productoTerminadoID,
+            RecetaBaseId = recetaBaseId
+        });
+
+        if (nombreCiclo is not null)
+            throw new InvalidOperationException(
+                $"Referencia circular: «{nombreCiclo}» ya usa este producto terminado como insumo.");
     }
 
     // No se borra fisicamente: las ordenes de produccion ya ejecutadas quedan

@@ -35,7 +35,14 @@ public record KardexMovimientoItem(
 )
 {
     public bool EsCaja => Unidad == "cja" && UnidadesPorEmbalaje is > 0;
-    public bool EsEntrada => Cantidad >= 0;
+    // La BD almacena cantidades siempre positivas; la dirección sale del nombre del tipo.
+    public bool EsEntrada => !(
+        TipoMovimiento.Contains("Salida")  ||
+        TipoMovimiento.Contains("Baja")    ||
+        TipoMovimiento.Contains("Pérdida") ||
+        TipoMovimiento.Contains("Perdida") ||
+        TipoMovimiento.Contains("Consumo")
+    );
 };
 
 public record RegistrarBajaRequest(

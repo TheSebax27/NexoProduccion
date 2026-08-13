@@ -7,7 +7,7 @@ namespace NexoApi.Features.Proyectos;
 
 [ApiController]
 [Route("api/proyectos")]
-[Authorize(Roles = "Administracion,Jefes")]
+[Authorize]
 public class ProyectosController : ControllerBase
 {
     private readonly IProyectosService _service;

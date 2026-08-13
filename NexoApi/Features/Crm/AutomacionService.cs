@@ -107,7 +107,9 @@ public class AutomacionService : IAutomacionService
 
         var entidades = await con.QueryAsync<(int ID, int ClienteID, string Cliente, string? Email, DateTime ValidoHasta, decimal Total)>(@"
             SELECT c.CotizacionID AS ID, c.ClienteID, cl.Nombre AS Cliente, cl.Email,
-                   c.ValidoHasta, c.Total
+                   c.ValidoHasta,
+                   ISNULL((SELECT SUM(l.Cantidad * l.PrecioUnitario)
+                           FROM Crm.CotizacionLineas l WHERE l.CotizacionID = c.CotizacionID), 0) AS Total
             FROM Crm.Cotizaciones c
             JOIN Crm.Clientes cl ON cl.ClienteID = c.ClienteID
             WHERE c.Estado NOT IN ('CONVERTIDA','RECHAZADA')

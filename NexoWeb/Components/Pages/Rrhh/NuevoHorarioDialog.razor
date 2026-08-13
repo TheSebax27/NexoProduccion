@@ -18,7 +18,7 @@
             </MudItem>
             <MudItem xs="12" sm="8">
                 <MudSelect T="string" @bind-Value="_tipoCiclo" Label="Tipo de ciclo">
-                    <MudSelectItem Value="@("FIJO")">Fijo — misma hora todos los días</MudSelectItem>
+                    <MudSelectItem Value="@("FIJO")">Fijo — misma hora todos los dias</MudSelectItem>
                     <MudSelectItem Value="@("SEMANA_AB")">Semana A/B — 2 semanas alternadas</MudSelectItem>
                     <MudSelectItem Value="@("SEMANA_4")">Semana A/B/C/D — 4 semanas alternadas</MudSelectItem>
                 </MudSelect>
@@ -51,7 +51,7 @@
                 <table style="width:100%; border-collapse:collapse; font-size:0.85rem">
                     <thead>
                         <tr style="background:var(--mud-palette-background-grey)">
-                            <th style="padding:6px 8px; text-align:left; width:90px">Día</th>
+                            <th style="padding:6px 8px; text-align:left; width:90px">Dia</th>
                             <th style="padding:6px 4px; text-align:center; width:50px">Activo</th>
                             <th style="padding:6px 4px; min-width:110px">Entrada</th>
                             <th style="padding:6px 4px; min-width:110px">Salida</th>
@@ -127,7 +127,7 @@
     private bool _registraSalida = true;
 
     private static readonly string[] TodasSemanas = ["A", "B", "C", "D"];
-    private static readonly string[] NombresDia = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    private static readonly string[] NombresDia = ["", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"];
     private static string NombreDia(int d) => NombresDia[d];
 
     private IEnumerable<string> SemanasActivas => _tipoCiclo switch

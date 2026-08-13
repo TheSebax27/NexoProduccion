@@ -7,7 +7,7 @@ namespace NexoApi.Features.Calendario;
 
 [ApiController]
 [Route("api/calendario")]
-[Authorize(Roles = "Administracion,Jefes,Empleados")]
+[Authorize]
 public class CalendarioController : ControllerBase
 {
     private readonly ICalendarioService _service;
@@ -37,7 +37,7 @@ public class CalendarioController : ControllerBase
         => Ok(await _service.ListarUsuariosDisponiblesAsync());
 
     [HttpPost("eventos")]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<ActionResult> CrearEvento(CrearEventoRequest request)
     {
         var id = await _service.CrearEventoAsync(request, UsuarioActualId);
@@ -45,7 +45,7 @@ public class CalendarioController : ControllerBase
     }
 
     [HttpPut("eventos/{id:int}")]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<ActionResult> ActualizarEvento(int id, ActualizarEventoRequest request)
     {
         await _service.ActualizarEventoAsync(id, request);
@@ -53,7 +53,7 @@ public class CalendarioController : ControllerBase
     }
 
     [HttpDelete("eventos/{id:int}")]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<ActionResult> EliminarEvento(int id)
     {
         await _service.EliminarEventoAsync(id);

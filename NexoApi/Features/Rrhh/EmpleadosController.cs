@@ -7,7 +7,7 @@ namespace NexoApi.Features.Rrhh;
 
 [ApiController]
 [Route("api/rrhh/empleados")]
-[Authorize(Roles = "Administracion")]
+[Authorize]
 public class EmpleadosController : ControllerBase
 {
     private readonly IRrhhService _service;
@@ -20,15 +20,12 @@ public class EmpleadosController : ControllerBase
     private int UsuarioActualId =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-    // Solo esta lectura se abre tambien a Jefes -- Proyectos
-    // necesita elegir responsables de tarea, y ese modulo si incluye ese rol.
-    // Crear/editar empleados se queda Admin-only.
     [HttpGet]
-    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult<IEnumerable<EmpleadoItem>>> Listar([FromQuery] bool soloActivos = false)
         => Ok(await _service.ListarEmpleadosAsync(soloActivos));
 
     [HttpPost]
+    [Authorize]
     public async Task<ActionResult> Crear(CrearEmpleadoRequest request)
     {
         var id = await _service.CrearEmpleadoAsync(request);
@@ -36,6 +33,7 @@ public class EmpleadosController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize]
     public async Task<ActionResult> Actualizar(int id, ActualizarEmpleadoRequest request)
     {
         try
@@ -55,9 +53,6 @@ public class EmpleadosController : ControllerBase
 
     // ================= Foto (opcional, una sola por empleado) =================
 
-    // Sin [Authorize]: un <img src="..."> plano no puede mandar el header
-    // Authorization -- mismo trade-off documentado que la imagen de articulo
-    // (ArticulosController). Solo sirve bytes de una foto por ID numerico.
     [HttpGet("{id:int}/foto")]
     [AllowAnonymous]
     public async Task<IActionResult> ObtenerFoto(int id)
@@ -70,6 +65,7 @@ public class EmpleadosController : ControllerBase
     }
 
     [HttpPut("{id:int}/foto")]
+    [Authorize]
     public async Task<ActionResult> ActualizarFoto(int id, ActualizarFotoEmpleadoRequest request)
     {
         if (Convert.FromBase64String(request.Base64).Length > 1_000_000)
@@ -87,6 +83,7 @@ public class EmpleadosController : ControllerBase
     }
 
     [HttpDelete("{id:int}/foto")]
+    [Authorize]
     public async Task<ActionResult> EliminarFoto(int id)
     {
         try
@@ -114,6 +111,7 @@ public class EmpleadosController : ControllerBase
         => Ok(await _service.ListarDocumentosAsync(id));
 
     [HttpPost("{id:int}/documentos")]
+    [Authorize]
     public async Task<ActionResult> SubirDocumento(int id, SubirDocumentoEmpleadoRequest request)
     {
         if (Convert.FromBase64String(request.Base64).Length > 5_000_000)
@@ -134,6 +132,7 @@ public class EmpleadosController : ControllerBase
     }
 
     [HttpDelete("documentos/{id:int}")]
+    [Authorize]
     public async Task<ActionResult> EliminarDocumento(int id)
     {
         try
@@ -154,6 +153,7 @@ public class EmpleadosController : ControllerBase
         => Ok(await _service.ListarEvaluacionesAsync(id));
 
     [HttpPost("evaluaciones")]
+    [Authorize]
     public async Task<ActionResult> CrearEvaluacion(CrearEvaluacionRequest request)
     {
         try
@@ -174,6 +174,7 @@ public class EmpleadosController : ControllerBase
         => Ok(await _service.ListarCapacitacionesAsync(id));
 
     [HttpPost("capacitaciones")]
+    [Authorize]
     public async Task<ActionResult> CrearCapacitacion(CrearCapacitacionRequest request)
     {
         var id = await _service.CrearCapacitacionAsync(request, UsuarioActualId);

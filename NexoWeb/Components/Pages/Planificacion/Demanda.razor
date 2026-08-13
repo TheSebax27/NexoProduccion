@@ -1,5 +1,5 @@
-@page "/planificacion/demanda"
-@attribute [Authorize(Roles = "Administracion,Jefes")]
+﻿@page "/planificacion/demanda"
+@attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar

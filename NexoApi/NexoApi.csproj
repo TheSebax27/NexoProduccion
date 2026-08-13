@@ -14,6 +14,25 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- Agente bundled: copiado automáticamente durante el publish de NexoApi.
+		     El Target PublicarAgente (abajo) genera el publish del agente primero. -->
+		<Content Include="..\NexoSyncAgent\publish\**\*" Exclude="..\NexoSyncAgent\publish\**\*.pdb">
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			<Link>Agent\%(RecursiveDir)%(Filename)%(Extension)</Link>
+		</Content>
+	</ItemGroup>
+
+	<!-- Publica el instalador y el agente automáticamente antes de publicar NexoApi.
+	     Solo se ejecuta en dotnet publish, no en build normal. -->
+	<Target Name="PublicarAgentes" BeforeTargets="Publish">
+		<Message Text="▶ Publicando NexoInstaladorAgente..." Importance="high" />
+		<Exec Command="dotnet publish &quot;$(MSBuildThisFileDirectory)..\NexoInstaladorAgente\NexoInstaladorAgente.csproj&quot; -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:PublishTrimmed=true -o &quot;$(MSBuildThisFileDirectory)..\NexoSyncAgent\publish&quot; --nologo -v quiet" />
+		<Message Text="▶ Publicando NexoSyncAgent..." Importance="high" />
+		<Exec Command="dotnet publish &quot;$(MSBuildThisFileDirectory)..\NexoSyncAgent\NexoSyncAgent.csproj&quot; -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o &quot;$(MSBuildThisFileDirectory)..\NexoSyncAgent\publish&quot; --nologo -v quiet" />
+		<Message Text="✔ Agente e instalador publicados." Importance="high" />
+	</Target>
+
+	<ItemGroup>
 		<!-- Acceso a Datos -->
 		<PackageReference Include="ClosedXML" Version="0.105.1" />
 		<PackageReference Include="Dapper" Version="2.1.79" />

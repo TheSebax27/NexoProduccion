@@ -18,6 +18,9 @@ public class ConfiguracionEmpresaState
     public string? LogoBase64 { get; private set; }
     public string? LogoContentType { get; private set; }
     public bool UsaVisions { get; private set; } = true;
+    public bool ManejarVencimientos { get; private set; } = false;
+    public int DiasAlertaVencimiento { get; private set; } = 7;
+    public string ModoLotes { get; private set; } = "FIFO";
 
     // Null si no hay logo propio -- el sidebar usa la imagen por defecto (LogoV.png) en ese caso.
     public string? LogoDataUri => LogoBase64 is null ? null : $"data:{LogoContentType};base64,{LogoBase64}";
@@ -43,6 +46,9 @@ public class ConfiguracionEmpresaState
                 LogoBase64 = respuesta.LogoBase64;
                 LogoContentType = respuesta.LogoContentType;
                 UsaVisions = respuesta.UsaVisions;
+                ManejarVencimientos = respuesta.ManejarVencimientos;
+                DiasAlertaVencimiento = respuesta.DiasAlertaVencimiento;
+                ModoLotes = respuesta.ModoLotes;
             }
         }
         catch
@@ -84,6 +90,17 @@ public class ConfiguracionEmpresaState
         await _apiClient.PutAsync<ActualizarUsaVisionsRequest, object>(
             "api/configuracion/empresa/visions", new ActualizarUsaVisionsRequest(usaVisions));
         UsaVisions = usaVisions;
+        OnCambio?.Invoke();
+    }
+
+    public async Task ActualizarConfigInventarioAsync(bool manejarVencimientos, int diasAlerta, string modoLotes)
+    {
+        await _apiClient.PutAsync(
+            "api/configuracion/empresa/inventario",
+            new ActualizarConfigInventarioRequest(manejarVencimientos, diasAlerta, modoLotes));
+        ManejarVencimientos = manejarVencimientos;
+        DiasAlertaVencimiento = diasAlerta;
+        ModoLotes = modoLotes;
         OnCambio?.Invoke();
     }
 }

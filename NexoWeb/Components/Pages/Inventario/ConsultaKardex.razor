@@ -1,5 +1,5 @@
-@page "/inventario/kardex"
-@attribute [Authorize(Roles = "Administracion,Jefes,Empleados")]
+﻿@page "/inventario/kardex"
+@attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
@@ -74,7 +74,7 @@ else if (_movimientos.Count > 0)
             (máximo 500 por consulta)
         </MudText>
         <MudText Typo="Typo.caption" Style="color:var(--n-text-3);">
-            Valor total: @mostrados.Sum(m => m.ValorMovimiento).ToString("C0")
+            Valor total: @mostrados.Sum(m => m.EsEntrada ? m.ValorMovimiento : -m.ValorMovimiento).ToString("C0")
         </MudText>
     </div>
 

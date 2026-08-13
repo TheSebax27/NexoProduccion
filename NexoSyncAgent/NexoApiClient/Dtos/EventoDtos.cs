@@ -35,4 +35,10 @@ public record RegistrarEventoEntranteRequest(
 // valores nunca se editan directo por SQL contra Visions.
 // CentroCostoVisions es el codigo CENTROCOSTO real dentro de la base de
 // Visions (puede ser null si el Administrador aun no lo configuro en NEXO).
-public record ConfiguracionAgenteResponse(int? CentroCostoVisions, bool Activo, string? PrefijosDocumentoVenta);
+// IntervalMinutes viene de la BD de NEXO -- el admin lo cambia desde la web
+// sin necesidad de tocar appsettings.json en el servidor de Visions.
+public record ConfiguracionAgenteResponse(int? CentroCostoVisions, bool Activo, string? PrefijosDocumentoVenta, int IntervalMinutes);
+
+// Respuesta del endpoint /latido -- confirma que la API recibio el latido
+// y devuelve la hora del servidor para que el agente pueda detectar desfase de reloj.
+public record LatidoResponse(DateTime HoraServidor, int EventosPendientes);

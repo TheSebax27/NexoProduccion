@@ -1,4 +1,5 @@
 @using NexoWeb.Common.Dtos
+@inject ISnackbar Snackbar
 
 <MudDialog>
     <TitleContent>
@@ -61,7 +62,8 @@
 
                 <MudItem xs="12" sm="6">
                     <MudDatePicker @bind-Date="_fechaInicioDate" Label="Fecha inicio"
-                                   DateFormat="dd/MM/yyyy" PickerVariant="PickerVariant.Dialog" Required="true" />
+                                   DateFormat="dd/MM/yyyy" PickerVariant="PickerVariant.Dialog" Required="true"
+                                   MinDate="@(_esEdicion ? (DateTime?)null : DateTime.Today)" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTimePicker @bind-Time="_horaInicio" Label="Hora inicio" AmPm="false" />
@@ -227,6 +229,12 @@
 
         var inicio = _fechaInicioDate.Value.Add(_horaInicio ?? TimeSpan.Zero).ToUniversalTime();
         var fin    = _fechaFinDate.Value.Add(_horaFin ?? TimeSpan.Zero).ToUniversalTime();
+
+        if (!_esEdicion && inicio < DateTime.UtcNow)
+        {
+            Snackbar.Add("No se pueden crear eventos en fechas pasadas.", Severity.Warning);
+            return;
+        }
 
         if (fin <= inicio)
         {

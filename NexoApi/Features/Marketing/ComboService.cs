@@ -20,7 +20,7 @@ public class ComboService : IComboService
     public ComboService(IDbConnectionFactory db) => _db = db;
 
     private record ItemCrudo(
-        int ComboItemID, int ArticuloID, string SKU, string NombreArticulo,
+        int ComboItemID, int ComboID, int ArticuloID, string SKU, string NombreArticulo,
         decimal Cantidad, string? Unidad, decimal? PrecioUnitarioSnapshot, decimal? PrecioVenta
     );
 
@@ -40,13 +40,30 @@ public class ComboService : IComboService
         DateTime FechaCreacion, decimal? PrecioCalculado
     );
 
-    private static ComboItem RowToItem(ListaRow r) => new(
+    private static ComboItem RowToItem(ListaRow r, IEnumerable<ItemCrudo> items) => new(
         r.ComboID, r.Nombre, r.Descripcion, r.Estado, r.ModoPrecio,
         r.FechaInicio.HasValue ? DateOnly.FromDateTime(r.FechaInicio.Value) : null,
         r.FechaFin.HasValue    ? DateOnly.FromDateTime(r.FechaFin.Value)    : null,
         r.PrecioManual, r.PorcentajeDescuento, r.PrecioCalculado,
-        r.ImagenBase64, r.ImagenContentType, r.FechaCreacion
+        r.ImagenBase64, r.ImagenContentType, r.FechaCreacion,
+        items.Select(i => new ComboItemLine(i.ComboItemID, i.ArticuloID, i.SKU, i.NombreArticulo, i.Cantidad, i.Unidad, i.PrecioUnitarioSnapshot)).ToList()
     );
+
+    private const string SqlItems = @"
+        SELECT ci.ComboItemID, ci.ComboID, ci.ArticuloID, a.SKU, a.Nombre AS NombreArticulo,
+               ci.Cantidad, um.Abreviatura AS Unidad, ci.PrecioUnitarioSnapshot, a.PrecioVenta
+        FROM Marketing.ComboItems ci
+        JOIN Catalogo.Articulos a ON a.ArticuloID = ci.ArticuloID
+        LEFT JOIN Catalogo.UnidadesMedida um ON um.UnidadID = a.UnidadID
+        WHERE ci.ComboID IN @Ids";
+
+    private static async Task<List<ItemCrudo>> CargarItemsAsync(
+        System.Data.IDbConnection con, IEnumerable<int> ids)
+    {
+        var arr = ids.ToArray();
+        if (arr.Length == 0) return [];
+        return (await con.QueryAsync<ItemCrudo>(SqlItems, new { Ids = arr })).ToList();
+    }
 
     public async Task<IEnumerable<ComboItem>> ListarAsync(string? estado)
     {
@@ -64,7 +81,9 @@ public class ComboService : IComboService
             WHERE (@Estado IS NULL OR c.Estado = @Estado)
             ORDER BY c.FechaCreacion DESC";
 
-        return (await con.QueryAsync<ListaRow>(sql, new { Estado = estado })).Select(RowToItem);
+        var rows = (await con.QueryAsync<ListaRow>(sql, new { Estado = estado })).ToList();
+        var items = await CargarItemsAsync(con, rows.Select(r => r.ComboID));
+        return rows.Select(r => RowToItem(r, items.Where(i => i.ComboID == r.ComboID)));
     }
 
     public async Task<IEnumerable<ComboItem>> ListarActivosAsync()
@@ -85,7 +104,9 @@ public class ComboService : IComboService
               AND (c.FechaFin IS NULL OR c.FechaFin >= CAST(GETDATE() AS DATE))
             ORDER BY c.Nombre";
 
-        return (await con.QueryAsync<ListaRow>(sql)).Select(RowToItem);
+        var rows = (await con.QueryAsync<ListaRow>(sql)).ToList();
+        var items = await CargarItemsAsync(con, rows.Select(r => r.ComboID));
+        return rows.Select(r => RowToItem(r, items.Where(i => i.ComboID == r.ComboID)));
     }
 
     public async Task<ComboDetalle?> ObtenerAsync(int id)

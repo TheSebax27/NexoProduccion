@@ -30,7 +30,7 @@ public class RecetasController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<ActionResult> Crear(CrearRecetaRequest request)
     {
         var id = await _service.CrearAsync(request);
@@ -39,7 +39,7 @@ public class RecetasController : ControllerBase
 
     /// <summary>Crea una nueva version de la receta y desactiva la anterior. La anterior nunca se borra.</summary>
     [HttpPost("{id:int}/nueva-version")]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<ActionResult> CrearNuevaVersion(int id, CrearNuevaVersionRequest request)
     {
         var nuevaId = await _service.CrearNuevaVersionAsync(id, request);
@@ -48,7 +48,7 @@ public class RecetasController : ControllerBase
 
     /// <summary>Desactiva la receta (no se borra fisicamente: ordenes de produccion pasadas quedan enlazadas a ella).</summary>
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<ActionResult> Desactivar(int id)
     {
         await _service.DesactivarAsync(id);

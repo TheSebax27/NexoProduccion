@@ -82,6 +82,13 @@ public class NexoApiClient : INexoApiClient
         return await LeerContenidoAsync<TResponse>(respuesta);
     }
 
+    public async Task PutAsync<TRequest>(string ruta, TRequest body)
+    {
+        await AgregarTokenAsync();
+        var respuesta = await _http.PutAsJsonAsync(ruta, body);
+        await ValidarRespuestaAsync(respuesta);
+    }
+
     public async Task DeleteAsync(string ruta)
     {
         await AgregarTokenAsync();
@@ -95,6 +102,13 @@ public class NexoApiClient : INexoApiClient
         var respuesta = await _http.PatchAsJsonAsync(ruta, body);
         await ValidarRespuestaAsync(respuesta);
         return await LeerContenidoAsync<TResponse>(respuesta);
+    }
+
+    public async Task PatchAsync(string ruta)
+    {
+        await AgregarTokenAsync();
+        var respuesta = await _http.PatchAsync(ruta, null);
+        await ValidarRespuestaAsync(respuesta);
     }
 
     // Algunos endpoints (ej. PUT de actualizacion) responden 204/200 sin cuerpo.

@@ -1,11 +1,14 @@
 ﻿using System.Data;
+using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using Dapper;
+using Microsoft.Extensions.Caching.Memory;
 using NexoApi.Common.Data;
 using NexoApi.Features.Catalogo;
 using NexoApi.Features.Catalogo.Dtos;
 using NexoApi.Features.Integracion.Dtos;
+using Microsoft.Extensions.Configuration;
 
 namespace NexoApi.Features.Integracion;
 
@@ -20,17 +23,31 @@ public interface IIntegracionService
     Task CrearMapeoAsync(CrearMapeoArticuloRequest request);
     Task<IEnumerable<ArticuloPendienteMapeoItem>> ListarArticulosPendientesMapeoAsync(int centroCostoId);
     Task ResolverArticuloPendienteAsync(int pendienteId, ResolverArticuloPendienteRequest request);
+    Task<LatidoResponse> RegistrarLatidoAsync(int centroCostoId);
+    Task<IEnumerable<EstadoIntegracionResponse>> ObtenerEstadoIntegracionAsync();
+    Task RegistrarFalloEventoAsync(long eventoId, int centroCostoId, string mensajeError);
+    Task<ConfiguracionAgenteCompletaResponse> ObtenerConfiguracionCompletaAsync(int agenteSyncId);
+    Task ActualizarConfiguracionCompletaAsync(int agenteSyncId, ActualizarConfiguracionAgenteRequest request);
+    string GenerarAppsettingsJson(ConfiguracionAgenteCompletaResponse config, string apiKey);
+    Task<string> PrepararAppsettingsConKeyFrescaAsync(int agenteSyncId);
+    Task<string> PrepararDescargaInstaladorAsync(int agenteSyncId);
+    byte[]? ObtenerPaqueteInstalador(string token);
+    Task DesactivarAgenteAsync(int agenteSyncId);
 }
 
 public class IntegracionService : IIntegracionService
 {
     private readonly IDbConnectionFactory _db;
     private readonly ICatalogoService _catalogoService;
+    private readonly IMemoryCache _cache;
+    private readonly IConfiguration _config;
 
-    public IntegracionService(IDbConnectionFactory db, ICatalogoService catalogoService)
+    public IntegracionService(IDbConnectionFactory db, ICatalogoService catalogoService, IMemoryCache cache, IConfiguration config)
     {
         _db = db;
         _catalogoService = catalogoService;
+        _cache = cache;
+        _config = config;
     }
 
     public async Task<IEnumerable<EventoPendienteItem>> ObtenerEventosPendientesAsync(int centroCostoId)
@@ -136,15 +153,32 @@ public class IntegracionService : IIntegracionService
     {
         using var connection = _db.CreateConnection();
 
-        var apiKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        var apiKey    = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
         var apiKeyHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(apiKey)));
 
-        const string sql = @"
-            INSERT INTO Integracion.AgentesSync (CentroCostoID, ApiKeyHash, Descripcion)
-            OUTPUT INSERTED.AgenteSyncID
-            VALUES (@CentroCostoID, @ApiKeyHash, @Descripcion)";
+        // Upsert: si ya existe un agente activo para este CentroCosto se regenera
+        // su clave en lugar de crear un registro nuevo -- garantiza 1 agente por CentroCosto.
+        var existingId = await connection.ExecuteScalarAsync<int?>(
+            @"SELECT TOP 1 AgenteSyncID FROM Integracion.AgentesSync
+              WHERE CentroCostoID = @CentroCostoID AND Activo = 1
+              ORDER BY AgenteSyncID DESC",
+            new { r.CentroCostoID });
 
-        var id = await connection.ExecuteScalarAsync<int>(sql, new { r.CentroCostoID, ApiKeyHash = apiKeyHash, r.Descripcion });
+        if (existingId.HasValue)
+        {
+            await connection.ExecuteAsync(
+                @"UPDATE Integracion.AgentesSync
+                  SET ApiKeyHash = @ApiKeyHash, Descripcion = @Descripcion
+                  WHERE AgenteSyncID = @AgenteSyncID",
+                new { ApiKeyHash = apiKeyHash, r.Descripcion, AgenteSyncID = existingId.Value });
+            return new GenerarApiKeyResponse(existingId.Value, apiKey);
+        }
+
+        var id = await connection.ExecuteScalarAsync<int>(
+            @"INSERT INTO Integracion.AgentesSync (CentroCostoID, ApiKeyHash, Descripcion)
+              OUTPUT INSERTED.AgenteSyncID
+              VALUES (@CentroCostoID, @ApiKeyHash, @Descripcion)",
+            new { r.CentroCostoID, ApiKeyHash = apiKeyHash, r.Descripcion });
 
         return new GenerarApiKeyResponse(id, apiKey);
     }
@@ -155,11 +189,17 @@ public class IntegracionService : IIntegracionService
 
         // TRY_CAST porque IdentificadorClienteVisions es nvarchar en NEXO (permite
         // texto libre), pero en Visions CENTROCOSTO siempre es numerico (smallint).
+        // IntervalMinutes viene de AgentesSync -- el agente usa el valor guardado en DB
+        // en vez de appsettings.json para que el admin pueda cambiarlo desde la web.
         const string sql = @"
-            SELECT TRY_CAST(IdentificadorClienteVisions AS INT) AS CentroCostoVisions,
-                   Estado AS Activo, PrefijosDocumentoVentaVisions AS PrefijosDocumentoVenta
-            FROM Organizacion.CentrosCosto
-            WHERE CentroCostoID = @CentroCostoId";
+            SELECT TRY_CAST(cc.IdentificadorClienteVisions AS INT) AS CentroCostoVisions,
+                   cc.Estado AS Activo,
+                   cc.PrefijosDocumentoVentaVisions AS PrefijosDocumentoVenta,
+                   ISNULL(a.IntervalMinutes, 5) AS IntervalMinutes
+            FROM Organizacion.CentrosCosto cc
+            LEFT JOIN Integracion.AgentesSync a
+                   ON a.CentroCostoID = cc.CentroCostoID AND a.Activo = 1
+            WHERE cc.CentroCostoID = @CentroCostoId";
 
         var resultado = await connection.QuerySingleOrDefaultAsync<ConfiguracionAgenteResponse>(sql, new { CentroCostoId = centroCostoId });
 
@@ -303,5 +343,253 @@ public class IntegracionService : IIntegracionService
             transaction.Rollback();
             throw;
         }
+    }
+
+    public async Task<LatidoResponse> RegistrarLatidoAsync(int centroCostoId)
+    {
+        using var connection = _db.CreateConnection();
+
+        // Actualiza UltimaConexion y UltimoLatido en el AgentesSync de este centro.
+        var parametros = new DynamicParameters();
+        parametros.Add("AgenteSyncID", await ObtenerAgenteSyncIdAsync(connection, centroCostoId));
+        await connection.ExecuteAsync("Integracion.sp_RegistrarLatido", parametros, commandType: CommandType.StoredProcedure);
+
+        var pendientes = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM Integracion.EventosSalientes WHERE Estado = 'PENDIENTE' AND CentroCostoID = @CentroCostoId",
+            new { CentroCostoId = centroCostoId });
+
+        return new LatidoResponse(DateTime.UtcNow, pendientes);
+    }
+
+    private static async Task<int> ObtenerAgenteSyncIdAsync(System.Data.IDbConnection connection, int centroCostoId)
+    {
+        var id = await connection.ExecuteScalarAsync<int?>(
+            "SELECT TOP 1 AgenteSyncID FROM Integracion.AgentesSync WHERE CentroCostoID = @CentroCostoId AND Activo = 1 ORDER BY AgenteSyncID DESC",
+            new { CentroCostoId = centroCostoId });
+        return id ?? throw new KeyNotFoundException($"No hay agente activo para el centro de costo {centroCostoId}.");
+    }
+
+    private record EstadoFila(
+        int AgenteSyncID, string Descripcion, int CentroCostoID, string NombreCentroCosto,
+        bool Activo, DateTime? UltimoLatido, string? VersionAgente);
+
+    public async Task<IEnumerable<EstadoIntegracionResponse>> ObtenerEstadoIntegracionAsync()
+    {
+        using var connection = _db.CreateConnection();
+
+        const string sqlAgentes = @"
+            SELECT a.AgenteSyncID, a.Descripcion, a.CentroCostoID, cc.Nombre AS NombreCentroCosto,
+                   a.Activo, a.UltimoLatido, a.VersionAgente
+            FROM Integracion.AgentesSync a
+            JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = a.CentroCostoID
+            ORDER BY a.UltimoLatido DESC";
+
+        var agentes = (await connection.QueryAsync<EstadoFila>(sqlAgentes)).ToList();
+        var resultado = new List<EstadoIntegracionResponse>();
+        var hoy = DateTime.UtcNow.Date;
+
+        foreach (var ag in agentes)
+        {
+            var pendientes = await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM Integracion.EventosSalientes WHERE Estado = 'PENDIENTE' AND CentroCostoID = @Id",
+                new { Id = ag.CentroCostoID });
+
+            var procesadosHoy = await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM Integracion.EventosSalientes WHERE Estado = 'CONFIRMADO' AND CentroCostoID = @Id AND CAST(FechaEnvio AS DATE) = @Hoy",
+                new { Id = ag.CentroCostoID, Hoy = hoy });
+
+            var ventasHoy = await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM Integracion.EventosEntrantes WHERE TipoEvento = 'VENTA' AND CentroCostoID = @Id AND Procesado = 1 AND CAST(FechaRecepcion AS DATE) = @Hoy",
+                new { Id = ag.CentroCostoID, Hoy = hoy });
+
+            var conError = await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM Integracion.EventosSalientes WHERE Estado = 'ERROR' AND CentroCostoID = @Id",
+                new { Id = ag.CentroCostoID });
+
+            resultado.Add(new EstadoIntegracionResponse(
+                ag.AgenteSyncID, ag.Descripcion, ag.CentroCostoID, ag.NombreCentroCosto,
+                ag.Activo, ag.UltimoLatido, ag.VersionAgente,
+                pendientes, procesadosHoy, ventasHoy, conError));
+        }
+
+        return resultado;
+    }
+
+    public async Task RegistrarFalloEventoAsync(long eventoId, int centroCostoId, string mensajeError)
+    {
+        using var connection = _db.CreateConnection();
+
+        var mensaje = mensajeError.Length > 500 ? mensajeError[..500] : mensajeError;
+
+        const string sql = @"
+            UPDATE Integracion.EventosSalientes
+            SET IntentosEnvio  = IntentosEnvio + 1,
+                UltimoError    = @Mensaje,
+                Estado         = CASE WHEN IntentosEnvio + 1 >= 3 THEN 'ERROR' ELSE Estado END
+            WHERE EventoID = @EventoId AND CentroCostoID = @CentroCostoId AND Estado = 'PENDIENTE'";
+
+        await connection.ExecuteAsync(sql, new { EventoId = eventoId, CentroCostoId = centroCostoId, Mensaje = mensaje });
+    }
+
+    public async Task<ConfiguracionAgenteCompletaResponse> ObtenerConfiguracionCompletaAsync(int agenteSyncId)
+    {
+        using var connection = _db.CreateConnection();
+
+        const string sql = @"
+            SELECT a.AgenteSyncID, a.Descripcion, a.CentroCostoID, cc.Nombre AS NombreCentroCosto,
+                   a.Activo, a.VisionsDbConexion, a.NexoApiBaseUrl, a.IntervalMinutes, a.AgentePath
+            FROM Integracion.AgentesSync a
+            JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = a.CentroCostoID
+            WHERE a.AgenteSyncID = @AgenteSyncId";
+
+        var resultado = await connection.QuerySingleOrDefaultAsync<ConfiguracionAgenteCompletaResponse>(
+            sql, new { AgenteSyncId = agenteSyncId });
+
+        return resultado ?? throw new KeyNotFoundException($"No existe el agente {agenteSyncId}.");
+    }
+
+    public async Task ActualizarConfiguracionCompletaAsync(int agenteSyncId, ActualizarConfiguracionAgenteRequest r)
+    {
+        using var connection = _db.CreateConnection();
+
+        // NexoApiBaseUrl siempre se toma del servidor — el cliente no tiene que escribirla.
+        var nexoApiUrl = _config["NexoApi:BaseUrl"]?.TrimEnd('/') + "/";
+
+        const string sql = @"
+            UPDATE Integracion.AgentesSync
+            SET VisionsDbConexion = @VisionsDbConexion,
+                NexoApiBaseUrl    = @NexoApiBaseUrl,
+                IntervalMinutes   = @IntervalMinutes,
+                AgentePath        = @AgentePath
+            WHERE AgenteSyncID = @AgenteSyncId";
+
+        var filas = await connection.ExecuteAsync(sql, new
+        {
+            AgenteSyncId         = agenteSyncId,
+            r.VisionsDbConexion,
+            NexoApiBaseUrl       = nexoApiUrl,
+            r.IntervalMinutes,
+            r.AgentePath
+        });
+
+        if (filas == 0)
+            throw new KeyNotFoundException($"No existe el agente {agenteSyncId}.");
+    }
+
+    public async Task DesactivarAgenteAsync(int agenteSyncId)
+    {
+        using var connection = _db.CreateConnection();
+        var filas = await connection.ExecuteAsync(
+            "UPDATE Integracion.AgentesSync SET Activo = 0 WHERE AgenteSyncID = @Id",
+            new { Id = agenteSyncId });
+        if (filas == 0)
+            throw new KeyNotFoundException($"No existe el agente {agenteSyncId}.");
+    }
+
+    // Formato del EXE combinado generado para el cliente:
+    // [NexoInstaladorAgente.exe] + [appsettings UTF-8] + [int32: settings_len]
+    // + [NexoSyncAgent.exe] + [int64: agent_len] + ["NEXO_SETUP_V1" 13 bytes]
+    private const string InstallerMagic = "NEXO_SETUP_V1";
+
+    public async Task<string> PrepararDescargaInstaladorAsync(int agenteSyncId)
+    {
+        var origenDir = Path.Combine(AppContext.BaseDirectory, "Agent");
+        if (!Directory.Exists(origenDir))
+        {
+            // En desarrollo (Debug) no existe Agent/ en bin\Debug; usar NexoSyncAgent\publish\ junto a la solución.
+            var devFallback = Path.GetFullPath(
+                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "NexoSyncAgent", "publish"));
+            if (Directory.Exists(devFallback))
+                origenDir = devFallback;
+            else
+                throw new InvalidOperationException(
+                    "El agente no está bundled. En desarrollo ejecuta 'dotnet publish NexoSyncAgent' primero.");
+        }
+
+        var installerPath = Path.Combine(origenDir, "NexoInstaladorAgente.exe");
+        var agentPath     = Path.Combine(origenDir, "NexoSyncAgent.exe");
+
+        if (!File.Exists(installerPath) || !File.Exists(agentPath))
+            throw new InvalidOperationException(
+                "Faltan archivos en la carpeta Agent/ del servidor. Republica NexoApi.");
+
+        // Generar API Key fresca y actualizar hash en BD.
+        using var connection = _db.CreateConnection();
+        var apiKey     = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        var apiKeyHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(apiKey)));
+        await connection.ExecuteAsync(
+            "UPDATE Integracion.AgentesSync SET ApiKeyHash = @ApiKeyHash WHERE AgenteSyncID = @AgenteSyncId",
+            new { ApiKeyHash = apiKeyHash, AgenteSyncId = agenteSyncId });
+
+        var config          = await ObtenerConfiguracionCompletaAsync(agenteSyncId);
+        var settingsBytes   = Encoding.UTF8.GetBytes(GenerarAppsettingsJson(config, apiKey));
+        var installerBytes  = await File.ReadAllBytesAsync(installerPath);
+        var agentBytes      = await File.ReadAllBytesAsync(agentPath);
+        var magicBytes      = Encoding.ASCII.GetBytes(InstallerMagic);
+
+        // Ensamblar el EXE combinado en memoria.
+        using var ms = new MemoryStream(
+            installerBytes.Length + settingsBytes.Length + 4 + agentBytes.Length + 8 + magicBytes.Length);
+        await ms.WriteAsync(installerBytes);
+        await ms.WriteAsync(settingsBytes);
+        await ms.WriteAsync(BitConverter.GetBytes(settingsBytes.Length));  // int32
+        await ms.WriteAsync(agentBytes);
+        await ms.WriteAsync(BitConverter.GetBytes((long)agentBytes.Length)); // int64
+        await ms.WriteAsync(magicBytes);
+
+        // Guardar en caché con token de un solo uso (10 min).
+        var token = Guid.NewGuid().ToString("N");
+        _cache.Set(token, ms.ToArray(), TimeSpan.FromMinutes(10));
+        return token;
+    }
+
+    public byte[]? ObtenerPaqueteInstalador(string token)
+    {
+        if (!_cache.TryGetValue(token, out byte[]? bytes)) return null;
+        _cache.Remove(token); // un solo uso
+        return bytes;
+    }
+
+    public async Task<string> PrepararAppsettingsConKeyFrescaAsync(int agenteSyncId)
+    {
+        using var connection = _db.CreateConnection();
+        var apiKey     = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        var apiKeyHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(apiKey)));
+        await connection.ExecuteAsync(
+            "UPDATE Integracion.AgentesSync SET ApiKeyHash = @ApiKeyHash WHERE AgenteSyncID = @AgenteSyncId",
+            new { ApiKeyHash = apiKeyHash, AgenteSyncId = agenteSyncId });
+
+        var config = await ObtenerConfiguracionCompletaAsync(agenteSyncId);
+        return GenerarAppsettingsJson(config, apiKey);
+    }
+
+    public string GenerarAppsettingsJson(ConfiguracionAgenteCompletaResponse config, string apiKey)
+    {
+        var intervalo   = config.IntervalMinutes > 0 ? config.IntervalMinutes : 5;
+        var serverName  = config.VisionsDbConexion ?? "SERVIDOR\\INSTANCIA";
+        var db          = $"Server={serverName};Database=VISIONSDBL1;Trusted_Connection=True;TrustServerCertificate=True;";
+        var url         = (config.NexoApiBaseUrl ?? _config["NexoApi:BaseUrl"] ?? "https://nexo.mi-empresa.com/").TrimEnd('/') + "/";
+
+        return $$"""
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+  "ConnectionStrings": {
+    "VisionsDb": "{{db}}"
+  },
+  "NexoApi": {
+    "BaseUrl": "{{url}}",
+    "ApiKey": "{{apiKey}}"
+  },
+  "Sync": {
+    "IntervalMinutes": {{intervalo}},
+    "IntervalSeconds": 0
+  }
+}
+""";
     }
 }

@@ -1,5 +1,5 @@
-@page "/inventario/ajustes"
-@attribute [Authorize(Roles = "Administracion,Empleados")]
+﻿@page "/inventario/ajustes"
+@attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
@@ -15,18 +15,19 @@
 <InfoAyuda Texto="Usa esta pantalla para cargar el stock inicial de un artículo (por ejemplo, al arrancar el sistema) o para corregir la cantidad tras un conteo físico. El movimiento queda registrado en el Kardex como 'Ajuste de Inventario' y afecta el costo promedio del artículo." />
 
 <MudPaper Class="pa-6" MaxWidth="600px">
-    <MudSelect T="int" @bind-Value="_articuloId" @bind-Value:after="OnArticuloCambiado"
-               Label="Articulo" Class="mb-4" Required="true">
+    <MudSelect T="int?" @bind-Value="_articuloId" @bind-Value:after="OnArticuloCambiado"
+               Label="Artículo" Class="mb-4" Required="true" Placeholder="Selecciona el artículo">
         @foreach (var articulo in _articulos)
         {
-            <MudSelectItem T="int" Value="@articulo.ArticuloID">@articulo.SKU - @articulo.Nombre (@articulo.TipoArticulo)</MudSelectItem>
+            <MudSelectItem T="int?" Value="@((int?)articulo.ArticuloID)">@articulo.SKU - @articulo.Nombre (@articulo.TipoArticulo)</MudSelectItem>
         }
     </MudSelect>
 
-    <MudSelect T="int" @bind-Value="_bodegaId" Label="Bodega" Class="mb-4" Required="true">
+    <MudSelect T="int?" @bind-Value="_bodegaId" Label="Bodega" Class="mb-4" Required="true"
+               Placeholder="Selecciona la bodega">
         @foreach (var bodega in _bodegas)
         {
-            <MudSelectItem T="int" Value="@bodega.BodegaID">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
+            <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
         }
     </MudSelect>
 
@@ -112,8 +113,8 @@
     private List<ArticuloItem> _articulos = new();
     private List<BodegaItem> _bodegas = new();
 
-    private int _articuloId;
-    private int _bodegaId;
+    private int? _articuloId;
+    private int? _bodegaId;
     private decimal _cantidad;
     private decimal _costoUnitario;
     private string _motivo = "";
@@ -125,10 +126,10 @@
     private decimal _unidades;
 
     private ArticuloItem? ArticuloSeleccionado =>
-        _articuloId > 0 ? _articulos.FirstOrDefault(a => a.ArticuloID == _articuloId) : null;
+        _articuloId.HasValue ? _articulos.FirstOrDefault(a => a.ArticuloID == _articuloId.Value) : null;
 
     private bool FormularioValido =>
-        _articuloId > 0 && _bodegaId > 0 && _cantidad > 0 &&
+        _articuloId.HasValue && _bodegaId.HasValue && _cantidad > 0 &&
         _costoUnitario >= 0 && _motivo.Trim().Length >= 5;
 
     protected override async Task OnInitializedAsync()
@@ -199,7 +200,7 @@
 
         try
         {
-            var request = new AjustarInventarioRequest(_articuloId, _bodegaId, _cantidad, _costoUnitario, _motivo.Trim());
+            var request = new AjustarInventarioRequest(_articuloId!.Value, _bodegaId!.Value, _cantidad, _costoUnitario, _motivo.Trim());
             var resultado = await ApiClient.PostAsync<AjustarInventarioRequest, AjustarInventarioResponse>("api/inventario/ajustes", request);
 
             Snackbar.Add($"Ajuste registrado correctamente. Codigo: {resultado!.CodigoAjuste}. Nuevo saldo: {resultado.NuevoSaldo:N3}", Severity.Success);

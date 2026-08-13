@@ -1,5 +1,5 @@
-@page "/crm/clientes/{ExternalId}"
-@attribute [Authorize(Roles = "Administracion")]
+﻿@page "/crm/clientes/{ExternalId}"
+@attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar

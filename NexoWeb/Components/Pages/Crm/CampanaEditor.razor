@@ -1,4 +1,4 @@
-@page "/crm/campanas/nueva"
+﻿@page "/crm/campanas/nueva"
 @page "/crm/campanas/{Id:int}"
 @implements IDisposable
 @using NexoWeb.Common.Dtos
@@ -8,7 +8,7 @@
 @inject INexoApiClient Api
 @inject NavigationManager Nav
 @inject ISnackbar Snack
-@attribute [Authorize(Roles = "Administracion,Ventas")]
+@attribute [Authorize]
 
 <PageTitle>@(_esNueva ? "Nueva campaña" : "Editar campaña")</PageTitle>
 

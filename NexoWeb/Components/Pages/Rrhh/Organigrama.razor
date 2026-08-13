@@ -1,15 +1,29 @@
-@page "/rrhh/organigrama"
-@attribute [Authorize(Roles = "Administracion")]
+﻿@page "/rrhh/organigrama"
+@attribute [Authorize]
 @inject INexoApiClient ApiClient
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Organigrama - NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
-    <MudText Typo="Typo.h5">Organigrama</MudText>
+<div class="nexo-page-hero">
+    <div class="nexo-page-hero__left">
+        <div class="nexo-page-hero__accent"></div>
+        <div>
+            <p class="nexo-page-hero__module">Recursos Humanos</p>
+            <h1 class="nexo-page-hero__title">Organigrama</h1>
+        </div>
+    </div>
     <BotonFavorito Href="/rrhh/organigrama" Etiqueta="Organigrama" />
 </div>
-<InfoAyuda Texto="Jerarquía basada en el campo 'Jefe Directo' de cada empleado. Se edita desde Empleados." />
+
+<MudPaper Class="pa-4 mb-4" Elevation="0" Style="border:1px solid var(--mud-palette-lines-default); border-radius:8px">
+    <div style="display:flex; align-items:center; gap:8px">
+        <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            Jerarquia basada en el campo "Jefe Directo" de cada empleado. Se edita desde Empleados.
+        </MudText>
+    </div>
+</MudPaper>
 
 @if (_errorCarga is not null)
 {

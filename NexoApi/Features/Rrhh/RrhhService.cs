@@ -269,9 +269,11 @@ public class RrhhService : IRrhhService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT c.CargoID, c.Nombre, c.DepartamentoID, d.Nombre AS Departamento, c.Estado
+            SELECT c.CargoID, c.Nombre, c.DepartamentoID, d.Nombre AS Departamento, c.Estado,
+                   c.RolPredeterminadoID, r.Nombre AS RolPredeterminado
             FROM Rrhh.Cargos c
             LEFT JOIN Rrhh.Departamentos d ON d.DepartamentoID = c.DepartamentoID
+            LEFT JOIN Seguridad.Roles r ON r.RolID = c.RolPredeterminadoID
             ORDER BY c.Nombre";
 
         return await connection.QueryAsync<CargoItem>(sql);
@@ -282,11 +284,11 @@ public class RrhhService : IRrhhService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            INSERT INTO Rrhh.Cargos (Nombre, DepartamentoID)
+            INSERT INTO Rrhh.Cargos (Nombre, DepartamentoID, RolPredeterminadoID)
             OUTPUT INSERTED.CargoID
-            VALUES (@Nombre, @DepartamentoID)";
+            VALUES (@Nombre, @DepartamentoID, @RolPredeterminadoID)";
 
-        return await connection.ExecuteScalarAsync<int>(sql, r);
+        return await connection.ExecuteScalarAsync<int>(sql, new { r.Nombre, r.DepartamentoID, r.RolPredeterminadoID });
     }
 
     public async Task ActualizarCargoAsync(int cargoId, ActualizarCargoRequest r)
@@ -294,8 +296,8 @@ public class RrhhService : IRrhhService
         using var connection = _db.CreateConnection();
 
         var filas = await connection.ExecuteAsync(
-            "UPDATE Rrhh.Cargos SET Nombre = @Nombre, DepartamentoID = @DepartamentoID, Estado = @Estado WHERE CargoID = @CargoId",
-            new { CargoId = cargoId, r.Nombre, r.DepartamentoID, r.Estado });
+            "UPDATE Rrhh.Cargos SET Nombre=@Nombre, DepartamentoID=@DepartamentoID, Estado=@Estado, RolPredeterminadoID=@RolPredeterminadoID WHERE CargoID=@CargoId",
+            new { CargoId = cargoId, r.Nombre, r.DepartamentoID, r.Estado, r.RolPredeterminadoID });
 
         if (filas == 0)
             throw new KeyNotFoundException($"No existe el cargo {cargoId}.");

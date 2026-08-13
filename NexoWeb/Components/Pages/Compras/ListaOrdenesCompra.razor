@@ -1,5 +1,5 @@
-@page "/compras/ordenes"
-@attribute [Authorize(Roles = "Administracion,Empleados")]
+ï»¿@page "/compras/ordenes"
+@attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -12,7 +12,7 @@
     <MudText Typo="Typo.h5">Ordenes de Compra</MudText>
     <BotonFavorito Href="/compras/ordenes" Etiqueta="Ordenes de Compra" />
 </div>
-<InfoAyuda Texto="Crea una Orden de Compra a un proveedor. Puedes recibirla en varias entregas parciales desde 'Ver / Recibir' — cada línea guarda cuánto se ha recibido y en qué fecha, hasta completarse." />
+<InfoAyuda Texto="Crea una Orden de Compra a un proveedor. Puedes recibirla en varias entregas parciales desde 'Ver / Recibir' ï¿½ cada lï¿½nea guarda cuï¿½nto se ha recibido y en quï¿½ fecha, hasta completarse." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => AbrirCreacionAsync(null))"
            StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
@@ -44,7 +44,7 @@ else if (Preferencias.VistaListado == "tarjetas")
                     </MudChip>
                 </div>
                 <div class="nexo-item-card__sub">@orden.Proveedor</div>
-                <div class="nexo-item-card__row"><span>Emisión</span><strong>@orden.FechaEmision.ToString("dd/MM/yyyy")</strong></div>
+                <div class="nexo-item-card__row"><span>Emisiï¿½n</span><strong>@orden.FechaEmision.ToString("dd/MM/yyyy")</strong></div>
                 <div class="nexo-item-card__row"><span>Recibido</span><strong>@(orden.FechaRecepcion?.ToString("dd/MM/yyyy") ?? "-")</strong></div>
                 <div class="nexo-item-card__row"><span>Total</span><strong>@orden.Total.ToString("C0")</strong></div>
                 <div class="nexo-item-card__actions">

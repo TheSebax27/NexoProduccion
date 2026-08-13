@@ -1,16 +1,30 @@
-@page "/rrhh/ausencias"
-@attribute [Authorize(Roles = "Administracion")]
+﻿@page "/rrhh/ausencias"
+@attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Ausencias y Vacaciones - NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
-    <MudText Typo="Typo.h5">Ausencias y Vacaciones</MudText>
+<div class="nexo-page-hero">
+    <div class="nexo-page-hero__left">
+        <div class="nexo-page-hero__accent"></div>
+        <div>
+            <p class="nexo-page-hero__module">Recursos Humanos</p>
+            <h1 class="nexo-page-hero__title">Ausencias y Vacaciones</h1>
+        </div>
+    </div>
     <BotonFavorito Href="/rrhh/ausencias" Etiqueta="Ausencias y Vacaciones" />
 </div>
-<InfoAyuda Texto="Control de disponibilidad del personal: vacaciones, incapacidades y permisos. No calcula nómina -- solo indica quién está disponible y cuándo. Se registran desde 'Gestionar' en cada Empleado." />
+
+<MudPaper Class="pa-4 mb-4" Elevation="0" Style="border:1px solid var(--mud-palette-lines-default); border-radius:8px">
+    <div style="display:flex; align-items:center; gap:8px">
+        <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            Disponibilidad del personal: vacaciones, incapacidades y permisos. No calcula nomina. Se registran desde "Gestionar" en cada Empleado.
+        </MudText>
+    </div>
+</MudPaper>
 
 <MudSelect T="string" Value="_filtroEstado" ValueChanged="OnFiltroCambiadoAsync" Label="Estado" Clearable="true" Style="max-width: 220px;" Class="mb-4">
     <MudSelectItem Value="@("PENDIENTE")">Pendiente</MudSelectItem>

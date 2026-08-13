@@ -168,13 +168,23 @@ public class FacturacionService : IFacturacionService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
+            -- Artículos directos
             SELECT fl.ArticuloID, a.SKU AS SkuArticulo, a.Nombre AS NombreArticulo,
                    fl.Cantidad AS CantidadFacturada,
                    ISNULL((SELECT SUM(s.CantidadActual) FROM Inventario.InventarioStock s WHERE s.ArticuloID = fl.ArticuloID), 0) AS StockDisponible
             FROM Facturacion.FacturaLineas fl
             JOIN Catalogo.Articulos a ON a.ArticuloID = fl.ArticuloID
             WHERE fl.FacturaID = @FacturaId AND fl.ArticuloID IS NOT NULL
-            ORDER BY fl.LineaID";
+            UNION ALL
+            -- Artículos dentro de combos (cantidad facturada = cantidad combo × cantidad en combo)
+            SELECT ci.ArticuloID, a.SKU AS SkuArticulo, a.Nombre AS NombreArticulo,
+                   fl.Cantidad * ci.Cantidad AS CantidadFacturada,
+                   ISNULL((SELECT SUM(s.CantidadActual) FROM Inventario.InventarioStock s WHERE s.ArticuloID = ci.ArticuloID), 0) AS StockDisponible
+            FROM Facturacion.FacturaLineas fl
+            JOIN Marketing.ComboItems ci ON ci.ComboID = fl.ComboID
+            JOIN Catalogo.Articulos a ON a.ArticuloID = ci.ArticuloID
+            WHERE fl.FacturaID = @FacturaId AND fl.ComboID IS NOT NULL
+            ORDER BY SkuArticulo";
 
         return await connection.QueryAsync<FacturaLineaStockItem>(sql, new { FacturaId = facturaId });
     }
@@ -212,12 +222,24 @@ public class FacturacionService : IFacturacionService
         using var conn = _db.CreateConnection();
 
         var lineasPT = await conn.QueryAsync<LineaPTCruda>("""
+            -- Productos terminados directos en la factura
             SELECT fl.ArticuloID, a.SKU, a.Nombre, fl.Cantidad,
                    (SELECT TOP 1 r.RecetaID FROM Produccion.RecetaBOM r
                     WHERE r.ProductoTerminadoID = fl.ArticuloID AND r.Estado = 1) AS RecetaID
             FROM Facturacion.FacturaLineas fl
-            JOIN catalogo.Articulos a ON a.ArticuloID = fl.ArticuloID
+            JOIN Catalogo.Articulos a ON a.ArticuloID = fl.ArticuloID
             WHERE fl.FacturaID = @facturaId
+              AND a.TipoArticuloID = 2
+            UNION ALL
+            -- Productos terminados dentro de combos
+            SELECT ci.ArticuloID, a.SKU, a.Nombre, fl.Cantidad * ci.Cantidad AS Cantidad,
+                   (SELECT TOP 1 r.RecetaID FROM Produccion.RecetaBOM r
+                    WHERE r.ProductoTerminadoID = ci.ArticuloID AND r.Estado = 1) AS RecetaID
+            FROM Facturacion.FacturaLineas fl
+            JOIN Marketing.ComboItems ci ON ci.ComboID = fl.ComboID
+            JOIN Catalogo.Articulos a ON a.ArticuloID = ci.ArticuloID
+            WHERE fl.FacturaID = @facturaId
+              AND fl.ComboID IS NOT NULL
               AND a.TipoArticuloID = 2
             """, new { facturaId });
 

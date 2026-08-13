@@ -1,5 +1,5 @@
-@page "/rrhh/empleados"
-@attribute [Authorize(Roles = "Administracion")]
+﻿@page "/rrhh/empleados"
+@attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -8,16 +8,31 @@
 
 <PageTitle>Empleados - NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
-    <MudText Typo="Typo.h5">Empleados</MudText>
-    <BotonFavorito Href="/rrhh/empleados" Etiqueta="Empleados" />
+<div class="nexo-page-hero">
+    <div class="nexo-page-hero__left">
+        <div class="nexo-page-hero__accent"></div>
+        <div>
+            <p class="nexo-page-hero__module">Recursos Humanos</p>
+            <h1 class="nexo-page-hero__title">Empleados</h1>
+        </div>
+    </div>
+    <div class="d-flex align-center" style="gap:8px">
+        <BotonFavorito Href="/rrhh/empleados" Etiqueta="Empleados" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="AbrirCreacionAsync">
+            Nuevo Empleado
+        </MudButton>
+    </div>
 </div>
-<InfoAyuda Texto="Directorio básico de personal: nombre, cargo, Centro de Costo y datos de contacto. No maneja nómina ni contabilidad -- solo saber quién trabaja dónde." />
 
-<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
-           StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
-    Nuevo Empleado
-</MudButton>
+<MudPaper Class="pa-4 mb-4" Elevation="0" Style="border:1px solid var(--mud-palette-lines-default); border-radius:8px">
+    <div style="display:flex; align-items:center; gap:8px">
+        <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            Directorio de personal: nombre, cargo, Centro de Costo y datos de contacto. No maneja nomina ni contabilidad.
+        </MudText>
+    </div>
+</MudPaper>
 
 @if (_errorCarga is not null)
 {

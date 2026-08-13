@@ -41,7 +41,28 @@ public record RegistrarEventoEntranteRequest(
 // Visions de este cliente -- NO el CentroCostoID interno de NEXO (son cosas
 // distintas: un mismo Visions puede compartir varias sucursales/CENTROCOSTO
 // en una sola base, cada una mapeada a su propio Centro de Costo en NEXO).
-public record ConfiguracionAgenteResponse(int? CentroCostoVisions, bool Activo, string? PrefijosDocumentoVenta);
+public record ConfiguracionAgenteResponse(int? CentroCostoVisions, bool Activo, string? PrefijosDocumentoVenta, int IntervalMinutes);
+
+// ---------- Configuracion completa del agente (solo Administracion, desde la web) ----------
+
+public record ConfiguracionAgenteCompletaResponse(
+    int AgenteSyncID,
+    string? Descripcion,
+    int CentroCostoID,
+    string NombreCentroCosto,
+    bool Activo,
+    string? VisionsDbConexion,
+    string? NexoApiBaseUrl,
+    int IntervalMinutes,
+    string? AgentePath
+);
+
+public record ActualizarConfiguracionAgenteRequest(
+    string? VisionsDbConexion,
+    string? NexoApiBaseUrl,
+    int IntervalMinutes,
+    string? AgentePath
+);
 
 public record GenerarApiKeyRequest(int CentroCostoID, string Descripcion);
 
@@ -75,3 +96,28 @@ public record ResolverArticuloPendienteRequest(
     int? ArticuloIDExistente,
     string? SkuNuevo, string? NombreNuevo, decimal? PrecioVentaNuevo, decimal? StockMinimoNuevo
 );
+
+// ---------- Latido / monitoreo del agente ----------
+
+// Respuesta al POST /latido -- confirma que la API recibio el heartbeat.
+// HoraServidor permite al agente detectar desfase de reloj entre maquinas.
+public record LatidoResponse(DateTime HoraServidor, int EventosPendientes);
+
+// Respuesta del GET /estado -- usada por NexoWeb para el panel de monitoreo.
+public record EstadoIntegracionResponse(
+    int AgenteSyncID,
+    string Descripcion,
+    int CentroCostoID,
+    string NombreCentroCosto,
+    bool Activo,
+    DateTime? UltimoLatido,
+    string? VersionAgente,
+    int EventosPendientes,
+    int EventosProcesadosHoy,
+    int VentasImportadasHoy,
+    int EventosConError
+);
+
+// Enviado por el Agente cuando no puede aplicar un evento en Visions.
+// Tras 3 intentos fallidos el evento pasa a ERROR y deja de reintentarse.
+public record RegistrarFalloRequest(string MensajeError);

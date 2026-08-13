@@ -23,7 +23,7 @@ public class CentrosCostoController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administracion")]
+    [Authorize]
     public async Task<ActionResult> Crear(CrearCentroCostoRequest request)
     {
         var id = await _service.CrearCentroCostoAsync(request);
@@ -31,7 +31,7 @@ public class CentrosCostoController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Administracion")]
+    [Authorize]
     public async Task<ActionResult> Actualizar(int id, ActualizarCentroCostoRequest request)
     {
         try

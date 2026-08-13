@@ -26,7 +26,7 @@ public class ComboController(IComboService service) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administracion,Jefes,Marketing")]
+    [Authorize]
     public async Task<IActionResult> Crear([FromBody] CrearComboRequest r)
     {
         var uid = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -35,7 +35,7 @@ public class ComboController(IComboService service) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Administracion,Jefes,Marketing")]
+    [Authorize]
     public async Task<IActionResult> Actualizar(int id, [FromBody] ActualizarComboRequest r)
     {
         try

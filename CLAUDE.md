@@ -1341,3 +1341,45 @@ Cuando se factura un Producto Terminado que tiene receta BOM, el sistema puede c
 - Muestra tabla de insumos por producto terminado con semáforo verde/rojo
 - Si hay insuficientes, advierte pero deja ejecutar igualmente
 - Tras ejecutar, muestra resultados con errores individuales si los hay
+
+## 38. Integración Visions — validación, monitoreo y resiliencia offline (agosto 2026)
+
+### 38.1 — Fix crítico: CHECK constraint de EventosSalientes
+
+`Integracion.EventosSalientes.TipoEvento` tenía un CHECK que solo permitía `ENTRADA_PRODUCTO_TERMINADO` y `TRASPASO_RECIBIDO`. El tipo `SINCRONIZAR_ARTICULO` (que `EncolarSincronizacionArticuloAsync` inserta cada vez que se crea un mapeo) no estaba incluido — cualquier mapeo de artículo nuevo fallaba silenciosamente con error de violación de constraint. **Corregido**: `CK_EventosSalientes_TipoEvento` ahora incluye los 3 tipos.
+
+### 38.2 — Heartbeat del agente (UltimaConexion ya se actualiza)
+
+Antes de este cambio, `Integracion.AgentesSync.UltimaConexion` nunca se actualizaba (siempre NULL para todos los agentes). Se agregó:
+- `Integracion.sp_RegistrarLatido(@AgenteSyncID, @VersionAgente)` — actualiza `UltimaConexion` + nueva columna `UltimoLatido` + `VersionAgente`.
+- Columnas nuevas en `AgentesSync`: `UltimoLatido datetime2 NULL`, `VersionAgente NVARCHAR(20) NULL`.
+- Endpoint `POST api/integracion/latido` (autenticado con API Key) — el agente lo llama primero en cada ronda. Devuelve `LatidoResponse(HoraServidor, EventosPendientes)`.
+- Endpoint `GET api/integracion/estado` (JWT, solo Administrador) — devuelve lista de agentes con estado, eventos pendientes, procesados hoy y ventas importadas hoy. Usado por NexoWeb.
+
+### 38.3 — Worker.cs: backoff automático ante falta de conectividad
+
+El Worker ya manejaba excepciones genéricas, pero sin distinguir "la API no está disponible" de "hubo un error en la lógica". Cambios:
+- El latido va **primero**. Si falla por error de red/HTTP, se registra el warning y se salta toda la ronda (no tiene sentido intentar sincronizar si la API no responde).
+- Backoff exponencial: 30s → 60s → 120s → ... hasta el intervalo configurado. Se reinicia a cero cuando el latido vuelve a funcionar.
+- `Sync:IntervalSeconds` en `appsettings.json` tiene prioridad sobre `Sync:IntervalMinutes`. Para testing rápido: `"IntervalSeconds": 30`. Para producción: `"IntervalSeconds": 0` + `"IntervalMinutes": 5`.
+
+### 38.4 — NexoSyncAgent/appsettings.json — valores correctos para dev
+
+La config de plantilla apuntaba a `VISIONS` (nombre de BD incorrecto) y `localhost` (sin instancia). Corregido a `Server=DESKTOP-V83PQ7M\\JONATHAN;Database=VISIONSDBL1` y `BaseUrl: https://localhost:7144/`. El API key de desarrollo: `NexoSyncTest_CentroCentral_2026` (AgenteSyncID=4 en la BD local). **Para producción: regenerar siempre desde la UI** (Catálogo → Centros de Costo → Editar → Generar API Key).
+
+### 38.5 — Página de monitoreo e instalación: /admin/integracion-visions
+
+Nueva página `Components/Pages/Admin/IntegracionVisions.razor` (Administrador). Dos pestañas:
+- **Estado del agente**: cards por agente mostrando último latido, estado semafórico (Conectado < 10 min / Alerta < 30 min / Sin respuesta), eventos pendientes/procesados hoy/ventas importadas hoy. Se refresca automáticamente cada 30 segundos (mismo patrón que la campana de notificaciones).
+- **Instalación paso a paso**: guía completa de 5 pasos con bloques de código copiables (sqlcmd, sc.exe), más sección de resiliencia offline que explica qué pasa en cada dirección cuando se corta la conexión.
+Link en NavMenu bajo Administración (ícono SyncAlt).
+
+### 38.6 — Resiliencia offline (comportamiento ya confirmado en el diseño)
+
+- **NEXO → Visions** (OPs cerradas, traspasos recibidos): los eventos quedan `PENDIENTE` en `Integracion.EventosSalientes`. Cuando el agente recupera conectividad, los aplica en orden en el siguiente ciclo. No se pierde ningún movimiento.
+- **Visions → NEXO** (ventas del POS): el agente inserta en `NEXO_VentasExportadas` de la base de Visions DESPUÉS de confirmar que NEXO aceptó el evento. Si la confirmación falla, no se inserta → la próxima ronda re-exporta esa venta (idempotencia garantizada por `IdEventoExterno` UNIQUE en `Integracion.EventosEntrantes`).
+- El backoff del Worker (38.3) previene saturación de red cuando NEXO está caído: no reintenta agresivamente cada 30s, sino con pausa creciente.
+
+### 38.7 — Agente de prueba (BD local)
+
+`AgenteSyncID = 4`, CentroCosto = 1 (central), key = `NexoSyncTest_CentroCentral_2026`. Los agentes anteriores (ID 2 y 3) se desactivaron para evitar conflictos. **Este agente es solo para desarrollo local** — en producción usar siempre el key generado desde la UI.

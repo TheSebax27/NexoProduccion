@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NexoSyncAgent")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+40a81092183d5da74a632f9a71648cdcb973ee4e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1a20c211cc33c487e69582630bd5b073d809433c")]
 [assembly: System.Reflection.AssemblyProductAttribute("NexoSyncAgent")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NexoSyncAgent")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

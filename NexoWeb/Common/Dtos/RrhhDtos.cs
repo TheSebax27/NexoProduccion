@@ -31,9 +31,10 @@ public record DepartamentoItem(int DepartamentoID, string Nombre, bool Estado, i
 public record CrearDepartamentoRequest(string Nombre);
 public record ActualizarDepartamentoRequest(string Nombre, bool Estado);
 
-public record CargoItem(int CargoID, string Nombre, int? DepartamentoID, string? Departamento, bool Estado);
-public record CrearCargoRequest(string Nombre, int? DepartamentoID);
-public record ActualizarCargoRequest(string Nombre, int? DepartamentoID, bool Estado);
+public record CargoItem(int CargoID, string Nombre, int? DepartamentoID, string? Departamento, bool Estado,
+    int? RolPredeterminadoID, string? RolPredeterminado);
+public record CrearCargoRequest(string Nombre, int? DepartamentoID, int? RolPredeterminadoID = null);
+public record ActualizarCargoRequest(string Nombre, int? DepartamentoID, bool Estado, int? RolPredeterminadoID = null);
 
 // ---------- Historial laboral (agosto 2026, RRHH v2) ----------
 
@@ -76,6 +77,8 @@ public record CrearCapacitacionRequest(int EmpleadoID, string Nombre, string? In
 
 public record OrganigramaNodo(int EmpleadoID, string Nombres, string Apellidos, string? Cargo, int? JefeDirectoID);
 
+public record EmpleadoSimpleItem(int EmpleadoID, string Nombres, string Apellidos);
+
 // ---------- Asistencia con QR rotativo ----------
 
 public record TokenQrResponse(string Token, int SegundosRestantes);
@@ -84,7 +87,10 @@ public record EstadoAsistenciaHoy(
     int EmpleadoID, string Empleado,
     bool TieneEntrada, DateTime? HoraEntrada, string? MetodoEntrada,
     bool TieneSalida, DateTime? HoraSalida, string? MetodoSalida,
-    bool RegistraSalida
+    bool RegistraSalida,
+    bool TieneAlmuerzo,
+    bool TieneEntrada2, DateTime? HoraEntrada2, string? MetodoEntrada2,
+    bool TieneSalida2, DateTime? HoraSalida2, string? MetodoSalida2
 );
 
 public record MarcarQrRequest(string Token, string Tipo);

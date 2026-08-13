@@ -7,7 +7,8 @@ public record ComboItem(
     decimal? PrecioManual, decimal PorcentajeDescuento,
     decimal? PrecioCalculado,
     string? ImagenBase64, string? ImagenContentType,
-    DateTime FechaCreacion
+    DateTime FechaCreacion,
+    List<ComboItemLine> Items
 );
 
 public record ComboDetalle(

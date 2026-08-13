@@ -251,7 +251,7 @@
               "RelativeDocumentMoniker": "Features\\Email\\GmailEmailService.cs",
               "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Email\\GmailEmailService.cs",
               "RelativeToolTip": "Features\\Email\\GmailEmailService.cs",
-              "ViewState": "AgIAADUAAAAAAAAAAAAuwEgAAAAZAAAAAAAAAA==",
+              "ViewState": "AgIAADUAAAAAAAAAAAAuwEgAAABBAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-08-11T22:17:59.871Z",
               "EditorCaption": ""
@@ -266,8 +266,7 @@
               "RelativeToolTip": "Features\\Email\\EmailController.cs",
               "ViewState": "AgIAAAsAAAAAAAAAAAAuwBsAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-11T22:06:43.049Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-11T22:06:43.049Z"
             },
             {
               "$type": "Document",
@@ -279,8 +278,7 @@
               "RelativeToolTip": "Features\\Rrhh\\AsistenciaController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAFYAAAAyAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-11T21:27:00.944Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-11T21:27:00.944Z"
             },
             {
               "$type": "Document",
@@ -292,8 +290,7 @@
               "RelativeToolTip": "Features\\Rrhh\\AsistenciaService.cs",
               "ViewState": "AgIAACMAAAAAAAAAAAAAADwAAADIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-11T21:26:53.049Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-11T21:26:53.049Z"
             },
             {
               "$type": "Document",
@@ -305,8 +302,7 @@
               "RelativeToolTip": "Features\\Configuracion\\ConfiguracionService.cs",
               "ViewState": "AgIAAAsAAAAAAAAAAAAowCMAAAAwAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-11T16:31:23.625Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-11T16:31:23.625Z"
             },
             {
               "$type": "Document",
@@ -318,8 +314,7 @@
               "RelativeToolTip": "Features\\Crm\\CrmController.cs",
               "ViewState": "AgIAADwBAAAAAAAAAAAIwGMBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-11T16:31:22.396Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-11T16:31:22.396Z"
             },
             {
               "$type": "Document",
@@ -355,8 +350,7 @@
               "RelativeToolTip": "Features\\Crm\\CrmService.cs",
               "ViewState": "AgIAAAUDAAAAAAAAAAAcwBsDAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-11T15:32:27.606Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-11T15:32:27.606Z"
             },
             {
               "$type": "Document",
@@ -404,8 +398,7 @@
               "RelativeToolTip": "Features\\Logistica\\LogisticaService.cs",
               "ViewState": "AgIAAAMAAAAAAAAAAAAAABgAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-08T15:17:12.553Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-08T15:17:12.553Z"
             },
             {
               "$type": "Document",

@@ -105,3 +105,7 @@ public record ConsumoOpItem(
 public record MotivoExcesoItem(int MotivoExcesoID, string Nombre);
 
 public record AjustarConsumoRealRequest(decimal CantidadReal, int? MotivoExcesoID, string? Observacion);
+
+public record StockLineaItem(
+    string Articulo, string Unidad,
+    decimal CantidadRequerida, decimal StockDisponible);

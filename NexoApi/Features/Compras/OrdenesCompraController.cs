@@ -35,7 +35,7 @@ public class OrdenesCompraController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administracion,Empleados")]
+    [Authorize]
     public async Task<ActionResult> Crear(CrearOrdenCompraRequest request)
     {
         var id = await _service.CrearAsync(request, UsuarioActualId);
@@ -44,7 +44,7 @@ public class OrdenesCompraController : ControllerBase
 
     /// <summary>Recibe (total o parcialmente) una linea especifica de la orden de compra.</summary>
     [HttpPost("detalle/{ordenCompraDetalleId:int}/recibir")]
-    [Authorize(Roles = "Administracion,Empleados")]
+    [Authorize]
     public async Task<ActionResult> RecibirLinea(int ordenCompraDetalleId, RecibirLineaOrdenCompraRequest request)
     {
         var (loteId, nuevoCostoPromedio) = await _service.RecibirLineaAsync(ordenCompraDetalleId, request, UsuarioActualId);

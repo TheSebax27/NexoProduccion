@@ -1,5 +1,5 @@
-@page "/catalogo/bodegas"
-@attribute [Authorize(Roles = "Administracion")]
+ï»¿@page "/catalogo/bodegas"
+@attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -12,7 +12,7 @@
     <MudText Typo="Typo.h5">Bodegas</MudText>
     <BotonFavorito Href="/catalogo/bodegas" Etiqueta="Bodegas" />
 </div>
-<InfoAyuda Texto="Las bodegas almacenan el inventario físico (o virtual, ej. para tránsito) dentro de un Centro de Costo. Cada movimiento de inventario queda asociado a una bodega específica." />
+<InfoAyuda Texto="Las bodegas almacenan el inventario fï¿½sico (o virtual, ej. para trï¿½nsito) dentro de un Centro de Costo. Cada movimiento de inventario queda asociado a una bodega especï¿½fica." />
 
 <MudGrid Class="mb-4">
     <MudItem xs="12" sm="6" md="4">
@@ -217,7 +217,7 @@ else
     {
         var confirmado = await DialogService.ShowMessageBox(
             "Confirmar",
-            $"¿Desactivar la bodega '{bodega.Nombre}'? No podra usarse en nuevos movimientos de inventario.",
+            $"ï¿½Desactivar la bodega '{bodega.Nombre}'? No podra usarse en nuevos movimientos de inventario.",
             yesText: "Desactivar", cancelText: "Cancelar");
 
         if (confirmado != true)

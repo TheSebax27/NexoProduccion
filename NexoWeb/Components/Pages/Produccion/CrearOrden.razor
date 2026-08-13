@@ -1,6 +1,6 @@
-@page "/produccion/ordenes/crear"
+﻿@page "/produccion/ordenes/crear"
 @page "/produccion/ordenes/{OrdenProduccionId:int}/editar"
-@attribute [Authorize(Roles = "Administracion,Jefes")]
+@attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject NavigationManager Navegacion

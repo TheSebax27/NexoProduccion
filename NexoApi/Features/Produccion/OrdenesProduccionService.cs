@@ -21,7 +21,10 @@ public interface IOrdenesProduccionService
     Task<IEnumerable<TipoProduccionItem>> ListarTiposProduccionAsync();
     Task<IEnumerable<ConsumoOpItem>> ListarConsumosAsync(int ordenProduccionId);
     Task<IEnumerable<MotivoExcesoItem>> ListarMotivosExcesoAsync();
+    Task<IEnumerable<StockLineaItem>> VerificarStockOrdenAsync(int ordenProduccionId);
 }
+
+public record StockLineaItem(string Articulo, string Unidad, decimal CantidadRequerida, decimal StockDisponible);
 
 public class OrdenesProduccionService : IOrdenesProduccionService
 {
@@ -273,5 +276,33 @@ public class OrdenesProduccionService : IOrdenesProduccionService
         using var connection = _db.CreateConnection();
         return await connection.QueryAsync<TipoProduccionItem>(
             "SELECT TipoProduccionID, Codigo, Nombre FROM Produccion.TiposProduccion ORDER BY TipoProduccionID");
+    }
+
+    public async Task<IEnumerable<StockLineaItem>> VerificarStockOrdenAsync(int ordenProduccionId)
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<StockLineaItem>(@"
+            SELECT
+                a.Nombre                                                        AS Articulo,
+                um.Abreviatura                                                  AS Unidad,
+                CAST(rd.CantidadRequerida
+                     * op.CantidadProgramada
+                     / NULLIF(r.CantidadRendimientoBase, 0)
+                     * (1 + rd.PorcentajeMermaEstandar / 100.0) AS DECIMAL(18,4)) AS CantidadRequerida,
+                ISNULL(SUM(s.CantidadActual), 0)                                AS StockDisponible
+            FROM Produccion.OrdenesProduccion op
+            JOIN Produccion.RecetaBOM r              ON r.RecetaID        = op.RecetaID
+            JOIN Produccion.RecetaBOM_Detalle rd      ON rd.RecetaID       = r.RecetaID
+            JOIN Catalogo.Articulos a                 ON a.ArticuloID      = rd.InsumoID
+            JOIN Catalogo.UnidadesMedida um           ON um.UnidadID       = rd.UnidadID
+            LEFT JOIN Inventario.InventarioStock s    ON s.ArticuloID      = rd.InsumoID
+                                                     AND s.BodegaID       = op.BodegaOrigenMPID
+            WHERE op.OrdenProduccionID = @ordenProduccionId
+              AND op.Estado = 'Planificada'
+            GROUP BY a.Nombre, um.Abreviatura,
+                     rd.CantidadRequerida, op.CantidadProgramada,
+                     r.CantidadRendimientoBase, rd.PorcentajeMermaEstandar
+            ORDER BY a.Nombre",
+            new { ordenProduccionId });
     }
 }

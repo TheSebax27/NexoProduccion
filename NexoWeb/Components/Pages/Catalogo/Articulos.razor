@@ -1,5 +1,5 @@
-@page "/catalogo/articulos"
-@attribute [Authorize(Roles = "Administracion,Jefes")]
+ï»¿@page "/catalogo/articulos"
+@attribute [Authorize]
 @implements IDisposable
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -13,7 +13,7 @@
     <MudText Typo="Typo.h5">Articulos</MudText>
     <BotonFavorito Href="/catalogo/articulos" Etiqueta="Articulos" />
 </div>
-<InfoAyuda Texto="El catálogo maestro de artículos: materias primas, insumos y productos terminados. Cada artículo tiene un SKU único, una unidad de medida y su conversión de caja a unidad. Se usa en recetas, órdenes de compra y de producción." />
+<InfoAyuda Texto="El catï¿½logo maestro de artï¿½culos: materias primas, insumos y productos terminados. Cada artï¿½culo tiene un SKU ï¿½nico, una unidad de medida y su conversiï¿½n de caja a unidad. Se usa en recetas, ï¿½rdenes de compra y de producciï¿½n." />
 
 <MudGrid Class="mb-4">
     <MudItem xs="12" sm="6" md="4">
@@ -63,7 +63,7 @@ else if (Preferencias.VistaListado == "tarjetas")
                 }
                 <div class="nexo-item-card__title">@articulo.Nombre</div>
                 <div class="nexo-item-card__sub">
-                    @articulo.SKU · @articulo.TipoArticulo
+                    @articulo.SKU ï¿½ @articulo.TipoArticulo
                     <MudChip T="string" Color="@(articulo.Estado ? Color.Success : Color.Error)" Size="Size.Small" Class="ml-2">
                         @(articulo.Estado ? "Activo" : "Inactivo")
                     </MudChip>
@@ -90,7 +90,7 @@ else if (Preferencias.VistaListado == "tarjetas")
                     </div>
                 }
                 <div class="nexo-item-card__row">
-                    <span>Stock Mínimo</span>
+                    <span>Stock Mï¿½nimo</span>
                     <strong>@articulo.StockMinimo.ToString("N2")</strong>
                 </div>
                 <div class="nexo-item-card__actions">

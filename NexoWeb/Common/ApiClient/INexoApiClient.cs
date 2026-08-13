@@ -17,7 +17,9 @@ public interface INexoApiClient
     Task<TResponse?> PostAsync<TRequest, TResponse>(string ruta, TRequest body);
     Task PostAsync<TRequest>(string ruta, TRequest body);
     Task<TResponse?> PutAsync<TRequest, TResponse>(string ruta, TRequest body);
+    Task PutAsync<TRequest>(string ruta, TRequest body);
     Task PostAsync(string ruta);
     Task DeleteAsync(string ruta);
     Task<TResponse?> PatchAsync<TRequest, TResponse>(string ruta, TRequest body);
+    Task PatchAsync(string ruta);
 }

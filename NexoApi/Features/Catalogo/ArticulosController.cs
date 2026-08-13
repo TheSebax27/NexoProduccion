@@ -24,7 +24,7 @@ public class ArticulosController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<ActionResult> Crear(CrearArticuloRequest request)
     {
         var id = await _service.CrearArticuloAsync(request);
@@ -34,7 +34,7 @@ public class ArticulosController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<ActionResult> Actualizar(int id, ActualizarArticuloRequest request)
     {
         try
@@ -78,11 +78,11 @@ public class ArticulosController : ControllerBase
     }
 
     [HttpPut("{id:int}/imagen")]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<ActionResult> ActualizarImagen(int id, ActualizarImagenRequest request)
     {
         if (Convert.FromBase64String(request.Base64).Length > 1_000_000)
-            return BadRequest(new { error = "La imagen es muy grande (máximo 1 MB)." });
+            return BadRequest(new { error = "La imagen es muy grande (mï¿½ximo 1 MB)." });
 
         try
         {
@@ -96,7 +96,7 @@ public class ArticulosController : ControllerBase
     }
 
     [HttpDelete("{id:int}/imagen")]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<ActionResult> EliminarImagen(int id)
     {
         try

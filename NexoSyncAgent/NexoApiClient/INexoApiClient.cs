@@ -8,4 +8,6 @@ public interface INexoApiClient
     Task ConfirmarEventoSalienteAsync(long eventoId, CancellationToken ct);
     Task RegistrarEventoEntranteAsync(RegistrarEventoEntranteRequest request, CancellationToken ct);
     Task<ConfiguracionAgenteResponse> ObtenerConfiguracionAsync(CancellationToken ct);
+    Task<LatidoResponse> EnviarLatidoAsync(CancellationToken ct);
+    Task RegistrarFalloEventoAsync(long eventoId, string mensajeError, CancellationToken ct);
 }

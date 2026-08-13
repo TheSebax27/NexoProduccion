@@ -33,9 +33,10 @@ public record DepartamentoItem(int DepartamentoID, string Nombre, bool Estado, i
 public record CrearDepartamentoRequest(string Nombre);
 public record ActualizarDepartamentoRequest(string Nombre, bool Estado);
 
-public record CargoItem(int CargoID, string Nombre, int? DepartamentoID, string? Departamento, bool Estado);
-public record CrearCargoRequest(string Nombre, int? DepartamentoID);
-public record ActualizarCargoRequest(string Nombre, int? DepartamentoID, bool Estado);
+public record CargoItem(int CargoID, string Nombre, int? DepartamentoID, string? Departamento, bool Estado,
+    int? RolPredeterminadoID, string? RolPredeterminado);
+public record CrearCargoRequest(string Nombre, int? DepartamentoID, int? RolPredeterminadoID = null);
+public record ActualizarCargoRequest(string Nombre, int? DepartamentoID, bool Estado, int? RolPredeterminadoID = null);
 
 // ---------- Historial laboral (agosto 2026, RRHH v2) ----------
 // Se genera automatico al detectar un cambio de CargoID/CentroCostoID en

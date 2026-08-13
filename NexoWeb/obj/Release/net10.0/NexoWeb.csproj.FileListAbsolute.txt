@@ -34,7 +34,6 @@ C:\Produccion\NexoWeb\obj\Release\net10.0\scopedcss\projectbundle\NexoWeb.bundle
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\tzxjg6is5z-{0}-mhumzvqd1g-mhumzvqd1g.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\0wz98yz2xy-{0}-rnojub5shy-rnojub5shy.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\iu0nu0fy9n-{0}-h274v8c8ou-h274v8c8ou.gz
-C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\82xpymwtvw-{0}-ksxbt2xz1t-ksxbt2xz1t.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\zlhnwxzp6m-{0}-bqjiyaj88i-bqjiyaj88i.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\rfo77zb88m-{0}-c2jlpeoesf-c2jlpeoesf.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\j6k4p04ukp-{0}-erw9l3u2r3-erw9l3u2r3.gz
@@ -81,8 +80,6 @@ C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\rfwk4ls4yv-{0}-63fj8s7r0e-6
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\s074obfnsx-{0}-0j3bgjxly4-0j3bgjxly4.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\a0erazg3lp-{0}-p17byqhy34-p17byqhy34.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\i5e2m5sr5f-{0}-abdmv1u4y3-abdmv1u4y3.gz
-C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\1jra6etdxu-{0}-f7fxoh55ae-f7fxoh55ae.gz
-C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\emdyfxdyab-{0}-68qhiysw0j-68qhiysw0j.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\staticwebassets.build.json
 C:\Produccion\NexoWeb\obj\Release\net10.0\staticwebassets.build.json.cache
 C:\Produccion\NexoWeb\obj\Release\net10.0\staticwebassets.development.json
@@ -96,4 +93,7 @@ C:\Produccion\NexoWeb\obj\Release\net10.0\NexoWeb.genruntimeconfig.cache
 C:\Produccion\NexoWeb\obj\Release\net10.0\ref\NexoWeb.dll
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\mohx22tfow-{0}-d70zhl0xjx-d70zhl0xjx.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\fidee3c6o4-{0}-d70zhl0xjx-d70zhl0xjx.gz
-C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\rkatry7cmk-{0}-qwbwl1prd3-qwbwl1prd3.gz
+C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\1jra6etdxu-{0}-wyu7y4jcvb-wyu7y4jcvb.gz
+C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\emdyfxdyab-{0}-wfr2hj6447-wfr2hj6447.gz
+C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\82xpymwtvw-{0}-31ctn0hll9-31ctn0hll9.gz
+C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\rkatry7cmk-{0}-hsrxpe1xr4-hsrxpe1xr4.gz

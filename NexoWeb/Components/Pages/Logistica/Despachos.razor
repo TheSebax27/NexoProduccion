@@ -1,5 +1,5 @@
-@page "/logistica/despachos"
-@attribute [Authorize(Roles = "Administracion,Empleados")]
+﻿@page "/logistica/despachos"
+@attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar

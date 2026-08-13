@@ -17,3 +17,36 @@ public record ResolverArticuloPendienteRequest(
     int? ArticuloIDExistente,
     string? SkuNuevo, string? NombreNuevo, decimal? PrecioVentaNuevo, decimal? StockMinimoNuevo
 );
+
+public record EstadoIntegracionResponse(
+    int AgenteSyncID,
+    string Descripcion,
+    int CentroCostoID,
+    string NombreCentroCosto,
+    bool Activo,
+    DateTime? UltimoLatido,
+    string? VersionAgente,
+    int EventosPendientes,
+    int EventosProcesadosHoy,
+    int VentasImportadasHoy,
+    int EventosConError
+);
+
+public record ConfiguracionAgenteCompletaResponse(
+    int AgenteSyncID,
+    string? Descripcion,
+    int CentroCostoID,
+    string NombreCentroCosto,
+    bool Activo,
+    string? VisionsDbConexion,
+    string? NexoApiBaseUrl,
+    int IntervalMinutes,
+    string? AgentePath
+);
+
+public record ActualizarConfiguracionAgenteRequest(
+    string? VisionsDbConexion,
+    string? NexoApiBaseUrl,
+    int IntervalMinutes,
+    string? AgentePath
+);

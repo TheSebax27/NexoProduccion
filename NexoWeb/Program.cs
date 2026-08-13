@@ -42,6 +42,7 @@ builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 builder.Services.AddScoped<PreferenciasState>();
 builder.Services.AddScoped<ConfiguracionEmpresaState>();
+builder.Services.AddScoped<ModulosVisiblesState>();
 builder.Services.AddSingleton<CalendarioBroadcast>();
 
 var app = builder.Build();

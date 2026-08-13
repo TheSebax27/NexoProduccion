@@ -7,7 +7,7 @@ namespace NexoApi.Features.Crm;
 
 [ApiController]
 [Route("api/crm")]
-[Authorize(Roles = "Administracion")]
+[Authorize]
 public class CrmController : ControllerBase
 {
     private readonly ICrmService _service;
@@ -20,11 +20,7 @@ public class CrmController : ControllerBase
     private int UsuarioActualId =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-    // Solo esta lectura se abre tambien a Empleados (Logistica/Despachos) y
-    // Jefes (Proyectos) -- ambos necesitan elegir un cliente.
-    // Crear/editar clientes y ver interacciones se quedan Admin-only.
     [HttpGet("clientes")]
-    [Authorize(Roles = "Administracion,Empleados,Jefes")]
     public async Task<ActionResult<IEnumerable<ClienteItem>>> ListarClientes(
         [FromQuery] int? responsableId, [FromQuery] string? tipoCliente,
         [FromQuery] string? fuenteContacto, [FromQuery] bool? soloActivos)

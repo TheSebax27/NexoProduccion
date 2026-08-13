@@ -8,7 +8,7 @@ namespace NexoApi.Features.Facturacion;
 
 [ApiController]
 [Route("api/facturacion")]
-[Authorize(Roles = "Administracion,Empleados")]
+[Authorize]
 public class FacturacionController : ControllerBase
 {
     private readonly IFacturacionService _service;

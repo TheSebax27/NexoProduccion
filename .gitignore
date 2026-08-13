@@ -1,0 +1,28 @@
+# Visual Studio
+.vs/
+bin/
+obj/
+
+# Archivos de usuario
+*.user
+*.suo
+
+# Logs
+*.log
+
+wwwroot/tailwind.css
+tailwindcss.exe
+
+# Visual Studio
+.vs/
+**/.vs/
+
+# .NET
+**/bin/
+**/obj/
+
+# SQL Server backups
+*.bak
+
+# Publicaciones/compilados
+NexoSyncAgent/publish/

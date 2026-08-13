@@ -1,6 +1,6 @@
-@page "/produccion/recetas/crear"
+﻿@page "/produccion/recetas/crear"
 @page "/produccion/recetas/{RecetaBaseId:int}/nueva-version"
-@attribute [Authorize(Roles = "Administracion,Jefes")]
+@attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject NavigationManager Navegacion
@@ -88,7 +88,11 @@ else
                     {
                         <MudSelectItem T="int?" Value="@((int?)articulo.ArticuloID)">
                             @articulo.Nombre
-                            @if (articulo.EsUnidadCaja)
+                            @if (articulo.TipoArticulo == "Producto Terminado")
+                            {
+                                <text> [PT]</text>
+                            }
+                            else if (articulo.EsUnidadCaja)
                             {
                                 <text> (@articulo.UnidadesPorEmbalaje.Value.ToString("N0") u/cja)</text>
                             }
@@ -231,13 +235,13 @@ else
     private List<UnidadMedidaItem> _unidadesMedida = new();
     private List<CentroTrabajoItem> _centrosTrabajo = new();
 
-    // Un Producto Terminado es lo que la receta PRODUCE; los insumos (Materia
-    // Prima/Insumo/Servicio) son lo que la receta CONSUME. Servicio se incluye
-    // porque cosas como una licencia de Windows tambien se "consumen" al armar
-    // un producto (ej. un Computador necesita 1 licencia). No tiene sentido
-    // mezclar Producto Terminado: no se elige como insumo de si mismo.
     private List<ArticuloItem> _productosTerminados => _articulos.Where(a => a.TipoArticulo == "Producto Terminado").ToList();
-    private List<ArticuloItem> _insumosDisponibles => _articulos.Where(a => a.TipoArticulo is "Materia Prima" or "Insumo" or "Servicio").ToList();
+    // Incluye PT como insumo (ej: un PT que lleva otro PT ensamblado), pero excluye
+    // el propio PT que produce esta receta para evitar auto-referencia directa.
+    private List<ArticuloItem> _insumosDisponibles => _articulos
+        .Where(a => a.TipoArticulo is "Materia Prima" or "Insumo" or "Servicio" or "Producto Terminado"
+                    && a.ArticuloID != _productoTerminadoId)
+        .ToList();
 
     // Encabezado del formulario
     private int? _productoTerminadoId;

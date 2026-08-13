@@ -32,6 +32,15 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6">
+                <MudSelect T="int?" @bind-Value="_centroTrabajoId" Label="Centro de trabajo"
+                           Placeholder="Ninguno" Clearable>
+                    @foreach (var c in CentrosTrabajo)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)c.CentroTrabajoID)">@c.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
                 <MudSelect T="string" @bind-Value="_estado" Label="Estado">
                     <MudSelectItem Value="@("Activa")">Activa</MudSelectItem>
                     <MudSelectItem Value="@("EnMantenimiento")">En Mantenimiento</MudSelectItem>
@@ -110,11 +119,13 @@
 @code {
     [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public List<TipoMaquinariaItem> Tipos { get; set; } = [];
+    [Parameter] public List<CentroTrabajoItem> CentrosTrabajo { get; set; } = [];
     [Parameter] public MaquinariaDetalle? Maquina { get; set; }
 
     string _codigo = "";
     string _nombre = "";
     int? _tipoId;
+    int? _centroTrabajoId;
     string _estado = "Activa";
     string? _marca, _modelo, _numeroSerie, _ubicacion, _unidadCapacidad, _notas;
     decimal? _capacidadMaxima, _costoAdquisicion, _costoHora;
@@ -132,6 +143,7 @@
         _codigo = Maquina.Codigo;
         _nombre = Maquina.Nombre;
         _tipoId = Maquina.TipoMaquinariaID;
+        _centroTrabajoId = Maquina.CentroTrabajoID;
         _estado = Maquina.Estado;
         _marca  = Maquina.Marca;
         _modelo = Maquina.Modelo;
@@ -159,7 +171,7 @@
             if (Maquina is null)
             {
                 var req = new CrearMaquinariaRequest(
-                    _codigo.Trim(), _nombre.Trim(), _tipoId!.Value, null,
+                    _codigo.Trim(), _nombre.Trim(), _tipoId!.Value, _centroTrabajoId,
                     _marca, _modelo, _numeroSerie,
                     fecha, _vidaUtilAnios,
                     _costoAdquisicion, _costoHora,
@@ -170,7 +182,7 @@
             else
             {
                 var req = new ActualizarMaquinariaRequest(
-                    _codigo.Trim(), _nombre.Trim(), _tipoId!.Value, null, _estado,
+                    _codigo.Trim(), _nombre.Trim(), _tipoId!.Value, _centroTrabajoId, _estado,
                     _marca, _modelo, _numeroSerie,
                     fecha, _vidaUtilAnios,
                     _costoAdquisicion, _costoHora,

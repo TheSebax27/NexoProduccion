@@ -8,6 +8,7 @@ namespace NexoApi.Features.Rrhh;
 
 [ApiController]
 [Route("api/rrhh/asistencia")]
+[Authorize]
 public class AsistenciaController(IAsistenciaService service) : ControllerBase
 {
     private int UsuarioActualId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -49,7 +50,7 @@ public class AsistenciaController(IAsistenciaService service) : ControllerBase
     // ---- Admin: marcado manual con advertencia ----
 
     [HttpPost("marcar/manual")]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<ActionResult> MarcarManual(MarcarManualRequest request)
     {
         try { await service.MarcarManualAsync(UsuarioActualId, request); return Ok(); }
@@ -57,7 +58,6 @@ public class AsistenciaController(IAsistenciaService service) : ControllerBase
     }
 
     [HttpGet("lista")]
-    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult<IEnumerable<RegistroAsistenciaItem>>> Lista(
         [FromQuery] int? empleadoId, [FromQuery] DateOnly? desde, [FromQuery] DateOnly? hasta)
         => Ok(await service.ListarAsync(empleadoId, desde, hasta));
@@ -65,20 +65,53 @@ public class AsistenciaController(IAsistenciaService service) : ControllerBase
     // ---- Horarios ----
 
     [HttpGet("horarios")]
-    [Authorize(Roles = "Administracion,Jefes")]
+    [Authorize]
     public async Task<ActionResult<IEnumerable<HorarioItem>>> Horarios()
         => Ok(await service.ListarHorariosAsync());
 
     [HttpPost("horarios")]
-    [Authorize(Roles = "Administracion")]
+    [Authorize]
     public async Task<ActionResult> CrearHorario(CrearHorarioRequest request)
         => Ok(new { horarioId = await service.CrearHorarioAsync(request) });
 
     [HttpPost("empleados/{empleadoId:int}/horario")]
-    [Authorize(Roles = "Administracion")]
+    [Authorize]
     public async Task<ActionResult> AsignarHorario(int empleadoId, AsignarHorarioRequest request)
     {
-        await service.AsignarHorarioEmpleadoAsync(empleadoId, request);
+        try { await service.AsignarHorarioEmpleadoAsync(empleadoId, request); return NoContent(); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpPut("horarios/{id:int}")]
+    [Authorize]
+    public async Task<ActionResult> ActualizarHorario(int id, CrearHorarioRequest request)
+    {
+        try { await service.ActualizarHorarioAsync(id, request); return NoContent(); }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+    }
+
+    [HttpGet("horarios/{id:int}/asignados")]
+    [Authorize]
+    public async Task<ActionResult> EmpleadosAsignados(int id)
+        => Ok(await service.ObtenerEmpleadosAsignadosAsync(id));
+
+    [HttpGet("empleados-sin-horario")]
+    public async Task<ActionResult> EmpleadosSinHorario()
+        => Ok(await service.ListarEmpleadosSinHorarioAsync());
+
+    [HttpDelete("horarios/{id:int}")]
+    [Authorize]
+    public async Task<ActionResult> EliminarHorario(int id)
+    {
+        try { await service.EliminarHorarioAsync(id); return NoContent(); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpPatch("horarios/{id:int}/toggle-activo")]
+    [Authorize]
+    public async Task<ActionResult> ToggleActivo(int id)
+    {
+        await service.ToggleActivoHorarioAsync(id);
         return NoContent();
     }
 

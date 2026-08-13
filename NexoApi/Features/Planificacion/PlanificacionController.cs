@@ -7,7 +7,7 @@ namespace NexoApi.Features.Planificacion;
 
 [ApiController]
 [Route("api/planificacion")]
-[Authorize(Roles = "Administracion,Jefes")]
+[Authorize]
 public class PlanificacionController : ControllerBase
 {
     private readonly IPlanificacionService _service;

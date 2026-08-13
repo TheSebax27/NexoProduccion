@@ -1,5 +1,5 @@
-@page "/facturacion"
-@attribute [Authorize(Roles = "Administracion,Empleados")]
+﻿@page "/facturacion"
+@attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar

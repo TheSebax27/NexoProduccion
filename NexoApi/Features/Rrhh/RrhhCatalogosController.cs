@@ -9,7 +9,7 @@ namespace NexoApi.Features.Rrhh;
 // 2026) que no giran alrededor de un solo EmpleadoID como EmpleadosController.
 [ApiController]
 [Route("api/rrhh")]
-[Authorize(Roles = "Administracion")]
+[Authorize]
 public class RrhhCatalogosController : ControllerBase
 {
     private readonly IRrhhService _service;
@@ -25,11 +25,11 @@ public class RrhhCatalogosController : ControllerBase
     // ---------- Departamentos ----------
 
     [HttpGet("departamentos")]
-    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult<IEnumerable<DepartamentoItem>>> ListarDepartamentos()
         => Ok(await _service.ListarDepartamentosAsync());
 
     [HttpPost("departamentos")]
+    [Authorize]
     public async Task<ActionResult> CrearDepartamento(CrearDepartamentoRequest request)
     {
         var id = await _service.CrearDepartamentoAsync(request);
@@ -37,6 +37,7 @@ public class RrhhCatalogosController : ControllerBase
     }
 
     [HttpPut("departamentos/{id:int}")]
+    [Authorize]
     public async Task<ActionResult> ActualizarDepartamento(int id, ActualizarDepartamentoRequest request)
     {
         try
@@ -53,11 +54,11 @@ public class RrhhCatalogosController : ControllerBase
     // ---------- Cargos ----------
 
     [HttpGet("cargos")]
-    [Authorize(Roles = "Administracion,Jefes")]
     public async Task<ActionResult<IEnumerable<CargoItem>>> ListarCargos()
         => Ok(await _service.ListarCargosAsync());
 
     [HttpPost("cargos")]
+    [Authorize]
     public async Task<ActionResult> CrearCargo(CrearCargoRequest request)
     {
         var id = await _service.CrearCargoAsync(request);
@@ -65,6 +66,7 @@ public class RrhhCatalogosController : ControllerBase
     }
 
     [HttpPut("cargos/{id:int}")]
+    [Authorize]
     public async Task<ActionResult> ActualizarCargo(int id, ActualizarCargoRequest request)
     {
         try

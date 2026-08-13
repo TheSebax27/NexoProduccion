@@ -1,6 +1,5 @@
-﻿<MudNavMenu>
-    @* Favoritos: paginas marcadas desde el boton de marcador de cada
-       subpagina (ver BotonFavorito.razor) -- grupo vacio si no hay ninguna. *@
+<MudNavMenu>
+    @* Favoritos *@
     @if (Preferencias.Favoritos.Count > 0)
     {
         <MudNavGroup Title="Favoritos" Icon="@Icons.Material.Filled.Bookmark" Expanded="false">
@@ -11,138 +10,234 @@
         </MudNavGroup>
     }
 
-    <AuthorizeView Roles="Administracion,Jefes,Empleados">
-        <Authorized>
-            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Insights">
-                Business Intelligence
-            </MudNavLink>
-        </Authorized>
-    </AuthorizeView>
+    @* Business Intelligence — raiz, sin grupo *@
+    @if (Modulos.EsVisible("BI"))
+    {
+        <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Insights">
+            Business Intelligence
+        </MudNavLink>
+    }
 
-    @* El grupo entero debe ocultarse si el rol no tiene acceso a NINGUNA
-       subpagina de adentro -- antes el MudNavGroup se mostraba siempre,
-       vacio, para roles sin acceso a ningun hijo (ej. Empleados veia
-       "Produccion" sin ninguna opcion debajo). *@
-    <AuthorizeView Roles="Administracion,Jefes,Subempleados" Context="grupoProduccion">
-        <Authorized>
-            <MudNavGroup Title="Produccion" Icon="@Icons.Material.Filled.Factory" Expanded="true">
-                <AuthorizeView Roles="Administracion,Jefes,Subempleados">
-                    <Authorized>
-                        <MudNavLink Href="/produccion/ordenes">Ordenes de Produccion</MudNavLink>
-                    </Authorized>
-                </AuthorizeView>
-                <AuthorizeView Roles="Administracion,Jefes">
-                    <Authorized>
-                        <MudNavLink Href="/produccion/recetas">Recetas (BOM)</MudNavLink>
-                        <MudNavLink Href="/produccion/maquinaria">Maquinaria</MudNavLink>
-                    </Authorized>
-                </AuthorizeView>
-            </MudNavGroup>
-        </Authorized>
-    </AuthorizeView>
+    @* Produccion *@
+    @if (Modulos.EsVisible("PRODUCCION"))
+    {
+        <MudNavGroup Title="Produccion" Icon="@Icons.Material.Filled.Factory" Expanded="true">
+            @if (Modulos.EsVisible("PRODUCCION.ORDENES"))
+            {
+                <MudNavLink Href="/produccion/ordenes" Icon="@Icons.Material.Filled.Assignment">Ordenes de Produccion</MudNavLink>
+            }
+            @if (Modulos.EsVisible("PRODUCCION.RECETAS"))
+            {
+                <MudNavLink Href="/produccion/recetas" Icon="@Icons.Material.Filled.MenuBook">Recetas (BOM)</MudNavLink>
+            }
+            @if (Modulos.EsVisible("PRODUCCION.MAQUINARIA"))
+            {
+                <MudNavLink Href="/produccion/maquinaria" Icon="@Icons.Material.Filled.PrecisionManufacturing">Maquinaria</MudNavLink>
+            }
+        </MudNavGroup>
+    }
 
-    @* Inventario siempre tiene al menos "Consulta de Stock" (todos los
-       roles autenticados), asi que el grupo no necesita AuthorizeView propio. *@
-    <MudNavGroup Title="Inventario" Icon="@Icons.Material.Filled.Inventory2" Expanded="false">
-        <MudNavLink Href="/inventario/stock">Consulta de Stock</MudNavLink>
-        <AuthorizeView Roles="Administracion,Jefes,Empleados">
-            <Authorized>
-                <MudNavLink Href="/inventario/kardex">Kardex de Artículos</MudNavLink>
-            </Authorized>
-        </AuthorizeView>
-        <AuthorizeView Roles="Administracion,Empleados">
-            <Authorized>
-                <MudNavLink Href="/inventario/ajustes">Ajuste de Inventario</MudNavLink>
-                <MudNavLink Href="/inventario/bajas">Registrar Baja</MudNavLink>
-                <MudNavLink Href="/inventario/traspasos">Traspasos</MudNavLink>
-            </Authorized>
-        </AuthorizeView>
-    </MudNavGroup>
+    @* Inventario *@
+    @if (Modulos.EsVisible("INVENTARIO"))
+    {
+        <MudNavGroup Title="Inventario" Icon="@Icons.Material.Filled.Inventory2" Expanded="false">
+            @if (Modulos.EsVisible("INVENTARIO.STOCK"))
+            {
+                <MudNavLink Href="/inventario/stock" Icon="@Icons.Material.Filled.Inventory">Consulta de Stock</MudNavLink>
+            }
+            @if (Modulos.EsVisible("INVENTARIO.KARDEX"))
+            {
+                <MudNavLink Href="/inventario/kardex" Icon="@Icons.Material.Filled.ReceiptLong">Kardex de Articulos</MudNavLink>
+            }
+            @if (Modulos.EsVisible("INVENTARIO.AJUSTES"))
+            {
+                <MudNavLink Href="/inventario/ajustes" Icon="@Icons.Material.Filled.Tune">Ajuste de Inventario</MudNavLink>
+            }
+            @if (Modulos.EsVisible("INVENTARIO.BAJAS"))
+            {
+                <MudNavLink Href="/inventario/bajas" Icon="@Icons.Material.Filled.RemoveCircleOutline">Registrar Baja</MudNavLink>
+            }
+            @if (Modulos.EsVisible("INVENTARIO.TRASPASOS"))
+            {
+                <MudNavLink Href="/inventario/traspasos" Icon="@Icons.Material.Filled.MoveDown">Traspasos</MudNavLink>
+            }
+        </MudNavGroup>
+    }
 
-    <AuthorizeView Roles="Administracion,Empleados">
-        <Authorized>
-            <MudNavGroup Title="Operaciones" Icon="@Icons.Material.Filled.SwapHoriz" Expanded="false">
+    @* Operaciones *@
+    @if (Modulos.EsVisible("OPERACIONES"))
+    {
+        <MudNavGroup Title="Operaciones" Icon="@Icons.Material.Filled.SwapHoriz" Expanded="false">
+            @if (Modulos.EsVisible("OPERACIONES.MOVIMIENTOS"))
+            {
                 <MudNavLink Href="/operaciones/movimientos" Icon="@Icons.Material.Filled.Timeline">Movimientos</MudNavLink>
+            }
+            @if (Modulos.EsVisible("OPERACIONES.COMPRAS"))
+            {
                 <MudNavLink Href="/compras/ordenes" Icon="@Icons.Material.Filled.ShoppingCart">Ordenes de Compra</MudNavLink>
+            }
+            @if (Modulos.EsVisible("OPERACIONES.DESPACHOS"))
+            {
                 <MudNavLink Href="/logistica/despachos" Icon="@Icons.Material.Filled.LocalShipping">Despachos</MudNavLink>
-                <MudNavLink Href="/facturacion" Icon="@Icons.Material.Filled.Receipt">Facturación</MudNavLink>
-            </MudNavGroup>
-        </Authorized>
-    </AuthorizeView>
+            }
+            @if (Modulos.EsVisible("OPERACIONES.FACTURACION"))
+            {
+                <MudNavLink Href="/facturacion" Icon="@Icons.Material.Filled.Receipt">Facturacion</MudNavLink>
+            }
+        </MudNavGroup>
+    }
 
-    <AuthorizeView Roles="Administracion,Jefes" Context="grupoCatalogo">
-        <Authorized>
-            <MudNavGroup Title="Catalogo" Icon="@Icons.Material.Filled.Category" Expanded="false">
-                @* Articulos.razor exige Administracion,Jefes -- antes este
-                   link no tenia AuthorizeView y aparecia para cualquiera (ej.
-                   Empleados), pero al entrar la pagina lo rechazaba (pantalla en blanco). *@
-                <AuthorizeView Roles="Administracion,Jefes">
-                    <Authorized>
-                        <MudNavLink Href="/catalogo/articulos">Articulos</MudNavLink>
-                    </Authorized>
-                </AuthorizeView>
-                <AuthorizeView Roles="Administracion">
-                    <Authorized>
-                        <MudNavLink Href="/catalogo/centros-costo">Centros de Costo</MudNavLink>
-                        <MudNavLink Href="/catalogo/centros-trabajo">Centros de Trabajo</MudNavLink>
-                        <MudNavLink Href="/catalogo/bodegas">Bodegas</MudNavLink>
-                        <MudNavLink Href="/catalogo/proveedores">Proveedores</MudNavLink>
-                        @if (ConfiguracionEmpresa.UsaVisions)
-                        {
-                            <MudNavLink Href="/catalogo/mapeo-articulos-visions">Mapeo Articulos Visions</MudNavLink>
-                        }
-                    </Authorized>
-                </AuthorizeView>
-            </MudNavGroup>
-        </Authorized>
-    </AuthorizeView>
+    @* Catalogo *@
+    @if (Modulos.EsVisible("CATALOGO"))
+    {
+        <MudNavGroup Title="Catalogo" Icon="@Icons.Material.Filled.Category" Expanded="false">
+            @if (Modulos.EsVisible("CATALOGO.ARTICULOS"))
+            {
+                <MudNavLink Href="/catalogo/articulos" Icon="@Icons.Material.Filled.ViewInAr">Articulos</MudNavLink>
+            }
+            @if (Modulos.EsVisible("CATALOGO.CENTROSCOSTO"))
+            {
+                <MudNavLink Href="/catalogo/centros-costo" Icon="@Icons.Material.Filled.BusinessCenter">Centros de Costo</MudNavLink>
+            }
+            @if (Modulos.EsVisible("CATALOGO.CENTROSTRABAJO"))
+            {
+                <MudNavLink Href="/catalogo/centros-trabajo" Icon="@Icons.Material.Filled.Work">Centros de Trabajo</MudNavLink>
+            }
+            @if (Modulos.EsVisible("CATALOGO.BODEGAS"))
+            {
+                <MudNavLink Href="/catalogo/bodegas" Icon="@Icons.Material.Filled.Warehouse">Bodegas</MudNavLink>
+            }
+            @if (Modulos.EsVisible("CATALOGO.PROVEEDORES"))
+            {
+                <MudNavLink Href="/catalogo/proveedores" Icon="@Icons.Material.Filled.Store">Proveedores</MudNavLink>
+                @if (ConfiguracionEmpresa.UsaVisions)
+                {
+                    <MudNavLink Href="/catalogo/mapeo-articulos-visions" Icon="@Icons.Material.Filled.SyncAlt">Mapeo Articulos Visions</MudNavLink>
+                }
+            }
+        </MudNavGroup>
+    }
 
-    <AuthorizeView Roles="Administracion,Jefes">
-        <Authorized>
-            <MudNavGroup Title="Planificacion" Icon="@Icons.Material.Filled.Timeline" Expanded="false">
-                <MudNavLink Href="/planificacion/demanda">Demanda Proyectada</MudNavLink>
-                <MudNavLink Href="/planificacion/metas-venta">Metas de Venta</MudNavLink>
+    @* Planificacion *@
+    @if (Modulos.EsVisible("PLANIFICACION"))
+    {
+        <MudNavGroup Title="Planificacion" Icon="@Icons.Material.Filled.Timeline" Expanded="false">
+            @if (Modulos.EsVisible("PLANIFICACION.DEMANDA"))
+            {
+                <MudNavLink Href="/planificacion/demanda" Icon="@Icons.Material.Filled.TrendingUp">Demanda Proyectada</MudNavLink>
+            }
+            @if (Modulos.EsVisible("PLANIFICACION.METAS"))
+            {
+                <MudNavLink Href="/planificacion/metas-venta" Icon="@Icons.Material.Filled.Flag">Metas de Venta</MudNavLink>
+            }
+            @if (Modulos.EsVisible("PLANIFICACION.CALENDARIO"))
+            {
                 <MudNavLink Href="/planificacion/calendario" Icon="@Icons.Material.Filled.CalendarMonth">Calendario</MudNavLink>
-                <MudNavLink Href="/proyectos">Proyectos</MudNavLink>
-            </MudNavGroup>
-        </Authorized>
-    </AuthorizeView>
+            }
+            @if (Modulos.EsVisible("PLANIFICACION.PROYECTOS"))
+            {
+                <MudNavLink Href="/proyectos" Icon="@Icons.Material.Filled.AccountTree">Proyectos</MudNavLink>
+            }
+        </MudNavGroup>
+    }
 
-    <AuthorizeView Roles="Administracion,Ventas">
-        <Authorized>
-            <MudNavGroup Title="CRM" Icon="@Icons.Material.Filled.Handshake" Expanded="false">
-                <MudNavLink Href="/crm/clientes">Clientes</MudNavLink>
-                <MudNavLink Href="/crm/leads">Leads</MudNavLink>
-                <MudNavLink Href="/crm/oportunidades">Oportunidades</MudNavLink>
-                <MudNavLink Href="/crm/actividades">Actividades</MudNavLink>
-                <MudNavLink Href="/crm/cotizaciones">Cotizaciones</MudNavLink>
-                <MudNavLink Href="/crm/campanas" Icon="@Icons.Material.Filled.Campaign">Campañas</MudNavLink>
+    @* CRM *@
+    @if (Modulos.EsVisible("CRM"))
+    {
+        <MudNavGroup Title="CRM" Icon="@Icons.Material.Filled.Handshake" Expanded="false">
+            @if (Modulos.EsVisible("CRM.CLIENTES"))
+            {
+                <MudNavLink Href="/crm/clientes" Icon="@Icons.Material.Filled.People">Clientes</MudNavLink>
+            }
+            @if (Modulos.EsVisible("CRM.LEADS"))
+            {
+                <MudNavLink Href="/crm/leads" Icon="@Icons.Material.Filled.PersonSearch">Leads</MudNavLink>
+            }
+            @if (Modulos.EsVisible("CRM.OPORTUNIDADES"))
+            {
+                <MudNavLink Href="/crm/oportunidades" Icon="@Icons.Material.Filled.MonetizationOn">Oportunidades</MudNavLink>
+            }
+            @if (Modulos.EsVisible("CRM.ACTIVIDADES"))
+            {
+                <MudNavLink Href="/crm/actividades" Icon="@Icons.Material.Filled.EventNote">Actividades</MudNavLink>
+            }
+            @if (Modulos.EsVisible("CRM.COTIZACIONES"))
+            {
+                <MudNavLink Href="/crm/cotizaciones" Icon="@Icons.Material.Filled.RequestQuote">Cotizaciones</MudNavLink>
+            }
+            @if (Modulos.EsVisible("CRM.CAMPANAS"))
+            {
+                <MudNavLink Href="/crm/campanas" Icon="@Icons.Material.Filled.Campaign">Campanas</MudNavLink>
+            }
+            @if (Modulos.EsVisible("CRM.COMBOS"))
+            {
                 <MudNavLink Href="/marketing/combos" Icon="@Icons.Material.Filled.LocalOffer">Combos / Ofertas</MudNavLink>
-            </MudNavGroup>
-        </Authorized>
-    </AuthorizeView>
+            }
+        </MudNavGroup>
+    }
 
-    <AuthorizeView Roles="Administracion">
-        <Authorized>
-            <MudNavGroup Title="Recursos Humanos" Icon="@Icons.Material.Filled.Badge" Expanded="false">
-                <MudNavLink Href="/rrhh/empleados">Empleados</MudNavLink>
+    @* Recursos Humanos *@
+    @if (Modulos.EsVisible("RRHH"))
+    {
+        <MudNavGroup Title="Recursos Humanos" Icon="@Icons.Material.Filled.Badge" Expanded="false">
+            @if (Modulos.EsVisible("RRHH.EMPLEADOS"))
+            {
+                <MudNavLink Href="/rrhh/empleados" Icon="@Icons.Material.Filled.Person">Empleados</MudNavLink>
+            }
+            @if (Modulos.EsVisible("RRHH.ASISTENCIA"))
+            {
                 <MudNavLink Href="/rrhh/asistencia" Icon="@Icons.Material.Filled.FactCheck">Asistencia</MudNavLink>
+            }
+            @if (Modulos.EsVisible("RRHH.HORARIOS"))
+            {
                 <MudNavLink Href="/rrhh/horarios" Icon="@Icons.Material.Filled.Schedule">Horarios</MudNavLink>
-                <MudNavLink Href="/rrhh/cargos">Cargos y Departamentos</MudNavLink>
-                <MudNavLink Href="/rrhh/ausencias">Ausencias y Vacaciones</MudNavLink>
-                <MudNavLink Href="/rrhh/organigrama">Organigrama</MudNavLink>
-                <MudNavLink Href="/admin/usuarios">Usuarios del Sistema</MudNavLink>
-            </MudNavGroup>
-        </Authorized>
-    </AuthorizeView>
+            }
+            @if (Modulos.EsVisible("RRHH.CARGOS"))
+            {
+                <MudNavLink Href="/rrhh/cargos" Icon="@Icons.Material.Filled.Work">Cargos y Departamentos</MudNavLink>
+            }
+            @if (Modulos.EsVisible("RRHH.AUSENCIAS"))
+            {
+                <MudNavLink Href="/rrhh/ausencias" Icon="@Icons.Material.Filled.BeachAccess">Ausencias y Vacaciones</MudNavLink>
+            }
+            @if (Modulos.EsVisible("RRHH.ORGANIGRAMA"))
+            {
+                <MudNavLink Href="/rrhh/organigrama" Icon="@Icons.Material.Filled.AccountTree">Organigrama</MudNavLink>
+            }
+            @* Usuarios del sistema y Roles — exclusivo Admin *@
+            <AuthorizeView Roles="Administracion">
+                <Authorized>
+                    @if (Modulos.EsVisible("RRHH.USUARIOS"))
+                    {
+                        <MudNavLink Href="/admin/usuarios" Icon="@Icons.Material.Filled.ManageAccounts">Usuarios del Sistema</MudNavLink>
+                    }
+                    <MudNavLink Href="/admin/roles" Icon="@Icons.Material.Filled.AdminPanelSettings">
+                        Roles y Modulos
+                    </MudNavLink>
+                </Authorized>
+            </AuthorizeView>
+        </MudNavGroup>
+    }
 </MudNavMenu>
 
 @code {
     [Inject] private NexoWeb.Common.Auth.PreferenciasState Preferencias { get; set; } = default!;
     [Inject] private NexoWeb.Common.Auth.ConfiguracionEmpresaState ConfiguracionEmpresa { get; set; } = default!;
+    [Inject] private NexoWeb.Common.Auth.ModulosVisiblesState Modulos { get; set; } = default!;
+    [Inject] private NexoWeb.Common.Auth.AuthStateService Auth { get; set; } = default!;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         ConfiguracionEmpresa.OnCambio += StateHasChanged;
+        Modulos.OnCambio += StateHasChanged;
+        Auth.OnChange += RecargarModulos;
+
+        await Modulos.CargarAsync(Auth.Rol, Auth.UsuarioId);
+    }
+
+    private async void RecargarModulos()
+    {
+        await Modulos.CargarAsync(Auth.Rol, Auth.UsuarioId);
+        await InvokeAsync(StateHasChanged);
     }
 }

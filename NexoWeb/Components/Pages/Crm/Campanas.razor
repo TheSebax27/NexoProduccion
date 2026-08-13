@@ -1,10 +1,10 @@
-@page "/crm/campanas"
+﻿@page "/crm/campanas"
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Common.ApiClient
 @inject INexoApiClient Api
 @inject NavigationManager Nav
 @inject ISnackbar Snack
-@attribute [Authorize(Roles = "Administracion,Ventas")]
+@attribute [Authorize]
 
 <PageTitle>Campañas de Email</PageTitle>
 

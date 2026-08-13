@@ -519,6 +519,7 @@ public class CrmService : ICrmService
             FROM Crm.Clientes c
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = c.ResponsableID
             WHERE c.Estado = 1
+              AND c.NIT <> 'CF-SYS'
               AND (
                   (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) IS NULL
                   OR (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) < DATEADD(DAY, -@DiasSinContacto, SYSUTCDATETIME())

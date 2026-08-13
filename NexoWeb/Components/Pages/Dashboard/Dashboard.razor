@@ -1,12 +1,14 @@
 ﻿@* Components/Pages/Dashboard/Dashboard.razor *@
 @page "/"
-@attribute [Authorize(Roles = "Administracion,Jefes,Empleados")]
+@attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
+@inject NexoWeb.Common.Auth.ModulosVisiblesState Modulos
 @using NexoWeb.Common.Dtos
 @using System.Globalization
+@implements IDisposable
 
 <PageTitle>Business Intelligence - NEXO</PageTitle>
 
@@ -336,7 +338,7 @@ else
                     </div>
                     <MudDateRangePicker @bind-DateRange="_rangoPlanVsReal" @bind-DateRange:after="OnRangoPlanVsRealCambiadoAsync"
                                         Label="Rango de fechas" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                        PickerVariant="PickerVariant.Dialog"
+                                        PickerVariant="PickerVariant.Dialog" Color="Color.Primary"
                                         Style="max-width: 300px; min-width: 260px;" DateFormat="dd/MM/yyyy" />
                 </div>
 
@@ -387,7 +389,7 @@ else
                     </div>
                     <MudDateRangePicker @bind-DateRange="_rangoVariacion" @bind-DateRange:after="OnRangoVariacionCambiadoAsync"
                                         Label="Rango" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                        PickerVariant="PickerVariant.Dialog"
+                                        PickerVariant="PickerVariant.Dialog" Color="Color.Primary"
                                         Style="max-width: 260px; min-width: 220px;" DateFormat="dd/MM/yyyy" />
                 </div>
 
@@ -482,7 +484,7 @@ else
                     </div>
                     <MudDateRangePicker @bind-DateRange="_rangoPerdidas" @bind-DateRange:after="OnRangoPerdidasCambiadoAsync"
                                         Label="Rango de fechas" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                        PickerVariant="PickerVariant.Dialog"
+                                        PickerVariant="PickerVariant.Dialog" Color="Color.Primary"
                                         Style="max-width: 300px; min-width: 260px;" DateFormat="dd/MM/yyyy" />
                 </div>
                 <div class="nexo-chart-card__body">
@@ -686,6 +688,46 @@ else
     private ResumenInventarioItem _resumenInventario = new(0, 0);
     private EventoCalendarioItem? _proximoEvento;
     private List<ComboItem> _combosActivos = new();
+
+    // Rutas alternativas cuando BI no es visible, en orden de prioridad
+    private static readonly (string Codigo, string Ruta)[] _rutasAlternativas =
+    [
+        ("PRODUCCION.ORDENES",     "/produccion/ordenes"),
+        ("PRODUCCION.RECETAS",     "/produccion/recetas"),
+        ("INVENTARIO.STOCK",       "/inventario/stock"),
+        ("INVENTARIO.KARDEX",      "/inventario/kardex"),
+        ("OPERACIONES.MOVIMIENTOS","/operaciones/movimientos"),
+        ("OPERACIONES.COMPRAS",    "/compras/ordenes"),
+        ("OPERACIONES.DESPACHOS",  "/logistica/despachos"),
+        ("OPERACIONES.FACTURACION","/facturacion"),
+        ("CATALOGO.ARTICULOS",     "/catalogo/articulos"),
+        ("CRM.CLIENTES",           "/crm/clientes"),
+        ("PLANIFICACION.DEMANDA",  "/planificacion/demanda"),
+    ];
+
+    protected override void OnInitialized()
+    {
+        Modulos.OnCambio += VerificarAccesoBI;
+        VerificarAccesoBI();
+    }
+
+    public void Dispose() => Modulos.OnCambio -= VerificarAccesoBI;
+
+    private void VerificarAccesoBI()
+    {
+        if (!Modulos.Cargado || Modulos.EsAdmin) return;
+        if (Modulos.EsVisible("BI")) return;
+
+        // BI oculto: redirigir al primer modulo accesible
+        foreach (var (codigo, ruta) in _rutasAlternativas)
+        {
+            if (Modulos.EsVisible(codigo))
+            {
+                Navigation.NavigateTo(ruta, replace: true);
+                return;
+            }
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
