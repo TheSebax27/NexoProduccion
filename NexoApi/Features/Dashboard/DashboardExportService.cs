@@ -369,13 +369,13 @@ public class DashboardExportService : IDashboardExportService
         var fila = filaEncabezado + 1;
         foreach (var a in d.Articulos)
         {
-            hoja.Cell(fila, 1).Value = a.SKU;
+            hoja.Cell(fila, 1).Value = a.Referencia;
             hoja.Cell(fila, 2).Value = a.Nombre;
             hoja.Cell(fila, 3).Value = a.TipoArticulo;
             hoja.Cell(fila, 4).Value = a.Unidad;
             hoja.Cell(fila, 5).Value = (double)a.CostoPromedio;
             hoja.Cell(fila, 5).Style.NumberFormat.Format = "$#,##0.00";
-            hoja.Cell(fila, 6).Value = (double)a.PrecioVenta;
+            hoja.Cell(fila, 6).Value = (double)(a.PPublico ?? 0);
             hoja.Cell(fila, 6).Style.NumberFormat.Format = "$#,##0.00";
             hoja.Cell(fila, 7).Value = (double)a.StockMinimo;
             hoja.Cell(fila, 8).Value = (double)a.PuntoReorden;

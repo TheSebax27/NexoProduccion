@@ -69,9 +69,9 @@ public class BusquedaService : IBusquedaService
         if (usuario.IsInRole("Administracion") || usuario.IsInRole("Jefes"))
         {
             const string sqlArticulos = @"
-                SELECT TOP (@Max) SKU, Nombre
-                FROM Catalogo.Articulos
-                WHERE Nombre LIKE @Patron OR SKU LIKE @Patron
+                SELECT TOP (@Max) Referencia AS SKU, Nombre
+                FROM Catalogo.Tarjetas
+                WHERE Nombre LIKE @Patron OR Referencia LIKE @Patron
                 ORDER BY Nombre";
             var articulos = await connection.QueryAsync<(string SKU, string Nombre)>(
                 sqlArticulos, new { Patron = patron, Max = MaxPorCategoria });
@@ -133,7 +133,7 @@ public class BusquedaService : IBusquedaService
             const string sqlOrdenesProduccion = @"
                 SELECT TOP (@Max) op.CodigoOP, a.Nombre AS Producto, e.Nombre AS Estado
                 FROM Produccion.OrdenesProduccion op
-                JOIN Catalogo.Articulos a ON a.ArticuloID = op.ProductoTerminadoID
+                JOIN Catalogo.Tarjetas a ON a.ArticuloID = op.ProductoTerminadoID
                 JOIN Produccion.EstadosOP e ON e.EstadoOPID = op.EstadoOPID
                 WHERE op.CodigoOP LIKE @Patron OR a.Nombre LIKE @Patron
                 ORDER BY op.OrdenProduccionID DESC";

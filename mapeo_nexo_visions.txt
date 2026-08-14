@@ -1,0 +1,166 @@
+==============================================================
+MAPEO NEXO ERP <-> VISIONS ERP
+Agosto 2026
+==============================================================
+
+NEXO puede funcionar de forma INDEPENDIENTE o en conjunto con Visions.
+Cuando va en conjunto, el NexoSyncAgent sincroniza los datos entre
+ambas bases de datos usando este mapeo como referencia.
+
+--------------------------------------------------------------
+TARJETAS / ARTICULOS
+--------------------------------------------------------------
+
+NEXO (catalogo.Tarjetas)        VISIONS (dbo.TARJETA)           Notas
+-------------------------------- -------------------------------- ----------------------------------
+ArticuloID                       (sin equivalente)               PK autoincremental de NEXO
+Referencia                       REFERENCIA                      CLAVE PRINCIPAL del producto
+Nombre                           DETALLE                         Nombre/descripcion del producto
+Descripcion                      (sin equivalente)               Campo extra de NEXO
+TipoArticuloID                   (sin equivalente)               Tipos: Producto Terminado,
+                                                                  Insumo, Materia Prima, Servicio
+UnidadID                         (sin equivalente)               FK a Catalogo.UnidadesMedida
+CostoPromedio                    (calculado en Visions)          En NEXO se calcula por CPP
+StockMinimo                      EXISTENCIASMINIMAS              Stock minimo de alerta
+PuntoReorden                     SUGERIDO                        Punto de reabastecimiento
+Estado                           (sin equivalente)               Solo en NEXO (activo/inactivo)
+FechaCreacion                    (sin equivalente)               Solo en NEXO
+Presentacion.Fracciones          FRACCIONES                      Unidades por caja/embalaje (en NEXO vive en catalogo.Presentacion, no en Tarjetas)
+Fracciona                        FRACCIONA                       'SI'/'NO' (NEXO, antes ModoVentaCaja)
+PrecioVentaUnidad                (sin equivalente)               NEXO: precio por unidad suelta de caja
+Imagen / ImagenContentType       (sin equivalente)               Solo en NEXO
+Costo                            COSTO                           Costo de compra/referencia
+PPublico                         PPUBLICO                        Precio de venta publico (precio base)
+PBodega                          PBODEGA                         Precio de venta bodega/mayor
+PCredito                         PCREDITO                        Precio de venta a credito
+UPublico                         UPUBLICO                        Utilidad/margen publico vs costo
+UBodega                          UBODEGA                         Utilidad/margen bodega vs costo
+UCredito                         UCREDITO                        Utilidad/margen credito vs costo
+MarcaCodigo                      MARCA                           FK a catalogo.Marca.Codigo
+GrupoMenorCodigo                 GRUPOMENOR                      Ref. blanda a catalogo.GrupoMenor
+PresentacionCodigo               PRESENTACION                    FK a catalogo.Presentacion.Codigo
+Peso                             PESO                            Peso del producto en kg
+IvaSiNo                          IVASINO                         'SI' o 'NO'
+IvaValor                         IVAVALOR                        Porcentaje (ej. 19)
+IvaDescripcion                   IVADESCRIPCION                  Ej. "IVA 19%"
+Iva2                             (sin equivalente en Visions)    Adicion NEXO: segundo impuesto
+IvaDescripcion2                  (sin equivalente en Visions)    Adicion NEXO: desc. 2do impuesto
+
+--------------------------------------------------------------
+IVA
+--------------------------------------------------------------
+
+NEXO (catalogo.Iva)              VISIONS (dbo.IVA)
+-------------------------------- --------------------------------
+IvaID (identity PK)              Id (identity PK)
+Iva                              IVA
+Descripcion                      DESCRIPCION
+
+NEXO NO sincroniza: CUENTA, BASE, COSTO, INVENTARIO
+(campos contables de Visions, no aplican en NEXO)
+
+Nota: TARJETA.IVAVALOR y TARJETA.IVADESCRIPCION almacenan los
+      valores directamente (copia plana), sin FK a IVA.
+      Igual patron en NEXO: Tarjetas.IvaValor/IvaDescripcion
+      son copias planas, IvaID solo existe en el catalogo NEXO.
+
+Valores iniciales (mismos que Visions):
+  0  - EXENTO
+  5  - IVA 5%
+  16 - IVA 16%
+  19 - IVA 19%
+  0  - EXCLUIDO
+  0  - ICUI Saludable
+  0  - ICL Licores
+  0  - IBUA Bebidas
+  0  - INPP Plasticos
+
+--------------------------------------------------------------
+GRUPOS MAYORES
+--------------------------------------------------------------
+
+NEXO (catalogo.GrupoMayor)       VISIONS (dbo.GRUPOMAYOR)
+-------------------------------- --------------------------------
+Codigo                           CODIGO
+Nombre                           NOMBRE
+
+NEXO NO sincroniza: NOTACONTABILIDAD (campo contable de Visions, no aplica en NEXO)
+
+--------------------------------------------------------------
+GRUPOS MENORES
+--------------------------------------------------------------
+
+NEXO (catalogo.GrupoMenor)       VISIONS (dbo.GRUPOMENOR)
+-------------------------------- --------------------------------
+Codigo                           CODIGO
+Nombre                           NOMBRE
+GrupoMayor                       GRUPOMAYOR
+
+NEXO NO sincroniza: NOTACONTABILIDAD, CODIGODANE
+
+--------------------------------------------------------------
+MARCA
+--------------------------------------------------------------
+
+NEXO (catalogo.Marca)            VISIONS (dbo.MARCA)
+-------------------------------- --------------------------------
+Codigo                           CODIGO
+Marca                            MARCA
+
+Nota: En NEXO el campo se llama "Marca" (igual que en Visions).
+      La API de NEXO lo expone como "Nombre" en el DTO para
+      mantener convencion PascalCase, pero la columna en BD es "Marca".
+
+--------------------------------------------------------------
+PRESENTACION
+--------------------------------------------------------------
+
+NEXO (catalogo.Presentacion)     VISIONS (dbo.PRESENTACION)
+-------------------------------- --------------------------------
+Codigo                           CODIGO
+Presentacion                     PRESENTACION
+
+--------------------------------------------------------------
+CAMPOS QUE NEXO TIENE Y VISIONS NO
+--------------------------------------------------------------
+- Tarjetas.ArticuloID            PK autoincremental de NEXO
+- Tarjetas.Descripcion           Campo largo de descripcion
+- Tarjetas.TipoArticuloID        Clasificacion propia de NEXO
+- Tarjetas.Estado                Activo/Inactivo (Visions elimina directamente)
+- Tarjetas.FechaCreacion         Auditoria
+- Tarjetas.Imagen                Foto del producto
+- Tarjetas.Fracciona             Control de venta fraccionada (SI/NO); antes 'ModoVentaCaja'
+- Tarjetas.Iva2 / IvaDescripcion2   Soporte para doble impuesto
+- Toda la tabla Organizacion.*   Centros de Costo, Bodegas (Visions los maneja internamente)
+- Toda la gestion de Kardex      NEXO tiene su propio Kardex detallado
+
+--------------------------------------------------------------
+CAMPOS QUE VISIONS TIENE Y NEXO NO SINCRONIZA (por ahora)
+--------------------------------------------------------------
+- TARJETA.CENTROCOSTO            En NEXO el CC se maneja aparte
+- TARJETA.BARRAS                 Codigo de barras (pendiente agregar a NEXO)
+- TARJETA.TIPOTARJETA            Tipo interno de Visions
+- TARJETA.INVENTA / ADVIERTE     Flags de inventario de Visions
+- TARJETA.VF1..VF4 / VV1..VV4   Valores especiales Visions
+- TARJETA.ROTA1/ROTA2            Rotacion
+- TARJETA.MARGEN1/2/3            Margenes Visions
+- TARJETA.PUC                    Plan unico de cuentas
+- TARJETA.UBICA / UBICA1..4      Ubicacion fisica en bodega
+- GRUPOMAYOR.NOTACONTABILIDAD    Nota contable
+- GRUPOMENOR.NOTACONTABILIDAD    Nota contable
+- GRUPOMENOR.CODIGODANE          Codigo DANE
+
+--------------------------------------------------------------
+NOTAS GENERALES DE SINCRONIZACION
+--------------------------------------------------------------
+1. La clave de sincronizacion principal es: NEXO.Referencia = VISIONS.TARJETA.REFERENCIA
+2. Visions tiene PK compuesta (CENTROCOSTO + REFERENCIA). NEXO usa CentroCostoID
+   del contexto del usuario autenticado para resolver el CENTROCOSTO.
+3. GrupoMenorCodigo en Tarjetas es referencia blanda (sin FK formal) porque
+   GrupoMenor tiene PK compuesta (Codigo + GrupoMayor) -- igual que en Visions.
+4. Precios P (PPublico/PBodega/PCredito) = precio de venta por canal. U (UPublico/UBodega/UCredito) = utilidad/margen vs costo. Ambos grupos se sincronizan directamente.
+5. NEXO.Presentacion.Fracciones = VISIONS.TARJETA.FRACCIONES — Tarjetas ya no tiene columna Fracciones propia; se obtiene via JOIN a Presentacion.
+5. IVA: NEXO agrega Iva2/IvaDescripcion2 para productos con doble impuesto;
+   Visions no tiene este campo -- al exportar a Visions se ignora.
+
+==============================================================

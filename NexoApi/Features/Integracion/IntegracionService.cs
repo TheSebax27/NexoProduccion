@@ -62,11 +62,11 @@ public class IntegracionService : IIntegracionService
             SELECT e.EventoID, e.TipoEvento, e.Cantidad, e.CostoUnitario, e.FechaCreacion,
                    cc.IdentificadorClienteVisions AS CentroCostoVisions,
                    m.CodigoArticuloVisions AS ReferenciaVisions,
-                   a.Nombre AS NombreArticulo, a.PrecioVenta AS PrecioVentaArticulo, a.StockMinimo AS StockMinimoArticulo
+                   a.Nombre AS NombreArticulo, a.PPublico AS PrecioVentaArticulo, a.StockMinimo AS StockMinimoArticulo
             FROM Integracion.EventosSalientes e
             JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = e.CentroCostoID
             JOIN Integracion.MapeoArticulos m ON m.ArticuloID = e.ArticuloID AND m.CentroCostoID = e.CentroCostoID
-            JOIN Catalogo.Articulos a ON a.ArticuloID = e.ArticuloID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = e.ArticuloID
             WHERE e.Estado = 'PENDIENTE' AND e.CentroCostoID = @CentroCostoId";
 
         return await connection.QueryAsync<EventoPendienteItem>(sql, new { CentroCostoId = centroCostoId });
@@ -211,10 +211,10 @@ public class IntegracionService : IIntegracionService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT m.MapeoID, m.ArticuloID, a.SKU AS SkuArticulo, a.Nombre AS NombreArticulo,
+            SELECT m.MapeoID, m.ArticuloID, a.Referencia AS SkuArticulo, a.Nombre AS NombreArticulo,
                    m.CentroCostoID, m.CodigoArticuloVisions, m.Estado, m.FechaCreacion
             FROM Integracion.MapeoArticulos m
-            JOIN Catalogo.Articulos a ON a.ArticuloID = m.ArticuloID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = m.ArticuloID
             WHERE m.CentroCostoID = @CentroCostoId
             ORDER BY a.Nombre";
 
@@ -229,7 +229,7 @@ public class IntegracionService : IIntegracionService
         // Producto Terminado (lo unico que se vende ahi). Materia Prima,
         // Insumos y Servicios se quedan solo en NEXO.
         var tipoArticulo = await connection.ExecuteScalarAsync<string?>(
-            @"SELECT ta.Nombre FROM Catalogo.Articulos a
+            @"SELECT ta.Nombre FROM Catalogo.Tarjetas a
               JOIN Catalogo.TiposArticulo ta ON ta.TipoArticuloID = a.TipoArticuloID
               WHERE a.ArticuloID = @ArticuloID", new { r.ArticuloID });
 
@@ -254,7 +254,7 @@ public class IntegracionService : IIntegracionService
         const string sql = @"
             INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
             SELECT 'SINCRONIZAR_ARTICULO', @CentroCostoID, @ArticuloID, 0, a.CostoPromedio
-            FROM Catalogo.Articulos a WHERE a.ArticuloID = @ArticuloID";
+            FROM Catalogo.Tarjetas a WHERE a.ArticuloID = @ArticuloID";
 
         await connection.ExecuteAsync(sql, new { ArticuloID = articuloId, CentroCostoID = centroCostoId });
     }
@@ -307,16 +307,16 @@ public class IntegracionService : IIntegracionService
                 var stockMinimo = r.StockMinimoNuevo ?? 0;
 
                 const string sqlCrearArticulo = @"
-                    INSERT INTO Catalogo.Articulos (SKU, Nombre, TipoArticuloID, PrecioVenta, StockMinimo, PuntoReorden)
+                    INSERT INTO Catalogo.Tarjetas (Referencia, Nombre, TipoArticuloID, PPublico, StockMinimo, PuntoReorden)
                     OUTPUT INSERTED.ArticuloID
-                    VALUES (@SKU, @Nombre, @TipoArticuloID, @PrecioVenta, @StockMinimo, @StockMinimo)";
+                    VALUES (@Referencia, @Nombre, @TipoArticuloID, @PPublico, @StockMinimo, @StockMinimo)";
 
                 articuloId = await connection.ExecuteScalarAsync<int>(sqlCrearArticulo, new
                 {
-                    SKU = r.SkuNuevo,
+                    Referencia = r.SkuNuevo,
                     Nombre = r.NombreNuevo,
                     TipoArticuloID = tipoProductoTerminadoId,
-                    PrecioVenta = r.PrecioVentaNuevo ?? 0,
+                    PPublico = r.PrecioVentaNuevo ?? 0,
                     StockMinimo = stockMinimo
                 }, transaction);
             }

@@ -149,9 +149,9 @@ public class DashboardService : IDashboardService
                 ISNULL((SELECT AVG(Cumplimiento) FROM (
                     SELECT CASE WHEN m.MetaValor > 0
                          THEN (ISNULL((
-                             SELECT SUM(ABS(km.Cantidad) * a.PrecioVenta) FROM Kardex.KardexMovimientos km
+                             SELECT SUM(ABS(km.Cantidad) * a.PPublico) FROM Kardex.KardexMovimientos km
                              JOIN Kardex.TiposMovimientoKardex t ON t.TipoMovID = km.TipoMovID
-                             JOIN Catalogo.Articulos a ON a.ArticuloID = km.ArticuloID
+                             JOIN Catalogo.Tarjetas a ON a.ArticuloID = km.ArticuloID
                              JOIN Inventario.Bodegas b ON b.BodegaID = km.BodegaID
                              WHERE t.Codigo IN ('SALIDA_VENTA_VISIONS', 'SALIDA_VENTA_FACTURA') AND b.CentroCostoID = m.CentroCostoID
                                AND km.Fecha >= m.Periodo AND km.Fecha < DATEADD(MONTH, 1, m.Periodo)

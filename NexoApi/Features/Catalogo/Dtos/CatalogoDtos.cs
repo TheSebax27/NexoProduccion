@@ -27,40 +27,115 @@ public record CrearBodegaRequest(string Nombre, int CentroCostoID, string TipoBo
 public record ActualizarBodegaRequest(string Nombre, string TipoBodega, bool EsVirtual, bool Estado);
 public record BodegaItem(int BodegaID, string Nombre, int CentroCostoID, string CentroCosto, string TipoBodega, bool EsVirtual, bool Estado);
 
-// ---------- Articulos ----------
+// ---------- Articulos / Tarjetas ----------
 // UnidadID es opcional: un Servicio no es tangible, no tiene sentido forzarlo
 // a una unidad fisica (kg, L, und, etc.).
-// UnidadesPorEmbalaje: cuantas unidades base trae 1 caja/embalaje (ej. una
+// Fracciones: cuantas unidades base trae 1 caja/embalaje (ej. una
 // Caja de Fuente trae 10 unidades). Es solo informativo/de conversion para
 // ayudar a calcular bien la cantidad -- el stock, kardex y recetas SIEMPRE
 // se registran en la UnidadID base del articulo, esto no cambia esa logica.
-// ModoVentaCaja: 'CAJA' = solo en cajas completas, 'AMBOS' = cajas y unidades sueltas.
-// Solo aplica cuando UnidadesPorEmbalaje tiene valor (articulo con unidad de caja).
+// Fracciona: 'SI' = vende en fracciones (unidades sueltas Y cajas), 'NO' = solo en paquetes completos.
+// Solo aplica cuando Fracciones tiene valor (articulo con unidad de caja).
+//
+// Campos Visions (calca de TARJETA):
+//   Referencia    = TARJETA.REFERENCIA (codigo en Visions, para sincronizacion)
+//   Costo         = TARJETA.COSTO
+//   PPublico/PBodega/PCredito = TARJETA.PPUBLICO/PBODEGA/PCREDITO
+//   UPublico/UBodega/UCredito  = TARJETA.UPUBLICO/UBODEGA/UCREDITO
+//   MarcaCodigo   = TARJETA.MARCA  -> catalogo.Marcas.Codigo
+//   GrupoMenorCodigo = TARJETA.GRUPOMENOR -> catalogo.GruposMenores.Codigo
+//   PresentacionCodigo = TARJETA.PRESENTACION -> catalogo.Presentaciones.Codigo
+//   IvaSiNo/IvaValor/IvaDescripcion = TARJETA.IVASINO/IVAVALOR/IVADESCRIPCION
+//   Iva2/IvaDescripcion2 = adicion NEXO (doble impuesto), no existe en Visions
+
 public record CrearArticuloRequest(
-    string SKU, string Nombre, string? Descripcion, int TipoArticuloID, int? UnidadID,
-    decimal PrecioVenta, decimal StockMinimo, decimal PuntoReorden, int? DiasVidaUtil,
-    decimal? UnidadesPorEmbalaje, string? ModoVentaCaja = "AMBOS", decimal? PrecioVentaUnidad = null
+    string Referencia, string Nombre, string? Descripcion, int TipoArticuloID,
+    decimal StockMinimo, decimal PuntoReorden, int? DiasVidaUtil,
+    string? Fracciona = "SI", decimal? PrecioVentaUnidad = null,
+    // Campos Visions (Referencia = TARJETA.REFERENCIA, Nombre = TARJETA.DETALLE)
+    decimal? Costo = null,
+    decimal? PPublico = null, decimal? PBodega = null, decimal? PCredito = null,
+    decimal? UPublico = null,  decimal? UBodega = null, decimal? UCredito = null,
+    string? MarcaCodigo = null, string? GrupoMenorCodigo = null, string? PresentacionCodigo = null,
+    decimal? Peso = null,
+    string? IvaSiNo = null, short? IvaValor = null, string? IvaDescripcion = null,
+    short? Iva2 = null, string? IvaDescripcion2 = null
 );
+
 public record ActualizarArticuloRequest(
-    string Nombre, string? Descripcion, decimal PrecioVenta,
+    string Nombre, string? Descripcion,
     decimal StockMinimo, decimal PuntoReorden, int? DiasVidaUtil, bool Estado,
-    decimal? UnidadesPorEmbalaje, string? ModoVentaCaja = "AMBOS", decimal? PrecioVentaUnidad = null
+    string? Fracciona = "SI", decimal? PrecioVentaUnidad = null,
+    // Campos Visions (Referencia = TARJETA.REFERENCIA, Nombre = TARJETA.DETALLE)
+    decimal? Costo = null,
+    decimal? PPublico = null, decimal? PBodega = null, decimal? PCredito = null,
+    decimal? UPublico = null,  decimal? UBodega = null, decimal? UCredito = null,
+    string? MarcaCodigo = null, string? GrupoMenorCodigo = null, string? PresentacionCodigo = null,
+    decimal? Peso = null,
+    string? IvaSiNo = null, short? IvaValor = null, string? IvaDescripcion = null,
+    short? Iva2 = null, string? IvaDescripcion2 = null
 );
 
 public record ArticuloItem(
-    int ArticuloID, string SKU, string Nombre, string? Descripcion, string TipoArticulo, string? Unidad,
-    decimal CostoPromedio, decimal PrecioVenta, decimal StockMinimo, decimal PuntoReorden, bool Estado,
-    int? DiasVidaUtil, decimal? UnidadesPorEmbalaje, bool TieneImagen, string? ModoVentaCaja, decimal? PrecioVentaUnidad
-);
+    int ArticuloID, string Referencia, string Nombre, string? Descripcion, string TipoArticulo,
+    decimal CostoPromedio, decimal StockMinimo, decimal PuntoReorden, bool Estado, decimal Existencias,
+    int? DiasVidaUtil, decimal? Fracciones, bool TieneImagen, string? Fracciona, decimal? PrecioVentaUnidad,
+    // Campos Visions (Referencia = TARJETA.REFERENCIA, Nombre = TARJETA.DETALLE)
+    decimal? Costo,
+    decimal? PPublico, decimal? PBodega, decimal? PCredito,
+    decimal? UPublico,  decimal? UBodega, decimal? UCredito,
+    string? MarcaCodigo, string? MarcaNombre,
+    string? GrupoMenorCodigo, string? GrupoMenorNombre,
+    string? GrupoMayorCodigo, string? GrupoMayorNombre,
+    string? PresentacionCodigo, string? PresentacionNombre,
+    decimal? Peso,
+    string? IvaSiNo, short? IvaValor, string? IvaDescripcion,
+    short? Iva2, string? IvaDescripcion2
+)
+{
+    // Helpers para uso en dialogs de despacho/factura
+    public bool EsFraccionado => Fracciones is > 0;
+    public bool SoloEnPaquete => EsFraccionado && Fracciona == "NO";
+    // Alias de compatibilidad (Unidad ahora es PresentacionCodigo — UnidadesMedida eliminado)
+    public string? Unidad => PresentacionCodigo;
+    public decimal PrecioUnidadEfectivo => PPublico ?? 0;
+}
 
 // ---------- Imagen de articulo (opcional, una sola por articulo) ----------
 public record ActualizarImagenRequest(string Base64, string ContentType);
 
-// Agregado para el punto #2 (pantalla de Articulos): no existia forma de listar
-// estos dos catalogos, por lo que el formulario de creacion no podia poblar
-// sus selectores de Tipo de Articulo ni de Unidad de Medida.
+// Catalogos base para selectores en formularios
 public record TipoArticuloItem(int TipoArticuloID, string Codigo, string Nombre);
 public record UnidadMedidaItem(int UnidadID, string Nombre, string Abreviatura, string Tipo);
+
+// ---------- Catalogo: Iva (= dbo.IVA en Visions) ----------
+// TARJETA no tiene FK a IVA; almacena IVAVALOR e IVADESCRIPCION como copia plana.
+// NEXO sigue el mismo patron: IvaValor e IvaDescripcion en Tarjetas son copias planas.
+public record IvaItem(int IvaID, int Iva, string? Descripcion);
+public record CrearIvaRequest(int Iva, string? Descripcion);
+public record ActualizarIvaRequest(int Iva, string? Descripcion);
+
+// ---------- Catalogo: GruposMayores (= GRUPOMAYOR en Visions) ----------
+public record GrupoMayorItem(string Codigo, string? Nombre);
+public record CrearGrupoMayorRequest(string Codigo, string Nombre);
+public record ActualizarGrupoMayorRequest(string Nombre);
+
+// ---------- Catalogo: GruposMenores (= GRUPOMENOR en Visions) ----------
+public record GrupoMenorItem(string Codigo, string? Nombre, string GrupoMayor, string? GrupoMayorNombre);
+public record CrearGrupoMenorRequest(string Codigo, string Nombre, string GrupoMayor);
+public record ActualizarGrupoMenorRequest(string Nombre);
+
+// ---------- Catalogo: Marcas (= MARCA en Visions) ----------
+public record MarcaItem(string Codigo, string? Nombre);
+public record CrearMarcaRequest(string Codigo, string Nombre);
+public record ActualizarMarcaRequest(string Nombre);
+
+// ---------- Catalogo: Presentaciones (= PRESENTACION en Visions) ----------
+// Fracciones: unidades que trae esta presentacion (ej. 12 para CAJA12)
+// Tipo: NULL/'UNIDADES' = presentacion normal; 'PESO' = vendido por peso (activa campo Peso en articulo)
+public record PresentacionItem(string Codigo, string Presentacion, decimal? Fracciones = null, string? Tipo = null);
+public record CrearPresentacionRequest(string Codigo, string Presentacion, decimal? Fracciones = null, string? Tipo = null);
+public record ActualizarPresentacionRequest(string Presentacion, decimal? Fracciones = null, string? Tipo = null);
 
 // Clientes se movio a Features/Crm (agosto 2026) -- ver Features/Crm/Dtos/CrmDtos.cs.
 

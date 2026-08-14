@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using NexoApi.Common.Data;
 using NexoApi.Features.Crm.Dtos;
 using NexoApi.Features.Email;
@@ -303,10 +303,9 @@ public class CrmService : ICrmService
 
             SELECT 'PEDIDO' AS TipoEvento, op.FechaCreacion AS Fecha,
                    'Orden de Produccion #' + CAST(op.OrdenProduccionID AS VARCHAR) AS Titulo,
-                   a.Nombre + ' - ' + CAST(op.CantidadProgramada AS VARCHAR) + ' ' + ISNULL(u.Abreviatura, '') AS Detalle
+                   a.Nombre + ' - ' + CAST(op.CantidadProgramada AS VARCHAR) + ' ' + ISNULL(a.PresentacionCodigo, '') AS Detalle
             FROM Produccion.OrdenesProduccion op
-            JOIN Catalogo.Articulos a ON a.ArticuloID = op.ProductoTerminadoID
-            LEFT JOIN Catalogo.UnidadesMedida u ON u.UnidadID = a.UnidadID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = op.ProductoTerminadoID
             WHERE op.ClienteID = @ClienteId
 
             UNION ALL
@@ -722,10 +721,10 @@ public class CrmService : ICrmService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT l.LineaID, l.CotizacionID, l.ArticuloID, a.SKU AS SkuArticulo, a.Nombre AS NombreArticulo,
+            SELECT l.LineaID, l.CotizacionID, l.ArticuloID, a.Referencia AS SkuArticulo, a.Nombre AS NombreArticulo,
                    l.Cantidad, l.PrecioUnitario, (l.Cantidad * l.PrecioUnitario) AS Subtotal
             FROM Crm.CotizacionLineas l
-            JOIN Catalogo.Articulos a ON a.ArticuloID = l.ArticuloID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = l.ArticuloID
             WHERE l.CotizacionID = @CotizacionId
             ORDER BY l.LineaID";
 

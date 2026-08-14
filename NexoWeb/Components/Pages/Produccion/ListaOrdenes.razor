@@ -1,4 +1,4 @@
-﻿@page "/produccion/ordenes"
+@page "/produccion/ordenes"
 @attribute [Authorize]
 @implements IDisposable
 @inject INexoApiClient ApiClient
@@ -7,233 +7,201 @@
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
-<PageTitle>Ordenes de Produccion — NEXO</PageTitle>
+<PageTitle>Órdenes de Producción — NEXO</PageTitle>
 
-@* ── Hero ── *@
-<div class="nexo-page-hero">
-    <div class="nexo-page-hero__left">
-        <div class="nexo-page-hero__accent"></div>
-        <div>
-            <p class="nexo-page-hero__module">Produccion</p>
-            <h1 class="nexo-page-hero__title">Ordenes de Produccion</h1>
-        </div>
+<div class="prod-header">
+    <div class="prod-header__left">
+        <h1 class="prod-header__title">
+            <MudIcon Icon="@Icons.Material.Filled.Factory" Class="prod-header__icon" />
+            Órdenes de Producción
+        </h1>
+        <p class="prod-header__sub">Planifica, libera y cierra órdenes de producción. El stock se descuenta al liberar.</p>
     </div>
-    @if (_puedeGestionar)
-    {
-        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                   StartIcon="@Icons.Material.Filled.Add" Href="/produccion/ordenes/crear">
-            Nueva Orden
-        </MudButton>
-    }
+    <div class="prod-header__actions">
+        <BotonFavorito Href="/produccion/ordenes" Etiqueta="Órdenes de Producción" />
+        @if (_puedeGestionar)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add" Href="/produccion/ordenes/crear">
+                Nueva Orden
+            </MudButton>
+        }
+    </div>
 </div>
 
-@* ── Alerta maquinaria en mantenimiento ── *@
+<ProduccionNav />
+
+@* ── Alerta maquinaria en mantenimiento ──────────────────────────────── *@
 @if (_enMantenimiento.Count > 0)
 {
-    <MudAlert Severity="Severity.Warning" Class="mb-4" Icon="@Icons.Material.Filled.Build" Dense>
-        <strong>Maquinas en mantenimiento:</strong>
+    <MudAlert Severity="Severity.Warning" Class="mb-3" Icon="@Icons.Material.Filled.Build">
+        <strong>Máquinas en mantenimiento:</strong>
         @string.Join(", ", _enMantenimiento.Select(m => m.Nombre))
         — algunas tareas pueden verse afectadas.
-        <MudLink Href="/produccion/maquinaria" Class="ml-2">Ver maquinaria</MudLink>
+        <MudLink Href="/produccion/maquinaria" Class="ml-2">Ver maquinaria →</MudLink>
     </MudAlert>
 }
 
-@* ── Pipeline de estados (filtro visual) ── *@
-<div class="d-flex flex-wrap mb-4" style="gap:8px">
-    @foreach (var (estado, color, icono) in _pipeline)
+@* ── Pipeline de estados (filtro visual) ───────────────────────────── *@
+<div class="prod-pipeline">
+    @foreach (var (estado, colorVar, icono) in _pipeline)
     {
         var count = _todas.Count(o => o.Estado == estado);
         var activo = _filtroEstado == estado;
-        <div @onclick="@(() => SetFiltro(estado))"
-             style="cursor:pointer; display:flex; align-items:center; gap:8px;
-                    padding:10px 18px; border-radius:10px; transition:all .15s;
-                    border:2px solid @(activo ? $"var(--mud-palette-{color})" : "var(--mud-palette-lines-default)");
-                    background:@(activo ? $"color-mix(in srgb, var(--mud-palette-{color}) 12%, transparent)" : "var(--mud-palette-surface)")">
-            <MudIcon Icon="@icono" Size="Size.Small"
-                     Style="@($"color:var(--mud-palette-{color})")" />
+        <button class="prod-pipeline__item @(activo ? "prod-pipeline__item--active" : "")"
+                style="@(activo ? $"border-color:{colorVar}; background:color-mix(in srgb, {colorVar} 12%, transparent)" : "")"
+                @onclick="@(() => SetFiltro(estado))">
+            <MudIcon Icon="@icono" Style="@($"color:{colorVar}; font-size:1.1rem;")" />
             <div>
-                <div style="font-size:0.78rem; font-weight:600; color:var(--mud-palette-text-primary)">@estado</div>
-                <div style="font-size:1.1rem; font-weight:700; line-height:1; color:var(--mud-palette-@color)">@count</div>
+                <div class="prod-pipeline__label">@estado</div>
+                <div class="prod-pipeline__count" style="color:@colorVar">@count</div>
             </div>
-        </div>
+        </button>
     }
     @if (_filtroEstado is not null)
     {
-        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Default"
-                   StartIcon="@Icons.Material.Filled.FilterAltOff"
-                   OnClick="@(() => SetFiltro(null))">
+        <button class="prod-pipeline__clear" @onclick="@(() => SetFiltro(null))">
+            <MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Style="font-size:.9rem;" />
             Ver todas
-        </MudButton>
+        </button>
     }
 </div>
 
-@* ── Contenido ── *@
 @if (_cargando)
 {
-    <div class="d-flex justify-center pa-8">
-        <MudProgressCircular Indeterminate Color="Color.Primary" />
+    <div class="prod-skeleton">
+        @for (int i = 0; i < 6; i++) { <div class="prod-skeleton__row"></div> }
     </div>
 }
 else if (_ordenes.Count == 0)
 {
-    <MudPaper Class="pa-8" Elevation="0"
-              Style="border:2px dashed var(--mud-palette-lines-default); border-radius:12px; text-align:center">
-        <MudIcon Icon="@Icons.Material.Outlined.Assignment" Size="Size.Large"
-                 Style="color:var(--mud-palette-text-secondary); font-size:3rem" Class="mb-2" />
-        <MudText Color="Color.Secondary">
-            @(_filtroEstado is null ? "No hay ordenes de produccion." : $"No hay ordenes en estado '{_filtroEstado}'.")
-        </MudText>
-    </MudPaper>
+    <div class="prod-vacio">
+        <MudIcon Icon="@Icons.Material.Outlined.Assignment" Style="font-size:3rem; color:var(--n-text-3); display:block; margin-bottom:.75rem;" />
+        <p>@(_filtroEstado is null ? "No hay órdenes de producción." : $"No hay órdenes en estado '{_filtroEstado}'.")</p>
+        @if (_filtroEstado is not null)
+        {
+            <button class="prod-pipeline__clear mt-2" @onclick="@(() => SetFiltro(null))">Ver todas las órdenes</button>
+        }
+    </div>
 }
 else
 {
-    <MudPaper Elevation="1" Style="border-radius:12px; overflow:hidden">
-        <MudTable Items="_ordenes" Hover Dense Breakpoint="Breakpoint.Sm" Elevation="0"
-                  RowStyle="cursor:default">
-            <HeaderContent>
-                <MudTh Style="width:130px">Codigo</MudTh>
-                <MudTh>Producto</MudTh>
-                <MudTh Style="width:130px">Centro</MudTh>
-                <MudTh Style="width:100px">Estado</MudTh>
-                <MudTh Style="width:90px; text-align:right">Prog.</MudTh>
-                <MudTh Style="width:90px; text-align:right">Real</MudTh>
-                <MudTh Style="width:90px; text-align:right">C/U Real</MudTh>
-                <MudTh Style="width:100px">Fecha</MudTh>
-                <MudTh Style="width:150px"></MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Codigo">
-                    <span style="font-family:monospace; font-weight:600; font-size:0.82rem">
-                        @context.CodigoOP
-                    </span>
-                </MudTd>
-                <MudTd DataLabel="Producto">
-                    <MudText Typo="Typo.body2">@context.Producto</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">@context.CentroCosto</MudText>
-                </MudTd>
-                <MudTd DataLabel="Centro">
-                    <MudText Typo="Typo.caption">@context.CentroCosto</MudText>
-                </MudTd>
-                <MudTd DataLabel="Estado">
-                    @{
-                        var (chip, chipIcon) = ChipEstado(context.Estado);
-                    }
-                    <MudChip T="string" Color="@chip" Size="Size.Small" Icon="@chipIcon"
-                             Style="font-size:0.72rem; height:22px">
-                        @context.Estado
-                    </MudChip>
-                </MudTd>
-                <MudTd DataLabel="Prog." Style="text-align:right">
-                    <span style="font-size:0.85rem; font-weight:600">@context.CantidadProgramada.ToString("N0")</span>
-                </MudTd>
-                <MudTd DataLabel="Real" Style="text-align:right">
-                    @if (context.CantidadProducidaReal.HasValue)
-                    {
-                        var pct = context.CantidadProgramada > 0
-                            ? context.CantidadProducidaReal.Value / context.CantidadProgramada * 100
-                            : 0;
-                        var colorPct = pct >= 95 ? "color:var(--mud-palette-success)"
-                                     : pct >= 75 ? "color:var(--mud-palette-warning)"
-                                     : "color:var(--mud-palette-error)";
-                        <span style="font-size:0.85rem; font-weight:600; @colorPct">
-                            @context.CantidadProducidaReal.Value.ToString("N0")
-                        </span>
-                        <div style="font-size:0.7rem; color:var(--mud-palette-text-secondary)">
-                            @pct.ToString("N0")%
-                        </div>
-                    }
-                    else
-                    {
-                        <span style="color:var(--mud-palette-text-secondary)">—</span>
-                    }
-                </MudTd>
-                <MudTd DataLabel="C/U Real" Style="text-align:right">
-                    <span style="font-size:0.82rem">
-                        @(context.CostoUnitarioReal?.ToString("C0") ?? "—")
-                    </span>
-                </MudTd>
-                <MudTd DataLabel="Fecha">
-                    @{
-                        var fecha = context.FechaInicio ?? context.FechaPlanificada;
-                    }
-                    @if (fecha.HasValue)
-                    {
-                        <span style="font-size:0.8rem">@fecha.Value.ToString("dd/MM/yy")</span>
-                    }
-                    else
-                    {
-                        <span style="color:var(--mud-palette-text-secondary)">—</span>
-                    }
-                </MudTd>
-                <MudTd DataLabel="Acciones">
-                    <div class="d-flex align-center" style="gap:2px">
-                        @if (context.Estado == "Planificada" && _puedeGestionar)
-                        {
-                            <MudTooltip Text="Editar orden">
-                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                               Size="Size.Small" Color="Color.Default"
-                                               Href="@($"/produccion/ordenes/{context.OrdenProduccionID}/editar")" />
-                            </MudTooltip>
-                            <MudTooltip Text="Liberar — descuenta materia prima">
-                                <MudIconButton Icon="@Icons.Material.Filled.LockOpen"
-                                               Size="Size.Small" Color="Color.Info"
-                                               OnClick="@(() => LiberarConVerificacionAsync(context))" />
-                            </MudTooltip>
-                            <MudTooltip Text="Cancelar orden">
-                                <MudIconButton Icon="@Icons.Material.Filled.Cancel"
-                                               Size="Size.Small" Color="Color.Error"
-                                               OnClick="@(() => CancelarAsync(context.OrdenProduccionID))" />
-                            </MudTooltip>
-                        }
-                        @if (context.Estado == "Liberada" && _puedeGestionar)
-                        {
-                            <MudTooltip Text="Iniciar produccion">
-                                <MudIconButton Icon="@Icons.Material.Filled.PlayArrow"
-                                               Size="Size.Small" Color="Color.Primary"
-                                               OnClick="@(() => IniciarAsync(context.OrdenProduccionID))" />
-                            </MudTooltip>
-                        }
-                        @if (context.Estado == "En Proceso" && _puedeGestionar)
-                        {
-                            <MudTooltip Text="Ajustar consumo real">
-                                <MudIconButton Icon="@Icons.Material.Filled.Tune"
-                                               Size="Size.Small" Color="Color.Warning"
-                                               OnClick="@(() => AbrirAjusteConsumoAsync(context))" />
-                            </MudTooltip>
-                        }
-                        @if (context.Estado == "En Proceso" && _puedeCerrar)
-                        {
-                            <MudTooltip Text="Cerrar y registrar produccion final">
-                                <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
-                                               Size="Size.Small" Color="Color.Success"
-                                               OnClick="@(() => AbrirCierreAsync(context.OrdenProduccionID))" />
-                            </MudTooltip>
-                        }
-                        @if (context.Estado == "Finalizada")
-                        {
-                            <MudChip T="string" Size="Size.Small" Color="Color.Success"
-                                     Icon="@Icons.Material.Filled.Done"
-                                     Style="font-size:0.7rem; height:22px; pointer-events:none">
-                                Completada
+    <div class="prod-table-wrap">
+        <table class="prod-table">
+            <thead>
+                <tr>
+                    <th>Código OP</th>
+                    <th>Producto</th>
+                    <th>Centro</th>
+                    <th>Estado</th>
+                    <th class="prod-table__num">Programado</th>
+                    <th class="prod-table__num">Real</th>
+                    <th class="prod-table__num">C/U Real</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var o in _ordenes)
+                {
+                    var (chipColor, chipIcon) = ChipEstado(o.Estado);
+                    var fecha = o.FechaInicio ?? o.FechaPlanificada;
+                    <tr class="prod-table__row">
+                        <td><span class="prod-codigo">@o.CodigoOP</span></td>
+                        <td class="prod-table__nombre">
+                            <div class="prod-table__prod">@o.Producto</div>
+                            <div class="prod-table__centro inv-muted">@o.CentroCosto</div>
+                        </td>
+                        <td class="inv-muted" style="font-size:.8rem;">@o.CentroCosto</td>
+                        <td>
+                            <MudChip T="string" Color="@chipColor" Size="Size.Small" Icon="@chipIcon"
+                                     Style="font-size:.72rem; height:22px; pointer-events:none;">
+                                @o.Estado
                             </MudChip>
-                        }
-                    </div>
-                </MudTd>
-            </RowTemplate>
-        </MudTable>
-    </MudPaper>
-}
-
-@* ── Leyenda de acciones ── *@
-@if (_ordenes.Count > 0 && _puedeGestionar)
-{
-    <div class="d-flex flex-wrap mt-3" style="gap:12px; font-size:0.75rem; color:var(--mud-palette-text-secondary)">
-        <span><MudIcon Icon="@Icons.Material.Filled.LockOpen" Size="Size.Small" Style="font-size:14px; vertical-align:middle" /> Liberar</span>
-        <span><MudIcon Icon="@Icons.Material.Filled.PlayArrow" Size="Size.Small" Style="font-size:14px; vertical-align:middle" /> Iniciar</span>
-        <span><MudIcon Icon="@Icons.Material.Filled.Tune" Size="Size.Small" Style="font-size:14px; vertical-align:middle" /> Ajustar consumo</span>
-        <span><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Style="font-size:14px; vertical-align:middle" /> Cerrar</span>
-        <span><MudIcon Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" Style="font-size:14px; vertical-align:middle" /> Cancelar</span>
+                        </td>
+                        <td class="prod-table__num">
+                            <span class="prod-num">@o.CantidadProgramada.ToString("N0")</span>
+                        </td>
+                        <td class="prod-table__num">
+                            @if (o.CantidadProducidaReal.HasValue)
+                            {
+                                var pct = o.CantidadProgramada > 0
+                                    ? o.CantidadProducidaReal.Value / o.CantidadProgramada * 100 : 0;
+                                <span class="prod-num @(pct >= 95 ? "prod-num--verde" : pct >= 75 ? "prod-num--warn" : "prod-num--rojo")">
+                                    @o.CantidadProducidaReal.Value.ToString("N0")
+                                </span>
+                                <div class="inv-muted" style="font-size:.72rem;">@pct.ToString("N0")%</div>
+                            }
+                            else { <span class="inv-muted">—</span> }
+                        </td>
+                        <td class="prod-table__num inv-muted">@(o.CostoUnitarioReal?.ToString("C0") ?? "—")</td>
+                        <td class="inv-muted" style="font-size:.8rem; white-space:nowrap;">
+                            @(fecha.HasValue ? fecha.Value.ToString("dd/MM/yy") : "—")
+                        </td>
+                        <td>
+                            <div class="prod-acciones">
+                                @if (o.Estado == "Planificada" && _puedeGestionar)
+                                {
+                                    <MudTooltip Text="Editar">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                                       Href="@($"/produccion/ordenes/{o.OrdenProduccionID}/editar")" />
+                                    </MudTooltip>
+                                    <MudTooltip Text="Liberar — descuenta materia prima">
+                                        <MudIconButton Icon="@Icons.Material.Filled.LockOpen" Size="Size.Small"
+                                                       Color="Color.Info" OnClick="@(() => LiberarConVerificacionAsync(o))" />
+                                    </MudTooltip>
+                                    <MudTooltip Text="Cancelar">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Cancel" Size="Size.Small"
+                                                       Color="Color.Error" OnClick="@(() => CancelarAsync(o.OrdenProduccionID))" />
+                                    </MudTooltip>
+                                }
+                                @if (o.Estado == "Liberada" && _puedeGestionar)
+                                {
+                                    <MudTooltip Text="Iniciar producción">
+                                        <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Size="Size.Small"
+                                                       Color="Color.Primary" OnClick="@(() => IniciarAsync(o.OrdenProduccionID))" />
+                                    </MudTooltip>
+                                }
+                                @if (o.Estado == "En Proceso" && _puedeGestionar)
+                                {
+                                    <MudTooltip Text="Ajustar consumo real">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Tune" Size="Size.Small"
+                                                       Color="Color.Warning" OnClick="@(() => AbrirAjusteConsumoAsync(o))" />
+                                    </MudTooltip>
+                                }
+                                @if (o.Estado == "En Proceso" && _puedeCerrar)
+                                {
+                                    <MudTooltip Text="Cerrar y registrar producción final">
+                                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small"
+                                                       Color="Color.Success" OnClick="@(() => AbrirCierreAsync(o.OrdenProduccionID))" />
+                                    </MudTooltip>
+                                }
+                                @if (o.Estado == "Finalizada")
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success"
+                                             Icon="@Icons.Material.Filled.Done"
+                                             Style="font-size:.7rem; height:22px; pointer-events:none;">
+                                        Completada
+                                    </MudChip>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
+
+    @if (_puedeGestionar)
+    {
+        <div class="prod-leyenda">
+            <span><MudIcon Icon="@Icons.Material.Filled.LockOpen" Style="font-size:14px; vertical-align:middle;" /> Liberar</span>
+            <span><MudIcon Icon="@Icons.Material.Filled.PlayArrow" Style="font-size:14px; vertical-align:middle;" /> Iniciar</span>
+            <span><MudIcon Icon="@Icons.Material.Filled.Tune" Style="font-size:14px; vertical-align:middle;" /> Ajustar consumo</span>
+            <span><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="font-size:14px; vertical-align:middle;" /> Cerrar</span>
+            <span><MudIcon Icon="@Icons.Material.Filled.Cancel" Style="font-size:14px; vertical-align:middle;" /> Cancelar</span>
+        </div>
+    }
 }
 
 @code {
@@ -247,26 +215,18 @@ else
     private bool _puedeCerrar;
     private List<MaquinariaEnMantenimientoItem> _enMantenimiento = [];
 
-    private static readonly (string Estado, string Color, string Icono)[] _pipeline =
+    private static readonly (string Estado, string ColorVar, string Icono)[] _pipeline =
     [
-        ("Planificada",  "default",  Icons.Material.Filled.Schedule),
-        ("Liberada",     "info",     Icons.Material.Filled.LockOpen),
-        ("En Proceso",   "warning",  Icons.Material.Filled.Factory),
-        ("Finalizada",   "success",  Icons.Material.Filled.CheckCircle),
-        ("Cancelada",    "error",    Icons.Material.Filled.Cancel),
+        ("Planificada", "var(--n-text-3)",              Icons.Material.Filled.Schedule),
+        ("Liberada",    "var(--mud-palette-info)",      Icons.Material.Filled.LockOpen),
+        ("En Proceso",  "var(--mud-palette-warning)",   Icons.Material.Filled.Factory),
+        ("Finalizada",  "var(--mud-palette-success)",   Icons.Material.Filled.CheckCircle),
+        ("Cancelada",   "var(--mud-palette-error)",     Icons.Material.Filled.Cancel),
     ];
 
-    protected override void OnInitialized()
-    {
-        Preferencias.OnCambio += OnPreferenciasCambiaron;
-    }
-
-    private void OnPreferenciasCambiaron() => InvokeAsync(StateHasChanged);
-
-    public void Dispose()
-    {
-        Preferencias.OnCambio -= OnPreferenciasCambiaron;
-    }
+    protected override void OnInitialized()     { Preferencias.OnCambio += OnPreferenciasCambiaron; }
+    private void OnPreferenciasCambiaron()       => InvokeAsync(StateHasChanged);
+    public  void Dispose()                       { Preferencias.OnCambio -= OnPreferenciasCambiaron; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -274,7 +234,7 @@ else
         {
             var estado = await EstadoAuth;
             _puedeGestionar = estado.User.IsInRole("Administracion") || estado.User.IsInRole("Jefes");
-            _puedeCerrar = _puedeGestionar;
+            _puedeCerrar    = _puedeGestionar;
         }
         await Task.WhenAll(CargarAsync(), CargarMaquinariaEnMantenimientoAsync());
     }
@@ -282,9 +242,7 @@ else
     private void SetFiltro(string? estado)
     {
         _filtroEstado = estado;
-        _ordenes = _filtroEstado is null
-            ? _todas
-            : _todas.Where(o => o.Estado == _filtroEstado).ToList();
+        _ordenes = _filtroEstado is null ? _todas : _todas.Where(o => o.Estado == _filtroEstado).ToList();
     }
 
     private async Task CargarAsync()
@@ -295,10 +253,7 @@ else
             _todas = await ApiClient.GetAsync<List<OrdenProduccionResumen>>("api/produccion/ordenes") ?? [];
             SetFiltro(_filtroEstado);
         }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"No se pudo cargar la lista: {ex.Message}", Severity.Error);
-        }
+        catch (Exception ex) { Snackbar.Add($"No se pudo cargar la lista: {ex.Message}", Severity.Error); }
         finally { _cargando = false; }
     }
 
@@ -312,18 +267,12 @@ else
         catch { _enMantenimiento = []; }
     }
 
-    // ── Verificacion antes de liberar ──────────────────────────────────
     private async Task LiberarConVerificacionAsync(OrdenProduccionResumen orden)
     {
-        var parametros = new DialogParameters<VerificarStockDialog>
-        {
-            { x => x.Orden, orden }
-        };
-        var opts = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialogo = await DialogService.ShowAsync<VerificarStockDialog>(
-            $"Liberar — {orden.CodigoOP}", parametros, opts);
-        var resultado = await dialogo.Result;
-        if (resultado is { Canceled: false })
+        var p = new DialogParameters<VerificarStockDialog> { { x => x.Orden, orden } };
+        var dlg = await DialogService.ShowAsync<VerificarStockDialog>($"Liberar — {orden.CodigoOP}", p,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        if ((await dlg.Result) is { Canceled: false })
             await EjecutarAccionAsync(
                 () => ApiClient.PostAsync($"api/produccion/ordenes/{orden.OrdenProduccionID}/liberar"),
                 "Orden liberada. Materia prima descontada.");
@@ -331,43 +280,34 @@ else
 
     private async Task CancelarAsync(int id)
     {
-        var ok = await DialogService.ShowMessageBox(
-            "Cancelar orden",
-            "La orden quedara marcada como Cancelada. No se toca inventario porque aun no habia sido liberada. Esta accion no se puede deshacer.",
-            yesText: "Cancelar orden", cancelText: "Volver");
-        if (ok != true) return;
+        if (await DialogService.ShowMessageBox("Cancelar orden",
+            "La orden quedará marcada como Cancelada. Esta acción no se puede deshacer.",
+            yesText: "Cancelar orden", cancelText: "Volver") != true) return;
         await EjecutarAccionAsync(
             () => ApiClient.PostAsync($"api/produccion/ordenes/{id}/cancelar"), "Orden cancelada.");
     }
 
     private async Task IniciarAsync(int id)
     {
-        var ok = await DialogService.ShowMessageBox(
-            "Iniciar produccion",
-            "La orden pasara a 'En Proceso'. El consumo de materia prima ya fue descontado al liberar.",
-            yesText: "Iniciar", cancelText: "Cancelar");
-        if (ok != true) return;
+        if (await DialogService.ShowMessageBox("Iniciar producción",
+            "La orden pasará a 'En Proceso'. El consumo de materia prima ya fue descontado al liberar.",
+            yesText: "Iniciar", cancelText: "Cancelar") != true) return;
         await EjecutarAccionAsync(
-            () => ApiClient.PostAsync($"api/produccion/ordenes/{id}/iniciar"),
-            "Orden iniciada.");
+            () => ApiClient.PostAsync($"api/produccion/ordenes/{id}/iniciar"), "Orden iniciada.");
     }
 
     private async Task AbrirAjusteConsumoAsync(OrdenProduccionResumen orden)
     {
-        var parametros = new DialogParameters<AjustarConsumoDialog>
-        {
-            { x => x.Orden, orden }
-        };
-        var dialogo = await DialogService.ShowAsync<AjustarConsumoDialog>(
-            $"Ajustar Consumo — {orden.CodigoOP}", parametros,
+        var p = new DialogParameters<AjustarConsumoDialog> { { x => x.Orden, orden } };
+        var dlg = await DialogService.ShowAsync<AjustarConsumoDialog>($"Ajustar Consumo — {orden.CodigoOP}", p,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
-        await dialogo.Result;
+        await dlg.Result;
     }
 
     private async Task AbrirCierreAsync(int id)
     {
-        var dialogo = await DialogService.ShowAsync<CerrarOrdenDialog>("Cerrar Orden de Produccion");
-        var resultado = await dialogo.Result;
+        var dlg = await DialogService.ShowAsync<CerrarOrdenDialog>("Cerrar Orden de Producción");
+        var resultado = await dlg.Result;
         if (resultado is null || resultado.Canceled) return;
         var request = (CerrarOrdenProduccionRequest)resultado.Data!;
         await EjecutarAccionAsync(
@@ -378,25 +318,17 @@ else
 
     private async Task EjecutarAccionAsync(Func<Task> accion, string mensajeExito)
     {
-        try
-        {
-            await accion();
-            Snackbar.Add(mensajeExito, Severity.Success);
-            await CargarAsync();
-        }
-        catch (HttpRequestException ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
+        try { await accion(); Snackbar.Add(mensajeExito, Severity.Success); await CargarAsync(); }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
     }
 
     private static (Color chip, string icono) ChipEstado(string estado) => estado switch
     {
-        "Planificada" => (Color.Default,  Icons.Material.Filled.Schedule),
-        "Liberada"    => (Color.Info,     Icons.Material.Filled.LockOpen),
-        "En Proceso"  => (Color.Warning,  Icons.Material.Filled.Factory),
-        "Finalizada"  => (Color.Success,  Icons.Material.Filled.CheckCircle),
-        "Cancelada"   => (Color.Error,    Icons.Material.Filled.Cancel),
-        _             => (Color.Default,  Icons.Material.Filled.HelpOutline)
+        "Planificada" => (Color.Default, Icons.Material.Filled.Schedule),
+        "Liberada"    => (Color.Info,    Icons.Material.Filled.LockOpen),
+        "En Proceso"  => (Color.Warning, Icons.Material.Filled.Factory),
+        "Finalizada"  => (Color.Success, Icons.Material.Filled.CheckCircle),
+        "Cancelada"   => (Color.Error,   Icons.Material.Filled.Cancel),
+        _             => (Color.Default, Icons.Material.Filled.HelpOutline)
     };
 }

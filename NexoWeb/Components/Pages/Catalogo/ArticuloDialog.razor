@@ -1,17 +1,18 @@
-﻿@using NexoWeb.Common.Dtos
+@using NexoWeb.Common.Dtos
+@inject IDialogService DialogService
 
 <MudDialog>
     <DialogContent>
         <MudForm @ref="_form" Model="@this">
+
+            @* ── Identificacion ─────────────────────────────────────────── *@
             @if (!EsEdicion)
             {
                 <MudTextField @bind-Value="_sku" Label="SKU" Required="true"
                               RequiredError="El SKU es obligatorio" Class="mb-3" />
             }
-
             <MudTextField @bind-Value="_nombre" Label="Nombre" Required="true"
                           RequiredError="El nombre es obligatorio" Class="mb-3" />
-
             <MudTextField @bind-Value="_descripcion" Label="Descripcion" Lines="2" Class="mb-3" />
 
             @if (!EsEdicion)
@@ -24,86 +25,139 @@
                     }
                 </MudSelect>
 
-                <MudSelect T="int?" @bind-Value="_unidadId" Label="Unidad de Medida" Clearable="@EsServicio"
-                           Required="@(!EsServicio)" RequiredError="Selecciona una unidad" Class="mb-1">
-                    @foreach (var unidad in UnidadesMedida)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)unidad.UnidadID)">@unidad.Nombre (@unidad.Abreviatura)</MudSelectItem>
-                    }
-                </MudSelect>
                 @if (EsServicio)
                 {
                     <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
-                        Opcional: solo si este servicio se cuenta por unidades (ej. claves de licencia).
-                        Si es intangible sin cantidad (ej. horas de consultoria), dejalo en blanco.
+                        Opcional: solo si este servicio se mide en unidades (ej. licencias). Si es intangible sin cantidad, dejalo en blanco.
                     </MudText>
                 }
-                else
-                {
-                    <div class="mb-3"></div>
-                }
+                else { <div class="mb-3"></div> }
             }
 
-            @if (EsUnidadCaja)
+            @* ── Presentacion ─────────────────────────────────────────────── *@
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.caption" Class="mb-2 d-block"
+                     Style="color: var(--n-text-3, #9B9BB4); text-transform:uppercase; letter-spacing:.07em; font-weight:700;">
+                Presentacion
+            </MudText>
+
+            <div class="d-flex align-center mb-3" style="gap:0.5rem;">
+                <MudSelect T="string?" Value="_presentacionCodigo" ValueChanged="OnPresentacionChanged"
+                           Label="Presentacion" Clearable="true" Placeholder="Sin presentacion"
+                           Style="flex:1;">
+                    @foreach (var p in Presentaciones)
+                    {
+                        <MudSelectItem T="string?" Value="@p.Codigo">
+                            @p.Codigo &mdash; @p.Presentacion
+                            @if (p.Fracciones is > 0) { <span style="color:var(--n-text-3)"> (@p.Fracciones.Value.ToString("N0") und)</span> }
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+                <MudTooltip Text="Nueva presentacion">
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
+                                   OnClick="AbrirCrearPresentacionAsync" />
+                </MudTooltip>
+            </div>
+
+            @if (EsFraccionado)
             {
-                <MudNumericField @bind-Value="_unidadesPorEmbalaje" Label="Unidades por Caja/Embalaje" Min="1m" Format="N2"
-                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Inventory2" Class="mb-2" />
                 <MudText Typo="Typo.caption" Class="mb-2 d-block" Style="color: var(--n-text-3, #9B9BB4);">
-                    Cuantas unidades individuales trae 1 caja de este articulo.
+                    Presentacion: @_fracciones!.Value.ToString("N0") unidades por paquete/caja
                 </MudText>
-                <MudText Typo="Typo.body2" Class="mb-1"><b>¿Cómo se vende este artículo?</b></MudText>
-                <MudRadioGroup T="string" @bind-Value="_modoVentaCaja" Class="mb-3">
-                    <MudRadio T="string" Value="@("AMBOS")" Color="Color.Primary">
-                        Puede salir en caja y en unidades sueltas
-                    </MudRadio>
-                    <MudRadio T="string" Value="@("CAJA")" Color="Color.Primary">
-                        Solo en caja completa
-                    </MudRadio>
+                <MudText Typo="Typo.body2" Class="mb-1"><b>Como se vende?</b></MudText>
+                <MudRadioGroup T="string" @bind-Value="_fracciona" Class="mb-3">
+                    <MudRadio T="string" Value="@("SI")" Color="Color.Primary">En caja y en unidades sueltas</MudRadio>
+                    <MudRadio T="string" Value="@("NO")" Color="Color.Primary">Solo en caja/paquete completo</MudRadio>
                 </MudRadioGroup>
-            }
-
-            @if (EsProductoTerminado)
-            {
-                <MudMoneyField @bind-Value="_precioVenta" Label="@(EsUnidadCaja ? "Precio de Venta por Caja" : "Precio de Venta")" Class="mb-1" />
-                @if (EsUnidadCaja && _unidadesPorEmbalaje is > 0 && _precioVenta > 0)
+                @if (EsFraccionado && _ppPublico is > 0)
                 {
-                    <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
-                        = @((_precioVenta / _unidadesPorEmbalaje.Value).ToString("C2")) por unidad (@_unidadesPorEmbalaje.Value.ToString("N0") unidades/caja)
-                    </MudText>
-
-                    @* Precio por unidad suelta (opcional) *@
-                    <MudText Typo="Typo.body2" Class="mb-1"><b>Precio por unidad suelta (opcional)</b></MudText>
-                    <div class="d-flex align-center mb-1" style="gap:0.75rem; flex-wrap:wrap;">
-                        <MudNumericField T="decimal" @bind-Value="_margenUnidad" @bind-Value:after="RecalcPrecioUnidad" Label="% ganancia individual"
-                                         Min="0m" Max="9999m" Format="N1" Style="flex:1; min-width:140px;"
-                                         Adornment="Adornment.End" AdornmentText="%" />
-                        <MudNumericField T="decimal?" @bind-Value="_precioVentaUnidad" Label="Precio unitario"
-                                         Min="0m" Format="N0" Style="flex:1; min-width:140px;"
+                    <div class="d-flex align-center mb-3" style="gap:0.75rem; flex-wrap:wrap;">
+                        <MudNumericField T="decimal" @bind-Value="_margenUnidad" @bind-Value:after="RecalcPrecioUnidad"
+                                         Label="% ganancia unidad suelta" Min="0m" Max="9999m" Format="N1"
+                                         Style="flex:1; min-width:130px;" Adornment="Adornment.End" AdornmentText="%" />
+                        <MudNumericField T="decimal?" @bind-Value="_precioVentaUnidad" Label="Precio unitario suelta"
+                                         Min="0m" Format="N0" Style="flex:1; min-width:130px;"
                                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
                     </div>
-                    <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
-                        Si no se define, se usará el precio base por caja al vender unidades individuales. Con 10% de margen y caja a @_precioVenta.ToString("C0"):
-                        unidad base = @((_precioVenta / _unidadesPorEmbalaje.Value).ToString("C0")) → con margen = @((_precioVenta / _unidadesPorEmbalaje.Value * 1.1m).ToString("C0"))
-                    </MudText>
-                }
-                else
-                {
-                    <div class="mb-3"></div>
                 }
             }
-            else if (EsEdicion && Articulo!.CostoPromedio > 0)
+
+            @if (EsDePeso)
             {
-                <MudTextField Value="@Articulo!.CostoPromedio.ToString("C2")" Label="Costo Promedio de Compra" ReadOnly="true"
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.ShoppingCart" Class="mb-1" />
-                <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
-                    Se calcula automaticamente con el costo promedio ponderado de las compras recibidas. No se edita aqui.
+                <MudNumericField T="decimal?" @bind-Value="_peso" Label="Peso (kg)" Format="N3" Min="0m" Class="mb-3"
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.MonitorWeight" />
+            }
+
+            @* ── Precios y Costos ────────────────────────────────────────── *@
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.caption" Class="mb-2 d-block"
+                     Style="color: var(--n-text-3, #9B9BB4); text-transform:uppercase; letter-spacing:.07em; font-weight:700;">
+                Precios y Costos
+            </MudText>
+
+            <MudNumericField T="decimal?" @bind-Value="_costo" @bind-Value:after="OnCostoChanged"
+                             Label="Costo (sin impuestos)" Format="N2" Min="0m" Class="mb-1"
+                             Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.ShoppingCart" />
+            @if (TotalImpuestoPct > 0 && _costo is > 0)
+            {
+                <MudText Typo="Typo.caption" Class="mb-2 d-block" Style="color:#0EA5E9;">
+                    Con impuestos (@TotalImpuestoPct.ToString("N1")%): <strong>@CostoConImpuesto!.Value.ToString("N0")</strong>
                 </MudText>
             }
 
-            @* Stock Minimo/Punto de Reorden aplican a cualquier tipo que se pueda
-               comprar y tener existencias (hasta un Servicio como claves de licencia
-               puede tener "me quedan pocas"). Vida Util solo aplica a bienes fisicos
-               perecederos, un bien digital no caduca por tiempo en bodega. *@
+            @if (EsEdicion && Articulo!.CostoPromedio > 0)
+            {
+                <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
+                    Costo promedio ponderado de compras: @Articulo!.CostoPromedio.ToString("C2") (calculado automaticamente)
+                </MudText>
+            }
+
+            @* Precio Publico *@
+            <div class="d-flex mb-2" style="gap:0.65rem; flex-wrap:wrap;">
+                <MudNumericField T="decimal?" Value="_ppPublico" ValueChanged="OnPPPublicoChanged"
+                                 Label="Precio Publico" Format="N0" Min="0m" Style="flex:2; min-width:140px;"
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+                <MudNumericField T="decimal" Value="_porcPublico" ValueChanged="OnPorcPublicoChanged"
+                                 Label="% Utilidad" Format="N1" Min="0m" Max="9999m" Style="flex:1; min-width:100px;"
+                                 Adornment="Adornment.End" AdornmentText="%" />
+                <MudNumericField T="decimal?" @bind-Value="_uPublico"
+                                 Label="Util. $" Format="N2" Style="flex:1; min-width:100px;"
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+            </div>
+
+            @* Precio Bodega *@
+            <div class="d-flex mb-2" style="gap:0.65rem; flex-wrap:wrap;">
+                <MudNumericField T="decimal?" Value="_pBodega" ValueChanged="OnPBodegaChanged"
+                                 Label="Precio Bodega" Format="N0" Min="0m" Style="flex:2; min-width:140px;"
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+                <MudNumericField T="decimal" Value="_porcBodega" ValueChanged="OnPorcBodegaChanged"
+                                 Label="% Utilidad" Format="N1" Min="0m" Max="9999m" Style="flex:1; min-width:100px;"
+                                 Adornment="Adornment.End" AdornmentText="%" />
+                <MudNumericField T="decimal?" @bind-Value="_uBodega"
+                                 Label="Util. $" Format="N2" Style="flex:1; min-width:100px;"
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+            </div>
+
+            @* Precio Credito *@
+            <div class="d-flex mb-3" style="gap:0.65rem; flex-wrap:wrap;">
+                <MudNumericField T="decimal?" Value="_pCredito" ValueChanged="OnPCreditoChanged"
+                                 Label="Precio Credito" Format="N0" Min="0m" Style="flex:2; min-width:140px;"
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+                <MudNumericField T="decimal" Value="_porcCredito" ValueChanged="OnPorcCreditoChanged"
+                                 Label="% Utilidad" Format="N1" Min="0m" Max="9999m" Style="flex:1; min-width:100px;"
+                                 Adornment="Adornment.End" AdornmentText="%" />
+                <MudNumericField T="decimal?" @bind-Value="_uCredito"
+                                 Label="Util. $" Format="N2" Style="flex:1; min-width:100px;"
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+            </div>
+
+            @* ── Stock y Control ─────────────────────────────────────────── *@
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.caption" Class="mb-2 d-block"
+                     Style="color: var(--n-text-3, #9B9BB4); text-transform:uppercase; letter-spacing:.07em; font-weight:700;">
+                Stock y Control
+            </MudText>
+
             <MudNumericField @bind-Value="_stockMinimo" Label="Stock Minimo" Min="0m" Format="N2" Class="mb-3" />
             <MudNumericField @bind-Value="_puntoReorden" Label="Punto de Reorden" Min="0m" Format="N2" Class="mb-3" />
             @if (!EsServicio)
@@ -113,40 +167,110 @@
                 @if (_diasVidaUtil is > 0)
                 {
                     <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
-                        Un lote producido hoy caducaria aproximadamente el @DateTime.Today.AddDays(_diasVidaUtil.Value).ToString("dd/MM/yyyy").
+                        Caducaria aproximadamente el @DateTime.Today.AddDays(_diasVidaUtil.Value).ToString("dd/MM/yyyy").
                     </MudText>
                 }
-                else
+                else { <div class="mb-3"></div> }
+            }
+            @if (EsEdicion)
+            {
+                <MudSwitch T="bool" @bind-Value="_estado" Color="Color.Success" Label="Activo" Class="mb-1" />
+            }
+
+            @* ── IVA ─────────────────────────────────────────────────────── *@
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.caption" Class="mb-2 d-block"
+                     Style="color: var(--n-text-3, #9B9BB4); text-transform:uppercase; letter-spacing:.07em; font-weight:700;">
+                IVA
+            </MudText>
+
+            <MudSelect T="int?" Value="_ivaId" ValueChanged="OnIvaChanged"
+                       Label="Impuesto 1 — IVA" Clearable="true" Class="mb-3" Placeholder="Sin IVA">
+                @foreach (var iva in IvasPrimarios)
                 {
-                    <div class="mb-3"></div>
+                    <MudSelectItem T="int?" Value="@((int?)iva.IvaID)">@iva.Descripcion (@iva.Iva%)</MudSelectItem>
+                }
+            </MudSelect>
+            @if (_ivaId.HasValue && !IvaEsExcluidoOExento)
+            {
+                <MudSelect T="string?" Value="_impuestoConsumoCode" ValueChanged="OnImpuestoConsumoChanged"
+                           Label="Impuesto 2 — Consumo (opcional)" Clearable="true" Class="mb-3" Placeholder="Ninguno">
+                    @foreach (var ic in ImpuestosConsumo)
+                    {
+                        <MudSelectItem T="string?" Value="@ic.Codigo">@ic.Nombre (0%)</MudSelectItem>
+                    }
+                </MudSelect>
+                @if (_impuestoConsumoCode is not null)
+                {
+                    <MudNumericField T="decimal?" @bind-Value="_impuestoPorcentaje"
+                                     @bind-Value:after="OnImpuestoPorcentajeChanged"
+                                     Label="Porcentaje del impuesto" Min="0m" Max="100m" Format="N2" Class="mb-1"
+                                     Adornment="Adornment.End" AdornmentText="%" />
+                    <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
+                        Ingresa el porcentaje aplicable según la normativa vigente.
+                    </MudText>
                 }
             }
 
-            @if (EsEdicion)
+            @* ── Clasificacion ───────────────────────────────────────────── *@
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.caption" Class="mb-2 d-block"
+                     Style="color: var(--n-text-3, #9B9BB4); text-transform:uppercase; letter-spacing:.07em; font-weight:700;">
+                Clasificacion
+            </MudText>
+
+            <MudSelect T="string?" @bind-Value="_marcaCodigo" Label="Marca" Clearable="true" Class="mb-3" Placeholder="Sin marca">
+                @foreach (var m in Marcas)
+                {
+                    <MudSelectItem T="string?" Value="@m.Codigo">@m.Codigo &mdash; @m.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="string?" Value="_grupoMayorCodigo" ValueChanged="OnGrupoMayorChanged"
+                       Label="Grupo Mayor" Clearable="true" Class="mb-3" Placeholder="Sin grupo mayor">
+                @foreach (var gm in GruposMayores)
+                {
+                    <MudSelectItem T="string?" Value="@gm.Codigo">@gm.Codigo &mdash; @gm.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="string?" Value="_grupoMenorCodigo" ValueChanged="OnGrupoMenorChanged"
+                       Label="Grupo Menor" Clearable="true" Class="mb-3"
+                       Placeholder="@(string.IsNullOrEmpty(_grupoMayorCodigo) ? "Selecciona grupo mayor primero" : "Sin grupo menor")"
+                       Disabled="@(string.IsNullOrEmpty(_grupoMayorCodigo))">
+                @foreach (var gm in GruposMenoresFiltrados)
+                {
+                    <MudSelectItem T="string?" Value="@gm.Codigo">@gm.Codigo &mdash; @gm.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+            @if (!string.IsNullOrEmpty(_grupoMayorCodigo) && !GruposMenoresFiltrados.Any())
             {
-                <MudSwitch T="bool" @bind-Value="_estado" Color="Color.Success" Label="Activo" />
+                <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
+                    Este grupo mayor no tiene grupos menores registrados.
+                </MudText>
             }
 
-            @* Imagen opcional -- una sola por articulo, nunca obligatoria. *@
-            <div class="mt-3">
-                <MudText Typo="Typo.caption" Class="d-block mb-1" Style="color: var(--n-text-3, #9B9BB4);">Imagen (opcional)</MudText>
-                <div class="d-flex align-center" style="gap: 0.75rem;">
-                    @if (_imagenPreviewUrl is not null)
-                    {
-                        <img src="@_imagenPreviewUrl" alt="" style="width:48px; height:48px; object-fit:cover; border-radius:8px;" />
-                    }
-                    else if (EsEdicion && Articulo!.TieneImagen)
-                    {
-                        <img src="@($"api/catalogo/articulos/{Articulo!.ArticuloID}/imagen?v={_cacheBust}")" alt="" style="width:48px; height:48px; object-fit:cover; border-radius:8px;" />
-                    }
-                    <InputFile id="nexo-articulo-imagen-input" OnChange="OnImagenSeleccionadaAsync"
-                               accept="image/png,image/jpeg,image/webp" style="display:none;" />
-                    <label for="nexo-articulo-imagen-input" class="nexo-perfil-panel__btn-archivo">
-                        @((_imagenPreviewUrl is not null || (EsEdicion && Articulo!.TieneImagen)) ? "Cambiar" : "Subir imagen")
-                    </label>
-                </div>
-                <MudText Typo="Typo.caption" Class="d-block mt-1" Style="color: var(--n-text-3, #9B9BB4);">Máximo 1 MB.</MudText>
+            @* ── Imagen ──────────────────────────────────────────────────── *@
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.caption" Class="d-block mb-2" Style="color: var(--n-text-3, #9B9BB4);">Imagen (opcional)</MudText>
+            <div class="d-flex align-center mb-1" style="gap: 0.75rem;">
+                @if (_imagenPreviewUrl is not null)
+                {
+                    <img src="@_imagenPreviewUrl" alt="" style="width:48px; height:48px; object-fit:cover; border-radius:8px;" />
+                }
+                else if (EsEdicion && Articulo!.TieneImagen)
+                {
+                    <img src="@($"api/catalogo/articulos/{Articulo!.ArticuloID}/imagen?v={_cacheBust}")" alt=""
+                         style="width:48px; height:48px; object-fit:cover; border-radius:8px;" />
+                }
+                <InputFile id="nexo-articulo-imagen-input" OnChange="OnImagenSeleccionadaAsync"
+                           accept="image/png,image/jpeg,image/webp" style="display:none;" />
+                <label for="nexo-articulo-imagen-input" class="nexo-perfil-panel__btn-archivo">
+                    @((_imagenPreviewUrl is not null || (EsEdicion && Articulo!.TieneImagen)) ? "Cambiar" : "Subir imagen")
+                </label>
             </div>
+            <MudText Typo="Typo.caption" Class="d-block" Style="color: var(--n-text-3, #9B9BB4);">Maximo 1 MB.</MudText>
+
         </MudForm>
     </DialogContent>
     <DialogActions>
@@ -162,111 +286,302 @@
 
     [Parameter] public ArticuloItem? Articulo { get; set; }
     [Parameter] public List<TipoArticuloItem> TiposArticulo { get; set; } = new();
-    [Parameter] public List<UnidadMedidaItem> UnidadesMedida { get; set; } = new();
+    [Parameter] public List<MarcaItem> Marcas { get; set; } = new();
+    [Parameter] public List<GrupoMayorItem> GruposMayores { get; set; } = new();
+    [Parameter] public List<GrupoMenorItem> GruposMenores { get; set; } = new();
+    [Parameter] public List<PresentacionItem> Presentaciones { get; set; } = new();
+    [Parameter] public List<IvaItem> Ivas { get; set; } = new();
 
     private bool EsEdicion => Articulo is not null;
 
-    // El formulario cambia segun el tipo: Producto Terminado es lo unico que
-    // se vende (Precio de Venta); Materia Prima/Insumo se compran (se muestra
-    // su costo promedio, ya calculado por las recepciones de compra); Servicio
-    // no maneja stock.
     private string? TipoSeleccionadoNombre => EsEdicion
         ? Articulo!.TipoArticulo
         : TiposArticulo.FirstOrDefault(t => t.TipoArticuloID == _tipoArticuloId)?.Nombre;
 
-    private bool EsProductoTerminado => TipoSeleccionadoNombre == "Producto Terminado";
     private bool EsServicio => TipoSeleccionadoNombre == "Servicio";
+    private bool EsFraccionado => _fracciones is > 0;
+    private bool EsDePeso => _presentacionItem?.EsDePeso == true;
 
-    // En edicion no se muestra el selector de Unidad (no se puede cambiar), asi
-    // que se compara contra el string ya resuelto que trae el articulo.
-    private bool EsUnidadCaja => EsEdicion
-        ? Articulo!.Unidad == "cja"
-        : UnidadesMedida.FirstOrDefault(u => u.UnidadID == _unidadId)?.Abreviatura == "cja";
+    private IEnumerable<GrupoMenorItem> GruposMenoresFiltrados =>
+        string.IsNullOrEmpty(_grupoMayorCodigo)
+            ? Enumerable.Empty<GrupoMenorItem>()
+            : GruposMenores.Where(gm => gm.GrupoMayor == _grupoMayorCodigo);
 
+    private IEnumerable<IvaItem> IvasPrimarios => Ivas.Where(i =>
+        (i.Iva == 0 || i.Iva == 5 || i.Iva == 16 || i.Iva == 19) &&
+        !ImpuestosConsumo.Any(ic => (i.Descripcion ?? "").StartsWith(ic.Codigo)));
+    private bool    IvaEsExcluidoOExento => _ivaId.HasValue && _ivaValor == 0;
+    private decimal TotalImpuestoPct     => (_ivaValor ?? 0) + (_impuestoConsumoCode is not null ? (_impuestoPorcentaje ?? 0) : 0);
+    private decimal? CostoConImpuesto    => _costo is > 0 ? _costo.Value * (1 + TotalImpuestoPct / 100) : _costo;
+
+    private static readonly (string Codigo, string Nombre)[] ImpuestosConsumo =
+    {
+        ("IBUA", "IBUA Bebidas"),
+        ("ICL",  "ICL Licores"),
+        ("ICUI", "ICUI Saludable"),
+        ("INPP", "INPP Plásticos"),
+    };
+
+    // ── Estado del formulario ─────────────────────────────────────────────
     private MudForm _form = default!;
     private string _sku = string.Empty;
     private string _nombre = string.Empty;
     private string? _descripcion;
     private int _tipoArticuloId;
-    private int? _unidadId;
-    private decimal _precioVenta;
     private decimal _stockMinimo;
     private decimal _puntoReorden;
     private int? _diasVidaUtil;
-    private decimal? _unidadesPorEmbalaje;
-    private string _modoVentaCaja = "AMBOS";
+    private decimal? _fracciones;
+    private string _fracciona = "SI";
     private decimal? _precioVentaUnidad;
     private decimal _margenUnidad;
     private bool _estado = true;
+    // Imagen
     private string? _imagenBase64;
     private string? _imagenContentType;
     private string? _imagenPreviewUrl;
-    // Rompe el cache del navegador para la imagen existente -- ver mismo
-    // patron en Articulos.razor.
     private readonly long _cacheBust = DateTime.UtcNow.Ticks;
+    // Precios y costos
+    private decimal? _costo;
+    private decimal? _ppPublico;
+    private decimal? _pBodega;
+    private decimal? _pCredito;
+    private decimal? _uPublico;
+    private decimal? _uBodega;
+    private decimal? _uCredito;
+    private decimal _porcPublico;
+    private decimal _porcBodega;
+    private decimal _porcCredito;
+    private decimal? _peso;
+    // Clasificacion
+    private string? _marcaCodigo;
+    private string? _grupoMayorCodigo;
+    private string? _grupoMenorCodigo;
+    private string? _presentacionCodigo;
+    private PresentacionItem? _presentacionItem;
+    // IVA
+    private string?  _ivaSiNo;
+    private short?   _ivaValor;
+    private string?  _ivaDescripcion;
+    private string?  _impuestoConsumoCode;
+    private decimal? _impuestoPorcentaje;
+    private short?   _iva2;
+    private string?  _ivaDescripcion2;
+    private int?     _ivaId;
 
     protected override void OnInitialized()
     {
         if (Articulo is not null)
         {
-            _nombre = Articulo.Nombre;
-            _descripcion = Articulo.Descripcion;
-            _precioVenta = Articulo.PrecioVenta;
-            _stockMinimo = Articulo.StockMinimo;
-            _puntoReorden = Articulo.PuntoReorden;
-            _diasVidaUtil = Articulo.DiasVidaUtil;
-            _unidadesPorEmbalaje = Articulo.UnidadesPorEmbalaje;
-            _modoVentaCaja = Articulo.ModoVentaCaja ?? "AMBOS";
-            _precioVentaUnidad = Articulo.PrecioVentaUnidad;
-            _estado = Articulo.Estado;
+            _nombre             = Articulo.Nombre;
+            _descripcion        = Articulo.Descripcion;
+            _stockMinimo        = Articulo.StockMinimo;
+            _puntoReorden       = Articulo.PuntoReorden;
+            _diasVidaUtil       = Articulo.DiasVidaUtil;
+            _fracciones         = Articulo.Fracciones;
+            _fracciona          = Articulo.Fracciona ?? "SI";
+            _precioVentaUnidad  = Articulo.PrecioVentaUnidad;
+            _estado             = Articulo.Estado;
+            _costo              = Articulo.Costo;
+            _ppPublico          = Articulo.PPublico;
+            _pBodega            = Articulo.PBodega;
+            _pCredito           = Articulo.PCredito;
+            _uPublico           = Articulo.UPublico;
+            _uBodega            = Articulo.UBodega;
+            _uCredito           = Articulo.UCredito;
+            _peso               = Articulo.Peso;
+            _marcaCodigo        = Articulo.MarcaCodigo;
+            _grupoMayorCodigo   = Articulo.GrupoMayorCodigo;
+            _grupoMenorCodigo   = Articulo.GrupoMenorCodigo;
+            _presentacionCodigo = Articulo.PresentacionCodigo;
+            _presentacionItem   = Presentaciones.FirstOrDefault(p => p.Codigo == _presentacionCodigo);
+            _ivaSiNo            = Articulo.IvaSiNo;
+            _ivaValor           = Articulo.IvaValor;
+            _ivaDescripcion     = Articulo.IvaDescripcion;
+            _iva2               = Articulo.Iva2;
+            _ivaDescripcion2    = Articulo.IvaDescripcion2;
+            if (_ivaValor.HasValue)
+                _ivaId = Ivas.FirstOrDefault(i => i.Iva == _ivaValor && i.Descripcion == _ivaDescripcion)?.IvaID;
+            // Restaurar impuesto consumo si el artículo tenía uno guardado
+            if (_iva2.HasValue && _ivaDescripcion2 is not null)
+            {
+                var match = ImpuestosConsumo.FirstOrDefault(ic =>
+                    ic.Nombre == _ivaDescripcion2 || _ivaDescripcion2.StartsWith(ic.Codigo));
+                if (match.Codigo is not null)
+                {
+                    _impuestoConsumoCode = match.Codigo;
+                    _impuestoPorcentaje = _iva2;
+                }
+            }
+            // Calcular % iniciales
+            RecalcPorcentajes();
         }
+    }
+
+    // ── Presentacion ─────────────────────────────────────────────────────
+    private void OnPresentacionChanged(string? codigo)
+    {
+        _presentacionCodigo = codigo;
+        _presentacionItem = Presentaciones.FirstOrDefault(p => p.Codigo == codigo);
+        _fracciones = _presentacionItem?.Fracciones is > 0 ? _presentacionItem.Fracciones : null;
+    }
+
+    private async Task AbrirCrearPresentacionAsync()
+    {
+        var dialogo = await DialogService.ShowAsync<PresentacionDialog>("Nueva Presentacion",
+            new DialogParameters<PresentacionDialog>(), new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialogo.Result;
+        if (result is null || result.Canceled || result.Data is not PresentacionDialog.Result data) return;
+
+        // La pagina padre (Articulos) no recarga aqui, se actualiza solo la lista local del dialogo
+        var nueva = new PresentacionItem(data.Codigo, data.Nombre, data.Fracciones, data.Tipo);
+        Presentaciones = new List<PresentacionItem>(Presentaciones) { nueva };
+        OnPresentacionChanged(data.Codigo);
+        StateHasChanged();
+    }
+
+    // ── Precios y Utilidades (bidireccional, base = costo con impuestos) ──
+    private decimal CalcPorc(decimal? precio) =>
+        CostoConImpuesto is > 0 ? Math.Round(((precio ?? 0) - CostoConImpuesto.Value) / CostoConImpuesto.Value * 100, 2) : 0;
+
+    private void RecalcPorcentajes()
+    {
+        _porcPublico = CalcPorc(_ppPublico);
+        _porcBodega  = CalcPorc(_pBodega);
+        _porcCredito = CalcPorc(_pCredito);
+    }
+
+    private void OnCostoChanged()
+    {
+        _uPublico = _ppPublico.HasValue ? _ppPublico - CostoConImpuesto : null;
+        _uBodega  = _pBodega.HasValue  ? _pBodega  - CostoConImpuesto : null;
+        _uCredito = _pCredito.HasValue ? _pCredito - CostoConImpuesto : null;
+        RecalcPorcentajes();
+    }
+
+    private void OnPPPublicoChanged(decimal? v) { _ppPublico = v; _uPublico = v - CostoConImpuesto; _porcPublico = CalcPorc(v); }
+    private void OnPorcPublicoChanged(decimal p)
+    {
+        _porcPublico = p;
+        if (CostoConImpuesto is > 0) _ppPublico = Math.Round(CostoConImpuesto.Value * (1 + p / 100), 0);
+        _uPublico = _ppPublico - CostoConImpuesto;
+    }
+
+    private void OnPBodegaChanged(decimal? v) { _pBodega = v; _uBodega = v - CostoConImpuesto; _porcBodega = CalcPorc(v); }
+    private void OnPorcBodegaChanged(decimal p)
+    {
+        _porcBodega = p;
+        if (CostoConImpuesto is > 0) _pBodega = Math.Round(CostoConImpuesto.Value * (1 + p / 100), 0);
+        _uBodega = _pBodega - CostoConImpuesto;
+    }
+
+    private void OnPCreditoChanged(decimal? v) { _pCredito = v; _uCredito = v - CostoConImpuesto; _porcCredito = CalcPorc(v); }
+    private void OnPorcCreditoChanged(decimal p)
+    {
+        _porcCredito = p;
+        if (CostoConImpuesto is > 0) _pCredito = Math.Round(CostoConImpuesto.Value * (1 + p / 100), 0);
+        _uCredito = _pCredito - CostoConImpuesto;
     }
 
     private void RecalcPrecioUnidad()
     {
-        if (_unidadesPorEmbalaje is > 0 && _precioVenta > 0)
-            _precioVentaUnidad = Math.Round(_precioVenta / _unidadesPorEmbalaje.Value * (1 + _margenUnidad / 100), 0);
+        if (_fracciones is > 0 && _ppPublico is > 0)
+            _precioVentaUnidad = Math.Round(_ppPublico.Value / _fracciones.Value * (1 + _margenUnidad / 100), 0);
     }
 
+    // ── IVA ──────────────────────────────────────────────────────────────
+    private void OnIvaChanged(int? ivaId)
+    {
+        _ivaId = ivaId;
+        if (ivaId is null)
+        {
+            _ivaSiNo = null; _ivaValor = null; _ivaDescripcion = null;
+            _impuestoConsumoCode = null; _impuestoPorcentaje = null; _iva2 = null; _ivaDescripcion2 = null;
+            OnCostoChanged(); return;
+        }
+        var iva = Ivas.FirstOrDefault(i => i.IvaID == ivaId);
+        if (iva is null) return;
+        _ivaValor = (short)iva.Iva; _ivaDescripcion = iva.Descripcion; _ivaSiNo = iva.Iva > 0 ? "SI" : "NO";
+        if (iva.Iva == 0) { _impuestoConsumoCode = null; _impuestoPorcentaje = null; _iva2 = null; _ivaDescripcion2 = null; }
+        OnCostoChanged();
+    }
+
+    private void OnImpuestoConsumoChanged(string? codigo)
+    {
+        _impuestoConsumoCode = codigo;
+        if (codigo is null) { _impuestoPorcentaje = null; _iva2 = null; _ivaDescripcion2 = null; }
+        OnCostoChanged();
+    }
+
+    private void OnImpuestoPorcentajeChanged()
+    {
+        _iva2 = (short?)(_impuestoPorcentaje ?? 0);
+        _ivaDescripcion2 = ImpuestosConsumo.FirstOrDefault(i => i.Codigo == _impuestoConsumoCode).Nombre;
+        OnCostoChanged();
+    }
+
+    // ── Clasificacion ─────────────────────────────────────────────────────
+    private void OnGrupoMayorChanged(string? value)
+    {
+        _grupoMayorCodigo = value;
+        if (!GruposMenoresFiltrados.Any(gm => gm.Codigo == _grupoMenorCodigo))
+            _grupoMenorCodigo = null;
+    }
+
+    private void OnGrupoMenorChanged(string? value)
+    {
+        _grupoMenorCodigo = value;
+        if (value is not null)
+        {
+            var item = GruposMenoresFiltrados.FirstOrDefault(g => g.Codigo == value);
+            if (item is not null) _grupoMayorCodigo = item.GrupoMayor;
+        }
+    }
+
+    // ── Guardar ───────────────────────────────────────────────────────────
     private async Task GuardarAsync()
     {
         await _form.Validate();
-        if (!_form.IsValid)
-            return;
+        if (!_form.IsValid) return;
 
-        var embalajeAEnviar = EsUnidadCaja ? _unidadesPorEmbalaje : null;
-        var modoAEnviar = EsUnidadCaja ? _modoVentaCaja : null;
-        var precioUnidadAEnviar = EsUnidadCaja ? _precioVentaUnidad : null;
+        var fraccionaAEnviar    = EsFraccionado ? _fracciona : "SI";
+        var precioUnidadAEnviar = EsFraccionado ? _precioVentaUnidad : null;
+        var pesoAEnviar         = EsDePeso ? _peso : null;
+        if (_impuestoConsumoCode is not null)
+        {
+            _iva2 = (short?)(_impuestoPorcentaje ?? 0);
+            _ivaDescripcion2 = ImpuestosConsumo.FirstOrDefault(i => i.Codigo == _impuestoConsumoCode).Nombre;
+        }
+        else { _iva2 = null; _ivaDescripcion2 = null; }
 
         if (EsEdicion)
         {
             var request = new ActualizarArticuloRequest(
-                _nombre, _descripcion, _precioVenta, _stockMinimo, _puntoReorden, _diasVidaUtil, _estado,
-                embalajeAEnviar, modoAEnviar, precioUnidadAEnviar);
+                _nombre, _descripcion, _stockMinimo, _puntoReorden, _diasVidaUtil, _estado,
+                fraccionaAEnviar, precioUnidadAEnviar,
+                _costo, _ppPublico, _pBodega, _pCredito, _uPublico, _uBodega, _uCredito,
+                _marcaCodigo, _grupoMenorCodigo, _presentacionCodigo,
+                pesoAEnviar, _ivaSiNo, _ivaValor, _ivaDescripcion, _iva2, _ivaDescripcion2);
             MudDialog.Close(DialogResult.Ok(new ArticuloDialogResultado(request, _imagenBase64, _imagenContentType)));
         }
         else
         {
-            if (_tipoArticuloId == 0 || (!EsServicio && (_unidadId is null or 0)))
-                return;
-
+            if (_tipoArticuloId == 0) return;
             var request = new CrearArticuloRequest(
-                _sku, _nombre, _descripcion, _tipoArticuloId, _unidadId,
-                _precioVenta, _stockMinimo, _puntoReorden, _diasVidaUtil, embalajeAEnviar, modoAEnviar, precioUnidadAEnviar);
+                _sku, _nombre, _descripcion, _tipoArticuloId,
+                _stockMinimo, _puntoReorden, _diasVidaUtil, fraccionaAEnviar, precioUnidadAEnviar,
+                _costo, _ppPublico, _pBodega, _pCredito, _uPublico, _uBodega, _uCredito,
+                _marcaCodigo, _grupoMenorCodigo, _presentacionCodigo,
+                pesoAEnviar, _ivaSiNo, _ivaValor, _ivaDescripcion, _iva2, _ivaDescripcion2);
             MudDialog.Close(DialogResult.Ok(new ArticuloDialogResultado(request, _imagenBase64, _imagenContentType)));
         }
     }
 
+    // ── Imagen ────────────────────────────────────────────────────────────
     private async Task OnImagenSeleccionadaAsync(InputFileChangeEventArgs e)
     {
         const long maxBytes = 1_000_000;
-
-        if (e.File.Size > maxBytes)
-        {
-            _imagenBase64 = null;
-            return;
-        }
-
+        if (e.File.Size > maxBytes) { _imagenBase64 = null; return; }
         using var stream = e.File.OpenReadStream(maxBytes);
         using var memoria = new MemoryStream();
         await stream.CopyToAsync(memoria);

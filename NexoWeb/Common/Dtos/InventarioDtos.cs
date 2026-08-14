@@ -34,7 +34,9 @@ public record KardexMovimientoItem(
     string? ObservacionDetallada
 )
 {
-    public bool EsCaja => Unidad == "cja" && UnidadesPorEmbalaje is > 0;
+    // EsCaja: usa UnidadesPorEmbalaje en lugar de Unidad == "cja" porque Unidad
+    // ahora viene de PresentacionCodigo y el código puede variar por cliente.
+    public bool EsCaja => UnidadesPorEmbalaje is > 0;
     // La BD almacena cantidades siempre positivas; la dirección sale del nombre del tipo.
     public bool EsEntrada => !(
         TipoMovimiento.Contains("Salida")  ||

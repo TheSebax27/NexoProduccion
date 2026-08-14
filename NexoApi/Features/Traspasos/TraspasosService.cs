@@ -84,7 +84,7 @@ public class TraspasosService : ITraspasosService
             SELECT d.TraspasoDetalleID, d.ArticuloID, a.Nombre AS Articulo,
                    d.CantidadEnviada, d.CantidadRecibida, d.CostoUnitario
             FROM Inventario.TraspasosDetalle d
-            JOIN Catalogo.Articulos a ON a.ArticuloID = d.ArticuloID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = d.ArticuloID
             WHERE d.TraspasoID = @TraspasoId";
 
         return await connection.QueryAsync<TraspasoDetalleItem>(sql, new { TraspasoId = traspasoId });

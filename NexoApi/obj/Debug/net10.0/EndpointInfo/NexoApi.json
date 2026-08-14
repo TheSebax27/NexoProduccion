@@ -90,6 +90,44 @@
       }
     },
     "/api/catalogo/articulos/{id}": {
+      "get": {
+        "tags": [
+          "Articulos"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticuloItem"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticuloItem"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticuloItem"
+                }
+              }
+            }
+          }
+        }
+      },
       "put": {
         "tags": [
           "Articulos"
@@ -10000,6 +10038,673 @@
         }
       }
     },
+    "/api/catalogo/ivas": {
+      "get": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IvaItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IvaItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IvaItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearIvaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearIvaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearIvaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/ivas/{ivaId}": {
+      "put": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "parameters": [
+          {
+            "name": "ivaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarIvaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarIvaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarIvaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "parameters": [
+          {
+            "name": "ivaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/grupos-mayores": {
+      "get": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GrupoMayorItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GrupoMayorItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GrupoMayorItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearGrupoMayorRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearGrupoMayorRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearGrupoMayorRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/grupos-mayores/{codigo}": {
+      "put": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "parameters": [
+          {
+            "name": "codigo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarGrupoMayorRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarGrupoMayorRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarGrupoMayorRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "parameters": [
+          {
+            "name": "codigo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/grupos-menores": {
+      "get": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "parameters": [
+          {
+            "name": "grupoMayor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GrupoMenorItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GrupoMenorItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GrupoMenorItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearGrupoMenorRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearGrupoMenorRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearGrupoMenorRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/grupos-menores/{codigo}/{grupoMayor}": {
+      "put": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "parameters": [
+          {
+            "name": "codigo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "grupoMayor",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarGrupoMenorRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarGrupoMenorRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarGrupoMenorRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "parameters": [
+          {
+            "name": "codigo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "grupoMayor",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/marcas": {
+      "get": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MarcaItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MarcaItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MarcaItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearMarcaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearMarcaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearMarcaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/marcas/{codigo}": {
+      "put": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "parameters": [
+          {
+            "name": "codigo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarMarcaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarMarcaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarMarcaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "parameters": [
+          {
+            "name": "codigo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/presentaciones": {
+      "get": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PresentacionItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PresentacionItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PresentacionItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPresentacionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPresentacionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPresentacionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/presentaciones/{codigo}": {
+      "put": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "parameters": [
+          {
+            "name": "codigo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarPresentacionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarPresentacionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarPresentacionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "TarjetasCatalogos"
+        ],
+        "parameters": [
+          {
+            "name": "codigo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/inventario/traspasos": {
       "get": {
         "tags": [
@@ -10228,10 +10933,6 @@
             "type": "string",
             "nullable": true
           },
-          "precioVenta": {
-            "type": "number",
-            "format": "double"
-          },
           "stockMinimo": {
             "type": "number",
             "format": "double"
@@ -10248,18 +10949,87 @@
           "estado": {
             "type": "boolean"
           },
-          "unidadesPorEmbalaje": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "modoVentaCaja": {
+          "fracciona": {
             "type": "string",
             "nullable": true
           },
           "precioVentaUnidad": {
             "type": "number",
             "format": "double",
+            "nullable": true
+          },
+          "costo": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pPublico": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pBodega": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pCredito": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uPublico": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uBodega": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uCredito": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "marcaCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "grupoMenorCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "presentacionCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "peso": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "ivaSiNo": {
+            "type": "string",
+            "nullable": true
+          },
+          "ivaValor": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "ivaDescripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "iva2": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "ivaDescripcion2": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -10703,6 +11473,26 @@
         },
         "additionalProperties": false
       },
+      "ActualizarGrupoMayorRequest": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarGrupoMenorRequest": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ActualizarHitoRequest": {
         "type": "object",
         "properties": {
@@ -10733,6 +11523,20 @@
             "nullable": true
           },
           "contentType": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarIvaRequest": {
+        "type": "object",
+        "properties": {
+          "iva": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "descripcion": {
             "type": "string",
             "nullable": true
           }
@@ -10868,6 +11672,16 @@
         },
         "additionalProperties": false
       },
+      "ActualizarMarcaRequest": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ActualizarMetaVentaRequest": {
         "type": "object",
         "properties": {
@@ -10993,6 +11807,25 @@
             "nullable": true
           },
           "apellidos": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarPresentacionRequest": {
+        "type": "object",
+        "properties": {
+          "presentacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "fracciones": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "tipo": {
             "type": "string",
             "nullable": true
           }
@@ -11284,7 +12117,7 @@
             "type": "integer",
             "format": "int32"
           },
-          "sku": {
+          "referencia": {
             "type": "string",
             "nullable": true
           },
@@ -11300,15 +12133,7 @@
             "type": "string",
             "nullable": true
           },
-          "unidad": {
-            "type": "string",
-            "nullable": true
-          },
           "costoPromedio": {
-            "type": "number",
-            "format": "double"
-          },
-          "precioVenta": {
             "type": "number",
             "format": "double"
           },
@@ -11323,12 +12148,16 @@
           "estado": {
             "type": "boolean"
           },
+          "existencias": {
+            "type": "number",
+            "format": "double"
+          },
           "diasVidaUtil": {
             "type": "integer",
             "format": "int32",
             "nullable": true
           },
-          "unidadesPorEmbalaje": {
+          "fracciones": {
             "type": "number",
             "format": "double",
             "nullable": true
@@ -11336,7 +12165,7 @@
           "tieneImagen": {
             "type": "boolean"
           },
-          "modoVentaCaja": {
+          "fracciona": {
             "type": "string",
             "nullable": true
           },
@@ -11344,6 +12173,118 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "costo": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pPublico": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pBodega": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pCredito": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uPublico": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uBodega": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uCredito": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "marcaCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "marcaNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "grupoMenorCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "grupoMenorNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "grupoMayorCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "grupoMayorNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "presentacionCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "presentacionNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "peso": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "ivaSiNo": {
+            "type": "string",
+            "nullable": true
+          },
+          "ivaValor": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "ivaDescripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "iva2": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "ivaDescripcion2": {
+            "type": "string",
+            "nullable": true
+          },
+          "esFraccionado": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "soloEnPaquete": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "unidad": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "precioUnidadEfectivo": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
           }
         },
         "additionalProperties": false
@@ -12267,7 +13208,7 @@
       "CrearArticuloRequest": {
         "type": "object",
         "properties": {
-          "sku": {
+          "referencia": {
             "type": "string",
             "nullable": true
           },
@@ -12283,15 +13224,6 @@
             "type": "integer",
             "format": "int32"
           },
-          "unidadID": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "precioVenta": {
-            "type": "number",
-            "format": "double"
-          },
           "stockMinimo": {
             "type": "number",
             "format": "double"
@@ -12305,18 +13237,87 @@
             "format": "int32",
             "nullable": true
           },
-          "unidadesPorEmbalaje": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "modoVentaCaja": {
+          "fracciona": {
             "type": "string",
             "nullable": true
           },
           "precioVentaUnidad": {
             "type": "number",
             "format": "double",
+            "nullable": true
+          },
+          "costo": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pPublico": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pBodega": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pCredito": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uPublico": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uBodega": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uCredito": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "marcaCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "grupoMenorCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "presentacionCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "peso": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "ivaSiNo": {
+            "type": "string",
+            "nullable": true
+          },
+          "ivaValor": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "ivaDescripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "iva2": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "ivaDescripcion2": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -12882,6 +13883,38 @@
         },
         "additionalProperties": false
       },
+      "CrearGrupoMayorRequest": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CrearGrupoMenorRequest": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "grupoMayor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CrearHitoRequest": {
         "type": "object",
         "properties": {
@@ -12950,6 +13983,20 @@
           "proximoContacto": {
             "type": "string",
             "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CrearIvaRequest": {
+        "type": "object",
+        "properties": {
+          "iva": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "descripcion": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -13125,6 +14172,20 @@
         },
         "additionalProperties": false
       },
+      "CrearMarcaRequest": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CrearMetaVentaRequest": {
         "type": "object",
         "properties": {
@@ -13157,10 +14218,6 @@
           "cantidadRendimientoBase": {
             "type": "number",
             "format": "double"
-          },
-          "unidadRendimientoID": {
-            "type": "integer",
-            "format": "int32"
           },
           "detalle": {
             "type": "array",
@@ -13336,6 +14393,29 @@
         },
         "additionalProperties": false
       },
+      "CrearPresentacionRequest": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "presentacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "fracciones": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "tipo": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CrearProveedorRequest": {
         "type": "object",
         "properties": {
@@ -13421,10 +14501,6 @@
           "cantidadRendimientoBase": {
             "type": "number",
             "format": "double"
-          },
-          "unidadRendimientoID": {
-            "type": "integer",
-            "format": "int32"
           },
           "detalle": {
             "type": "array",
@@ -13805,10 +14881,6 @@
           "cantidadRequerida": {
             "type": "number",
             "format": "double"
-          },
-          "unidadID": {
-            "type": "integer",
-            "format": "int32"
           },
           "porcentajeMermaEstandar": {
             "type": "number",
@@ -14505,6 +15577,42 @@
         },
         "additionalProperties": false
       },
+      "GrupoMayorItem": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GrupoMenorItem": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "grupoMayor": {
+            "type": "string",
+            "nullable": true
+          },
+          "grupoMayorNombre": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "GuardarCampanaRequest": {
         "type": "object",
         "properties": {
@@ -14810,6 +15918,24 @@
           },
           "visible": {
             "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "IvaItem": {
+        "type": "object",
+        "properties": {
+          "ivaID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "iva": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "descripcion": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -15148,6 +16274,20 @@
             "nullable": true
           },
           "notas": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MarcaItem": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
             "type": "string",
             "nullable": true
           }
@@ -15744,6 +16884,29 @@
           "totalReal": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PresentacionItem": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "presentacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "fracciones": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "tipo": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

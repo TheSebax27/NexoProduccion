@@ -1,100 +1,156 @@
-﻿@page "/catalogo/articulos"
+@page "/catalogo/articulos"
 @attribute [Authorize]
 @implements IDisposable
 @inject INexoApiClient ApiClient
-@inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
-<PageTitle>Articulos - NEXO</PageTitle>
+<PageTitle>Artículos — NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
-    <MudText Typo="Typo.h5">Articulos</MudText>
-    <BotonFavorito Href="/catalogo/articulos" Etiqueta="Articulos" />
+@* ── Encabezado ──────────────────────────────────────────────────────── *@
+<div class="art-header">
+    <div class="art-header__left">
+        <h1 class="art-header__title">
+            <MudIcon Icon="@Icons.Material.Filled.Inventory" Class="art-header__icon" />
+            Artículos
+        </h1>
+        <p class="art-header__sub">Catálogo maestro: materias primas, insumos y productos terminados.</p>
+    </div>
+    <div class="art-header__actions">
+        <BotonFavorito Href="/catalogo/articulos" Etiqueta="Artículos" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   OnClick="@(() => NavigationManager.NavigateTo("/catalogo/articulos/nuevo"))"
+                   StartIcon="@Icons.Material.Filled.Add">
+            Nuevo artículo
+        </MudButton>
+    </div>
 </div>
-<InfoAyuda Texto="El cat�logo maestro de art�culos: materias primas, insumos y productos terminados. Cada art�culo tiene un SKU �nico, una unidad de medida y su conversi�n de caja a unidad. Se usa en recetas, �rdenes de compra y de producci�n." />
 
-<MudGrid Class="mb-4">
-    <MudItem xs="12" sm="6" md="4">
-        <MudTextField T="string" Label="Buscar por nombre o SKU" Value="_filtroTexto"
-                      ValueChanged="OnFiltroTextoCambiadoAsync" Adornment="Adornment.Start"
-                      AdornmentIcon="@Icons.Material.Filled.Search" Immediate="false" DebounceInterval="400" />
-    </MudItem>
-    <MudItem xs="12" sm="6" md="4">
-        <MudSelect T="int?" Value="_filtroTipoId" ValueChanged="OnFiltroTipoCambiadoAsync"
-                   Label="Filtrar por Tipo" Clearable="true">
-            @foreach (var tipo in _tiposArticulo)
+@* ── Filtros ─────────────────────────────────────────────────────────── *@
+<div class="art-filtros">
+    <MudTextField T="string" Label="Buscar por nombre o SKU" Value="_filtroTexto"
+                  ValueChanged="OnFiltroTextoCambiadoAsync" Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search" Immediate="false"
+                  DebounceInterval="400" Variant="Variant.Outlined"
+                  Style="flex:2; min-width:220px;" />
+    <MudSelect T="int?" Value="_filtroTipoId" ValueChanged="OnFiltroTipoCambiadoAsync"
+               Label="Tipo de artículo" Clearable="true" Variant="Variant.Outlined"
+               Style="flex:1; min-width:180px;">
+        @foreach (var tipo in _tiposArticulo)
+        {
+            <MudSelectItem T="int?" Value="@tipo.TipoArticuloID">@tipo.Nombre</MudSelectItem>
+        }
+    </MudSelect>
+    <MudSelect T="bool?" Value="_filtroEstado" ValueChanged="OnFiltroEstadoCambiadoAsync"
+               Label="Estado" Clearable="true" Variant="Variant.Outlined"
+               Style="flex:0 0 150px;">
+        <MudSelectItem T="bool?" Value="@((bool?)true)">Activos</MudSelectItem>
+        <MudSelectItem T="bool?" Value="@((bool?)false)">Inactivos</MudSelectItem>
+    </MudSelect>
+</div>
+
+@* ── Resumen ─────────────────────────────────────────────────────────── *@
+@if (!_cargando && _articulos.Count > 0)
+{
+    <div class="art-resumen">
+        <div class="art-resumen__chip">
+            <strong>@_articulos.Count</strong>&nbsp;artículo@(_articulos.Count != 1 ? "s" : "")
+        </div>
+        @if (_tiposResumen.Any())
+        {
+            foreach (var (tipo, cant) in _tiposResumen)
             {
-                <MudSelectItem T="int?" Value="@tipo.TipoArticuloID">@tipo.Nombre</MudSelectItem>
+                <div class="art-resumen__chip art-resumen__chip--muted">
+                    @cant @tipo
+                </div>
             }
-        </MudSelect>
-    </MudItem>
-</MudGrid>
-
-<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
-           StartIcon="@Icons.Material.Filled.Add" Class="mb-4"
-           Disabled="_tiposArticulo.Count == 0 || _unidadesMedida.Count == 0">
-    Nuevo Articulo
-</MudButton>
+        }
+    </div>
+}
 
 @if (_errorCarga is not null)
 {
-    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar los articulos: @_errorCarga</MudAlert>
+    <MudAlert Severity="Severity.Error" Class="mb-4">@_errorCarga</MudAlert>
 }
+
 @if (_cargando)
 {
-    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+    <div class="art-skeleton">
+        @for (int i = 0; i < 8; i++)
+        {
+            <div class="art-skeleton__row"></div>
+        }
+    </div>
 }
 else if (_articulos.Count == 0)
 {
-    <MudText>No hay articulos que coincidan con el filtro.</MudText>
+    <div class="art-vacio">
+        <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Style="font-size:3rem; color:var(--n-text-3); display:block; margin-bottom:.75rem;" />
+        <p>Sin artículos que coincidan con el filtro.</p>
+        @if (!string.IsNullOrWhiteSpace(_filtroTexto) || _filtroTipoId.HasValue || _filtroEstado.HasValue)
+        {
+            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="LimpiarFiltrosAsync">
+                Limpiar filtros
+            </MudButton>
+        }
+    </div>
 }
 else if (Preferencias.VistaListado == "tarjetas")
 {
-    <div class="nexo-card-grid">
-        @foreach (var articulo in _articulos)
+    <div class="art-grid">
+        @foreach (var a in _articulos)
         {
-            <div class="nexo-item-card">
-                @if (articulo.TieneImagen)
+            <div class="art-card" @onclick="@(() => NavigationManager.NavigateTo($"/catalogo/articulos/{a.ArticuloID}/editar"))">
+                @if (a.TieneImagen)
                 {
-                    <img src="@($"api/catalogo/articulos/{articulo.ArticuloID}/imagen?v={_cacheBust}")" alt=""
-                         style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:0.5rem;" />
+                    <img src="@($"api/catalogo/articulos/{a.ArticuloID}/imagen?v={_cacheBust}")" alt=""
+                         class="art-card__img" />
                 }
-                <div class="nexo-item-card__title">@articulo.Nombre</div>
-                <div class="nexo-item-card__sub">
-                    @articulo.SKU � @articulo.TipoArticulo
-                    <MudChip T="string" Color="@(articulo.Estado ? Color.Success : Color.Error)" Size="Size.Small" Class="ml-2">
-                        @(articulo.Estado ? "Activo" : "Inactivo")
-                    </MudChip>
-                </div>
-                <div class="nexo-item-card__row">
-                    <span>Unidad</span>
-                    <strong>
-                        @(articulo.Unidad ?? "-")
-                        @if (articulo.Unidad == "cja" && articulo.UnidadesPorEmbalaje is > 0)
-                        {
-                            <span style="font-weight:400; color:var(--n-text-3);">(@articulo.UnidadesPorEmbalaje.Value.ToString("N0") und/caja)</span>
-                        }
-                    </strong>
-                </div>
-                <div class="nexo-item-card__row">
-                    <span>Costo Promedio</span>
-                    <strong>@articulo.CostoPromedio.ToString("C2")</strong>
-                </div>
-                @if (articulo.TipoArticulo == "Producto Terminado")
+                else
                 {
-                    <div class="nexo-item-card__row">
-                        <span>Precio Venta</span>
-                        <strong>@articulo.PrecioVenta.ToString("C2")</strong>
+                    <div class="art-card__no-img">
+                        <MudIcon Icon="@Icons.Material.Outlined.Inventory" Style="font-size:2.5rem; color:var(--n-text-3); opacity:.4;" />
                     </div>
                 }
-                <div class="nexo-item-card__row">
-                    <span>Stock M�nimo</span>
-                    <strong>@articulo.StockMinimo.ToString("N2")</strong>
-                </div>
-                <div class="nexo-item-card__actions">
-                    <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(articulo))">Editar</MudButton>
+                <div class="art-card__body">
+                    <div class="art-card__title">@a.Nombre</div>
+                    <div class="art-card__meta">
+                        <span class="art-sku">@a.Referencia</span>
+                        <span class="art-tipo">@a.TipoArticulo</span>
+                    </div>
+                    @if (a.PresentacionCodigo is not null)
+                    {
+                        <div class="art-card__row">
+                            <span>Presentación</span>
+                            <strong>
+                                @a.PresentacionCodigo
+                                @if (a.PresentacionNombre is not null) { <span class="art-muted"> — @a.PresentacionNombre</span> }
+                                @if (a.EsFraccionado) { <span class="art-muted"> (@a.Fracciones!.Value.ToString("N0") und)</span> }
+                            </strong>
+                        </div>
+                    }
+                    @if (a.CostoPromedio > 0)
+                    {
+                        <div class="art-card__row">
+                            <span>Costo prom.</span>
+                            <strong>@a.CostoPromedio.ToString("C0")</strong>
+                        </div>
+                    }
+                    @if (a.PPublico is > 0)
+                    {
+                        <div class="art-card__row">
+                            <span>P. Público</span>
+                            <strong>@a.PPublico!.Value.ToString("C0")</strong>
+                        </div>
+                    }
+                    <div class="art-card__footer">
+                        <span class="art-estado @(a.Estado ? "art-estado--activo" : "art-estado--inactivo")">
+                            @(a.Estado ? "Activo" : "Inactivo")
+                        </span>
+                        <span class="art-editar-link">Editar →</span>
+                    </div>
                 </div>
             </div>
         }
@@ -102,100 +158,125 @@ else if (Preferencias.VistaListado == "tarjetas")
 }
 else
 {
-    <MudTable Items="_articulos" Hover="true" Dense="true" Striped="true">
-        <HeaderContent>
-            <MudTh></MudTh>
-            <MudTh>SKU</MudTh>
-            <MudTh>Nombre</MudTh>
-            <MudTh>Tipo</MudTh>
-            <MudTh>Unidad</MudTh>
-            <MudTh>Costo Promedio</MudTh>
-            <MudTh>Precio Venta</MudTh>
-            <MudTh>Stock Minimo</MudTh>
-            <MudTh>Estado</MudTh>
-            <MudTh>Accion</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="">
-                @if (context.TieneImagen)
+    <div class="art-table-wrap">
+        <table class="art-table">
+            <thead>
+                <tr>
+                    <th class="art-table__th-img"></th>
+                    <th>SKU</th>
+                    <th>Nombre</th>
+                    <th>Tipo</th>
+                    <th>Presentación</th>
+                    <th class="art-table__num">Costo prom.</th>
+                    <th class="art-table__num">P. Público</th>
+                    <th class="art-table__num">Stock mín.</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in _articulos)
                 {
-                    <img src="@($"api/catalogo/articulos/{context.ArticuloID}/imagen?v={_cacheBust}")" alt=""
-                         style="width:32px; height:32px; object-fit:cover; border-radius:6px;" />
+                    <tr class="art-table__row" @onclick="@(() => NavigationManager.NavigateTo($"/catalogo/articulos/{a.ArticuloID}/editar"))">
+                        <td class="art-table__td-img">
+                            @if (a.TieneImagen)
+                            {
+                                <img src="@($"api/catalogo/articulos/{a.ArticuloID}/imagen?v={_cacheBust}")"
+                                     alt="" class="art-table__thumb" />
+                            }
+                            else
+                            {
+                                <div class="art-table__no-thumb">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Inventory"
+                                             Style="font-size:1rem; color:var(--n-text-3); opacity:.5;" />
+                                </div>
+                            }
+                        </td>
+                        <td><span class="art-sku">@a.Referencia</span></td>
+                        <td class="art-table__nombre">
+                            <span class="art-table__nombre-text">@a.Nombre</span>
+                            @if (a.Descripcion is not null)
+                            {
+                                <span class="art-table__desc">@a.Descripcion</span>
+                            }
+                        </td>
+                        <td><span class="art-tipo">@a.TipoArticulo</span></td>
+                        <td>
+                            @if (a.PresentacionCodigo is not null)
+                            {
+                                <span class="art-pres">@a.PresentacionCodigo</span>
+                                @if (a.PresentacionNombre is not null)
+                                {
+                                    <span class="art-muted"> @a.PresentacionNombre</span>
+                                }
+                                @if (a.EsFraccionado)
+                                {
+                                    <span class="art-pres-fra"> · @a.Fracciones!.Value.ToString("N0") und</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="art-muted">—</span>
+                            }
+                        </td>
+                        <td class="art-table__num">
+                            @(a.CostoPromedio > 0 ? a.CostoPromedio.ToString("C0") : "—")
+                        </td>
+                        <td class="art-table__num">
+                            @(a.PPublico is > 0 ? a.PPublico!.Value.ToString("C0") : "—")
+                        </td>
+                        <td class="art-table__num">
+                            @(a.StockMinimo > 0 ? a.StockMinimo.ToString("N2") : "—")
+                        </td>
+                        <td>
+                            <span class="art-estado @(a.Estado ? "art-estado--activo" : "art-estado--inactivo")">
+                                @(a.Estado ? "Activo" : "Inactivo")
+                            </span>
+                        </td>
+                        <td class="art-table__td-acciones">
+                            <span class="art-editar-link">Editar →</span>
+                        </td>
+                    </tr>
                 }
-            </MudTd>
-            <MudTd DataLabel="SKU">@context.SKU</MudTd>
-            <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
-            <MudTd DataLabel="Tipo">@context.TipoArticulo</MudTd>
-            <MudTd DataLabel="Unidad">
-                @(context.Unidad ?? "-")
-                @if (context.Unidad == "cja" && context.UnidadesPorEmbalaje is > 0)
-                {
-                    <MudText Typo="Typo.caption" Class="d-block" Style="color: var(--n-text-3, #9B9BB4);">
-                        = @context.UnidadesPorEmbalaje.Value.ToString("N0") und/caja
-                    </MudText>
-                }
-            </MudTd>
-            <MudTd DataLabel="Costo Promedio">@context.CostoPromedio.ToString("C2")</MudTd>
-            <MudTd DataLabel="Precio Venta">
-                @(context.TipoArticulo == "Producto Terminado" ? context.PrecioVenta.ToString("C2") : "-")
-            </MudTd>
-            <MudTd DataLabel="Stock Minimo">@context.StockMinimo.ToString("N2")</MudTd>
-            <MudTd DataLabel="Estado">
-                <MudChip T="string" Color="@(context.Estado ? Color.Success : Color.Error)" Size="Size.Small">
-                    @(context.Estado ? "Activo" : "Inactivo")
-                </MudChip>
-            </MudTd>
-            <MudTd DataLabel="Accion">
-                <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">
-                    Editar
-                </MudButton>
-            </MudTd>
-        </RowTemplate>
-        <NoRecordsContent>
-            <MudText>No hay articulos que coincidan con el filtro.</MudText>
-        </NoRecordsContent>
-    </MudTable>
+            </tbody>
+        </table>
+    </div>
 }
 
 @code {
-    private List<ArticuloItem> _articulos = new();
+    private List<ArticuloItem>     _articulos    = new();
     private List<TipoArticuloItem> _tiposArticulo = new();
-    private List<UnidadMedidaItem> _unidadesMedida = new();
-    private int? _filtroTipoId;
+    private int?    _filtroTipoId;
+    private bool?   _filtroEstado;
+    private bool    _cargando  = true;
+    private string? _errorCarga;
+    private long    _cacheBust = DateTime.UtcNow.Ticks;
 
-    // Permite llegar con un termino precargado desde la busqueda global
-    // (ej. /catalogo/articulos?texto=SKU-001) sin tener que volver a escribirlo.
     [SupplyParameterFromQuery(Name = "texto")]
     private string? _filtroTexto { get; set; }
 
-    private bool _cargando = true;
-    private string? _errorCarga;
+    private IEnumerable<(string Tipo, int Cant)> _tiposResumen =>
+        _articulos.GroupBy(a => a.TipoArticulo)
+                  .Select(g => (g.Key, g.Count()))
+                  .OrderByDescending(x => x.Item2);
 
     protected override void OnInitialized()
     {
         Preferencias.OnCambio += OnPreferenciasCambiaron;
     }
 
-    // "Rompe" el cache del navegador para las imagenes de articulo -- sin esto,
-    // si el navegador llego a cachear una respuesta rota (o la imagen de un
-    // articulo cambia), el <img> puede seguir mostrando lo viejo indefinidamente
-    // porque la URL es siempre la misma. Se recalcula cada vez que se sube una
-    // imagen nueva para forzar el refetch inmediato.
-    private long _cacheBust = DateTime.UtcNow.Ticks;
-
-    private void OnPreferenciasCambiaron() => InvokeAsync(StateHasChanged);
-
     public void Dispose()
     {
         Preferencias.OnCambio -= OnPreferenciasCambiaron;
     }
+
+    private void OnPreferenciasCambiaron() => InvokeAsync(StateHasChanged);
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             _tiposArticulo = await ApiClient.GetAsync<List<TipoArticuloItem>>("api/catalogo/articulos/tipos") ?? new();
-            _unidadesMedida = await ApiClient.GetAsync<List<UnidadMedidaItem>>("api/catalogo/articulos/unidades") ?? new();
             await CargarAsync();
         }
         catch (Exception ex)
@@ -209,17 +290,18 @@ else
     {
         _cargando = true;
         _errorCarga = null;
-
         try
         {
-            var query = new List<string>();
-            if (_filtroTipoId.HasValue)
-                query.Add($"tipoArticuloId={_filtroTipoId}");
-            if (!string.IsNullOrWhiteSpace(_filtroTexto))
-                query.Add($"texto={Uri.EscapeDataString(_filtroTexto)}");
+            var q = new List<string>();
+            if (_filtroTipoId.HasValue) q.Add($"tipoArticuloId={_filtroTipoId}");
+            if (!string.IsNullOrWhiteSpace(_filtroTexto)) q.Add($"texto={Uri.EscapeDataString(_filtroTexto)}");
 
-            var ruta = "api/catalogo/articulos" + (query.Count > 0 ? "?" + string.Join("&", query) : "");
-            _articulos = await ApiClient.GetAsync<List<ArticuloItem>>(ruta) ?? new();
+            var ruta = "api/catalogo/articulos" + (q.Count > 0 ? "?" + string.Join("&", q) : "");
+            var todos = await ApiClient.GetAsync<List<ArticuloItem>>(ruta) ?? new();
+
+            _articulos = _filtroEstado.HasValue
+                ? todos.Where(a => a.Estado == _filtroEstado.Value).ToList()
+                : todos;
         }
         catch (Exception ex)
         {
@@ -231,89 +313,15 @@ else
         }
     }
 
-    private async Task OnFiltroTipoCambiadoAsync(int? nuevoValor)
+    private async Task OnFiltroTipoCambiadoAsync(int? v)  { _filtroTipoId = v; await CargarAsync(); }
+    private async Task OnFiltroTextoCambiadoAsync(string? v) { _filtroTexto = v; await CargarAsync(); }
+    private async Task OnFiltroEstadoCambiadoAsync(bool? v) { _filtroEstado = v; await CargarAsync(); }
+
+    private async Task LimpiarFiltrosAsync()
     {
-        _filtroTipoId = nuevoValor;
+        _filtroTexto  = null;
+        _filtroTipoId = null;
+        _filtroEstado = null;
         await CargarAsync();
-    }
-
-    private async Task OnFiltroTextoCambiadoAsync(string? nuevoValor)
-    {
-        _filtroTexto = nuevoValor;
-        await CargarAsync();
-    }
-
-    private async Task AbrirCreacionAsync()
-    {
-        var parametros = new DialogParameters<ArticuloDialog>
-        {
-            { x => x.TiposArticulo, _tiposArticulo },
-            { x => x.UnidadesMedida, _unidadesMedida }
-        };
-
-        var dialogo = await DialogService.ShowAsync<ArticuloDialog>("Nuevo Articulo", parametros);
-        var resultado = await dialogo.Result;
-
-        if (resultado is null || resultado.Canceled)
-            return;
-
-        try
-        {
-            var dialogoResultado = (ArticuloDialogResultado)resultado.Data!;
-            var request = (CrearArticuloRequest)dialogoResultado.Datos;
-            var creado = await ApiClient.PostAsync<CrearArticuloRequest, CrearArticuloResponse>("api/catalogo/articulos", request);
-
-            if (dialogoResultado.ImagenBase64 is not null && creado is not null)
-            {
-                await ApiClient.PutAsync<ActualizarImagenRequest, object?>(
-                    $"api/catalogo/articulos/{creado.ArticuloId}/imagen",
-                    new ActualizarImagenRequest(dialogoResultado.ImagenBase64, dialogoResultado.ImagenContentType!));
-                _cacheBust = DateTime.UtcNow.Ticks;
-            }
-
-            Snackbar.Add("Articulo creado correctamente.", Severity.Success);
-            await CargarAsync();
-        }
-        catch (HttpRequestException ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
-    }
-
-    private async Task AbrirEdicionAsync(ArticuloItem articulo)
-    {
-        var parametros = new DialogParameters<ArticuloDialog>
-        {
-            { x => x.Articulo, articulo }
-        };
-
-        var dialogo = await DialogService.ShowAsync<ArticuloDialog>("Editar Articulo", parametros);
-        var resultado = await dialogo.Result;
-
-        if (resultado is null || resultado.Canceled)
-            return;
-
-        try
-        {
-            var dialogoResultado = (ArticuloDialogResultado)resultado.Data!;
-            var request = (ActualizarArticuloRequest)dialogoResultado.Datos;
-            await ApiClient.PutAsync<ActualizarArticuloRequest, object?>(
-                $"api/catalogo/articulos/{articulo.ArticuloID}", request);
-
-            if (dialogoResultado.ImagenBase64 is not null)
-            {
-                await ApiClient.PutAsync<ActualizarImagenRequest, object?>(
-                    $"api/catalogo/articulos/{articulo.ArticuloID}/imagen",
-                    new ActualizarImagenRequest(dialogoResultado.ImagenBase64, dialogoResultado.ImagenContentType!));
-                _cacheBust = DateTime.UtcNow.Ticks;
-            }
-
-            Snackbar.Add("Articulo actualizado correctamente.", Severity.Success);
-            await CargarAsync();
-        }
-        catch (HttpRequestException ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
     }
 }

@@ -97,7 +97,7 @@ public class OrdenesProduccionService : IOrdenesProduccionService
                    op.FechaPlanificada, op.FechaInicio, op.FechaFin, op.CostoUnitarioReal
             FROM Produccion.OrdenesProduccion op
             JOIN Produccion.EstadosOP e ON e.EstadoOPID = op.EstadoOPID
-            JOIN Catalogo.Articulos a ON a.ArticuloID = op.ProductoTerminadoID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = op.ProductoTerminadoID
             JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = op.CentroCostoDestinoID
             WHERE (@CentroCostoId IS NULL OR op.CentroCostoDestinoID = @CentroCostoId)
               AND (@Estado IS NULL OR e.Nombre = @Estado)
@@ -116,7 +116,7 @@ public class OrdenesProduccionService : IOrdenesProduccionService
                    op.FechaPlanificada, op.FechaInicio, op.FechaFin, op.CostoUnitarioReal
             FROM Produccion.OrdenesProduccion op
             JOIN Produccion.EstadosOP e ON e.EstadoOPID = op.EstadoOPID
-            JOIN Catalogo.Articulos a ON a.ArticuloID = op.ProductoTerminadoID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = op.ProductoTerminadoID
             JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = op.CentroCostoDestinoID
             WHERE op.OrdenProduccionID = @OrdenProduccionId";
 
@@ -257,7 +257,7 @@ public class OrdenesProduccionService : IOrdenesProduccionService
                    c.CantidadTeorica, c.CantidadReal,
                    me.Nombre AS MotivoExceso, c.Observacion
             FROM Produccion.OrdenesProduccionConsumo c
-            JOIN Catalogo.Articulos a ON a.ArticuloID = c.ArticuloID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = c.ArticuloID
             LEFT JOIN Produccion.MotivosExcesoConsumo me ON me.MotivoExcesoID = c.MotivoExcesoID
             WHERE c.OrdenProduccionID = @OrdenProduccionId
             ORDER BY c.ConsumoID";
@@ -284,7 +284,7 @@ public class OrdenesProduccionService : IOrdenesProduccionService
         return await connection.QueryAsync<StockLineaItem>(@"
             SELECT
                 a.Nombre                                                        AS Articulo,
-                um.Abreviatura                                                  AS Unidad,
+                ISNULL(a.PresentacionCodigo, '')                                AS Unidad,
                 CAST(rd.CantidadRequerida
                      * op.CantidadProgramada
                      / NULLIF(r.CantidadRendimientoBase, 0)
@@ -293,13 +293,12 @@ public class OrdenesProduccionService : IOrdenesProduccionService
             FROM Produccion.OrdenesProduccion op
             JOIN Produccion.RecetaBOM r              ON r.RecetaID        = op.RecetaID
             JOIN Produccion.RecetaBOM_Detalle rd      ON rd.RecetaID       = r.RecetaID
-            JOIN Catalogo.Articulos a                 ON a.ArticuloID      = rd.InsumoID
-            JOIN Catalogo.UnidadesMedida um           ON um.UnidadID       = rd.UnidadID
+            JOIN Catalogo.Tarjetas a                 ON a.ArticuloID      = rd.InsumoID
             LEFT JOIN Inventario.InventarioStock s    ON s.ArticuloID      = rd.InsumoID
                                                      AND s.BodegaID       = op.BodegaOrigenMPID
             WHERE op.OrdenProduccionID = @ordenProduccionId
               AND op.Estado = 'Planificada'
-            GROUP BY a.Nombre, um.Abreviatura,
+            GROUP BY a.Nombre, a.PresentacionCodigo,
                      rd.CantidadRequerida, op.CantidadProgramada,
                      r.CantidadRendimientoBase, rd.PorcentajeMermaEstandar
             ORDER BY a.Nombre",

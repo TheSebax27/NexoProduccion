@@ -18,9 +18,10 @@ public interface ICatalogoService
     Task ActualizarBodegaAsync(int bodegaId, ActualizarBodegaRequest request);
     Task DesactivarBodegaAsync(int bodegaId);
 
-    // Articulos
+    // Articulos / Tarjetas
     Task<int> CrearArticuloAsync(CrearArticuloRequest request);
     Task<IEnumerable<ArticuloItem>> ListarArticulosAsync(int? tipoArticuloId, string? texto);
+    Task<ArticuloItem?> ObtenerArticuloAsync(int articuloId);
     Task ActualizarArticuloAsync(int articuloId, ActualizarArticuloRequest request);
     Task<(byte[] Datos, string ContentType)?> ObtenerImagenArticuloAsync(int articuloId);
     Task ActualizarImagenArticuloAsync(int articuloId, ActualizarImagenRequest request);
@@ -34,10 +35,35 @@ public interface ICatalogoService
     Task<int> CrearProveedorAsync(CrearProveedorRequest request);
     Task ActualizarProveedorAsync(int proveedorId, ActualizarProveedorRequest request);
 
-    // Interfaz ICatalogoService, agregado:
     Task<IEnumerable<TipoArticuloItem>> ListarTiposArticuloAsync();
     Task<IEnumerable<UnidadMedidaItem>> ListarUnidadesMedidaAsync();
 
+    // Catalogo: Iva (calca de dbo.IVA de Visions)
+    Task<IEnumerable<IvaItem>> ListarIvasAsync();
+    Task<int> CrearIvaAsync(CrearIvaRequest request);
+    Task ActualizarIvaAsync(int ivaId, ActualizarIvaRequest request);
+    Task EliminarIvaAsync(int ivaId);
+
+    // Catalogos Visions: GruposMayores, GruposMenores, Marcas, Presentaciones
+    Task<IEnumerable<GrupoMayorItem>> ListarGruposMayoresAsync();
+    Task CrearGrupoMayorAsync(CrearGrupoMayorRequest request);
+    Task ActualizarGrupoMayorAsync(string codigo, ActualizarGrupoMayorRequest request);
+    Task EliminarGrupoMayorAsync(string codigo);
+
+    Task<IEnumerable<GrupoMenorItem>> ListarGruposMenoresAsync(string? grupoMayor);
+    Task CrearGrupoMenorAsync(CrearGrupoMenorRequest request);
+    Task ActualizarGrupoMenorAsync(string codigo, string grupoMayor, ActualizarGrupoMenorRequest request);
+    Task EliminarGrupoMenorAsync(string codigo, string grupoMayor);
+
+    Task<IEnumerable<MarcaItem>> ListarMarcasAsync();
+    Task CrearMarcaAsync(CrearMarcaRequest request);
+    Task ActualizarMarcaAsync(string codigo, ActualizarMarcaRequest request);
+    Task EliminarMarcaAsync(string codigo);
+
+    Task<IEnumerable<PresentacionItem>> ListarPresentacionesAsync();
+    Task CrearPresentacionAsync(CrearPresentacionRequest request);
+    Task ActualizarPresentacionAsync(string codigo, ActualizarPresentacionRequest request);
+    Task EliminarPresentacionAsync(string codigo);
 }
 
 public class CatalogoService : ICatalogoService
@@ -170,19 +196,26 @@ public class CatalogoService : ICatalogoService
             throw new KeyNotFoundException($"No existe la bodega {bodegaId}.");
     }
 
-    // ================= Articulos =================
+    // ================= Articulos / Tarjetas =================
 
     public async Task<int> CrearArticuloAsync(CrearArticuloRequest r)
     {
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            INSERT INTO Catalogo.Articulos
-                (SKU, Nombre, Descripcion, TipoArticuloID, UnidadID, PrecioVenta, StockMinimo, PuntoReorden, DiasVidaUtil, UnidadesPorEmbalaje, ModoVentaCaja, PrecioVentaUnidad)
+            INSERT INTO Catalogo.Tarjetas
+                (Referencia, Nombre, Descripcion, TipoArticuloID, StockMinimo, PuntoReorden,
+                 DiasVidaUtil, Fracciona, PrecioVentaUnidad,
+                 Costo, PPublico, PBodega, PCredito, UPublico, UBodega, UCredito,
+                 MarcaCodigo, GrupoMenorCodigo, PresentacionCodigo,
+                 Peso, IvaSiNo, IvaValor, IvaDescripcion, Iva2, IvaDescripcion2)
             OUTPUT INSERTED.ArticuloID
             VALUES
-                (@SKU, @Nombre, @Descripcion, @TipoArticuloID, @UnidadID, @PrecioVenta, @StockMinimo, @PuntoReorden, @DiasVidaUtil, @UnidadesPorEmbalaje,
-                 ISNULL(@ModoVentaCaja, 'AMBOS'), @PrecioVentaUnidad)";
+                (@Referencia, @Nombre, @Descripcion, @TipoArticuloID, @StockMinimo, @PuntoReorden,
+                 @DiasVidaUtil, ISNULL(@Fracciona, 'SI'), @PrecioVentaUnidad,
+                 @Costo, @PPublico, @PBodega, @PCredito, @UPublico, @UBodega, @UCredito,
+                 @MarcaCodigo, @GrupoMenorCodigo, @PresentacionCodigo,
+                 @Peso, @IvaSiNo, @IvaValor, @IvaDescripcion, @Iva2, @IvaDescripcion2)";
 
         return await connection.ExecuteScalarAsync<int>(sql, r);
     }
@@ -192,19 +225,64 @@ public class CatalogoService : ICatalogoService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT a.ArticuloID, a.SKU, a.Nombre, a.Descripcion, ta.Nombre AS TipoArticulo, u.Abreviatura AS Unidad,
-                   a.CostoPromedio, a.PrecioVenta, a.StockMinimo, a.PuntoReorden, a.Estado, a.DiasVidaUtil,
-                   a.UnidadesPorEmbalaje,
+            SELECT a.ArticuloID, a.Referencia, a.Nombre, a.Descripcion, ta.Nombre AS TipoArticulo,
+                   a.CostoPromedio, a.StockMinimo, a.PuntoReorden, a.Estado,
+                   (SELECT ISNULL(SUM(ist.CantidadActual),0) FROM Inventario.InventarioStock ist WHERE ist.ArticuloID = a.ArticuloID) AS Existencias,
+                   a.DiasVidaUtil,
+                   p.Fracciones,
                    CAST(CASE WHEN a.Imagen IS NULL THEN 0 ELSE 1 END AS BIT) AS TieneImagen,
-                   a.ModoVentaCaja, a.PrecioVentaUnidad
-            FROM Catalogo.Articulos a
+                   a.Fracciona, a.PrecioVentaUnidad,
+                   a.Costo,
+                   a.PPublico, a.PBodega, a.PCredito,
+                   a.UPublico,  a.UBodega, a.UCredito,
+                   a.MarcaCodigo, m.Marca AS MarcaNombre,
+                   a.GrupoMenorCodigo, gm.Nombre AS GrupoMenorNombre,
+                   gm.GrupoMayor AS GrupoMayorCodigo, gmay.Nombre AS GrupoMayorNombre,
+                   a.PresentacionCodigo, p.Presentacion AS PresentacionNombre,
+                   a.Peso, a.IvaSiNo, a.IvaValor, a.IvaDescripcion,
+                   a.Iva2, a.IvaDescripcion2
+            FROM Catalogo.Tarjetas a
             JOIN Catalogo.TiposArticulo ta ON ta.TipoArticuloID = a.TipoArticuloID
-            LEFT JOIN Catalogo.UnidadesMedida u ON u.UnidadID = a.UnidadID
+            LEFT JOIN Catalogo.Marca m ON m.Codigo = a.MarcaCodigo
+            LEFT JOIN Catalogo.GrupoMenor gm ON gm.Codigo = a.GrupoMenorCodigo
+            LEFT JOIN Catalogo.GrupoMayor gmay ON gmay.Codigo = gm.GrupoMayor
+            LEFT JOIN Catalogo.Presentacion p ON p.Codigo = a.PresentacionCodigo
             WHERE (@TipoArticuloId IS NULL OR a.TipoArticuloID = @TipoArticuloId)
-              AND (@Texto IS NULL OR a.Nombre LIKE '%' + @Texto + '%' OR a.SKU LIKE '%' + @Texto + '%')
+              AND (@Texto IS NULL OR a.Nombre LIKE '%' + @Texto + '%' OR a.Referencia LIKE '%' + @Texto + '%')
             ORDER BY a.Nombre";
 
         return await connection.QueryAsync<ArticuloItem>(sql, new { TipoArticuloId = tipoArticuloId, Texto = texto });
+    }
+
+    public async Task<ArticuloItem?> ObtenerArticuloAsync(int articuloId)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT a.ArticuloID, a.Referencia, a.Nombre, a.Descripcion, ta.Nombre AS TipoArticulo,
+                   a.CostoPromedio, a.StockMinimo, a.PuntoReorden, a.Estado,
+                   (SELECT ISNULL(SUM(ist.CantidadActual),0) FROM Inventario.InventarioStock ist WHERE ist.ArticuloID = a.ArticuloID) AS Existencias,
+                   a.DiasVidaUtil,
+                   p.Fracciones,
+                   CAST(CASE WHEN a.Imagen IS NULL THEN 0 ELSE 1 END AS BIT) AS TieneImagen,
+                   a.Fracciona, a.PrecioVentaUnidad,
+                   a.Costo,
+                   a.PPublico, a.PBodega, a.PCredito,
+                   a.UPublico,  a.UBodega, a.UCredito,
+                   a.MarcaCodigo, m.Marca AS MarcaNombre,
+                   a.GrupoMenorCodigo, gm.Nombre AS GrupoMenorNombre,
+                   gm.GrupoMayor AS GrupoMayorCodigo, gmay.Nombre AS GrupoMayorNombre,
+                   a.PresentacionCodigo, p.Presentacion AS PresentacionNombre,
+                   a.Peso, a.IvaSiNo, a.IvaValor, a.IvaDescripcion,
+                   a.Iva2, a.IvaDescripcion2
+            FROM Catalogo.Tarjetas a
+            JOIN Catalogo.TiposArticulo ta ON ta.TipoArticuloID = a.TipoArticuloID
+            LEFT JOIN Catalogo.Marca m ON m.Codigo = a.MarcaCodigo
+            LEFT JOIN Catalogo.GrupoMenor gm ON gm.Codigo = a.GrupoMenorCodigo
+            LEFT JOIN Catalogo.GrupoMayor gmay ON gmay.Codigo = gm.GrupoMayor
+            LEFT JOIN Catalogo.Presentacion p ON p.Codigo = a.PresentacionCodigo
+            WHERE a.ArticuloID = @ArticuloId";
+
+        return await connection.QueryFirstOrDefaultAsync<ArticuloItem>(sql, new { ArticuloId = articuloId });
     }
 
     public async Task ActualizarArticuloAsync(int articuloId, ActualizarArticuloRequest r)
@@ -212,27 +290,31 @@ public class CatalogoService : ICatalogoService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            UPDATE Catalogo.Articulos
-            SET Nombre = @Nombre, Descripcion = @Descripcion, PrecioVenta = @PrecioVenta,
-                StockMinimo = @StockMinimo, PuntoReorden = @PuntoReorden, DiasVidaUtil = @DiasVidaUtil, Estado = @Estado,
-                UnidadesPorEmbalaje = @UnidadesPorEmbalaje,
-                ModoVentaCaja = ISNULL(@ModoVentaCaja, 'AMBOS'),
-                PrecioVentaUnidad = @PrecioVentaUnidad
+            UPDATE Catalogo.Tarjetas
+            SET Nombre = @Nombre, Descripcion = @Descripcion,
+                StockMinimo = @StockMinimo, PuntoReorden = @PuntoReorden, DiasVidaUtil = @DiasVidaUtil,
+                Estado = @Estado,
+                Fracciona = ISNULL(@Fracciona, 'SI'), PrecioVentaUnidad = @PrecioVentaUnidad,
+                Costo = @Costo,
+                PPublico = @PPublico, PBodega = @PBodega, PCredito = @PCredito,
+                UPublico = @UPublico, UBodega = @UBodega, UCredito = @UCredito,
+                MarcaCodigo = @MarcaCodigo, GrupoMenorCodigo = @GrupoMenorCodigo,
+                PresentacionCodigo = @PresentacionCodigo,
+                Peso = @Peso, IvaSiNo = @IvaSiNo, IvaValor = @IvaValor, IvaDescripcion = @IvaDescripcion,
+                Iva2 = @Iva2, IvaDescripcion2 = @IvaDescripcion2
             WHERE ArticuloID = @ArticuloId";
 
         var filas = await connection.ExecuteAsync(sql, new
         {
             ArticuloId = articuloId,
-            r.Nombre,
-            r.Descripcion,
-            r.PrecioVenta,
-            r.StockMinimo,
-            r.PuntoReorden,
-            r.DiasVidaUtil,
-            r.Estado,
-            r.UnidadesPorEmbalaje,
-            r.ModoVentaCaja,
-            r.PrecioVentaUnidad
+            r.Nombre, r.Descripcion, r.StockMinimo, r.PuntoReorden,
+            r.DiasVidaUtil, r.Estado, r.Fracciona, r.PrecioVentaUnidad,
+            r.Costo,
+            r.PPublico, r.PBodega, r.PCredito,
+            r.UPublico,  r.UBodega, r.UCredito,
+            r.MarcaCodigo, r.GrupoMenorCodigo, r.PresentacionCodigo,
+            r.Peso, r.IvaSiNo, r.IvaValor, r.IvaDescripcion,
+            r.Iva2, r.IvaDescripcion2
         });
 
         if (filas == 0)
@@ -241,19 +323,12 @@ public class CatalogoService : ICatalogoService
 
     private record ImagenArticulo(byte[] Imagen, string ImagenContentType);
 
-    // Imagen opcional, una sola por articulo -- el UPDATE reemplaza cualquier
-    // imagen anterior sin necesidad de borrarla aparte (no es un archivo en
-    // disco, es una columna varbinary que se sobrescribe).
     public async Task<(byte[] Datos, string ContentType)?> ObtenerImagenArticuloAsync(int articuloId)
     {
         using var connection = _db.CreateConnection();
 
-        // Dapper NO soporta mapear una fila directo a ValueTuple (solo QuerySingleOrDefaultAsync<(T1,T2)>
-        // funciona en escenarios de multi-mapping con splitOn, no en un SELECT plano como este) -- usar
-        // ValueTuple aqui causaba que el endpoint fallara con 500 CADA VEZ que un articulo SI tenia imagen
-        // guardada (el caso sin imagen no llegaba a mapear ninguna fila, por eso pasaba desapercibido).
         var resultado = await connection.QuerySingleOrDefaultAsync<ImagenArticulo>(
-            "SELECT Imagen, ImagenContentType FROM Catalogo.Articulos WHERE ArticuloID = @ArticuloId AND Imagen IS NOT NULL",
+            "SELECT Imagen, ImagenContentType FROM Catalogo.Tarjetas WHERE ArticuloID = @ArticuloId AND Imagen IS NOT NULL",
             new { ArticuloId = articuloId });
 
         return resultado is null ? null : (resultado.Imagen, resultado.ImagenContentType);
@@ -265,7 +340,7 @@ public class CatalogoService : ICatalogoService
         var datos = Convert.FromBase64String(r.Base64);
 
         var filas = await connection.ExecuteAsync(
-            "UPDATE Catalogo.Articulos SET Imagen = @Datos, ImagenContentType = @ContentType WHERE ArticuloID = @ArticuloId",
+            "UPDATE Catalogo.Tarjetas SET Imagen = @Datos, ImagenContentType = @ContentType WHERE ArticuloID = @ArticuloId",
             new { ArticuloId = articuloId, Datos = datos, r.ContentType });
 
         if (filas == 0)
@@ -277,11 +352,182 @@ public class CatalogoService : ICatalogoService
         using var connection = _db.CreateConnection();
 
         var filas = await connection.ExecuteAsync(
-            "UPDATE Catalogo.Articulos SET Imagen = NULL, ImagenContentType = NULL WHERE ArticuloID = @ArticuloId",
+            "UPDATE Catalogo.Tarjetas SET Imagen = NULL, ImagenContentType = NULL WHERE ArticuloID = @ArticuloId",
             new { ArticuloId = articuloId });
 
         if (filas == 0)
             throw new KeyNotFoundException($"No existe el articulo {articuloId}.");
+    }
+
+    // ================= Iva =================
+
+    public async Task<IEnumerable<IvaItem>> ListarIvasAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<IvaItem>(
+            "SELECT IvaID, Iva, Descripcion FROM Catalogo.Iva ORDER BY Iva, Descripcion");
+    }
+
+    public async Task<int> CrearIvaAsync(CrearIvaRequest r)
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.ExecuteScalarAsync<int>(
+            "INSERT INTO Catalogo.Iva (Iva, Descripcion) OUTPUT INSERTED.IvaID VALUES (@Iva, @Descripcion)", r);
+    }
+
+    public async Task ActualizarIvaAsync(int ivaId, ActualizarIvaRequest r)
+    {
+        using var connection = _db.CreateConnection();
+        var filas = await connection.ExecuteAsync(
+            "UPDATE Catalogo.Iva SET Iva = @Iva, Descripcion = @Descripcion WHERE IvaID = @IvaID",
+            new { IvaID = ivaId, r.Iva, r.Descripcion });
+        if (filas == 0) throw new KeyNotFoundException($"IVA {ivaId} no encontrado.");
+    }
+
+    public async Task EliminarIvaAsync(int ivaId)
+    {
+        using var connection = _db.CreateConnection();
+        var filas = await connection.ExecuteAsync(
+            "DELETE FROM Catalogo.Iva WHERE IvaID = @IvaID", new { IvaID = ivaId });
+        if (filas == 0) throw new KeyNotFoundException($"IVA {ivaId} no encontrado.");
+    }
+
+    // ================= GruposMayores =================
+
+    public async Task<IEnumerable<GrupoMayorItem>> ListarGruposMayoresAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<GrupoMayorItem>(
+            "SELECT Codigo, Nombre FROM Catalogo.GrupoMayor ORDER BY Nombre");
+    }
+
+    public async Task CrearGrupoMayorAsync(CrearGrupoMayorRequest r)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            "INSERT INTO Catalogo.GrupoMayor (Codigo, Nombre) VALUES (@Codigo, @Nombre)", r);
+    }
+
+    public async Task ActualizarGrupoMayorAsync(string codigo, ActualizarGrupoMayorRequest r)
+    {
+        using var connection = _db.CreateConnection();
+        var filas = await connection.ExecuteAsync(
+            "UPDATE Catalogo.GrupoMayor SET Nombre = @Nombre WHERE Codigo = @Codigo",
+            new { Codigo = codigo, r.Nombre });
+        if (filas == 0) throw new KeyNotFoundException($"GrupoMayor '{codigo}' no encontrado.");
+    }
+
+    public async Task EliminarGrupoMayorAsync(string codigo)
+    {
+        using var connection = _db.CreateConnection();
+        var filas = await connection.ExecuteAsync(
+            "DELETE FROM Catalogo.GrupoMayor WHERE Codigo = @Codigo", new { Codigo = codigo });
+        if (filas == 0) throw new KeyNotFoundException($"GrupoMayor '{codigo}' no encontrado.");
+    }
+
+    // ================= GruposMenores =================
+
+    public async Task<IEnumerable<GrupoMenorItem>> ListarGruposMenoresAsync(string? grupoMayor)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT gm.Codigo, gm.Nombre, gm.GrupoMayor, gmay.Nombre AS GrupoMayorNombre
+            FROM Catalogo.GrupoMenor gm
+            JOIN Catalogo.GrupoMayor gmay ON gmay.Codigo = gm.GrupoMayor
+            WHERE (@GrupoMayor IS NULL OR gm.GrupoMayor = @GrupoMayor)
+            ORDER BY gmay.Nombre, gm.Nombre";
+        return await connection.QueryAsync<GrupoMenorItem>(sql, new { GrupoMayor = grupoMayor });
+    }
+
+    public async Task CrearGrupoMenorAsync(CrearGrupoMenorRequest r)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            "INSERT INTO Catalogo.GrupoMenor (Codigo, Nombre, GrupoMayor) VALUES (@Codigo, @Nombre, @GrupoMayor)", r);
+    }
+
+    public async Task ActualizarGrupoMenorAsync(string codigo, string grupoMayor, ActualizarGrupoMenorRequest r)
+    {
+        using var connection = _db.CreateConnection();
+        var filas = await connection.ExecuteAsync(
+            "UPDATE Catalogo.GrupoMenor SET Nombre = @Nombre WHERE Codigo = @Codigo AND GrupoMayor = @GrupoMayor",
+            new { Codigo = codigo, GrupoMayor = grupoMayor, r.Nombre });
+        if (filas == 0) throw new KeyNotFoundException($"GrupoMenor '{codigo}' / '{grupoMayor}' no encontrado.");
+    }
+
+    public async Task EliminarGrupoMenorAsync(string codigo, string grupoMayor)
+    {
+        using var connection = _db.CreateConnection();
+        var filas = await connection.ExecuteAsync(
+            "DELETE FROM Catalogo.GrupoMenor WHERE Codigo = @Codigo AND GrupoMayor = @GrupoMayor",
+            new { Codigo = codigo, GrupoMayor = grupoMayor });
+        if (filas == 0) throw new KeyNotFoundException($"GrupoMenor '{codigo}' / '{grupoMayor}' no encontrado.");
+    }
+
+    // ================= Marcas =================
+
+    public async Task<IEnumerable<MarcaItem>> ListarMarcasAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<MarcaItem>(
+            "SELECT Codigo, Marca AS Nombre FROM Catalogo.Marca ORDER BY Marca");
+    }
+
+    public async Task CrearMarcaAsync(CrearMarcaRequest r)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            "INSERT INTO Catalogo.Marca (Codigo, Marca) VALUES (@Codigo, @Nombre)", r);
+    }
+
+    public async Task ActualizarMarcaAsync(string codigo, ActualizarMarcaRequest r)
+    {
+        using var connection = _db.CreateConnection();
+        var filas = await connection.ExecuteAsync(
+            "UPDATE Catalogo.Marca SET Marca = @Nombre WHERE Codigo = @Codigo",
+            new { Codigo = codigo, r.Nombre });
+        if (filas == 0) throw new KeyNotFoundException($"Marca '{codigo}' no encontrada.");
+    }
+
+    public async Task EliminarMarcaAsync(string codigo)
+    {
+        using var connection = _db.CreateConnection();
+        var filas = await connection.ExecuteAsync(
+            "DELETE FROM Catalogo.Marca WHERE Codigo = @Codigo", new { Codigo = codigo });
+        if (filas == 0) throw new KeyNotFoundException($"Marca '{codigo}' no encontrada.");
+    }
+
+    // ================= Presentaciones =================
+
+    public async Task<IEnumerable<PresentacionItem>> ListarPresentacionesAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<PresentacionItem>(
+            "SELECT Codigo, Presentacion, Fracciones, Tipo FROM Catalogo.Presentacion ORDER BY Presentacion");
+    }
+
+    public async Task CrearPresentacionAsync(CrearPresentacionRequest r)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            "INSERT INTO Catalogo.Presentacion (Codigo, Presentacion, Fracciones, Tipo) VALUES (@Codigo, @Presentacion, @Fracciones, @Tipo)", r);
+    }
+
+    public async Task ActualizarPresentacionAsync(string codigo, ActualizarPresentacionRequest r)
+    {
+        using var connection = _db.CreateConnection();
+        var filas = await connection.ExecuteAsync(
+            "UPDATE Catalogo.Presentacion SET Presentacion = @Presentacion, Fracciones = @Fracciones, Tipo = @Tipo WHERE Codigo = @Codigo",
+            new { Codigo = codigo, r.Presentacion, r.Fracciones, r.Tipo });
+        if (filas == 0) throw new KeyNotFoundException($"Presentacion '{codigo}' no encontrada.");
+    }
+
+    public async Task EliminarPresentacionAsync(string codigo)
+    {
+        using var connection = _db.CreateConnection();
+        var filas = await connection.ExecuteAsync(
+            "DELETE FROM Catalogo.Presentacion WHERE Codigo = @Codigo", new { Codigo = codigo });
+        if (filas == 0) throw new KeyNotFoundException($"Presentacion '{codigo}' no encontrada.");
     }
 
     public async Task<IEnumerable<CentroTrabajoItem>> ListarCentrosTrabajoAsync(bool soloActivos)
@@ -378,6 +624,4 @@ public class CatalogoService : ICatalogoService
         return await connection.QueryAsync<UnidadMedidaItem>(
             "SELECT UnidadID, Nombre, Abreviatura, Tipo FROM Catalogo.UnidadesMedida ORDER BY Nombre");
     }
-
-
 }

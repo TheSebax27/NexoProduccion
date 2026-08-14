@@ -92,77 +92,96 @@ public record ActualizarBodegaRequest(
     bool Estado
 );
 
-// Reemplaza la version reducida anterior: ahora coincide exactamente con el
-// ArticuloItem que devuelve la API (antes solo traia ArticuloID, SKU y
-// Nombre). Se agregan al final para no romper el binding por nombre que ya
-// usan Dashboard, Compras, Inventario, Traspasos y Produccion.
+// ArticuloItem: campos alineados con Visions v4 (Referencia, Fracciones, Fracciona).
 public record ArticuloItem(
     int ArticuloID,
-    string SKU,
+    string Referencia,
     string Nombre,
     string? Descripcion,
     string TipoArticulo,
-    string? Unidad,
     decimal CostoPromedio,
-    decimal PrecioVenta,
     decimal StockMinimo,
     decimal PuntoReorden,
     bool Estado,
+    decimal Existencias,
     int? DiasVidaUtil,
-    decimal? UnidadesPorEmbalaje,
+    decimal? Fracciones,
     bool TieneImagen,
-    string? ModoVentaCaja,
-    decimal? PrecioVentaUnidad
+    string? Fracciona,
+    decimal? PrecioVentaUnidad,
+    // Campos Visions (Referencia = TARJETA.REFERENCIA, Nombre = TARJETA.DETALLE)
+    decimal? Costo = null,
+    decimal? PPublico = null, decimal? PBodega = null, decimal? PCredito = null,
+    decimal? UPublico = null,  decimal? UBodega = null, decimal? UCredito = null,
+    string? MarcaCodigo = null, string? MarcaNombre = null,
+    string? GrupoMenorCodigo = null, string? GrupoMenorNombre = null,
+    string? GrupoMayorCodigo = null, string? GrupoMayorNombre = null,
+    string? PresentacionCodigo = null, string? PresentacionNombre = null,
+    decimal? Peso = null,
+    string? IvaSiNo = null, short? IvaValor = null, string? IvaDescripcion = null,
+    short? Iva2 = null, string? IvaDescripcion2 = null
 )
 {
     // Helpers para uso en dialogs de despacho/factura
-    public bool EsUnidadCaja => Unidad == "cja" && UnidadesPorEmbalaje is > 0;
-    public bool SoloEnCajas  => EsUnidadCaja && ModoVentaCaja == "CAJA";
-    // Precio efectivo por unidad suelta: PrecioVentaUnidad si está definido, si no PrecioVenta/upEmbalaje
-    public decimal PrecioUnidadEfectivo => PrecioVentaUnidad ?? (EsUnidadCaja ? PrecioVenta / UnidadesPorEmbalaje!.Value : PrecioVenta);
-};
+    public bool EsFraccionado => Fracciones is > 0;
+    // Alias de compatibilidad (Unidad ahora es PresentacionCodigo — UnidadesMedida eliminado)
+    public string? Unidad            => PresentacionCodigo;
+    // Alias de compatibilidad con paginas existentes (migrar progresivamente a Referencia/PPublico/Fracciones)
+    public string SKU                => Referencia;
+    public decimal PrecioVenta       => PPublico ?? 0;
+    public decimal? UnidadesPorEmbalaje => Fracciones;
+    public string? ModoVentaCaja     => EsFraccionado ? (Fracciona == "NO" ? "CAJA" : "AMBOS") : null;
+    public bool EsUnidadCaja  => EsFraccionado;
+    public bool SoloEnPaquete => EsFraccionado && Fracciona == "NO";
+    public bool SoloEnCajas   => SoloEnPaquete;
+    public decimal PrecioUnidadEfectivo => PrecioVentaUnidad ?? (EsFraccionado ? (PPublico ?? 0) / Fracciones!.Value : PPublico ?? 0);
+}
 
 // Imagen opcional, una sola por articulo. CrearArticuloResponse solo se usa
 // para leer el ArticuloID nuevo y poder subir la imagen justo despues de crear.
 public record ActualizarImagenRequest(string Base64, string ContentType);
 public record CrearArticuloResponse(int ArticuloId);
 
-// Lo que cierra ArticuloDialog: la solicitud de crear/actualizar de siempre,
-// mas la imagen opcional seleccionada (si el usuario eligio una). Articulos.razor
-// primero hace el Crear/Actualizar de siempre y, si hay imagen, la sube
-// aparte con el ArticuloID resultante.
+// Lo que cierra ArticuloDialog.
 public record ArticuloDialogResultado(object Datos, string? ImagenBase64, string? ImagenContentType);
 
-// Agregado para la pantalla de administracion de Articulos (punto #2).
-// UnidadID es opcional: un Servicio no es tangible, no aplica una unidad fisica.
-// UnidadesPorEmbalaje: cuantas unidades base trae 1 caja/embalaje (solo
-// informativo/de conversion, el stock siempre se registra en UnidadID base).
 public record CrearArticuloRequest(
-    string SKU,
+    string Referencia,
     string Nombre,
     string? Descripcion,
     int TipoArticuloID,
-    int? UnidadID,
-    decimal PrecioVenta,
     decimal StockMinimo,
     decimal PuntoReorden,
     int? DiasVidaUtil,
-    decimal? UnidadesPorEmbalaje,
-    string? ModoVentaCaja = "AMBOS",
-    decimal? PrecioVentaUnidad = null
+    string? Fracciona = "SI",
+    decimal? PrecioVentaUnidad = null,
+    // Campos Visions (Referencia = TARJETA.REFERENCIA, Nombre = TARJETA.DETALLE)
+    decimal? Costo = null,
+    decimal? PPublico = null, decimal? PBodega = null, decimal? PCredito = null,
+    decimal? UPublico = null,  decimal? UBodega = null, decimal? UCredito = null,
+    string? MarcaCodigo = null, string? GrupoMenorCodigo = null, string? PresentacionCodigo = null,
+    decimal? Peso = null,
+    string? IvaSiNo = null, short? IvaValor = null, string? IvaDescripcion = null,
+    short? Iva2 = null, string? IvaDescripcion2 = null
 );
 
 public record ActualizarArticuloRequest(
     string Nombre,
     string? Descripcion,
-    decimal PrecioVenta,
     decimal StockMinimo,
     decimal PuntoReorden,
     int? DiasVidaUtil,
     bool Estado,
-    decimal? UnidadesPorEmbalaje,
-    string? ModoVentaCaja = "AMBOS",
-    decimal? PrecioVentaUnidad = null
+    string? Fracciona = "SI",
+    decimal? PrecioVentaUnidad = null,
+    // Campos Visions (Referencia = TARJETA.REFERENCIA, Nombre = TARJETA.DETALLE)
+    decimal? Costo = null,
+    decimal? PPublico = null, decimal? PBodega = null, decimal? PCredito = null,
+    decimal? UPublico = null,  decimal? UBodega = null, decimal? UCredito = null,
+    string? MarcaCodigo = null, string? GrupoMenorCodigo = null, string? PresentacionCodigo = null,
+    decimal? Peso = null,
+    string? IvaSiNo = null, short? IvaValor = null, string? IvaDescripcion = null,
+    short? Iva2 = null, string? IvaDescripcion2 = null
 );
 
 public record ProveedorItem(
@@ -174,3 +193,30 @@ public record ActualizarProveedorRequest(string RazonSocial, string NIT, string?
 
 public record TipoArticuloItem(int TipoArticuloID, string Codigo, string Nombre);
 public record UnidadMedidaItem(int UnidadID, string Nombre, string Abreviatura, string Tipo);
+
+// ── Catalogo: Iva (calca de dbo.IVA de Visions) ────────────────────────
+// TARJETA no tiene FK a IVA; almacena valores directamente (copia plana).
+public record IvaItem(int IvaID, int Iva, string? Descripcion);
+public record CrearIvaRequest(int Iva, string? Descripcion);
+public record ActualizarIvaRequest(int Iva, string? Descripcion);
+
+// ── Catalogos Visions ────────────────────────────────────────────────────
+
+public record GrupoMayorItem(string Codigo, string? Nombre);
+public record CrearGrupoMayorRequest(string Codigo, string Nombre);
+public record ActualizarGrupoMayorRequest(string Nombre);
+
+public record GrupoMenorItem(string Codigo, string? Nombre, string GrupoMayor, string? GrupoMayorNombre);
+public record CrearGrupoMenorRequest(string Codigo, string Nombre, string GrupoMayor);
+public record ActualizarGrupoMenorRequest(string Nombre);
+
+public record MarcaItem(string Codigo, string? Nombre);
+public record CrearMarcaRequest(string Codigo, string Nombre);
+public record ActualizarMarcaRequest(string Nombre);
+
+public record PresentacionItem(string Codigo, string Presentacion, decimal? Fracciones = null, string? Tipo = null)
+{
+    public bool EsDePeso => Tipo == "PESO";
+}
+public record CrearPresentacionRequest(string Codigo, string Presentacion, decimal? Fracciones = null, string? Tipo = null);
+public record ActualizarPresentacionRequest(string Presentacion, decimal? Fracciones = null, string? Tipo = null);

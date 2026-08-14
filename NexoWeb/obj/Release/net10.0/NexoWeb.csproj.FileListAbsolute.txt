@@ -33,7 +33,6 @@ C:\Produccion\NexoWeb\obj\Release\net10.0\scopedcss\bundle\NexoWeb.styles.css
 C:\Produccion\NexoWeb\obj\Release\net10.0\scopedcss\projectbundle\NexoWeb.bundle.scp.css
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\tzxjg6is5z-{0}-mhumzvqd1g-mhumzvqd1g.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\0wz98yz2xy-{0}-rnojub5shy-rnojub5shy.gz
-C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\iu0nu0fy9n-{0}-h274v8c8ou-h274v8c8ou.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\zlhnwxzp6m-{0}-bqjiyaj88i-bqjiyaj88i.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\rfo77zb88m-{0}-c2jlpeoesf-c2jlpeoesf.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\j6k4p04ukp-{0}-erw9l3u2r3-erw9l3u2r3.gz
@@ -91,9 +90,11 @@ C:\Produccion\NexoWeb\obj\Release\net10.0\refint\NexoWeb.dll
 C:\Produccion\NexoWeb\obj\Release\net10.0\NexoWeb.pdb
 C:\Produccion\NexoWeb\obj\Release\net10.0\NexoWeb.genruntimeconfig.cache
 C:\Produccion\NexoWeb\obj\Release\net10.0\ref\NexoWeb.dll
-C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\mohx22tfow-{0}-d70zhl0xjx-d70zhl0xjx.gz
-C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\fidee3c6o4-{0}-d70zhl0xjx-d70zhl0xjx.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\1jra6etdxu-{0}-wyu7y4jcvb-wyu7y4jcvb.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\emdyfxdyab-{0}-wfr2hj6447-wfr2hj6447.gz
 C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\82xpymwtvw-{0}-31ctn0hll9-31ctn0hll9.gz
-C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\rkatry7cmk-{0}-hsrxpe1xr4-hsrxpe1xr4.gz
+C:\Produccion\NexoWeb\obj\Release\net10.0\scopedcss\Components\Pages\Catalogo\CrearArticulo.razor.rz.scp.css
+C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\iu0nu0fy9n-{0}-00vfc2r2dq-00vfc2r2dq.gz
+C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\rkatry7cmk-{0}-z27udkeg3i-z27udkeg3i.gz
+C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\mohx22tfow-{0}-9795mc26hz-9795mc26hz.gz
+C:\Produccion\NexoWeb\obj\Release\net10.0\compressed\fidee3c6o4-{0}-9795mc26hz-9795mc26hz.gz

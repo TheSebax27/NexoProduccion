@@ -34,9 +34,9 @@ public class InventarioService : IInventarioService
                    CAST(CASE WHEN a.Imagen IS NULL THEN 0 ELSE 1 END AS BIT) AS TieneImagen,
                    ISNULL(a.StockMinimo, 0) AS StockMinimo,
                    ISNULL(a.CostoPromedio, 0) AS CostoPromedio,
-                   ISNULL(a.PrecioVenta, 0) AS PrecioVenta
+                   ISNULL(a.PPublico, 0) AS PrecioVenta
             FROM Inventario.vw_StockConsolidado s
-            JOIN Catalogo.Articulos a ON a.ArticuloID = s.ArticuloID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = s.ArticuloID
             WHERE (@CentroCostoId IS NULL OR s.CentroCostoID = @CentroCostoId)
               AND (@BodegaId IS NULL OR s.BodegaID = @BodegaId)
               AND (@Sku IS NULL OR s.SKU = @Sku)
@@ -105,16 +105,16 @@ public class InventarioService : IInventarioService
         const string sql = @"
             SELECT TOP 500
                 k.KardexID, k.Fecha,
-                a.SKU, a.Nombre AS Articulo,
-                um.Abreviatura AS Unidad, a.UnidadesPorEmbalaje,
+                a.Referencia AS SKU, a.Nombre AS Articulo,
+                a.PresentacionCodigo AS Unidad, p.Fracciones AS UnidadesPorEmbalaje,
                 b.Nombre AS Bodega,
                 tm.Nombre AS TipoMovimiento,
                 k.Cantidad, k.CostoUnitario, k.CantidadSaldo,
                 ABS(k.Cantidad) * k.CostoUnitario AS ValorMovimiento,
                 k.ObservacionDetallada
             FROM Kardex.KardexMovimientos k
-            JOIN Catalogo.Articulos a ON a.ArticuloID = k.ArticuloID
-            LEFT JOIN Catalogo.UnidadesMedida um ON um.UnidadID = a.UnidadID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = k.ArticuloID
+            LEFT JOIN Catalogo.Presentacion p ON p.Codigo = a.PresentacionCodigo
             JOIN Inventario.Bodegas b ON b.BodegaID = k.BodegaID
             JOIN Kardex.TiposMovimientoKardex tm ON tm.TipoMovID = k.TipoMovID
             WHERE (@ArticuloId IS NULL OR k.ArticuloID = @ArticuloId)

@@ -1,113 +1,131 @@
-﻿@page "/inventario/kardex"
+@page "/inventario/kardex"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Common.Helpers
 
-<PageTitle>Kardex de Artículos - NEXO</PageTitle>
+<PageTitle>Kardex de Artículos — NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
-    <MudText Typo="Typo.h5">Kardex de Artículos</MudText>
+<div class="inv-header">
+    <div class="inv-header__left">
+        <h1 class="inv-header__title">
+            <MudIcon Icon="@Icons.Material.Filled.ListAlt" Class="inv-header__icon" />
+            Kardex de Artículos
+        </h1>
+        <p class="inv-header__sub">Historial de movimientos: entradas, salidas, ajustes y traspasos con saldo tras cada operación.</p>
+    </div>
     <BotonFavorito Href="/inventario/kardex" Etiqueta="Kardex de Artículos" />
 </div>
-<InfoAyuda Texto="Historial detallado de cada movimiento de inventario (entradas, salidas, ajustes, traspasos) con el saldo tras cada operación. Filtra por artículo, bodega o rango de fechas. La columna 'Valor' muestra el impacto económico del movimiento." />
 
-<MudPaper Class="pa-4 mb-4">
-    <MudGrid>
-        <MudItem xs="12" sm="6" md="3">
-            <MudSelect T="int?" @bind-Value="_articuloId" Label="Artículo" Clearable="true">
-                @foreach (var a in _articulos)
-                {
-                    <MudSelectItem T="int?" Value="@((int?)a.ArticuloID)">@a.SKU - @a.Nombre</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="2">
-            <MudSelect T="int?" @bind-Value="_bodegaId" Label="Bodega" Clearable="true">
-                @foreach (var b in _bodegas)
-                {
-                    <MudSelectItem T="int?" Value="@((int?)b.BodegaID)">@b.Nombre</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="2">
-            <MudDatePicker @bind-Date="_desde" Label="Desde" DateFormat="dd/MM/yyyy" PickerVariant="PickerVariant.Dialog" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="2">
-            <MudDatePicker @bind-Date="_hasta" Label="Hasta" DateFormat="dd/MM/yyyy" PickerVariant="PickerVariant.Dialog" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="2">
-            <MudSelect T="string" @bind-Value="_filtroCategoria" Label="Tipo" Clearable="true">
-                <MudSelectItem T="string" Value="@("Entrada")">Entradas</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Salida")">Salidas</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Producción")">Producción</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Ajuste")">Ajustes</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Baja")">Bajas / Pérdidas</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Traspaso")">Traspasos</MudSelectItem>
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" md="2" Class="d-flex align-end">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConsultarAsync"
-                       Disabled="_cargando" StartIcon="@Icons.Material.Filled.Search" FullWidth="true">
-                @(_cargando ? "Consultando..." : "Consultar")
-            </MudButton>
-        </MudItem>
-    </MudGrid>
-</MudPaper>
+<InventarioNav />
+
+@* ── Filtros ──────────────────────────────────────────────────────────── *@
+<div class="kx-filtros">
+    <MudSelect T="int?" @bind-Value="_articuloId" Label="Artículo" Variant="Variant.Outlined"
+               Clearable="true" Style="flex:2; min-width:200px;">
+        @foreach (var a in _articulos)
+        {
+            <MudSelectItem T="int?" Value="@((int?)a.ArticuloID)">@a.SKU — @a.Nombre</MudSelectItem>
+        }
+    </MudSelect>
+    <MudSelect T="int?" @bind-Value="_bodegaId" Label="Bodega" Variant="Variant.Outlined"
+               Clearable="true" Style="flex:1; min-width:150px;">
+        @foreach (var b in _bodegas)
+        {
+            <MudSelectItem T="int?" Value="@((int?)b.BodegaID)">@b.Nombre</MudSelectItem>
+        }
+    </MudSelect>
+    <MudDatePicker @bind-Date="_desde" Label="Desde" DateFormat="dd/MM/yyyy"
+                   PickerVariant="PickerVariant.Dialog" Variant="Variant.Outlined"
+                   Style="flex:1; min-width:140px;" />
+    <MudDatePicker @bind-Date="_hasta" Label="Hasta" DateFormat="dd/MM/yyyy"
+                   PickerVariant="PickerVariant.Dialog" Variant="Variant.Outlined"
+                   Style="flex:1; min-width:140px;" />
+    <MudSelect T="string" @bind-Value="_filtroCategoria" Label="Tipo" Variant="Variant.Outlined"
+               Clearable="true" Style="flex:1; min-width:130px;">
+        <MudSelectItem T="string" Value="@("Entrada")">Entradas</MudSelectItem>
+        <MudSelectItem T="string" Value="@("Salida")">Salidas</MudSelectItem>
+        <MudSelectItem T="string" Value="@("Producción")">Producción</MudSelectItem>
+        <MudSelectItem T="string" Value="@("Ajuste")">Ajustes</MudSelectItem>
+        <MudSelectItem T="string" Value="@("Baja")">Bajas / Pérdidas</MudSelectItem>
+        <MudSelectItem T="string" Value="@("Traspaso")">Traspasos</MudSelectItem>
+    </MudSelect>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConsultarAsync"
+               Disabled="_cargando" StartIcon="@Icons.Material.Filled.Search"
+               Style="flex-shrink:0; align-self:flex-end; height:56px; padding: 0 1.5rem;">
+        @(_cargando ? "Consultando..." : "Consultar")
+    </MudButton>
+</div>
 
 @if (_errorCarga is not null)
 {
     <MudAlert Severity="Severity.Error" Class="mb-4">@_errorCarga</MudAlert>
 }
+
 @if (_cargando)
 {
-    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+    <div class="inv-skeleton">
+        @for (int i = 0; i < 6; i++) { <div class="inv-skeleton__row"></div> }
+    </div>
 }
 else if (_movimientos.Count > 0)
 {
     var mostrados = MovimientosFiltrados.ToList();
-    <div class="d-flex align-center justify-space-between mb-2">
-        <MudText Typo="Typo.caption">
-            @mostrados.Count movimiento(s)
-            @if (!string.IsNullOrEmpty(_filtroCategoria)) { <text> de tipo "@_filtroCategoria"</text> }
-            (máximo 500 por consulta)
-        </MudText>
-        <MudText Typo="Typo.caption" Style="color:var(--n-text-3);">
-            Valor total: @mostrados.Sum(m => m.EsEntrada ? m.ValorMovimiento : -m.ValorMovimiento).ToString("C0")
-        </MudText>
+    <div class="kx-resumen">
+        <span class="kx-resumen__count">@mostrados.Count movimiento@(mostrados.Count != 1 ? "s" : "")</span>
+        <span class="kx-resumen__sep">·</span>
+        @if (!string.IsNullOrEmpty(_filtroCategoria))
+        {
+            <span class="kx-resumen__tipo">Tipo: @_filtroCategoria</span>
+            <span class="kx-resumen__sep">·</span>
+        }
+        <span class="kx-resumen__valor">
+            Valor neto:
+            <strong>@mostrados.Sum(m => m.EsEntrada ? m.ValorMovimiento : -m.ValorMovimiento).ToString("C0")</strong>
+        </span>
+        <span class="kx-resumen__note">(máx. 500 por consulta)</span>
     </div>
 
     @if (Preferencias.VistaListado == "tarjetas")
     {
-        <div class="nexo-card-grid">
+        <div class="inv-grid">
             @foreach (var mov in mostrados)
             {
-                <div class="nexo-item-card">
-                    <div class="d-flex align-center justify-space-between mb-1">
-                        <div class="nexo-item-card__title" style="font-size:0.9rem;">@mov.Articulo</div>
+                <div class="kx-card">
+                    <div class="kx-card__head">
+                        <div>
+                            <div class="kx-card__articulo">@mov.Articulo</div>
+                            <div class="kx-card__sub">
+                                <span class="inv-sku">@mov.SKU</span>
+                                · @mov.Bodega · @mov.Fecha.ToString("dd/MM/yy HH:mm")
+                            </div>
+                        </div>
                         @ChipTipo(mov)
                     </div>
-                    <div class="nexo-item-card__sub">@mov.SKU · @mov.Bodega · @mov.Fecha.ToString("dd/MM/yy HH:mm")</div>
-                    <div class="nexo-item-card__row">
-                        <span>Cantidad</span>
-                        <strong>@FormatearCantidad(mov)</strong>
-                    </div>
-                    <div class="nexo-item-card__row">
-                        <span>Costo unit.</span>
-                        <strong>@mov.CostoUnitario.ToString("C2")</strong>
-                    </div>
-                    <div class="nexo-item-card__row">
-                        <span>Valor</span>
-                        <strong>@mov.ValorMovimiento.ToString("C0")</strong>
-                    </div>
-                    <div class="nexo-item-card__row">
-                        <span>Saldo</span>
-                        <strong>@FormatearCantidad(mov.CantidadSaldo, mov.Unidad, mov.UnidadesPorEmbalaje)</strong>
+                    <div class="kx-card__rows">
+                        <div class="kx-card__row">
+                            <span>Cantidad</span>
+                            <strong class="@(mov.EsEntrada ? "inv-valor--verde" : "inv-valor--rojo")">
+                                @FormatearCantidad(mov)
+                            </strong>
+                        </div>
+                        <div class="kx-card__row">
+                            <span>Costo unit.</span>
+                            <span>@mov.CostoUnitario.ToString("C2")</span>
+                        </div>
+                        <div class="kx-card__row">
+                            <span>Valor</span>
+                            <strong>@mov.ValorMovimiento.ToString("C0")</strong>
+                        </div>
+                        <div class="kx-card__row">
+                            <span>Saldo tras mov.</span>
+                            <strong>@FormatearCantidad(mov.CantidadSaldo, mov.Unidad, mov.UnidadesPorEmbalaje)</strong>
+                        </div>
                     </div>
                     @if (mov.ObservacionDetallada is not null)
                     {
-                        <div class="nexo-item-card__sub mt-1">@mov.ObservacionDetallada</div>
+                        <div class="kx-card__obs">@mov.ObservacionDetallada</div>
                     }
                 </div>
             }
@@ -115,66 +133,97 @@ else if (_movimientos.Count > 0)
     }
     else
     {
-        <MudTable Items="mostrados" Hover="true" Dense="true" Striped="true" RowsPerPage="25">
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 25, 50, 100 }" />
-            </PagerContent>
-            <HeaderContent>
-                <MudTh>Fecha</MudTh>
-                <MudTh>SKU / Artículo</MudTh>
-                <MudTh>Bodega</MudTh>
-                <MudTh>Tipo</MudTh>
-                <MudTh Style="text-align:right">Cantidad</MudTh>
-                <MudTh Style="text-align:right">Costo Unit.</MudTh>
-                <MudTh Style="text-align:right">Valor</MudTh>
-                <MudTh Style="text-align:right">Saldo</MudTh>
-                <MudTh>Detalle</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yy HH:mm")</MudTd>
-                <MudTd DataLabel="Artículo">
-                    <div style="font-weight:600; font-size:0.8rem; color:var(--n-text-3);">@context.SKU</div>
-                    <div>@context.Articulo</div>
-                </MudTd>
-                <MudTd DataLabel="Bodega">@context.Bodega</MudTd>
-                <MudTd DataLabel="Tipo">@ChipTipo(context)</MudTd>
-                <MudTd DataLabel="Cantidad" Style="text-align:right">@FormatearCantidad(context)</MudTd>
-                <MudTd DataLabel="Costo Unit." Style="text-align:right">@context.CostoUnitario.ToString("C2")</MudTd>
-                <MudTd DataLabel="Valor" Style="text-align:right; font-weight:600;">
-                    <span style="color:@(context.EsEntrada ? "var(--mud-palette-success)" : "var(--mud-palette-error)")">
-                        @(context.EsEntrada ? "+" : "-")@context.ValorMovimiento.ToString("C0")
-                    </span>
-                </MudTd>
-                <MudTd DataLabel="Saldo" Style="text-align:right">
-                    @FormatearCantidad(context.CantidadSaldo, context.Unidad, context.UnidadesPorEmbalaje)
-                </MudTd>
-                <MudTd DataLabel="Detalle" Style="max-width:200px; white-space:normal; font-size:0.8rem;">
-                    @(context.ObservacionDetallada ?? "-")
-                </MudTd>
-            </RowTemplate>
-            <NoRecordsContent>
-                <MudText>No hay movimientos con estos filtros.</MudText>
-            </NoRecordsContent>
-        </MudTable>
+        <div class="inv-table-wrap">
+            <table class="inv-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>SKU / Artículo</th>
+                        <th>Bodega</th>
+                        <th>Tipo</th>
+                        <th class="inv-table__num">Cantidad</th>
+                        <th class="inv-table__num">Costo unit.</th>
+                        <th class="inv-table__num">Valor</th>
+                        <th class="inv-table__num">Saldo</th>
+                        <th>Detalle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var pagina = mostrados.Skip((_paginaActual - 1) * _porPagina).Take(_porPagina).ToList();
+                        var totalPaginas = (int)Math.Ceiling(mostrados.Count / (double)_porPagina);
+                    }
+                    @foreach (var mov in pagina)
+                    {
+                        <tr class="inv-table__row">
+                            <td class="inv-muted" style="white-space:nowrap; font-size:0.78rem;">@mov.Fecha.ToString("dd/MM/yy HH:mm")</td>
+                            <td>
+                                <span class="inv-sku">@mov.SKU</span>
+                                <div style="font-size:0.82rem; margin-top:2px;">@mov.Articulo</div>
+                            </td>
+                            <td class="inv-muted">@mov.Bodega</td>
+                            <td>@ChipTipo(mov)</td>
+                            <td class="inv-table__num">
+                                <strong class="@(mov.EsEntrada ? "inv-valor--verde" : "inv-valor--rojo")">
+                                    @FormatearCantidad(mov)
+                                </strong>
+                            </td>
+                            <td class="inv-table__num inv-muted">@mov.CostoUnitario.ToString("C2")</td>
+                            <td class="inv-table__num">
+                                <strong class="@(mov.EsEntrada ? "inv-valor--verde" : "inv-valor--rojo")">
+                                    @(mov.EsEntrada ? "+" : "-")@mov.ValorMovimiento.ToString("C0")
+                                </strong>
+                            </td>
+                            <td class="inv-table__num">@FormatearCantidad(mov.CantidadSaldo, mov.Unidad, mov.UnidadesPorEmbalaje)</td>
+                            <td class="inv-muted" style="max-width:160px; white-space:normal; font-size:0.78rem;">
+                                @(mov.ObservacionDetallada ?? "—")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (totalPaginas > 1)
+        {
+            <div class="kx-pager">
+                <button class="kx-pager__btn" disabled="@(_paginaActual <= 1)"
+                        @onclick="@(() => _paginaActual--)">‹ Ant.</button>
+                <span class="kx-pager__info">Página @_paginaActual de @totalPaginas</span>
+                <button class="kx-pager__btn" disabled="@(_paginaActual >= totalPaginas)"
+                        @onclick="@(() => _paginaActual++)">Sig. ›</button>
+            </div>
+        }
     }
 }
 else if (_consultaEjecutada)
 {
-    <MudAlert Severity="Severity.Info">No se encontraron movimientos con los filtros indicados.</MudAlert>
+    <div class="inv-vacio">
+        <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Style="font-size:3rem; color:var(--n-text-3); display:block; margin-bottom:.75rem;" />
+        <p>No hay movimientos con los filtros indicados.</p>
+    </div>
+}
+else
+{
+    <div class="inv-vacio">
+        <MudIcon Icon="@Icons.Material.Outlined.FilterList" Style="font-size:2.5rem; color:var(--n-text-3); display:block; margin-bottom:.75rem;" />
+        <p>Aplica filtros y presiona <strong>Consultar</strong> para ver el historial.</p>
+    </div>
 }
 
 @code {
     private List<KardexMovimientoItem> _movimientos = new();
     private List<ArticuloItem> _articulos = new();
-    private List<BodegaItem> _bodegas = new();
+    private List<BodegaItem>   _bodegas   = new();
     private int? _articuloId;
     private int? _bodegaId;
     private DateTime? _desde;
     private DateTime? _hasta;
     private string? _filtroCategoria;
-    private bool _cargando;
-    private bool _consultaEjecutada;
+    private bool  _cargando;
+    private bool  _consultaEjecutada;
     private string? _errorCarga;
+    private int _paginaActual = 1;
+    private const int _porPagina = 50;
 
     private IEnumerable<KardexMovimientoItem> MovimientosFiltrados =>
         string.IsNullOrEmpty(_filtroCategoria)
@@ -183,12 +232,12 @@ else if (_consultaEjecutada)
 
     private static string CategoriaDe(string tipo) => tipo switch
     {
-        var t when t.Contains("Ajuste")                                              => "Ajuste",
-        var t when t.Contains("Baja") || t.Contains("Pérdida")                      => "Baja",
-        var t when t.Contains("Traspaso")                                            => "Traspaso",
-        var t when t.Contains("Compra") || t.Contains("Entrada")                    => "Entrada",
-        var t when t.Contains("Venta") || t.Contains("Salida") || t.Contains("Despacho") => "Salida",
-        var t when t.Contains("Produccion") || t.Contains("Producción")             => "Producción",
+        var t when t.Contains("Ajuste")                                                   => "Ajuste",
+        var t when t.Contains("Baja") || t.Contains("Pérdida") || t.Contains("Perdida") => "Baja",
+        var t when t.Contains("Traspaso")                                                 => "Traspaso",
+        var t when t.Contains("Compra") || t.Contains("Entrada")                         => "Entrada",
+        var t when t.Contains("Venta") || t.Contains("Salida") || t.Contains("Despacho")=> "Salida",
+        var t when t.Contains("Produccion") || t.Contains("Producción")                  => "Producción",
         _ => "Otro"
     };
 
@@ -196,53 +245,43 @@ else if (_consultaEjecutada)
     {
         try
         {
-            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
-            var tareaBodegas = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
-            await Task.WhenAll(tareaArticulos, tareaBodegas);
-            _articulos = await tareaArticulos ?? new();
-            _bodegas = await tareaBodegas ?? new();
+            var t1 = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+            var t2 = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
+            await Task.WhenAll(t1, t2);
+            _articulos = await t1 ?? new();
+            _bodegas   = await t2 ?? new();
         }
         catch { }
     }
 
     private async Task ConsultarAsync()
     {
-        _cargando = true;
-        _errorCarga = null;
-        _consultaEjecutada = true;
-
+        _cargando = true; _errorCarga = null; _consultaEjecutada = true; _paginaActual = 1;
         try
         {
-            var query = new List<string>();
-            if (_articuloId.HasValue) query.Add($"articuloId={_articuloId}");
-            if (_bodegaId.HasValue) query.Add($"bodegaId={_bodegaId}");
-            if (_desde.HasValue) query.Add($"desde={_desde.Value:yyyy-MM-dd}");
-            if (_hasta.HasValue) query.Add($"hasta={_hasta.Value:yyyy-MM-dd}");
-
-            var ruta = "api/inventario/kardex" + (query.Count > 0 ? "?" + string.Join("&", query) : "");
+            var q = new List<string>();
+            if (_articuloId.HasValue) q.Add($"articuloId={_articuloId}");
+            if (_bodegaId.HasValue)   q.Add($"bodegaId={_bodegaId}");
+            if (_desde.HasValue)      q.Add($"desde={_desde.Value:yyyy-MM-dd}");
+            if (_hasta.HasValue)      q.Add($"hasta={_hasta.Value:yyyy-MM-dd}");
+            var ruta = "api/inventario/kardex" + (q.Count > 0 ? "?" + string.Join("&", q) : "");
             _movimientos = await ApiClient.GetAsync<List<KardexMovimientoItem>>(ruta) ?? new();
         }
-        catch (Exception ex)
-        {
-            _errorCarga = ex.Message;
-        }
-        finally
-        {
-            _cargando = false;
-        }
+        catch (Exception ex) { _errorCarga = ex.Message; }
+        finally { _cargando = false; }
     }
 
     private static string FormatearCantidad(KardexMovimientoItem mov)
     {
         var signo = mov.EsEntrada ? "+" : "-";
-        var abs = Math.Abs(mov.Cantidad);
-        var texto = FormatearCantidad(abs, mov.Unidad, mov.UnidadesPorEmbalaje);
+        var texto = FormatearCantidad(Math.Abs(mov.Cantidad), mov.Unidad, mov.UnidadesPorEmbalaje);
         return signo + texto;
     }
 
+    // Usa UnidadesPorEmbalaje (no unidad == "cja") porque Unidad = PresentacionCodigo
     private static string FormatearCantidad(decimal cantidad, string? unidad, decimal? unidadesPorEmbalaje)
     {
-        if (unidad == "cja" && unidadesPorEmbalaje is > 0)
+        if (unidadesPorEmbalaje is > 0)
             return StockHelper.FormatearCajaUnidades(cantidad, unidadesPorEmbalaje.Value);
         return $"{cantidad:N3} {unidad}".Trim();
     }
@@ -251,12 +290,12 @@ else if (_consultaEjecutada)
     {
         var (color, icon) = mov.TipoMovimiento switch
         {
-            var t when t.Contains("Ajuste") => (Color.Info, Icons.Material.Filled.Tune),
-            var t when t.Contains("Baja") || t.Contains("Pérdida") => (Color.Error, Icons.Material.Filled.DeleteOutline),
-            var t when t.Contains("Traspaso") => (Color.Secondary, Icons.Material.Filled.SwapHoriz),
-            var t when t.Contains("Compra") || t.Contains("Entrada") => (Color.Success, Icons.Material.Filled.ArrowDownward),
-            var t when t.Contains("Venta") || t.Contains("Salida") || t.Contains("Despacho") => (Color.Warning, Icons.Material.Filled.ArrowUpward),
-            var t when t.Contains("Produccion") || t.Contains("Producción") => (Color.Tertiary, Icons.Material.Filled.Factory),
+            var t when t.Contains("Ajuste")                                                   => (Color.Info, Icons.Material.Filled.Tune),
+            var t when t.Contains("Baja") || t.Contains("Pérdida") || t.Contains("Perdida") => (Color.Error, Icons.Material.Filled.DeleteOutline),
+            var t when t.Contains("Traspaso")                                                 => (Color.Secondary, Icons.Material.Filled.SwapHoriz),
+            var t when t.Contains("Compra") || t.Contains("Entrada")                         => (Color.Success, Icons.Material.Filled.ArrowDownward),
+            var t when t.Contains("Venta") || t.Contains("Salida") || t.Contains("Despacho")=> (Color.Warning, Icons.Material.Filled.ArrowUpward),
+            var t when t.Contains("Produccion") || t.Contains("Producción")                  => (Color.Tertiary, Icons.Material.Filled.Factory),
             _ => (mov.EsEntrada ? Color.Success : Color.Error, Icons.Material.Filled.SwapVert)
         };
 
@@ -265,10 +304,7 @@ else if (_consultaEjecutada)
         builder.AddAttribute(2, "Size", Size.Small);
         builder.AddAttribute(3, "Color", color);
         builder.AddAttribute(4, "Icon", icon);
-        builder.AddAttribute(5, "ChildContent", (RenderFragment)(b =>
-        {
-            b.AddContent(0, mov.TipoMovimiento);
-        }));
+        builder.AddAttribute(5, "ChildContent", (RenderFragment)(b => b.AddContent(0, mov.TipoMovimiento)));
         builder.CloseComponent();
     };
 }

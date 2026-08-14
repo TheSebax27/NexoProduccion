@@ -410,6 +410,32 @@
   },
   {
     "ContainingType": "NexoApi.Features.Catalogo.ArticulosController",
+    "Method": "ObtenerPorId",
+    "RelativePath": "api/catalogo/articulos/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Catalogo.Dtos.ArticuloItem",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.ArticulosController",
     "Method": "Actualizar",
     "RelativePath": "api/catalogo/articulos/{id}",
     "HttpMethod": "PUT",
@@ -722,6 +748,387 @@
       {
         "Name": "request",
         "Type": "NexoApi.Features.Catalogo.Dtos.ActualizarCentroTrabajoRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "ListarGruposMayores",
+    "RelativePath": "api/catalogo/grupos-mayores",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Catalogo.Dtos.GrupoMayorItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "CrearGrupoMayor",
+    "RelativePath": "api/catalogo/grupos-mayores",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.CrearGrupoMayorRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "ActualizarGrupoMayor",
+    "RelativePath": "api/catalogo/grupos-mayores/{codigo}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "codigo",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.ActualizarGrupoMayorRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "EliminarGrupoMayor",
+    "RelativePath": "api/catalogo/grupos-mayores/{codigo}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "codigo",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "ListarGruposMenores",
+    "RelativePath": "api/catalogo/grupos-menores",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "grupoMayor",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Catalogo.Dtos.GrupoMenorItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "CrearGrupoMenor",
+    "RelativePath": "api/catalogo/grupos-menores",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.CrearGrupoMenorRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "ActualizarGrupoMenor",
+    "RelativePath": "api/catalogo/grupos-menores/{codigo}/{grupoMayor}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "codigo",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "grupoMayor",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.ActualizarGrupoMenorRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "EliminarGrupoMenor",
+    "RelativePath": "api/catalogo/grupos-menores/{codigo}/{grupoMayor}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "codigo",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "grupoMayor",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "ListarIvas",
+    "RelativePath": "api/catalogo/ivas",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Catalogo.Dtos.IvaItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "CrearIva",
+    "RelativePath": "api/catalogo/ivas",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.CrearIvaRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "ActualizarIva",
+    "RelativePath": "api/catalogo/ivas/{ivaId}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "ivaId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.ActualizarIvaRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "EliminarIva",
+    "RelativePath": "api/catalogo/ivas/{ivaId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "ivaId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "ListarMarcas",
+    "RelativePath": "api/catalogo/marcas",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Catalogo.Dtos.MarcaItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "CrearMarca",
+    "RelativePath": "api/catalogo/marcas",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.CrearMarcaRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "ActualizarMarca",
+    "RelativePath": "api/catalogo/marcas/{codigo}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "codigo",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.ActualizarMarcaRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "EliminarMarca",
+    "RelativePath": "api/catalogo/marcas/{codigo}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "codigo",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "ListarPresentaciones",
+    "RelativePath": "api/catalogo/presentaciones",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Catalogo.Dtos.PresentacionItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "CrearPresentacion",
+    "RelativePath": "api/catalogo/presentaciones",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.CrearPresentacionRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "ActualizarPresentacion",
+    "RelativePath": "api/catalogo/presentaciones/{codigo}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "codigo",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Catalogo.Dtos.ActualizarPresentacionRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.TarjetasCatalogosController",
+    "Method": "EliminarPresentacion",
+    "RelativePath": "api/catalogo/presentaciones/{codigo}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "codigo",
+        "Type": "System.String",
         "IsRequired": true
       }
     ],

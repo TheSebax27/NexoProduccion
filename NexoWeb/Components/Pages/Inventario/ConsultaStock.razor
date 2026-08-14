@@ -7,246 +7,284 @@
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Common.Helpers
 
-<PageTitle>Consulta de Stock - NEXO</PageTitle>
+<PageTitle>Consulta de Stock — NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
-    <MudText Typo="Typo.h5">Consulta de Stock</MudText>
+<div class="inv-header">
+    <div class="inv-header__left">
+        <h1 class="inv-header__title">
+            <MudIcon Icon="@Icons.Material.Filled.Inventory" Class="inv-header__icon" />
+            Consulta de Stock
+        </h1>
+        <p class="inv-header__sub">Existencias por bodega, lote y valor. Haz clic en ▶ para ver detalle por lote.</p>
+    </div>
     <BotonFavorito Href="/inventario/stock" Etiqueta="Consulta de Stock" />
 </div>
-<InfoAyuda Texto="Consulta cuánto stock tienes de cada artículo, en qué bodega y a qué costo. Cada artículo muestra su total agrupado; haz clic en la flecha para ver el detalle por lote. El chip 'Requiere pedido' te lleva directo a crear una Orden de Compra." />
 
-<MudGrid Class="mb-4">
-    <MudItem xs="12" sm="3">
-        <MudTextField @bind-Value="_filtroSku" Label="Buscar por SKU" Variant="Variant.Outlined"
-                      Immediate="true" DebounceInterval="400" OnDebounceIntervalElapsed="CargarAsync" />
-    </MudItem>
-    <MudItem xs="12" sm="3">
-        <MudSelect T="int?" Value="_filtroCentroCostoId" ValueChanged="OnCentroCostoCambiadoAsync"
-                   Label="Centro de Costo" Variant="Variant.Outlined" Clearable="true">
-            @foreach (var cc in _centrosCosto)
-            {
-                <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
-            }
-        </MudSelect>
-    </MudItem>
-    <MudItem xs="12" sm="3">
-        <MudSelect T="int?" @bind-Value="_filtroBodegaId" @bind-Value:after="CargarAsync"
-                   Label="Bodega" Variant="Variant.Outlined" Clearable="true">
-            @foreach (var b in _bodegasFiltradas)
-            {
-                <MudSelectItem T="int?" Value="@b.BodegaID">@b.Nombre</MudSelectItem>
-            }
-        </MudSelect>
-    </MudItem>
-    <MudItem xs="12" sm="3" Class="d-flex align-center">
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CargarAsync" StartIcon="@Icons.Material.Filled.Refresh">
-            Actualizar
-        </MudButton>
-    </MudItem>
-</MudGrid>
+<InventarioNav />
+
+@* ── Filtros ─────────────────────────────────────────────────────────── *@
+<div class="inv-filtros">
+    <MudTextField @bind-Value="_filtroSku" Label="Buscar SKU o artículo" Variant="Variant.Outlined"
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  Immediate="true" DebounceInterval="400" OnDebounceIntervalElapsed="CargarAsync"
+                  Style="flex:2; min-width:200px;" />
+    <MudSelect T="int?" Value="_filtroCentroCostoId" ValueChanged="OnCentroCostoCambiadoAsync"
+               Label="Centro de Costo" Variant="Variant.Outlined" Clearable="true"
+               Style="flex:1; min-width:160px;">
+        @foreach (var cc in _centrosCosto)
+        {
+            <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
+        }
+    </MudSelect>
+    <MudSelect T="int?" @bind-Value="_filtroBodegaId" @bind-Value:after="CargarAsync"
+               Label="Bodega" Variant="Variant.Outlined" Clearable="true"
+               Style="flex:1; min-width:160px;">
+        @foreach (var b in _bodegasFiltradas)
+        {
+            <MudSelectItem T="int?" Value="@b.BodegaID">@b.Nombre</MudSelectItem>
+        }
+    </MudSelect>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CargarAsync"
+               StartIcon="@Icons.Material.Filled.Refresh" Style="flex-shrink:0;">
+        Actualizar
+    </MudButton>
+</div>
+
+@* ── Resumen KPIs ─────────────────────────────────────────────────────── *@
+@if (!_cargando && _grupos.Count > 0)
+{
+    <div class="inv-kpis">
+        <div class="inv-kpi">
+            <span class="inv-kpi__label">Artículos</span>
+            <span class="inv-kpi__value">@_grupos.Select(g => g.ArticuloID).Distinct().Count()</span>
+        </div>
+        <div class="inv-kpi">
+            <span class="inv-kpi__label">Valor total</span>
+            <span class="inv-kpi__value">@_grupos.Sum(g => g.ValorTotal).ToString("C0")</span>
+        </div>
+        @if (_grupos.Count(g => g.CantidadTotal <= 0) > 0)
+        {
+            <div class="inv-kpi inv-kpi--alerta">
+                <span class="inv-kpi__label">Sin stock</span>
+                <span class="inv-kpi__value">@_grupos.Count(g => g.CantidadTotal <= 0)</span>
+            </div>
+        }
+        @if (_grupos.Count(g => g.RequierePedido && g.CantidadTotal > 0) > 0)
+        {
+            <div class="inv-kpi inv-kpi--warn">
+                <span class="inv-kpi__label">Bajo mínimo</span>
+                <span class="inv-kpi__value">@_grupos.Count(g => g.RequierePedido && g.CantidadTotal > 0)</span>
+            </div>
+        }
+    </div>
+}
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+}
 
 @if (_cargando)
 {
-    <MudProgressCircular Indeterminate="true" Class="ma-4" />
-}
-else if (_error is not null)
-{
-    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+    <div class="inv-skeleton">
+        @for (int i = 0; i < 8; i++) { <div class="inv-skeleton__row"></div> }
+    </div>
 }
 else if (_grupos.Count == 0)
 {
-    <MudText>No hay stock que coincida con el filtro.</MudText>
+    <div class="inv-vacio">
+        <MudIcon Icon="@Icons.Material.Outlined.Inventory" Style="font-size:3rem; color:var(--n-text-3); display:block; margin-bottom:.75rem;" />
+        <p>Sin stock que coincida con el filtro.</p>
+    </div>
 }
 else if (Preferencias.VistaListado == "tarjetas")
 {
-    <div class="nexo-card-grid">
-        @foreach (var grupo in _grupos)
+    <div class="inv-grid">
+        @foreach (var g in _grupos)
         {
-            <div class="nexo-item-card">
-                @if (grupo.TieneImagen)
+            <div class="inv-card @(g.CantidadTotal <= 0 ? "inv-card--agotado" : g.RequierePedido ? "inv-card--warn" : "")">
+                @if (g.TieneImagen)
                 {
-                    <img src="@($"api/catalogo/articulos/{grupo.ArticuloID}/imagen?v={_cacheBust}")" alt=""
-                         style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:0.5rem;" />
+                    <img src="@($"api/catalogo/articulos/{g.ArticuloID}/imagen?v={_cacheBust}")" alt=""
+                         class="inv-card__img" />
                 }
-                <div class="nexo-item-card__title">@grupo.Articulo</div>
-                <div class="nexo-item-card__sub">@grupo.SKU · @grupo.Bodega · @grupo.CentroCosto</div>
-                <div class="nexo-item-card__row">
-                    <span>Cantidad</span>
-                    <strong>@FormatearCantidad(grupo.CantidadTotal, grupo.Unidad, grupo.UnidadesPorEmbalaje)</strong>
-                </div>
-                <div class="nexo-item-card__row">
-                    <span style="color:var(--n-text-3); font-size:0.78rem;">Valor stock (lote)</span>
-                    <strong>@grupo.ValorTotal.ToString("C0")</strong>
-                </div>
-                <div class="nexo-item-card__row">
-                    <span style="color:var(--n-text-3); font-size:0.78rem;">Costo promedio</span>
-                    <span style="font-size:0.85rem;">@grupo.CostoPromedio.ToString("C0")</span>
-                </div>
-                <div class="nexo-item-card__row">
-                    <span style="color:var(--n-text-3); font-size:0.78rem;">Precio venta</span>
-                    <span style="font-size:0.85rem; color:var(--mud-palette-success);">@grupo.PrecioVenta.ToString("C0")</span>
-                </div>
-                @if (grupo.Lotes.Count > 1)
-                {
-                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
-                               StartIcon="@Icons.Material.Filled.Layers"
-                               OnClick="@(() => ToggleExpand(grupo.Key))">
-                        @(grupo.Lotes.Count) lotes @(_expandidos.Contains(grupo.Key) ? "▲" : "▼")
-                    </MudButton>
-                    @if (_expandidos.Contains(grupo.Key))
+                <div class="inv-card__body">
+                    <div class="inv-card__title">@g.Articulo</div>
+                    <div class="inv-card__meta">
+                        <span class="inv-sku">@g.SKU</span>
+                        <span class="inv-tipo">@g.TipoArticulo</span>
+                    </div>
+                    <div class="inv-card__row">
+                        <span>Bodega</span>
+                        <strong>@g.Bodega</strong>
+                    </div>
+                    @if (g.Unidad is not null)
                     {
-                        @foreach (var lote in grupo.Lotes)
+                        <div class="inv-card__row">
+                            <span>Presentación</span>
+                            <span class="inv-pres">@g.Unidad</span>
+                        </div>
+                    }
+                    <div class="inv-card__row">
+                        <span>Cantidad</span>
+                        <strong class="@(g.CantidadTotal <= 0 ? "inv-valor--rojo" : "")">
+                            @FormatearCantidad(g.CantidadTotal, g.Unidad, g.UnidadesPorEmbalaje)
+                        </strong>
+                    </div>
+                    <div class="inv-card__row">
+                        <span>Valor stock</span>
+                        <strong>@g.ValorTotal.ToString("C0")</strong>
+                    </div>
+                    <div class="inv-card__row">
+                        <span>P. Venta</span>
+                        <span class="inv-valor--verde">@g.PrecioVenta.ToString("C0")</span>
+                    </div>
+                    @if (g.Lotes.Count > 1)
+                    {
+                        <button class="inv-lotes-btn" @onclick="@(() => ToggleExpand(g.Key))">
+                            @g.Lotes.Count lotes @(_expandidos.Contains(g.Key) ? "▲" : "▼")
+                        </button>
+                        @if (_expandidos.Contains(g.Key))
                         {
-                            <div style="border-left: 2px solid var(--n-primary); padding-left: 0.75rem; margin-top:0.5rem; font-size:0.82rem;">
-                                <div>@(lote.NumeroLote ?? "Sin lote") @(lote.FechaVencimiento.HasValue ? "· Vence: " + lote.FechaVencimiento.Value.ToString("dd/MM/yy") : "")</div>
-                                <div>@FormatearCantidad(lote.CantidadActual, lote.Unidad, lote.UnidadesPorEmbalaje) · Costo: @lote.CostoUnitarioLote.ToString("C0")</div>
-                            </div>
+                            @foreach (var lote in g.Lotes)
+                            {
+                                <div class="inv-lote-row">
+                                    <span>@(lote.NumeroLote ?? "Sin lote")@(lote.FechaVencimiento.HasValue ? " · Vence " + lote.FechaVencimiento.Value.ToString("dd/MM/yy") : "")</span>
+                                    <span>@FormatearCantidad(lote.CantidadActual, lote.Unidad, lote.UnidadesPorEmbalaje)</span>
+                                </div>
+                            }
                         }
                     }
-                }
-                @if (grupo.CantidadTotal <= 0)
-                {
-                    var esPt0 = grupo.TipoArticulo == "Producto Terminado";
-                    <div class="nexo-item-card__actions">
-                        <MudChip T="string" Color="Color.Error" Size="Size.Small"
-                                 Icon="@(esPt0 ? Icons.Material.Filled.Factory : Icons.Material.Filled.ShoppingCart)"
-                                 OnClick="@(() => IrAlertaAsync(grupo.ArticuloID, grupo.TipoArticulo))" Style="cursor:pointer;">
-                            @(esPt0 ? "Sin stock · Producir" : "Sin stock")
-                        </MudChip>
-                    </div>
-                }
-                else if (grupo.RequierePedido)
-                {
-                    var esPt1 = grupo.TipoArticulo == "Producto Terminado";
-                    <div class="nexo-item-card__actions">
-                        <MudChip T="string" Color="Color.Warning" Size="Size.Small"
-                                 Icon="@(esPt1 ? Icons.Material.Filled.Factory : Icons.Material.Filled.ShoppingCart)"
-                                 OnClick="@(() => IrAlertaAsync(grupo.ArticuloID, grupo.TipoArticulo))" Style="cursor:pointer;">
-                            @(esPt1 ? "Nueva producción" : "Requiere pedido")
-                        </MudChip>
-                    </div>
-                }
+                    @if (g.CantidadTotal <= 0 || g.RequierePedido)
+                    {
+                        <div class="inv-card__alerta">
+                            <MudChip T="string"
+                                     Color="@(g.CantidadTotal <= 0 ? Color.Error : Color.Warning)"
+                                     Size="Size.Small"
+                                     Icon="@(g.TipoArticulo == "Producto Terminado" ? Icons.Material.Filled.Factory : Icons.Material.Filled.ShoppingCart)"
+                                     OnClick="@(() => IrAlertaAsync(g.ArticuloID, g.TipoArticulo))"
+                                     Style="cursor:pointer;">
+                                @AlertaLabel(g)
+                            </MudChip>
+                        </div>
+                    }
+                </div>
             </div>
         }
     </div>
 }
 else
 {
-    <MudTable Items="_grupos" Hover="true" Dense="true" Striped="true"
-              RowsPerPage="50" AllowUnsorted="false">
-        <HeaderContent>
-            <MudTh></MudTh>
-            <MudTh></MudTh>
-            <MudTh>SKU</MudTh>
-            <MudTh>Articulo</MudTh>
-            <MudTh>Bodega</MudTh>
-            <MudTh>Centro de Costo</MudTh>
-            <MudTh Style="text-align:right">Cantidad</MudTh>
-            <MudTh Style="text-align:right">
-                <MudTooltip Text="Suma del stock valorado al costo de cada lote (FEFO/FIFO)">
-                    Valor Stock ⓘ
-                </MudTooltip>
-            </MudTh>
-            <MudTh Style="text-align:right">
-                <MudTooltip Text="Promedio ponderado histórico del catálogo">
-                    Costo Prom. ⓘ
-                </MudTooltip>
-            </MudTh>
-            <MudTh Style="text-align:right">P. Venta</MudTh>
-            <MudTh>Alerta</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            @* Fila resumen del grupo *@
-            <MudTd DataLabel="">
-                @if (context.TieneImagen)
+    <div class="inv-table-wrap">
+        <table class="inv-table">
+            <thead>
+                <tr>
+                    <th class="inv-table__th-img"></th>
+                    <th class="inv-table__th-exp"></th>
+                    <th>SKU</th>
+                    <th>Artículo</th>
+                    <th>Presentación</th>
+                    <th>Bodega</th>
+                    <th>Centro de costo</th>
+                    <th class="inv-table__num" title="Cantidad en stock">Cantidad</th>
+                    <th class="inv-table__num" title="Valor valorado al costo de cada lote">Valor stock</th>
+                    <th class="inv-table__num" title="Costo promedio ponderado del catálogo">Costo prom.</th>
+                    <th class="inv-table__num">P. Venta</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var g in _grupos)
                 {
-                    <img src="@($"api/catalogo/articulos/{context.ArticuloID}/imagen?v={_cacheBust}")" alt=""
-                         style="width:32px; height:32px; object-fit:cover; border-radius:6px;" />
-                }
-            </MudTd>
-            <MudTd DataLabel="">
-                @if (context.Lotes.Count > 1)
-                {
-                    <MudIconButton Size="Size.Small"
-                                   Icon="@(_expandidos.Contains(context.Key) ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
-                                   OnClick="@(() => ToggleExpand(context.Key))" />
-                }
-            </MudTd>
-            <MudTd DataLabel="SKU">@context.SKU</MudTd>
-            <MudTd DataLabel="Articulo">@context.Articulo</MudTd>
-            <MudTd DataLabel="Bodega">@context.Bodega</MudTd>
-            <MudTd DataLabel="Centro de Costo">@context.CentroCosto</MudTd>
-            <MudTd DataLabel="Cantidad" Style="text-align:right">
-                @FormatearCantidad(context.CantidadTotal, context.Unidad, context.UnidadesPorEmbalaje)
-                @if (context.Lotes.Count > 1)
-                {
-                    <MudText Typo="Typo.caption" Class="d-block" Style="color:var(--n-text-3);">
-                        @context.Lotes.Count lotes
-                    </MudText>
-                }
-            </MudTd>
-            <MudTd DataLabel="Valor Stock" Style="text-align:right">@context.ValorTotal.ToString("C0")</MudTd>
-            <MudTd DataLabel="Costo Prom." Style="text-align:right; color:var(--n-text-3);">@context.CostoPromedio.ToString("C0")</MudTd>
-            <MudTd DataLabel="P. Venta" Style="text-align:right; color:var(--mud-palette-success);">@context.PrecioVenta.ToString("C0")</MudTd>
-            <MudTd DataLabel="Alerta">
-                @if (context.CantidadTotal <= 0)
-                {
-                    var esPtL0 = context.TipoArticulo == "Producto Terminado";
-                    <MudChip T="string" Color="Color.Error" Size="Size.Small"
-                             Icon="@(esPtL0 ? Icons.Material.Filled.Factory : Icons.Material.Filled.ShoppingCart)"
-                             OnClick="@(() => IrAlertaAsync(context.ArticuloID, context.TipoArticulo))" Style="cursor:pointer;">
-                        @(esPtL0 ? "Sin stock · Producir" : "Sin stock")
-                    </MudChip>
-                }
-                else if (context.RequierePedido)
-                {
-                    var esPtL1 = context.TipoArticulo == "Producto Terminado";
-                    <MudChip T="string" Color="Color.Warning" Size="Size.Small"
-                             Icon="@(esPtL1 ? Icons.Material.Filled.Factory : Icons.Material.Filled.ShoppingCart)"
-                             OnClick="@(() => IrAlertaAsync(context.ArticuloID, context.TipoArticulo))" Style="cursor:pointer;">
-                        @(esPtL1 ? "Nueva producción" : "Requiere pedido")
-                    </MudChip>
-                }
-            </MudTd>
-        </RowTemplate>
-        <ChildRowContent>
-            @* Filas de detalle por lote cuando el grupo está expandido *@
-            @if (_expandidos.Contains(context.Key) && context.Lotes.Count > 1)
-            {
-                @foreach (var lote in context.Lotes)
-                {
-                    <MudTr Style="background:var(--mud-palette-background-grey, rgba(0,0,0,0.03));">
-                        <MudTd colspan="2"></MudTd>
-                        <MudTd colspan="2">
-                            <div style="padding-left:1.5rem; font-size:0.82rem; color:var(--n-text-2);">
-                                <strong>@(lote.NumeroLote ?? "Sin lote")</strong>
-                                @if (lote.FechaVencimiento.HasValue)
+                    <tr class="inv-table__row @(g.CantidadTotal <= 0 ? "inv-table__row--agotado" : g.RequierePedido ? "inv-table__row--warn" : "")">
+                        <td class="inv-table__td-img">
+                            @if (g.TieneImagen)
+                            {
+                                <img src="@($"api/catalogo/articulos/{g.ArticuloID}/imagen?v={_cacheBust}")"
+                                     alt="" class="inv-table__thumb" />
+                            }
+                        </td>
+                        <td class="inv-table__td-exp">
+                            @if (g.Lotes.Count > 1)
+                            {
+                                <button class="inv-expand-btn" @onclick="@(() => ToggleExpand(g.Key))">
+                                    @(_expandidos.Contains(g.Key) ? "▲" : "▶")
+                                </button>
+                            }
+                        </td>
+                        <td><span class="inv-sku">@g.SKU</span></td>
+                        <td class="inv-table__nombre">@g.Articulo</td>
+                        <td>
+                            @if (g.Unidad is not null)
+                            {
+                                <span class="inv-pres">@g.Unidad</span>
+                                @if (g.UnidadesPorEmbalaje is > 0)
                                 {
-                                    <text> · Vence @lote.FechaVencimiento.Value.ToString("dd/MM/yyyy")</text>
+                                    <span class="inv-pres-sub"> @g.UnidadesPorEmbalaje.Value.ToString("N0") und</span>
                                 }
-                            </div>
-                        </MudTd>
-                        <MudTd>@lote.Bodega</MudTd>
-                        <MudTd></MudTd>
-                        <MudTd Style="text-align:right; font-size:0.85rem;">
-                            @FormatearCantidad(lote.CantidadActual, lote.Unidad, lote.UnidadesPorEmbalaje)
-                        </MudTd>
-                        <MudTd Style="text-align:right; font-size:0.85rem;">
-                            <div>@lote.ValorTotal.ToString("C0")</div>
-                            <div style="font-size:0.78rem; color:var(--n-text-3);">@lote.CostoUnitarioLote.ToString("C0")/und</div>
-                        </MudTd>
-                        <MudTd></MudTd>
-                    </MudTr>
+                            }
+                            else { <span class="inv-muted">—</span> }
+                        </td>
+                        <td>@g.Bodega</td>
+                        <td class="inv-muted">@g.CentroCosto</td>
+                        <td class="inv-table__num">
+                            <strong class="@(g.CantidadTotal <= 0 ? "inv-valor--rojo" : "")">
+                                @FormatearCantidad(g.CantidadTotal, g.Unidad, g.UnidadesPorEmbalaje)
+                            </strong>
+                            @if (g.Lotes.Count > 1)
+                            {
+                                <div class="inv-sub">@g.Lotes.Count lotes</div>
+                            }
+                        </td>
+                        <td class="inv-table__num">@g.ValorTotal.ToString("C0")</td>
+                        <td class="inv-table__num inv-muted">@g.CostoPromedio.ToString("C0")</td>
+                        <td class="inv-table__num inv-valor--verde">@g.PrecioVenta.ToString("C0")</td>
+                        <td>
+                            @if (g.CantidadTotal <= 0 || g.RequierePedido)
+                            {
+                                <MudChip T="string"
+                                         Color="@(g.CantidadTotal <= 0 ? Color.Error : Color.Warning)"
+                                         Size="Size.Small"
+                                         Icon="@(g.TipoArticulo == "Producto Terminado" ? Icons.Material.Filled.Factory : Icons.Material.Filled.ShoppingCart)"
+                                         OnClick="@(() => IrAlertaAsync(g.ArticuloID, g.TipoArticulo))"
+                                         Style="cursor:pointer; white-space:nowrap;">
+                                    @AlertaLabel(g)
+                                </MudChip>
+                            }
+                        </td>
+                    </tr>
+                    @if (_expandidos.Contains(g.Key) && g.Lotes.Count > 1)
+                    {
+                        @foreach (var lote in g.Lotes)
+                        {
+                            <tr class="inv-table__lote">
+                                <td colspan="2"></td>
+                                <td colspan="2">
+                                    <span class="inv-lote-tag">Lote</span>
+                                    <strong>@(lote.NumeroLote ?? "Sin nro.")</strong>
+                                    @if (lote.FechaVencimiento.HasValue)
+                                    {
+                                        <span class="inv-muted"> · Vence @lote.FechaVencimiento.Value.ToString("dd/MM/yyyy")</span>
+                                    }
+                                </td>
+                                <td></td>
+                                <td>@lote.Bodega</td>
+                                <td></td>
+                                <td class="inv-table__num">
+                                    @FormatearCantidad(lote.CantidadActual, lote.Unidad, lote.UnidadesPorEmbalaje)
+                                </td>
+                                <td class="inv-table__num">
+                                    <div>@lote.ValorTotal.ToString("C0")</div>
+                                    <div class="inv-sub">@lote.CostoUnitarioLote.ToString("C0")/und</div>
+                                </td>
+                                <td colspan="3"></td>
+                            </tr>
+                        }
+                    }
                 }
-            }
-        </ChildRowContent>
-        <PagerContent>
-            <MudTablePager PageSizeOptions="new int[] { 25, 50, 100 }" />
-        </PagerContent>
-        <NoRecordsContent>
-            <MudText>No hay stock que coincida con el filtro.</MudText>
-        </NoRecordsContent>
-    </MudTable>
+            </tbody>
+        </table>
+    </div>
 }
 
 @code {
@@ -261,42 +299,80 @@ else
     );
 
     private List<StockConsolidadoItem> _stock = new();
-    private List<GrupoStock> _grupos = new();
+    private List<GrupoStock>           _grupos = new();
     private readonly HashSet<(int, int, int)> _expandidos = new();
 
     private string _filtroSku = "";
-    private int? _filtroCentroCostoId;
-    private int? _filtroBodegaId;
-    private bool _cargando = true;
+    private int?   _filtroCentroCostoId;
+    private int?   _filtroBodegaId;
+    private bool   _cargando  = true;
     private string? _error;
     private readonly long _cacheBust = DateTime.UtcNow.Ticks;
 
     private List<CentroCostoItem> _centrosCosto = new();
-    private List<BodegaItem> _bodegas = new();
+    private List<BodegaItem>      _bodegas      = new();
     private IEnumerable<BodegaItem> _bodegasFiltradas =>
         _filtroCentroCostoId is null ? _bodegas : _bodegas.Where(b => b.CentroCostoID == _filtroCentroCostoId);
 
-    protected override void OnInitialized()
-    {
-        Preferencias.OnCambio += OnPreferenciasCambiaron;
-    }
-
-    private void OnPreferenciasCambiaron() => InvokeAsync(StateHasChanged);
-
-    public void Dispose()
-    {
-        Preferencias.OnCambio -= OnPreferenciasCambiaron;
-    }
+    protected override void OnInitialized()     { Preferencias.OnCambio += OnPreferenciasCambiaron; }
+    private void OnPreferenciasCambiaron()       => InvokeAsync(StateHasChanged);
+    public  void Dispose()                       { Preferencias.OnCambio -= OnPreferenciasCambiaron; }
 
     protected override async Task OnInitializedAsync()
     {
-        var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
-        var tareaBodegas      = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
-        await Task.WhenAll(tareaCentrosCosto, tareaBodegas);
-        _centrosCosto = await tareaCentrosCosto ?? new();
-        _bodegas      = await tareaBodegas ?? new();
-
+        var t1 = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
+        var t2 = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
+        await Task.WhenAll(t1, t2);
+        _centrosCosto = await t1 ?? new();
+        _bodegas      = await t2 ?? new();
         await CargarAsync();
+    }
+
+    private async Task OnCentroCostoCambiadoAsync(int? v)
+    {
+        _filtroCentroCostoId = v;
+        if (_filtroBodegaId is not null && _bodegasFiltradas.All(b => b.BodegaID != _filtroBodegaId))
+            _filtroBodegaId = null;
+        await CargarAsync();
+    }
+
+    private void ToggleExpand((int, int, int) key)
+    {
+        if (!_expandidos.Remove(key)) _expandidos.Add(key);
+    }
+
+    private async Task CargarAsync()
+    {
+        _cargando = true; _error = null;
+        try
+        {
+            var p = new List<string>();
+            if (!string.IsNullOrWhiteSpace(_filtroSku)) p.Add($"sku={Uri.EscapeDataString(_filtroSku)}");
+            if (_filtroCentroCostoId is not null) p.Add($"centroCostoId={_filtroCentroCostoId}");
+            if (_filtroBodegaId is not null) p.Add($"bodegaId={_filtroBodegaId}");
+
+            var ruta = "api/inventario/stock" + (p.Count > 0 ? "?" + string.Join("&", p) : "");
+            _stock = await ApiClient.GetAsync<List<StockConsolidadoItem>>(ruta) ?? new();
+
+            _grupos = _stock
+                .GroupBy(s => (s.ArticuloID, s.BodegaID, s.CentroCostoID))
+                .Select(g =>
+                {
+                    var first = g.First();
+                    var key = (first.ArticuloID, first.BodegaID, first.CentroCostoID);
+                    var total = g.Sum(s => s.CantidadActual);
+                    return new GrupoStock(key,
+                        first.ArticuloID, first.SKU, first.Articulo, first.TipoArticulo,
+                        first.Unidad, first.UnidadesPorEmbalaje,
+                        first.BodegaID, first.Bodega, first.CentroCostoID, first.CentroCosto,
+                        total, g.Sum(s => s.ValorTotal),
+                        first.StockMinimo > 0 && total <= first.StockMinimo,
+                        first.TieneImagen, g.ToList(), first.CostoPromedio, first.PrecioVenta);
+                })
+                .ToList();
+        }
+        catch (Exception ex) { _error = $"No se pudo cargar el stock: {ex.Message}"; }
+        finally { _cargando = false; }
     }
 
     private void IrAlertaAsync(int articuloId, string tipoArticulo)
@@ -307,67 +383,16 @@ else
             Navegacion.NavigateTo($"/compras/ordenes?articuloId={articuloId}");
     }
 
-    private async Task OnCentroCostoCambiadoAsync(int? nuevoCentroCostoId)
+    private static string AlertaLabel(GrupoStock g)
     {
-        _filtroCentroCostoId = nuevoCentroCostoId;
-        if (_filtroBodegaId is not null && _bodegasFiltradas.All(b => b.BodegaID != _filtroBodegaId))
-            _filtroBodegaId = null;
-
-        await CargarAsync();
+        if (g.CantidadTotal <= 0) return g.TipoArticulo == "Producto Terminado" ? "Sin stock · Producir" : "Sin stock";
+        return g.TipoArticulo == "Producto Terminado" ? "Nueva producción" : "Requiere pedido";
     }
 
-    private void ToggleExpand((int, int, int) key)
-    {
-        if (!_expandidos.Remove(key))
-            _expandidos.Add(key);
-    }
-
-    private async Task CargarAsync()
-    {
-        _cargando = true;
-        _error = null;
-
-        try
-        {
-            var parametros = new List<string>();
-            if (!string.IsNullOrWhiteSpace(_filtroSku)) parametros.Add($"sku={Uri.EscapeDataString(_filtroSku)}");
-            if (_filtroCentroCostoId is not null) parametros.Add($"centroCostoId={_filtroCentroCostoId}");
-            if (_filtroBodegaId is not null) parametros.Add($"bodegaId={_filtroBodegaId}");
-
-            var ruta = "api/inventario/stock" + (parametros.Count > 0 ? "?" + string.Join("&", parametros) : "");
-            _stock = await ApiClient.GetAsync<List<StockConsolidadoItem>>(ruta) ?? new();
-
-            _grupos = _stock
-                .GroupBy(s => (s.ArticuloID, s.BodegaID, s.CentroCostoID))
-                .Select(g =>
-                {
-                    var first = g.First();
-                    var key = (first.ArticuloID, first.BodegaID, first.CentroCostoID);
-                    return new GrupoStock(
-                        key,
-                        first.ArticuloID, first.SKU, first.Articulo, first.TipoArticulo,
-                        first.Unidad, first.UnidadesPorEmbalaje,
-                        first.BodegaID, first.Bodega, first.CentroCostoID, first.CentroCosto,
-                        g.Sum(s => s.CantidadActual), g.Sum(s => s.ValorTotal),
-                        first.StockMinimo > 0 && g.Sum(s => s.CantidadActual) <= first.StockMinimo, first.TieneImagen,
-                        g.ToList(), first.CostoPromedio, first.PrecioVenta
-                    );
-                })
-                .ToList();
-        }
-        catch (Exception ex)
-        {
-            _error = $"No se pudo cargar el stock: {ex.Message}";
-        }
-        finally
-        {
-            _cargando = false;
-        }
-    }
-
+    // Usa UnidadesPorEmbalaje (no Unidad=="cja") porque Unidad ahora es PresentacionCodigo
     private static string FormatearCantidad(decimal cantidad, string? unidad, decimal? unidadesPorEmbalaje)
     {
-        if (unidad == "cja" && unidadesPorEmbalaje is > 0)
+        if (unidadesPorEmbalaje is > 0)
             return StockHelper.FormatearCajaUnidades(cantidad, unidadesPorEmbalaje.Value);
         return $"{cantidad:N2} {unidad}".Trim();
     }

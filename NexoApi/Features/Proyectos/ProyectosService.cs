@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using NexoApi.Common.Data;
 using NexoApi.Features.Proyectos.Dtos;
 
@@ -236,7 +236,7 @@ public class ProyectosService : IProyectosService
                    co.ArticuloID, a.Nombre AS Articulo, co.Fecha
             FROM Proyectos.Costos co
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = co.EmpleadoID
-            LEFT JOIN Catalogo.Articulos a ON a.ArticuloID = co.ArticuloID
+            LEFT JOIN Catalogo.Tarjetas a ON a.ArticuloID = co.ArticuloID
             WHERE co.ProyectoID = @ProyectoId
             ORDER BY co.Fecha DESC";
 

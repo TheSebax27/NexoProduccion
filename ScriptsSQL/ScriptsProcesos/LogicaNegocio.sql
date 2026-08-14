@@ -59,39 +59,14 @@ BEGIN
 
     DECLARE @FactorEscala DECIMAL(18,8) = @CantidadProgramada / @RendimientoBase;
 
-    -- Requerimiento total por insumo (incluyendo merma estandar), convertido a
-    -- la Unidad BASE del articulo (la que usa InventarioStock). La receta puede
-    -- pedir una Unidad distinta a la del articulo (ej. receta en "und" pero el
-    -- articulo se stockea por "Caja") -- se convierte usando
-    -- Catalogo.Articulos.UnidadesPorEmbalaje cuando el par es Caja<->Unidad;
-    -- cualquier otra combinacion de unidades distintas sin factor conocido
-    -- (ej. kg vs caja) se deja sin convertir (responsabilidad de quien arma
-    -- la receta usar la misma unidad que el articulo en ese caso).
-    -- Ademas, si la Unidad resultante es 'UNIDAD' (discreta, ej. piezas), se
-    -- redondea hacia arriba: no se puede tomar una fraccion de un articulo
-    -- indivisible. Para PESO/VOLUMEN/LONGITUD se deja fraccionario.
     IF OBJECT_ID('tempdb..#Requerido') IS NOT NULL DROP TABLE #Requerido;
     SELECT
         rd.InsumoID,
         a.Nombre AS NombreInsumo,
-        CASE
-            WHEN rd.UnidadID = a.UnidadID THEN
-                CASE WHEN um.Tipo = 'UNIDAD'
-                     THEN CEILING((rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0))
-                     ELSE (rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)
-                END
-            WHEN um.Abreviatura = 'und' AND umArt.Abreviatura = 'cja' AND a.UnidadesPorEmbalaje > 0 THEN
-                ((rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)) / a.UnidadesPorEmbalaje
-            WHEN um.Abreviatura = 'cja' AND umArt.Abreviatura = 'und' AND a.UnidadesPorEmbalaje > 0 THEN
-                CEILING(((rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)) * a.UnidadesPorEmbalaje)
-            ELSE
-                (rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)
-        END AS CantidadNecesaria
+        (rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar / 100.0) AS CantidadNecesaria
     INTO #Requerido
     FROM Produccion.RecetaBOM_Detalle rd
     JOIN Catalogo.Articulos a ON a.ArticuloID = rd.InsumoID
-    JOIN Catalogo.UnidadesMedida um ON um.UnidadID = rd.UnidadID
-    LEFT JOIN Catalogo.UnidadesMedida umArt ON umArt.UnidadID = a.UnidadID
     WHERE rd.RecetaID = @RecetaID;
 
     -- Disponible en la bodega de origen de materia prima
@@ -163,27 +138,10 @@ BEGIN
     BEGIN TRANSACTION;
 
     DECLARE @InsumoID INT, @CantidadNecesaria DECIMAL(18,4);
-    -- Mismo criterio de conversion Caja<->Unidad y redondeo que
-    -- sp_LiberarOrdenProduccion (ver comentario alli).
     DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
         SELECT rd.InsumoID,
-               CASE
-                   WHEN rd.UnidadID = a.UnidadID THEN
-                       CASE WHEN um.Tipo = 'UNIDAD'
-                            THEN CEILING((rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0))
-                            ELSE (rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)
-                       END
-                   WHEN um.Abreviatura = 'und' AND umArt.Abreviatura = 'cja' AND a.UnidadesPorEmbalaje > 0 THEN
-                       ((rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)) / a.UnidadesPorEmbalaje
-                   WHEN um.Abreviatura = 'cja' AND umArt.Abreviatura = 'und' AND a.UnidadesPorEmbalaje > 0 THEN
-                       CEILING(((rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)) * a.UnidadesPorEmbalaje)
-                   ELSE
-                       (rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar/100.0)
-               END
+               (rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar / 100.0)
         FROM Produccion.RecetaBOM_Detalle rd
-        JOIN Catalogo.Articulos a ON a.ArticuloID = rd.InsumoID
-        JOIN Catalogo.UnidadesMedida um ON um.UnidadID = rd.UnidadID
-        LEFT JOIN Catalogo.UnidadesMedida umArt ON umArt.UnidadID = a.UnidadID
         WHERE rd.RecetaID = @RecetaID;
 
     OPEN cur;

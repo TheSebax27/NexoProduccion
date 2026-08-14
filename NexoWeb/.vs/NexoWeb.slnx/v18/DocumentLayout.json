@@ -130,12 +130,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 1,
           "Children": [
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{56df62a4-05a3-4e5b-aa1a-99371ccfb997}"
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
@@ -148,7 +144,7 @@
               "RelativeDocumentMoniker": "Common\\Dtos\\FacturacionDtos.cs",
               "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\FacturacionDtos.cs",
               "RelativeToolTip": "Common\\Dtos\\FacturacionDtos.cs",
-              "ViewState": "AgIAAAUAAAAAAAAAAAAAABAAAAAVAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-08-12T20:34:01.599Z",
               "EditorCaption": ""

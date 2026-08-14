@@ -73,7 +73,6 @@ public record RecetaDetalleItem(
 public record DetalleRecetaRequest(
     int InsumoID,
     decimal CantidadRequerida,
-    int UnidadID,
     decimal PorcentajeMermaEstandar,
     int? CentroTrabajoID,
     int Orden
@@ -83,7 +82,6 @@ public record CrearRecetaRequest(
     int ProductoTerminadoID,
     string NombreReceta,
     decimal CantidadRendimientoBase,
-    int UnidadRendimientoID,
     List<DetalleRecetaRequest> Detalle,
     List<MaquinariaRecetaInput>? Maquinas = null
 );
@@ -91,7 +89,6 @@ public record CrearRecetaRequest(
 public record CrearNuevaVersionRequest(
     string NombreReceta,
     decimal CantidadRendimientoBase,
-    int UnidadRendimientoID,
     List<DetalleRecetaRequest> Detalle,
     List<MaquinariaRecetaInput>? Maquinas = null
 );

@@ -1,4 +1,4 @@
-﻿@page "/produccion/recetas"
+@page "/produccion/recetas"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -7,67 +7,94 @@
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
-<PageTitle>Recetas (BOM) - NEXO</PageTitle>
+<PageTitle>Recetas (BOM) — NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
-    <MudText Typo="Typo.h5">Recetas (BOM)</MudText>
-    <BotonFavorito Href="/produccion/recetas" Etiqueta="Recetas (BOM)" />
+<div class="prod-header">
+    <div class="prod-header__left">
+        <h1 class="prod-header__title">
+            <MudIcon Icon="@Icons.Material.Filled.MenuBook" Class="prod-header__icon" />
+            Recetas (BOM)
+        </h1>
+        <p class="prod-header__sub">Define los insumos y cantidades por corrida. Cada cambio importante crea una nueva versión.</p>
+    </div>
+    <div class="prod-header__actions">
+        <BotonFavorito Href="/produccion/recetas" Etiqueta="Recetas (BOM)" />
+        <MudButton Variant="Variant.Filled" Color="Color.Success" Href="/produccion/recetas/crear"
+                   StartIcon="@Icons.Material.Filled.Add">
+            Nueva Receta
+        </MudButton>
+    </div>
 </div>
-<InfoAyuda Texto="Define los insumos y cantidades necesarias para producir un art�culo (BOM). Cada cambio importante crea una nueva versi�n, sin borrar ni afectar el historial de �rdenes que usaron versiones anteriores." />
 
-<MudGrid Class="mb-4" Justify="Justify.SpaceBetween">
-    <MudItem xs="12" sm="6" md="4">
-        <MudSelect T="int?" Value="_filtroProductoId" ValueChanged="OnFiltroCambiadoAsync"
-                   Label="Filtrar por Producto Terminado" Clearable="true">
-            @foreach (var articulo in _articulos)
-            {
-                <MudSelectItem T="int?" Value="@articulo.ArticuloID">@articulo.Nombre</MudSelectItem>
-            }
-        </MudSelect>
-    </MudItem>
-    <MudItem>
-        <MudSwitch T="bool" @bind-Value="_soloActivas" Label="Solo versiones activas" Color="Color.Primary"
-                   @bind-Value:after="CargarAsync" />
-    </MudItem>
-</MudGrid>
+<ProduccionNav />
 
-<MudButton Variant="Variant.Filled" Color="Color.Success" Href="/produccion/recetas/crear"
-           StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
-    Nueva Receta
-</MudButton>
+@* ── Filtros ─────────────────────────────────────────────────────────── *@
+<div class="prod-filtros">
+    <MudSelect T="int?" Value="_filtroProductoId" ValueChanged="OnFiltroCambiadoAsync"
+               Label="Filtrar por producto terminado" Variant="Variant.Outlined" Clearable="true"
+               Style="flex:2; min-width:220px;">
+        @foreach (var a in _articulos)
+        {
+            <MudSelectItem T="int?" Value="@a.ArticuloID">@a.Nombre</MudSelectItem>
+        }
+    </MudSelect>
+    <MudSwitch T="bool" @bind-Value="_soloActivas" Label="Solo versiones activas"
+               Color="Color.Primary" @bind-Value:after="CargarAsync" />
+</div>
 
 @if (_errorCarga is not null)
 {
-    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar las recetas: @_errorCarga</MudAlert>
+    <MudAlert Severity="Severity.Error" Class="mb-4">@_errorCarga</MudAlert>
 }
+
 @if (_cargando)
 {
-    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+    <div class="prod-skeleton">
+        @for (int i = 0; i < 5; i++) { <div class="prod-skeleton__row"></div> }
+    </div>
 }
 else if (_recetas.Count == 0)
 {
-    <MudText>No hay recetas registradas para este filtro.</MudText>
+    <div class="prod-vacio">
+        <MudIcon Icon="@Icons.Material.Outlined.MenuBook" Style="font-size:3rem; color:var(--n-text-3); display:block; margin-bottom:.75rem;" />
+        <p>No hay recetas para el filtro seleccionado.</p>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" Href="/produccion/recetas/crear"
+                   StartIcon="@Icons.Material.Filled.Add" Class="mt-2">
+            Crear primera receta
+        </MudButton>
+    </div>
 }
 else if (Preferencias.VistaListado == "tarjetas")
 {
-    <div class="nexo-card-grid">
+    <div class="prod-grid">
         @foreach (var receta in _recetas)
         {
-            <div class="nexo-item-card">
-                <div class="d-flex align-center justify-space-between">
-                    <div class="nexo-item-card__title">@receta.ProductoTerminado</div>
-                    <MudChip T="string" Color="@(receta.Estado ? Color.Success : Color.Default)" Size="Size.Small">
+            <div class="prod-receta-card">
+                <div class="prod-receta-card__head">
+                    <div class="prod-receta-card__producto">@receta.ProductoTerminado</div>
+                    <span class="prod-receta-estado @(receta.Estado ? "prod-receta-estado--activa" : "prod-receta-estado--reemplazada")">
                         @(receta.Estado ? "Activa" : "Reemplazada")
-                    </MudChip>
+                    </span>
                 </div>
-                <div class="nexo-item-card__sub">@receta.NombreReceta � v@(receta.Version)</div>
-                <div class="nexo-item-card__row"><span>Rendimiento</span><strong>@receta.CantidadRendimientoBase.ToString("N2") @receta.UnidadRendimiento</strong></div>
-                <div class="nexo-item-card__actions">
-                    <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(receta))">Ver Insumos</MudButton>
+                <div class="prod-receta-card__nombre">@receta.NombreReceta <span class="prod-version">v@receta.Version</span></div>
+                <div class="prod-receta-card__row">
+                    <span>Rendimiento</span>
+                    <strong>@receta.CantidadRendimientoBase.ToString("N2") @receta.UnidadRendimiento</strong>
+                </div>
+                <div class="prod-receta-card__actions">
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => VerDetalleAsync(receta))">
+                        Ver Insumos
+                    </MudButton>
                     @if (receta.Estado)
                     {
-                        <MudButton Size="Size.Small" Color="Color.Primary" Href="@($"/produccion/recetas/{receta.RecetaID}/nueva-version")">Nueva Versi�n</MudButton>
-                        <MudButton Size="Size.Small" Color="Color.Error" OnClick="@(() => DesactivarAsync(receta))">Desactivar</MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary"
+                                   Href="@($"/produccion/recetas/{receta.RecetaID}/nueva-version")">
+                            Nueva Versión
+                        </MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
+                                   OnClick="@(() => DesactivarAsync(receta))">
+                            Desactivar
+                        </MudButton>
                     }
                 </div>
             </div>
@@ -76,119 +103,101 @@ else if (Preferencias.VistaListado == "tarjetas")
 }
 else
 {
-    <MudTable Items="_recetas" Hover="true" Dense="true" Striped="true">
-        <HeaderContent>
-            <MudTh>Producto Terminado</MudTh>
-            <MudTh>Receta</MudTh>
-            <MudTh>Version</MudTh>
-            <MudTh>Rendimiento</MudTh>
-            <MudTh>Estado</MudTh>
-            <MudTh>Acciones</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Producto Terminado">@context.ProductoTerminado</MudTd>
-            <MudTd DataLabel="Receta">@context.NombreReceta</MudTd>
-            <MudTd DataLabel="Version">v@(context.Version)</MudTd>
-            <MudTd DataLabel="Rendimiento">@context.CantidadRendimientoBase.ToString("N2") @context.UnidadRendimiento</MudTd>
-            <MudTd DataLabel="Estado">
-                <MudChip T="string" Color="@(context.Estado ? Color.Success : Color.Default)" Size="Size.Small">
-                    @(context.Estado ? "Activa" : "Reemplazada")
-                </MudChip>
-            </MudTd>
-            <MudTd DataLabel="Acciones">
-                <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(context))">
-                    Ver Insumos
-                </MudButton>
-                @if (context.Estado)
+    <div class="prod-table-wrap">
+        <table class="prod-table">
+            <thead>
+                <tr>
+                    <th>Producto Terminado</th>
+                    <th>Receta</th>
+                    <th>Versión</th>
+                    <th class="prod-table__num">Rendimiento</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in _recetas)
                 {
-                    <MudButton Size="Size.Small" Color="Color.Primary"
-                               Href="@($"/produccion/recetas/{context.RecetaID}/nueva-version")">
-                        Nueva Version
-                    </MudButton>
-                    <MudButton Size="Size.Small" Color="Color.Error"
-                               OnClick="@(() => DesactivarAsync(context))">
-                        Desactivar
-                    </MudButton>
+                    <tr class="prod-table__row">
+                        <td class="prod-table__nombre">@r.ProductoTerminado</td>
+                        <td>@r.NombreReceta</td>
+                        <td><span class="prod-version">v@r.Version</span></td>
+                        <td class="prod-table__num">
+                            <strong>@r.CantidadRendimientoBase.ToString("N2")</strong>
+                            <span class="inv-muted"> @r.UnidadRendimiento</span>
+                        </td>
+                        <td>
+                            <span class="prod-receta-estado @(r.Estado ? "prod-receta-estado--activa" : "prod-receta-estado--reemplazada")">
+                                @(r.Estado ? "Activa" : "Reemplazada")
+                            </span>
+                        </td>
+                        <td>
+                            <div class="prod-acciones">
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                           OnClick="@(() => VerDetalleAsync(r))">
+                                    Ver Insumos
+                                </MudButton>
+                                @if (r.Estado)
+                                {
+                                    <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary"
+                                               Href="@($"/produccion/recetas/{r.RecetaID}/nueva-version")">
+                                        Nueva Versión
+                                    </MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
+                                               OnClick="@(() => DesactivarAsync(r))">
+                                        Desactivar
+                                    </MudButton>
+                                }
+                            </div>
+                        </td>
+                    </tr>
                 }
-            </MudTd>
-        </RowTemplate>
-        <NoRecordsContent>
-            <MudText>No hay recetas registradas para este filtro.</MudText>
-        </NoRecordsContent>
-    </MudTable>
+            </tbody>
+        </table>
+    </div>
 }
 
 @code {
-    private List<RecetaResumen> _recetas = new();
-    private List<ArticuloItem> _articulos = new();
-    private int? _filtroProductoId;
-    private bool _soloActivas = true;
-    private bool _cargando = true;
+    private List<RecetaResumen>  _recetas   = new();
+    private List<ArticuloItem>   _articulos = new();
+    private int?  _filtroProductoId;
+    private bool  _soloActivas = true;
+    private bool  _cargando    = true;
     private string? _errorCarga;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // Se filtra por nombre de tipo, no por ID: los IDs de Catalogo.TiposArticulo
-            // dependen del orden de insercion de los datos semilla y no son confiables
-            // como numero fijo. Este selector es "Filtrar por Producto Terminado", no
-            // debe listar Materia Prima/Insumo/Servicio.
             _articulos = (await ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos") ?? new())
                 .Where(a => a.TipoArticulo == "Producto Terminado")
                 .ToList();
             await CargarAsync();
         }
-        catch (Exception ex)
-        {
-            _errorCarga = ex.Message;
-            _cargando = false;
-        }
+        catch (Exception ex) { _errorCarga = ex.Message; _cargando = false; }
     }
 
     private async Task CargarAsync()
     {
-        _cargando = true;
-        _errorCarga = null;
-
+        _cargando = true; _errorCarga = null;
         try
         {
-            var query = new List<string> { $"soloActivas={_soloActivas.ToString().ToLower()}" };
-            if (_filtroProductoId.HasValue)
-                query.Add($"productoTerminadoId={_filtroProductoId}");
-
-            var ruta = "api/produccion/recetas?" + string.Join("&", query);
-            _recetas = await ApiClient.GetAsync<List<RecetaResumen>>(ruta) ?? new();
+            var q = new List<string> { $"soloActivas={_soloActivas.ToString().ToLower()}" };
+            if (_filtroProductoId.HasValue) q.Add($"productoTerminadoId={_filtroProductoId}");
+            _recetas = await ApiClient.GetAsync<List<RecetaResumen>>("api/produccion/recetas?" + string.Join("&", q)) ?? new();
         }
-        catch (Exception ex)
-        {
-            _errorCarga = ex.Message;
-        }
-        finally
-        {
-            _cargando = false;
-        }
+        catch (Exception ex) { _errorCarga = ex.Message; }
+        finally { _cargando = false; }
     }
 
-    private async Task OnFiltroCambiadoAsync(int? nuevoValor)
-    {
-        _filtroProductoId = nuevoValor;
-        await CargarAsync();
-    }
+    private async Task OnFiltroCambiadoAsync(int? v) { _filtroProductoId = v; await CargarAsync(); }
 
     private async Task DesactivarAsync(RecetaResumen receta)
     {
-        var confirmacion = await DialogService.ShowMessageBox(
-            "Desactivar Receta",
-            $"Esta receta no vuelve a estar disponible para crear ordenes de produccion. " +
-            $"No se borra: las ordenes que ya la usaron siguen mostrando su historial correctamente.\n\n" +
-            $"Receta: {receta.NombreReceta} (v{receta.Version})\n\n" +
-            "�Confirmar?",
-            yesText: "Si, desactivar",
-            noText: "Cancelar");
-
-        if (confirmacion != true)
-            return;
+        if (await DialogService.ShowMessageBox("Desactivar Receta",
+            $"Esta receta no volverá a estar disponible para crear órdenes. No se borra: las órdenes que ya la usaron mantienen su historial.\n\n" +
+            $"Receta: {receta.NombreReceta} (v{receta.Version})\n\n¿Confirmar?",
+            yesText: "Sí, desactivar", noText: "Cancelar") != true) return;
 
         try
         {
@@ -196,20 +205,13 @@ else
             Snackbar.Add("Receta desactivada correctamente.", Severity.Success);
             await CargarAsync();
         }
-        catch (HttpRequestException ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
     }
 
     private async Task VerDetalleAsync(RecetaResumen receta)
     {
-        var parametros = new DialogParameters<RecetaDetalleDialog>
-        {
-            { x => x.RecetaID, receta.RecetaID }
-        };
-
+        var p = new DialogParameters<RecetaDetalleDialog> { { x => x.RecetaID, receta.RecetaID } };
         await DialogService.ShowAsync<RecetaDetalleDialog>(
-            $"Insumos de: {receta.NombreReceta} (v{receta.Version})", parametros);
+            $"Insumos de: {receta.NombreReceta} (v{receta.Version})", p);
     }
 }

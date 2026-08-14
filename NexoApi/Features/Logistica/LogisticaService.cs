@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using System.Text.Json;
 using Dapper;
 using NexoApi.Common.Data;
@@ -33,9 +33,9 @@ public class LogisticaService : ILogisticaService
                    d.ClienteID, c.Nombre AS Cliente, d.CentroCostoID, cc.Nombre AS CentroCosto, b.Nombre AS BodegaOrigen,
                    d.FechaDespacho, d.Estado, d.FechaEntrega, d.Direccion, d.Observaciones,
                    ISNULL((
-                       SELECT SUM(dd.Cantidad * ISNULL(dd.ValorUnitario, a.PrecioVenta))
+                       SELECT SUM(dd.Cantidad * ISNULL(dd.ValorUnitario, a.PPublico))
                        FROM Logistica.DespachoDetalle dd
-                       JOIN Catalogo.Articulos a ON a.ArticuloID = dd.ArticuloID
+                       JOIN Catalogo.Tarjetas a ON a.ArticuloID = dd.ArticuloID
                        WHERE dd.DespachoID = d.DespachoID
                    ), 0) AS ValorTotal,
                    d.MotivoAnulacion, d.FechaAnulacion, d.DescuentaStock
@@ -55,9 +55,9 @@ public class LogisticaService : ILogisticaService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT dd.ArticuloID, a.SKU AS SkuArticulo, a.Nombre AS NombreArticulo, dd.Cantidad, dd.ValorUnitario
+            SELECT dd.ArticuloID, a.Referencia AS SkuArticulo, a.Nombre AS NombreArticulo, dd.Cantidad, dd.ValorUnitario
             FROM Logistica.DespachoDetalle dd
-            JOIN Catalogo.Articulos a ON a.ArticuloID = dd.ArticuloID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = dd.ArticuloID
             WHERE dd.DespachoID = @DespachoId";
 
         return await connection.QueryAsync<DespachoDetalleItem>(sql, new { DespachoId = despachoId });

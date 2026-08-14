@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using NexoApi.Common.Data;
 using NexoApi.Features.Facturacion.Dtos;
 using NexoApi.Features.Produccion;
@@ -118,15 +118,15 @@ public class FacturacionService : IFacturacionService
 
         const string sql = @"
             SELECT l.LineaID, l.FacturaID, l.ArticuloID,
-                   a.SKU AS SkuArticulo,
+                   a.Referencia AS SkuArticulo,
                    COALESCE(a.Nombre, l.DescripcionLinea, c.Nombre) AS NombreArticulo,
                    l.ComboID, l.DescripcionLinea,
                    l.Cantidad, l.PrecioUnitario, ROUND(l.Cantidad * l.PrecioUnitario, 0) AS Subtotal,
-                   um.Abreviatura AS Unidad, a.UnidadesPorEmbalaje
+                   a.PresentacionCodigo AS Unidad, p.Fracciones AS UnidadesPorEmbalaje
             FROM Facturacion.FacturaLineas l
-            LEFT JOIN Catalogo.Articulos a ON a.ArticuloID = l.ArticuloID
+            LEFT JOIN Catalogo.Tarjetas a ON a.ArticuloID = l.ArticuloID
             LEFT JOIN Marketing.Combos c ON c.ComboID = l.ComboID
-            LEFT JOIN Catalogo.UnidadesMedida um ON um.UnidadID = a.UnidadID
+            LEFT JOIN Catalogo.Presentacion p ON p.Codigo = a.PresentacionCodigo
             WHERE l.FacturaID = @FacturaId
             ORDER BY l.LineaID";
 
@@ -169,20 +169,20 @@ public class FacturacionService : IFacturacionService
 
         const string sql = @"
             -- Artículos directos
-            SELECT fl.ArticuloID, a.SKU AS SkuArticulo, a.Nombre AS NombreArticulo,
+            SELECT fl.ArticuloID, a.Referencia AS SkuArticulo, a.Nombre AS NombreArticulo,
                    fl.Cantidad AS CantidadFacturada,
                    ISNULL((SELECT SUM(s.CantidadActual) FROM Inventario.InventarioStock s WHERE s.ArticuloID = fl.ArticuloID), 0) AS StockDisponible
             FROM Facturacion.FacturaLineas fl
-            JOIN Catalogo.Articulos a ON a.ArticuloID = fl.ArticuloID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = fl.ArticuloID
             WHERE fl.FacturaID = @FacturaId AND fl.ArticuloID IS NOT NULL
             UNION ALL
             -- Artículos dentro de combos (cantidad facturada = cantidad combo × cantidad en combo)
-            SELECT ci.ArticuloID, a.SKU AS SkuArticulo, a.Nombre AS NombreArticulo,
+            SELECT ci.ArticuloID, a.Referencia AS SkuArticulo, a.Nombre AS NombreArticulo,
                    fl.Cantidad * ci.Cantidad AS CantidadFacturada,
                    ISNULL((SELECT SUM(s.CantidadActual) FROM Inventario.InventarioStock s WHERE s.ArticuloID = ci.ArticuloID), 0) AS StockDisponible
             FROM Facturacion.FacturaLineas fl
             JOIN Marketing.ComboItems ci ON ci.ComboID = fl.ComboID
-            JOIN Catalogo.Articulos a ON a.ArticuloID = ci.ArticuloID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = ci.ArticuloID
             WHERE fl.FacturaID = @FacturaId AND fl.ComboID IS NOT NULL
             ORDER BY SkuArticulo";
 
@@ -223,21 +223,21 @@ public class FacturacionService : IFacturacionService
 
         var lineasPT = await conn.QueryAsync<LineaPTCruda>("""
             -- Productos terminados directos en la factura
-            SELECT fl.ArticuloID, a.SKU, a.Nombre, fl.Cantidad,
+            SELECT fl.ArticuloID, a.Referencia AS SKU, a.Nombre, fl.Cantidad,
                    (SELECT TOP 1 r.RecetaID FROM Produccion.RecetaBOM r
                     WHERE r.ProductoTerminadoID = fl.ArticuloID AND r.Estado = 1) AS RecetaID
             FROM Facturacion.FacturaLineas fl
-            JOIN Catalogo.Articulos a ON a.ArticuloID = fl.ArticuloID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = fl.ArticuloID
             WHERE fl.FacturaID = @facturaId
               AND a.TipoArticuloID = 2
             UNION ALL
             -- Productos terminados dentro de combos
-            SELECT ci.ArticuloID, a.SKU, a.Nombre, fl.Cantidad * ci.Cantidad AS Cantidad,
+            SELECT ci.ArticuloID, a.Referencia AS SKU, a.Nombre, fl.Cantidad * ci.Cantidad AS Cantidad,
                    (SELECT TOP 1 r.RecetaID FROM Produccion.RecetaBOM r
                     WHERE r.ProductoTerminadoID = ci.ArticuloID AND r.Estado = 1) AS RecetaID
             FROM Facturacion.FacturaLineas fl
             JOIN Marketing.ComboItems ci ON ci.ComboID = fl.ComboID
-            JOIN Catalogo.Articulos a ON a.ArticuloID = ci.ArticuloID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = ci.ArticuloID
             WHERE fl.FacturaID = @facturaId
               AND fl.ComboID IS NOT NULL
               AND a.TipoArticuloID = 2
@@ -260,7 +260,7 @@ public class FacturacionService : IFacturacionService
                        ISNULL(u.Abreviatura, '') AS Unidad,
                        rd.CantidadRequerida * @cantidad AS CantidadRequerida
                 FROM Produccion.RecetaBOM_Detalle rd
-                JOIN catalogo.Articulos a ON a.ArticuloID = rd.InsumoID
+                JOIN Catalogo.Tarjetas a ON a.ArticuloID = rd.InsumoID
                 LEFT JOIN catalogo.UnidadesMedida u ON u.UnidadID = rd.UnidadID
                 WHERE rd.RecetaID = @recetaId
                 """, new { recetaId = linea.RecetaID, cantidad = linea.Cantidad });

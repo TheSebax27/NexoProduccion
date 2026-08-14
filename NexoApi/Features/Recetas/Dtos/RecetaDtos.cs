@@ -1,11 +1,10 @@
-﻿namespace NexoApi.Features.Recetas.Dtos;
+namespace NexoApi.Features.Recetas.Dtos;
 
 public record MaquinariaRecetaInput(int MaquinariaID, decimal? HorasEstimadasPorLote, string? Notas);
 
 public record DetalleRecetaRequest(
     int InsumoID,
     decimal CantidadRequerida,
-    int UnidadID,
     decimal PorcentajeMermaEstandar,
     int? CentroTrabajoID,
     int Orden
@@ -15,7 +14,6 @@ public record CrearRecetaRequest(
     int ProductoTerminadoID,
     string NombreReceta,
     decimal CantidadRendimientoBase,
-    int UnidadRendimientoID,
     List<DetalleRecetaRequest> Detalle,
     List<MaquinariaRecetaInput>? Maquinas = null
 );
@@ -23,7 +21,6 @@ public record CrearRecetaRequest(
 public record CrearNuevaVersionRequest(
     string NombreReceta,
     decimal CantidadRendimientoBase,
-    int UnidadRendimientoID,
     List<DetalleRecetaRequest> Detalle,
     List<MaquinariaRecetaInput>? Maquinas = null
 );

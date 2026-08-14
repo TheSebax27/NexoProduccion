@@ -1,4 +1,4 @@
-﻿@page "/inventario/bajas"
+@page "/inventario/bajas"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -6,84 +6,159 @@
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
-<PageTitle>Registrar Baja - NEXO</PageTitle>
+<PageTitle>Registrar Baja — NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
-    <MudText Typo="Typo.h5">Registrar Baja por Merma o Daño</MudText>
+<div class="inv-header">
+    <div class="inv-header__left">
+        <h1 class="inv-header__title">
+            <MudIcon Icon="@Icons.Material.Filled.RemoveCircleOutline" Class="inv-header__icon" />
+            Registrar Baja
+        </h1>
+        <p class="inv-header__sub">Descuenta stock por daño o pérdida (no por venta ni traspaso). Irreversible, queda en el Kardex.</p>
+    </div>
     <BotonFavorito Href="/inventario/bajas" Etiqueta="Registrar Baja" />
 </div>
-<InfoAyuda Texto="Descuenta stock definitivamente por daño o pérdida (no por venta ni traspaso). Solo se listan las bodegas donde el artículo elegido tiene stock. El movimiento queda registrado en el Kardex y no se puede deshacer." />
 
-<MudPaper Class="pa-6" MaxWidth="600px">
-    <MudSelect T="int?" Value="_articuloId" ValueChanged="OnArticuloCambiado"
-               Label="Artículo" Class="mb-4" Required="true"
-               Placeholder="Selecciona el artículo">
-        @foreach (var articulo in _articulos)
-        {
-            <MudSelectItem T="int?" Value="@((int?)articulo.ArticuloID)">@articulo.SKU - @articulo.Nombre</MudSelectItem>
-        }
-    </MudSelect>
+<InventarioNav />
 
-    <MudSelect T="int?" @bind-Value="_bodegaId" Label="Bodega" Class="mb-4" Required="true"
-               Disabled="@(_articuloId is null)"
-               Placeholder="Selecciona la bodega"
-               HelperText="@(_articuloId is not null && _bodegasConStock.Count == 0 ? "Este artículo no tiene stock en ninguna bodega." : null)">
-        @foreach (var bodega in _bodegasConStock)
-        {
-            <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
-        }
-    </MudSelect>
+<div class="inv-form-card">
+    @* ── Artículo ─────────────────────────────────────────────────── *@
+    <div class="inv-form-section">
+        <label class="inv-form-label">Artículo <span class="inv-req">*</span></label>
+        <MudSelect T="int?" Value="_articuloId" ValueChanged="OnArticuloCambiado"
+                   Variant="Variant.Outlined" Placeholder="Selecciona el artículo"
+                   Class="inv-form-field">
+            @foreach (var articulo in _articulos)
+            {
+                <MudSelectItem T="int?" Value="@((int?)articulo.ArticuloID)">
+                    @articulo.SKU — @articulo.Nombre
+                </MudSelectItem>
+            }
+        </MudSelect>
+    </div>
 
-    <div class="d-flex align-end mb-4" style="gap: 0.5rem;">
-        <MudNumericField @bind-Value="_cantidadPerdida" Label="Cantidad perdida"
-                         Min="0.01m" Format="N2" Required="true" Style="flex:1" />
-        @if (!string.IsNullOrWhiteSpace(ArticuloSeleccionado?.Unidad))
+    @* ── Info artículo si está seleccionado ───────────────────────── *@
+    @if (ArticuloSeleccionado is { } artInfo && _stockArticulo is { } s)
+    {
+        <div class="inv-art-info">
+            <div class="inv-art-info__item">
+                <span class="inv-muted">Presentación</span>
+                <strong>
+                    @(artInfo.PresentacionCodigo ?? "—")
+                    @if (artInfo.PresentacionNombre is not null)
+                    { <span class="inv-muted"> — @artInfo.PresentacionNombre</span> }
+                </strong>
+            </div>
+            <div class="inv-art-info__item">
+                <span class="inv-muted">Stock disponible</span>
+                <strong>@s.CantidadActual.ToString("N2") @(artInfo.PresentacionCodigo ?? "")</strong>
+            </div>
+        </div>
+    }
+
+    @* ── Bodega (solo con stock del artículo) ─────────────────────── *@
+    <div class="inv-form-section">
+        <label class="inv-form-label">Bodega <span class="inv-req">*</span></label>
+        <MudSelect T="int?" @bind-Value="_bodegaId"
+                   Variant="Variant.Outlined"
+                   Disabled="@(_articuloId is null)"
+                   Placeholder="@(_articuloId is not null && _bodegasConStock.Count == 0 ? "Sin stock en ninguna bodega" : "Selecciona la bodega")"
+                   HelperText="@(_articuloId is not null && _bodegasConStock.Count == 0 ? "Este artículo no tiene stock disponible." : null)"
+                   Class="inv-form-field">
+            @foreach (var bodega in _bodegasConStock)
+            {
+                var stockBodega = _stock.Where(s => s.ArticuloID == _articuloId && s.BodegaID == bodega.BodegaID).Sum(s => s.CantidadActual);
+                <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">
+                    @bodega.Nombre (@bodega.CentroCosto) — Stock: @stockBodega.ToString("N2")
+                </MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+
+    @* ── Cantidad ────────────────────────────────────────────────────── *@
+    <div class="inv-form-section">
+        <label class="inv-form-label">Cantidad perdida <span class="inv-req">*</span></label>
+        <div class="d-flex align-end" style="gap:.5rem;">
+            <MudNumericField @bind-Value="_cantidadPerdida" Min="0.01m" Format="N2"
+                             Variant="Variant.Outlined" Label="Cantidad" Style="flex:1" />
+            @if (!string.IsNullOrWhiteSpace(ArticuloSeleccionado?.PresentacionCodigo))
+            {
+                <span class="inv-unidad-label">@ArticuloSeleccionado!.PresentacionCodigo</span>
+            }
+        </div>
+        @if (_bodegaId.HasValue && _articuloId.HasValue)
         {
-            <MudText Style="margin-bottom:0.5rem; color:var(--n-text-2); font-size:0.9rem;">
-                @ArticuloSeleccionado!.Unidad
-            </MudText>
+            var stockBodega = _stock.Where(s => s.ArticuloID == _articuloId && s.BodegaID == _bodegaId).Sum(s => s.CantidadActual);
+            if (_cantidadPerdida > stockBodega && stockBodega > 0)
+            {
+                <div class="inv-alerta-cant">
+                    ⚠ La cantidad supera el stock disponible en esta bodega (@stockBodega.ToString("N2")).
+                </div>
+            }
         }
     </div>
 
-    <MudSelect T="int?" @bind-Value="_motivoId" Label="Motivo" Class="mb-4" Required="true"
-               Placeholder="Selecciona el motivo">
-        @foreach (var motivo in _motivos)
-        {
-            <MudSelectItem T="int?" Value="@((int?)motivo.MotivoID)">@motivo.Nombre</MudSelectItem>
-        }
-    </MudSelect>
+    @* ── Motivo ───────────────────────────────────────────────────── *@
+    <div class="inv-form-section">
+        <label class="inv-form-label">Motivo <span class="inv-req">*</span></label>
+        <MudSelect T="int?" @bind-Value="_motivoId" Variant="Variant.Outlined"
+                   Placeholder="Selecciona el motivo" Class="inv-form-field">
+            @foreach (var motivo in _motivos)
+            {
+                <MudSelectItem T="int?" Value="@((int?)motivo.MotivoID)">@motivo.Nombre</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
 
-    <MudTextField @bind-Value="_observacion" Label="Observación detallada" Lines="3"
-                  HelperText="Mínimo 5 caracteres. Se guarda tal cual en el KARDEX, sé explícito."
-                  Class="mb-4" Required="true" />
+    @* ── Observación ─────────────────────────────────────────────── *@
+    <div class="inv-form-section">
+        <label class="inv-form-label">Observación <span class="inv-req">*</span></label>
+        <MudTextField @bind-Value="_observacion" Lines="3" Variant="Variant.Outlined"
+                      HelperText="Mínimo 5 caracteres. Se guarda tal cual en el Kardex, sé explícito."
+                      Class="inv-form-field" />
+    </div>
 
-    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="RegistrarAsync"
-               Disabled="@(!FormularioValido || _guardando)" StartIcon="@Icons.Material.Filled.RemoveCircle">
-        @(_guardando ? "Registrando..." : "Registrar Baja")
-    </MudButton>
-</MudPaper>
+    @* ── Alerta irreversible ──────────────────────────────────────── *@
+    <div class="inv-baja-alerta">
+        <MudIcon Icon="@Icons.Material.Filled.Warning" Style="color:rgb(244,67,54); font-size:1rem; margin-right:.35rem;" />
+        Esta operación es <strong>irreversible</strong> y descuenta el stock permanentemente.
+    </div>
+
+    @* ── Acción ───────────────────────────────────────────────────── *@
+    <div class="inv-form-actions">
+        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="RegistrarAsync"
+                   Disabled="@(!FormularioValido || _guardando)"
+                   StartIcon="@Icons.Material.Filled.RemoveCircle" Size="Size.Large">
+            @(_guardando ? "Registrando…" : "Registrar Baja")
+        </MudButton>
+    </div>
+</div>
 
 @code {
-    private List<ArticuloItem> _articulos = new();
-    private List<BodegaItem> _bodegas = new();
-    private List<StockConsolidadoItem> _stock = new();
-    private List<MotivoPerdidaItem> _motivos = new();
+    private List<ArticuloItem>          _articulos = new();
+    private List<BodegaItem>            _bodegas   = new();
+    private List<StockConsolidadoItem>  _stock     = new();
+    private List<MotivoPerdidaItem>     _motivos   = new();
 
-    private int? _articuloId;
-    private int? _bodegaId;
-    private int? _motivoId;
+    private int?    _articuloId;
+    private int?    _bodegaId;
+    private int?    _motivoId;
+    private decimal _cantidadPerdida;
+    private string  _observacion = "";
+    private bool    _guardando;
 
     private ArticuloItem? ArticuloSeleccionado =>
         _articuloId.HasValue ? _articulos.FirstOrDefault(a => a.ArticuloID == _articuloId.Value) : null;
+
+    private StockConsolidadoItem? _stockArticulo =>
+        _articuloId.HasValue
+            ? _stock.Where(s => s.ArticuloID == _articuloId.Value).OrderByDescending(s => s.CantidadActual).FirstOrDefault()
+            : null;
 
     private List<BodegaItem> _bodegasConStock =>
         _articuloId is null
             ? new()
             : _bodegas.Where(b => _stock.Any(s => s.ArticuloID == _articuloId.Value && s.BodegaID == b.BodegaID && s.CantidadActual > 0)).ToList();
-
-    private decimal _cantidadPerdida;
-    private string _observacion = "";
-    private bool _guardando;
 
     private bool FormularioValido =>
         _articuloId.HasValue && _bodegaId.HasValue && _motivoId.HasValue &&
@@ -91,17 +166,15 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
-        var tareaBodegas   = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
-        var tareaStock     = ApiClient.GetAsync<List<StockConsolidadoItem>>("api/inventario/stock");
-        var tareaMotivos   = ApiClient.GetAsync<List<MotivoPerdidaItem>>("api/inventario/motivos-perdida");
-
-        await Task.WhenAll(tareaArticulos, tareaBodegas, tareaStock, tareaMotivos);
-
-        _articulos = await tareaArticulos ?? new();
-        _bodegas   = await tareaBodegas   ?? new();
-        _stock     = await tareaStock     ?? new();
-        _motivos   = await tareaMotivos   ?? new();
+        var t1 = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+        var t2 = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
+        var t3 = ApiClient.GetAsync<List<StockConsolidadoItem>>("api/inventario/stock");
+        var t4 = ApiClient.GetAsync<List<MotivoPerdidaItem>>("api/inventario/motivos-perdida");
+        await Task.WhenAll(t1, t2, t3, t4);
+        _articulos = await t1 ?? new();
+        _bodegas   = await t2 ?? new();
+        _stock     = await t3 ?? new();
+        _motivos   = await t4 ?? new();
     }
 
     private void OnArticuloCambiado(int? nuevoId)
@@ -116,14 +189,14 @@
         var articuloNombre = ArticuloSeleccionado?.Nombre ?? "?";
         var bodegaNombre   = _bodegas.FirstOrDefault(b => b.BodegaID == _bodegaId)?.Nombre ?? "?";
         var motivoNombre   = _motivos.FirstOrDefault(m => m.MotivoID == _motivoId)?.Nombre ?? "?";
-        var unidad         = ArticuloSeleccionado?.Unidad ?? "und";
+        var pres           = ArticuloSeleccionado?.PresentacionCodigo ?? "und";
 
         var confirmacion = await DialogService.ShowMessageBox(
             "Confirmar Baja de Inventario",
             $"Esta acción es IRREVERSIBLE y quedará registrada en el Kardex.\n\n" +
             $"Artículo: {articuloNombre}\n" +
             $"Bodega: {bodegaNombre}\n" +
-            $"Cantidad: {_cantidadPerdida:N2} {unidad}\n" +
+            $"Cantidad: {_cantidadPerdida:N2} {pres}\n" +
             $"Motivo: {motivoNombre}\n\n" +
             "¿Confirmar la baja?",
             yesText: "Sí, registrar baja",
@@ -134,11 +207,12 @@
         _guardando = true;
         try
         {
-            var request = new RegistrarBajaRequest(_articuloId!.Value, _bodegaId!.Value, null, _cantidadPerdida, _motivoId!.Value, _observacion.Trim());
-            var resultado = await ApiClient.PostAsync<RegistrarBajaRequest, RegistrarBajaResponse>("api/inventario/bajas", request);
+            var request = new RegistrarBajaRequest(
+                _articuloId!.Value, _bodegaId!.Value, null, _cantidadPerdida, _motivoId!.Value, _observacion.Trim());
+            var resultado = await ApiClient.PostAsync<RegistrarBajaRequest, RegistrarBajaResponse>(
+                "api/inventario/bajas", request);
 
             Snackbar.Add($"Baja registrada. Código: {resultado!.CodigoBaja}", Severity.Success);
-
             _cantidadPerdida = 0;
             _observacion = "";
         }

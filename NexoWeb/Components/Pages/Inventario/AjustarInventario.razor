@@ -1,4 +1,4 @@
-﻿@page "/inventario/ajustes"
+@page "/inventario/ajustes"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -6,122 +6,143 @@
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
-<PageTitle>Ajuste de Inventario - NEXO</PageTitle>
+<PageTitle>Ajuste de Inventario — NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
-    <MudText Typo="Typo.h5">Ajuste de Inventario</MudText>
+<div class="inv-header">
+    <div class="inv-header__left">
+        <h1 class="inv-header__title">
+            <MudIcon Icon="@Icons.Material.Filled.Balance" Class="inv-header__icon" />
+            Ajuste de Inventario
+        </h1>
+        <p class="inv-header__sub">Carga stock inicial o corrige la cantidad tras un conteo físico. Queda registrado en el Kardex.</p>
+    </div>
     <BotonFavorito Href="/inventario/ajustes" Etiqueta="Ajuste de Inventario" />
 </div>
-<InfoAyuda Texto="Usa esta pantalla para cargar el stock inicial de un artículo (por ejemplo, al arrancar el sistema) o para corregir la cantidad tras un conteo físico. El movimiento queda registrado en el Kardex como 'Ajuste de Inventario' y afecta el costo promedio del artículo." />
 
-<MudPaper Class="pa-6" MaxWidth="600px">
-    <MudSelect T="int?" @bind-Value="_articuloId" @bind-Value:after="OnArticuloCambiado"
-               Label="Artículo" Class="mb-4" Required="true" Placeholder="Selecciona el artículo">
-        @foreach (var articulo in _articulos)
-        {
-            <MudSelectItem T="int?" Value="@((int?)articulo.ArticuloID)">@articulo.SKU - @articulo.Nombre (@articulo.TipoArticulo)</MudSelectItem>
-        }
-    </MudSelect>
+<InventarioNav />
 
-    <MudSelect T="int?" @bind-Value="_bodegaId" Label="Bodega" Class="mb-4" Required="true"
-               Placeholder="Selecciona la bodega">
-        @foreach (var bodega in _bodegas)
-        {
-            <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
-        }
-    </MudSelect>
+<div class="inv-form-card">
+    @* ── Artículo ─────────────────────────────────────────────────── *@
+    <div class="inv-form-section">
+        <label class="inv-form-label">Artículo <span class="inv-req">*</span></label>
+        <MudSelect T="int?" @bind-Value="_articuloId" @bind-Value:after="OnArticuloCambiado"
+                   Variant="Variant.Outlined" Placeholder="Selecciona el artículo"
+                   Class="inv-form-field">
+            @foreach (var articulo in _articulos)
+            {
+                <MudSelectItem T="int?" Value="@((int?)articulo.ArticuloID)">
+                    @articulo.SKU — @articulo.Nombre (@articulo.TipoArticulo)
+                </MudSelectItem>
+            }
+        </MudSelect>
+    </div>
 
-    @* ── Sección de cantidad: adapta según el tipo de unidad del artículo ── *@
-    @if (ArticuloSeleccionado is { } art)
-    {
-        @if (!_modoManual && art.Unidad == "cja" && art.UnidadesPorEmbalaje is > 0)
+    @* ── Bodega ───────────────────────────────────────────────────── *@
+    <div class="inv-form-section">
+        <label class="inv-form-label">Bodega <span class="inv-req">*</span></label>
+        <MudSelect T="int?" @bind-Value="_bodegaId" Variant="Variant.Outlined"
+                   Placeholder="Selecciona la bodega" Class="inv-form-field">
+            @foreach (var bodega in _bodegas)
+            {
+                <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">
+                    @bodega.Nombre (@bodega.CentroCosto)
+                </MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+
+    @* ── Cantidad: adapta según tipo de presentación del artículo ── *@
+    <div class="inv-form-section">
+        <label class="inv-form-label">Cantidad a agregar <span class="inv-req">*</span></label>
+
+        @if (ArticuloSeleccionado is { } art && !_modoManual && art.EsFraccionado)
         {
-            @* Modo caja: inputs separados cajas + unidades *@
-            <div class="d-flex align-end mb-1" style="gap: 0.75rem;">
+            @* Modo caja/fraccionado: inputs separados *@
+            <div class="inv-cant-frac">
                 <MudNumericField @bind-Value="_cajas" @bind-Value:after="RecalcularDesdeCajas"
-                                 Label="Cajas" Min="0m" Format="N0" Style="flex:1" />
+                                 Label="Cajas" Min="0m" Format="N0" Variant="Variant.Outlined" />
                 <MudNumericField @bind-Value="_unidades" @bind-Value:after="RecalcularDesdeCajas"
                                  Label="Unidades sueltas" Min="0m"
-                                 HelperText="@($"(máx {art.UnidadesPorEmbalaje - 1:N0} por caja)")"
-                                 Max="@(art.UnidadesPorEmbalaje!.Value - 1)"
-                                 Format="N0" Style="flex:1" />
+                                 HelperText="@($"máx {art.Fracciones!.Value - 1:N0} por caja")"
+                                 Max="@(art.Fracciones!.Value - 1)"
+                                 Format="N0" Variant="Variant.Outlined" />
             </div>
-            <div class="d-flex align-center justify-space-between mb-3">
-                <MudText Typo="Typo.caption" Style="color:var(--n-text-3);">
-                    Total: @(_cantidad.ToString("N5")) cajas = @((_cantidad * art.UnidadesPorEmbalaje.Value).ToString("N0")) unidades
-                </MudText>
-                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
-                           OnClick="@(() => { _modoManual = true; })" Style="font-size:0.75rem;">
-                    Cambiar a otro valor manualmente
-                </MudButton>
+            <div class="inv-cant-total">
+                Total: <strong>@(_cantidad.ToString("N5"))</strong> cajas =
+                <strong>@((_cantidad * art.Fracciones!.Value).ToString("N0"))</strong> unidades
             </div>
+            <button class="inv-modo-link" @onclick="@(() => _modoManual = true)">
+                Cambiar a valor manual →
+            </button>
         }
-        else if (!_modoManual)
+        else if (ArticuloSeleccionado is { } art2 && !_modoManual)
         {
-            @* Modo normal con unidad conocida *@
-            <div class="d-flex align-end mb-1" style="gap: 0.5rem;">
-                <MudNumericField @bind-Value="_cantidad" Label="Cantidad a agregar" Min="0.001m" Format="N3"
-                                 Class="flex-1" Required="true" />
-                @if (!string.IsNullOrWhiteSpace(art.Unidad))
+            @* Modo normal con presentación conocida *@
+            <div class="d-flex align-end" style="gap:.5rem;">
+                <MudNumericField @bind-Value="_cantidad" Label="Cantidad" Min="0.001m"
+                                 Format="N3" Variant="Variant.Outlined" Class="flex-1" />
+                @if (!string.IsNullOrWhiteSpace(art2.PresentacionCodigo))
                 {
-                    <MudText Style="margin-bottom:0.5rem; color:var(--n-text-2); font-size:0.9rem;">@art.Unidad</MudText>
+                    <span class="inv-unidad-label">@art2.PresentacionCodigo</span>
                 }
             </div>
-            <div class="d-flex align-center justify-space-between mb-3">
-                <span></span>
-                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
-                           OnClick="@(() => { _modoManual = true; })" Style="font-size:0.75rem;">
-                    Cambiar a otro valor manualmente
-                </MudButton>
-            </div>
+            <button class="inv-modo-link" @onclick="@(() => _modoManual = true)">
+                Cambiar a valor manual →
+            </button>
         }
         else
         {
-            @* Modo manual (decimal libre) *@
-            <MudNumericField @bind-Value="_cantidad" Label="Cantidad a agregar (valor manual)" Min="0.000001m"
-                             Format="N6" Class="mb-1" Required="true"
-                             HelperText="@($"Escribe el valor decimal exacto en unidad base ({art.Unidad ?? "und"})")" />
-            <div class="d-flex align-center justify-space-between mb-3">
-                <span></span>
-                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Secondary"
-                           OnClick="VolveModoFriendly" Style="font-size:0.75rem;">
-                    Volver al modo normal
-                </MudButton>
-            </div>
+            @* Modo manual (decimal libre) o sin artículo *@
+            <MudNumericField @bind-Value="_cantidad"
+                             Label="@(ArticuloSeleccionado is null ? "Cantidad" : "Cantidad (manual)")"
+                             Min="0.000001m" Format="N6" Variant="Variant.Outlined"
+                             HelperText="@(ArticuloSeleccionado is { } a ? $"Valor decimal en {a.PresentacionCodigo ?? "unidad base"}" : null)" />
+            @if (ArticuloSeleccionado is not null)
+            {
+                <button class="inv-modo-link" @onclick="VolveModoFriendly">
+                    ← Volver al modo normal
+                </button>
+            }
         }
-    }
-    else
-    {
-        @* Sin artículo seleccionado: campo genérico *@
-        <MudNumericField @bind-Value="_cantidad" Label="Cantidad a agregar" Min="0.01m" Format="N2" Class="mb-4" Required="true" />
-    }
+    </div>
 
-    <MudMoneyField @bind-Value="_costoUnitario" Label="Costo Unitario" Required="true"
-                   HelperText="Se usa para recalcular el costo promedio del articulo." Class="mb-4" />
+    @* ── Costo unitario ───────────────────────────────────────────── *@
+    <div class="inv-form-section">
+        <label class="inv-form-label">Costo unitario <span class="inv-req">*</span></label>
+        <MudMoneyField @bind-Value="_costoUnitario"
+                       HelperText="Se usa para recalcular el costo promedio del artículo."
+                       Class="inv-form-field" />
+    </div>
 
-    <MudTextField @bind-Value="_motivo" Label="Motivo del ajuste" Lines="3"
-                  HelperText="Minimo 5 caracteres. Ej: 'Carga inicial de stock al arrancar el sistema.'"
-                  Class="mb-4" Required="true" />
+    @* ── Motivo ───────────────────────────────────────────────────── *@
+    <div class="inv-form-section">
+        <label class="inv-form-label">Motivo del ajuste <span class="inv-req">*</span></label>
+        <MudTextField @bind-Value="_motivo" Lines="3" Variant="Variant.Outlined"
+                      HelperText="Mínimo 5 caracteres. Ej: 'Carga inicial de stock al arrancar el sistema.'"
+                      Class="inv-form-field" />
+    </div>
 
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="RegistrarAsync"
-               Disabled="@(!FormularioValido || _guardando)" StartIcon="@Icons.Material.Filled.AddCircle">
-        @(_guardando ? "Registrando..." : "Registrar Ajuste")
-    </MudButton>
-</MudPaper>
+    @* ── Acción ───────────────────────────────────────────────────── *@
+    <div class="inv-form-actions">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="RegistrarAsync"
+                   Disabled="@(!FormularioValido || _guardando)"
+                   StartIcon="@Icons.Material.Filled.AddCircle" Size="Size.Large">
+            @(_guardando ? "Registrando…" : "Registrar Ajuste")
+        </MudButton>
+    </div>
+</div>
 
 @code {
     private List<ArticuloItem> _articulos = new();
-    private List<BodegaItem> _bodegas = new();
+    private List<BodegaItem>   _bodegas   = new();
 
-    private int? _articuloId;
-    private int? _bodegaId;
+    private int?    _articuloId;
+    private int?    _bodegaId;
     private decimal _cantidad;
     private decimal _costoUnitario;
-    private string _motivo = "";
-    private bool _guardando;
-
-    // Modo de entrada de cantidad
-    private bool _modoManual;
+    private string  _motivo    = "";
+    private bool    _guardando;
+    private bool    _modoManual;
     private decimal _cajas;
     private decimal _unidades;
 
@@ -134,91 +155,76 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
-        var tareaBodegas = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
-
-        await Task.WhenAll(tareaArticulos, tareaBodegas);
-
-        _articulos = await tareaArticulos ?? new();
-        _bodegas = await tareaBodegas ?? new();
+        var t1 = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+        var t2 = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
+        await Task.WhenAll(t1, t2);
+        _articulos = await t1 ?? new();
+        _bodegas   = await t2 ?? new();
     }
 
     private void OnArticuloCambiado()
     {
-        // Resetear modo al cambiar de artículo
         _modoManual = false;
-        _cajas = 0;
-        _unidades = 0;
-        _cantidad = 0;
+        _cajas = 0; _unidades = 0; _cantidad = 0;
     }
 
     private void RecalcularDesdeCajas()
     {
         var art = ArticuloSeleccionado;
-        if (art?.UnidadesPorEmbalaje is > 0)
-            _cantidad = _cajas + _unidades / art.UnidadesPorEmbalaje.Value;
-        else
-            _cantidad = _cajas;
+        _cantidad = art?.Fracciones is > 0
+            ? _cajas + _unidades / art.Fracciones.Value
+            : _cajas;
     }
 
     private void VolveModoFriendly()
     {
         _modoManual = false;
         var art = ArticuloSeleccionado;
-        if (art?.Unidad == "cja" && art.UnidadesPorEmbalaje is > 0)
+        // EsFraccionado (UnidadesPorEmbalaje > 0) en lugar de Unidad == "cja"
+        if (art?.EsFraccionado == true)
         {
-            _cajas = Math.Floor(_cantidad);
-            _unidades = Math.Round((_cantidad - _cajas) * art.UnidadesPorEmbalaje.Value, 0);
+            _cajas    = Math.Floor(_cantidad);
+            _unidades = Math.Round((_cantidad - _cajas) * art.Fracciones!.Value, 0);
         }
     }
 
     private async Task RegistrarAsync()
     {
-        var art = ArticuloSeleccionado;
-        var articuloNombre = art?.Nombre ?? "?";
+        var art         = ArticuloSeleccionado;
         var bodegaNombre = _bodegas.FirstOrDefault(b => b.BodegaID == _bodegaId)?.Nombre ?? "?";
-
-        var resumenCantidad = (art?.Unidad == "cja" && art.UnidadesPorEmbalaje is > 0)
-            ? $"{_cantidad:N5} cajas ({_cantidad * art.UnidadesPorEmbalaje!.Value:N0} und)"
-            : $"{_cantidad:N3} {art?.Unidad ?? "und"}";
+        // EsFraccionado en lugar de Unidad == "cja"
+        var resumenCantidad = art?.EsFraccionado == true
+            ? $"{_cantidad:N5} cajas ({_cantidad * art.Fracciones!.Value:N0} und)"
+            : $"{_cantidad:N3} {art?.PresentacionCodigo ?? "und"}";
 
         var confirmacion = await DialogService.ShowMessageBox(
             "Confirmar Ajuste de Inventario",
-            $"Esta accion quedara registrada en el Kardex y no se puede deshacer directamente.\n\n" +
-            $"Articulo: {articuloNombre}\n" +
+            $"Esta acción quedará registrada en el Kardex y no se puede deshacer directamente.\n\n" +
+            $"Artículo: {art?.Nombre ?? "?"}\n" +
             $"Bodega: {bodegaNombre}\n" +
             $"Cantidad a agregar: {resumenCantidad}\n" +
             $"Costo unitario: {_costoUnitario:C2}\n\n" +
             "¿Confirmar el ajuste?",
-            yesText: "Si, registrar ajuste",
+            yesText: "Sí, registrar ajuste",
             noText: "Cancelar");
 
-        if (confirmacion != true)
-            return;
+        if (confirmacion != true) return;
 
         _guardando = true;
-
         try
         {
-            var request = new AjustarInventarioRequest(_articuloId!.Value, _bodegaId!.Value, _cantidad, _costoUnitario, _motivo.Trim());
-            var resultado = await ApiClient.PostAsync<AjustarInventarioRequest, AjustarInventarioResponse>("api/inventario/ajustes", request);
+            var request = new AjustarInventarioRequest(
+                _articuloId!.Value, _bodegaId!.Value, _cantidad, _costoUnitario, _motivo.Trim());
+            var resultado = await ApiClient.PostAsync<AjustarInventarioRequest, AjustarInventarioResponse>(
+                "api/inventario/ajustes", request);
 
-            Snackbar.Add($"Ajuste registrado correctamente. Codigo: {resultado!.CodigoAjuste}. Nuevo saldo: {resultado.NuevoSaldo:N3}", Severity.Success);
+            Snackbar.Add(
+                $"Ajuste registrado. Código: {resultado!.CodigoAjuste}. Nuevo saldo: {resultado.NuevoSaldo:N3}",
+                Severity.Success);
 
-            _cantidad = 0;
-            _cajas = 0;
-            _unidades = 0;
-            _costoUnitario = 0;
-            _motivo = "";
-            _modoManual = false;
+            _cantidad = 0; _cajas = 0; _unidades = 0; _costoUnitario = 0; _motivo = ""; _modoManual = false;
         }
-        catch (HttpRequestException ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
-        finally
-        {
-            _guardando = false;
-        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _guardando = false; }
     }
 }

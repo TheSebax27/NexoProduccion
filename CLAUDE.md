@@ -1383,3 +1383,45 @@ Link en NavMenu bajo Administración (ícono SyncAlt).
 ### 38.7 — Agente de prueba (BD local)
 
 `AgenteSyncID = 4`, CentroCosto = 1 (central), key = `NexoSyncTest_CentroCentral_2026`. Los agentes anteriores (ID 2 y 3) se desactivaron para evitar conflictos. **Este agente es solo para desarrollo local** — en producción usar siempre el key generado desde la UI.
+
+---
+
+## 39. Reglas de optimización de contexto (permanentes)
+
+**NO explorar todo el proyecto para tareas localizadas.**
+
+### Estrategia obligatoria
+
+Antes de leer archivos:
+1. Identificar exactamente qué funcionalidad se va a modificar.
+2. Buscar referencias con Grep/Glob antes de abrir archivos.
+3. Determinar los archivos directamente afectados.
+4. Leer únicamente esos archivos (secciones relevantes si son grandes).
+5. Solo leer archivos adicionales si hay una dependencia real que lo requiera.
+
+### Cadena de dependencia
+
+`Tarea → Referencia → Archivo necesario → Dependencia → Siguiente archivo necesario`
+
+### Para cambios que afectan varias capas
+
+Analizar impacto primero, luego trabajar bloque a bloque:
+- Base de datos → Backend/API → Servicios → DTOs/Modelos → Frontend
+
+No releer toda la arquitectura al empezar cada bloque.
+
+### Archivos grandes
+
+Localizar primero la clase/método/consulta relevante; leer solo esa sección.
+
+### Verificación
+
+Después de modificar: verificar únicamente las referencias afectadas y compilar el módulo afectado. No volver a analizar todo el repositorio salvo error que lo requiera.
+
+### Excepción
+
+Solo exploración amplia cuando:
+- La tarea explícitamente lo requiere.
+- Hay dependencias desconocidas que impiden el cambio de forma segura.
+- El cambio afecta transversalmente múltiples módulos sin mapa previo.
+- Una búsqueda localizada no permite determinar el impacto.

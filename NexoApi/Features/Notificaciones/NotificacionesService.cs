@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Dapper;
 using NexoApi.Common.Data;
 using NexoApi.Features.Crm;
@@ -66,7 +66,7 @@ public class NotificacionesService : INotificacionesService
                 FROM Inventario.vw_StockConsolidado s
                 GROUP BY s.ArticuloID
             ) g
-            JOIN Catalogo.Articulos a ON a.ArticuloID = g.ArticuloID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = g.ArticuloID
             WHERE a.StockMinimo > 0
               AND g.TotalStock > 0
               AND g.TotalStock <= a.StockMinimo

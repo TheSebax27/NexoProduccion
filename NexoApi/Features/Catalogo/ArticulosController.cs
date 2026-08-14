@@ -23,6 +23,13 @@ public class ArticulosController : ControllerBase
         return Ok(await _service.ListarArticulosAsync(tipoArticuloId, texto));
     }
 
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<ArticuloItem>> ObtenerPorId(int id)
+    {
+        var articulo = await _service.ObtenerArticuloAsync(id);
+        return articulo is null ? NotFound() : Ok(articulo);
+    }
+
     [HttpPost]
     [Authorize]
     public async Task<ActionResult> Crear(CrearArticuloRequest request)

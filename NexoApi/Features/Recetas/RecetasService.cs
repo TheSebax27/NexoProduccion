@@ -35,16 +35,15 @@ public class RecetasService : IRecetasService
         {
             const string sqlHeader = @"
                 INSERT INTO Produccion.RecetaBOM
-                    (ProductoTerminadoID, NombreReceta, Version, CantidadRendimientoBase, UnidadRendimientoID)
+                    (ProductoTerminadoID, NombreReceta, Version, CantidadRendimientoBase)
                 OUTPUT INSERTED.RecetaID
-                VALUES (@ProductoTerminadoID, @NombreReceta, 1, @CantidadRendimientoBase, @UnidadRendimientoID)";
+                VALUES (@ProductoTerminadoID, @NombreReceta, 1, @CantidadRendimientoBase)";
 
             var recetaId = await connection.ExecuteScalarAsync<int>(sqlHeader, new
             {
                 r.ProductoTerminadoID,
                 r.NombreReceta,
-                r.CantidadRendimientoBase,
-                r.UnidadRendimientoID
+                r.CantidadRendimientoBase
             }, transaction);
 
             await InsertarDetalleAsync(connection, transaction, recetaId, r.Detalle);
@@ -89,17 +88,16 @@ public class RecetasService : IRecetasService
 
             const string sqlHeader = @"
                 INSERT INTO Produccion.RecetaBOM
-                    (ProductoTerminadoID, NombreReceta, Version, CantidadRendimientoBase, UnidadRendimientoID)
+                    (ProductoTerminadoID, NombreReceta, Version, CantidadRendimientoBase)
                 OUTPUT INSERTED.RecetaID
-                VALUES (@ProductoTerminadoID, @NombreReceta, @NuevaVersion, @CantidadRendimientoBase, @UnidadRendimientoID)";
+                VALUES (@ProductoTerminadoID, @NombreReceta, @NuevaVersion, @CantidadRendimientoBase)";
 
             var nuevaRecetaId = await connection.ExecuteScalarAsync<int>(sqlHeader, new
             {
                 baseInfo.ProductoTerminadoID,
                 r.NombreReceta,
                 NuevaVersion = baseInfo.VersionActual + 1,
-                r.CantidadRendimientoBase,
-                r.UnidadRendimientoID
+                r.CantidadRendimientoBase
             }, transaction);
 
             await InsertarDetalleAsync(connection, transaction, nuevaRecetaId, r.Detalle);
@@ -125,9 +123,9 @@ public class RecetasService : IRecetasService
     {
         const string sqlDetalle = @"
             INSERT INTO Produccion.RecetaBOM_Detalle
-                (RecetaID, InsumoID, CantidadRequerida, UnidadID, PorcentajeMermaEstandar, CentroTrabajoID, Orden)
+                (RecetaID, InsumoID, CantidadRequerida, PorcentajeMermaEstandar, CentroTrabajoID, Orden)
             VALUES
-                (@RecetaID, @InsumoID, @CantidadRequerida, @UnidadID, @PorcentajeMermaEstandar, @CentroTrabajoID, @Orden)";
+                (@RecetaID, @InsumoID, @CantidadRequerida, @PorcentajeMermaEstandar, @CentroTrabajoID, @Orden)";
 
         foreach (var linea in detalle)
         {
@@ -136,7 +134,6 @@ public class RecetasService : IRecetasService
                 RecetaID = recetaId,
                 linea.InsumoID,
                 linea.CantidadRequerida,
-                linea.UnidadID,
                 linea.PorcentajeMermaEstandar,
                 linea.CentroTrabajoID,
                 linea.Orden
@@ -163,10 +160,9 @@ public class RecetasService : IRecetasService
 
         const string sql = @"
             SELECT r.RecetaID, a.Nombre AS ProductoTerminado, r.NombreReceta, r.Version,
-                   r.CantidadRendimientoBase, u.Abreviatura AS UnidadRendimiento, r.Estado
+                   r.CantidadRendimientoBase, ISNULL(a.PresentacionCodigo, '') AS UnidadRendimiento, r.Estado
             FROM Produccion.RecetaBOM r
-            JOIN Catalogo.Articulos a ON a.ArticuloID = r.ProductoTerminadoID
-            JOIN Catalogo.UnidadesMedida u ON u.UnidadID = r.UnidadRendimientoID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = r.ProductoTerminadoID
             WHERE (@ProductoTerminadoId IS NULL OR r.ProductoTerminadoID = @ProductoTerminadoId)
               AND (@SoloActivas = 0 OR r.Estado = 1)
             ORDER BY a.Nombre, r.Version DESC";
@@ -184,10 +180,9 @@ public class RecetasService : IRecetasService
 
         const string sql = @"
             SELECT d.RecetaDetalleID, d.InsumoID, a.Nombre AS Insumo, d.CantidadRequerida,
-                   u.Abreviatura AS Unidad, d.PorcentajeMermaEstandar, d.CentroTrabajoID, d.Orden
+                   ISNULL(a.PresentacionCodigo, '') AS Unidad, d.PorcentajeMermaEstandar, d.CentroTrabajoID, d.Orden
             FROM Produccion.RecetaBOM_Detalle d
-            JOIN Catalogo.Articulos a ON a.ArticuloID = d.InsumoID
-            JOIN Catalogo.UnidadesMedida u ON u.UnidadID = d.UnidadID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = d.InsumoID
             WHERE d.RecetaID = @RecetaId
             ORDER BY d.Orden";
 
@@ -216,7 +211,7 @@ public class RecetasService : IRecetasService
             SELECT TOP 1 a.Nombre
             FROM Produccion.RecetaBOM r
             JOIN Produccion.RecetaBOM_Detalle bd ON bd.RecetaID = r.RecetaID
-            JOIN Catalogo.Articulos a ON a.ArticuloID = r.ProductoTerminadoID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = r.ProductoTerminadoID
             WHERE r.Estado = 1
               AND (@RecetaBaseId IS NULL OR r.RecetaID <> @RecetaBaseId)
               AND r.ProductoTerminadoID IN @InsumoIds

@@ -74,16 +74,20 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xBcnRpY3Vsb0RpYWxvZy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Produccion/NexoWeb/Components/Pages/Catalogo/Articulos.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xBcnRpY3Vsb3MucmF6b3I=
-build_metadata.AdditionalFiles.CssScope = 
-
 [C:/Produccion/NexoWeb/Components/Pages/Catalogo/BodegaDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xCb2RlZ2FEaWFsb2cucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Pages/Catalogo/Bodegas.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xCb2RlZ2FzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Catalogo/CatalogoCamposDialog.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xDYXRhbG9nb0NhbXBvc0RpYWxvZy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Catalogo/CatalogosMaestros.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xDYXRhbG9nb3NNYWVzdHJvcy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Pages/Catalogo/CentroCostoDialog.razor]
@@ -106,8 +110,16 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xDcmVhck1hcGVvRGlhbG9nLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Produccion/NexoWeb/Components/Pages/Catalogo/GrupoMenorDialog.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xHcnVwb01lbm9yRGlhbG9nLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Produccion/NexoWeb/Components/Pages/Catalogo/MapeoArticulosVisions.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xNYXBlb0FydGljdWxvc1Zpc2lvbnMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Catalogo/PresentacionDialog.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xQcmVzZW50YWNpb25EaWFsb2cucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Pages/Catalogo/ProveedorDialog.razor]
@@ -210,22 +222,6 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xGYWN0dXJhY2lvblxHZXN0aW9uRmFjdHVyYURpYWxvZy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Produccion/NexoWeb/Components/Pages/Inventario/AjustarInventario.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xJbnZlbnRhcmlvXEFqdXN0YXJJbnZlbnRhcmlvLnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
-
-[C:/Produccion/NexoWeb/Components/Pages/Inventario/ConsultaKardex.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xJbnZlbnRhcmlvXENvbnN1bHRhS2FyZGV4LnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
-
-[C:/Produccion/NexoWeb/Components/Pages/Inventario/ConsultaStock.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xJbnZlbnRhcmlvXENvbnN1bHRhU3RvY2sucmF6b3I=
-build_metadata.AdditionalFiles.CssScope = 
-
-[C:/Produccion/NexoWeb/Components/Pages/Inventario/RegistrarBaja.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xJbnZlbnRhcmlvXFJlZ2lzdHJhckJhamEucmF6b3I=
-build_metadata.AdditionalFiles.CssScope = 
-
 [C:/Produccion/NexoWeb/Components/Pages/Logistica/AnularDespachoDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xMb2dpc3RpY2FcQW51bGFyRGVzcGFjaG9EaWFsb2cucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
@@ -306,16 +302,8 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm9kdWNjaW9uXEhpc3RvcmlhbE1hbnRlbmltaWVudG9EaWFsb2cucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Produccion/NexoWeb/Components/Pages/Produccion/ListaOrdenes.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm9kdWNjaW9uXExpc3RhT3JkZW5lcy5yYXpvcg==
-build_metadata.AdditionalFiles.CssScope = 
-
 [C:/Produccion/NexoWeb/Components/Pages/Produccion/MantenimientoMaquinariaDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm9kdWNjaW9uXE1hbnRlbmltaWVudG9NYXF1aW5hcmlhRGlhbG9nLnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
-
-[C:/Produccion/NexoWeb/Components/Pages/Produccion/Maquinaria.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm9kdWNjaW9uXE1hcXVpbmFyaWEucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Pages/Produccion/MaquinariaDialog.razor]
@@ -324,10 +312,6 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Produccion/NexoWeb/Components/Pages/Produccion/RecetaDetalleDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm9kdWNjaW9uXFJlY2V0YURldGFsbGVEaWFsb2cucmF6b3I=
-build_metadata.AdditionalFiles.CssScope = 
-
-[C:/Produccion/NexoWeb/Components/Pages/Produccion/Recetas.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm9kdWNjaW9uXFJlY2V0YXMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Pages/Produccion/VerificarStockDialog.razor]
@@ -422,10 +406,6 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUcmFzcGFzb3NcQ3JlYXJUcmFzcGFzb0RpYWxvZy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Produccion/NexoWeb/Components/Pages/Traspasos/ListaTraspasos.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUcmFzcGFzb3NcTGlzdGFUcmFzcGFzb3MucmF6b3I=
-build_metadata.AdditionalFiles.CssScope = 
-
 [C:/Produccion/NexoWeb/Components/Pages/Traspasos/TraspasoDetalleDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUcmFzcGFzb3NcVHJhc3Bhc29EZXRhbGxlRGlhbG9nLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -478,6 +458,18 @@ build_metadata.AdditionalFiles.CssScope = b-f4cvqfw4dp
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBdXRoXExvZ2luLnJhem9y
 build_metadata.AdditionalFiles.CssScope = b-tcjkolkcds
 
+[C:/Produccion/NexoWeb/Components/Pages/Catalogo/Articulos.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xBcnRpY3Vsb3MucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-jfqdycf9n1
+
+[C:/Produccion/NexoWeb/Components/Pages/Catalogo/CrearArticulo.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xDcmVhckFydGljdWxvLnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-b4tq0ycjok
+
+[C:/Produccion/NexoWeb/Components/Pages/Catalogo/EditarArticulo.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xFZGl0YXJBcnRpY3Vsby5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = b-remptfntk2
+
 [C:/Produccion/NexoWeb/Components/Pages/Crm/Oportunidades.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDcm1cT3BvcnR1bmlkYWRlcy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = b-gvrdtdo5pd
@@ -486,6 +478,46 @@ build_metadata.AdditionalFiles.CssScope = b-gvrdtdo5pd
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xEYXNoYm9hcmRcRGFzaGJvYXJkLnJhem9y
 build_metadata.AdditionalFiles.CssScope = b-p6pn72qmbn
 
+[C:/Produccion/NexoWeb/Components/Pages/Inventario/AjustarInventario.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xJbnZlbnRhcmlvXEFqdXN0YXJJbnZlbnRhcmlvLnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-1z6m5zxnpo
+
+[C:/Produccion/NexoWeb/Components/Pages/Inventario/ConsultaKardex.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xJbnZlbnRhcmlvXENvbnN1bHRhS2FyZGV4LnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-sfm1xd6dro
+
+[C:/Produccion/NexoWeb/Components/Pages/Inventario/ConsultaStock.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xJbnZlbnRhcmlvXENvbnN1bHRhU3RvY2sucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-9r0i9du42u
+
+[C:/Produccion/NexoWeb/Components/Pages/Inventario/RegistrarBaja.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xJbnZlbnRhcmlvXFJlZ2lzdHJhckJhamEucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-id8rropp2v
+
+[C:/Produccion/NexoWeb/Components/Pages/Produccion/ListaOrdenes.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm9kdWNjaW9uXExpc3RhT3JkZW5lcy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = b-qr4ryhivn2
+
+[C:/Produccion/NexoWeb/Components/Pages/Produccion/Maquinaria.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm9kdWNjaW9uXE1hcXVpbmFyaWEucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-xnq0eghygg
+
+[C:/Produccion/NexoWeb/Components/Pages/Produccion/Recetas.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm9kdWNjaW9uXFJlY2V0YXMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-udc5bseo7i
+
 [C:/Produccion/NexoWeb/Components/Pages/Proyectos/GestionProyectoDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm95ZWN0b3NcR2VzdGlvblByb3llY3RvRGlhbG9nLnJhem9y
 build_metadata.AdditionalFiles.CssScope = b-qd8h25l662
+
+[C:/Produccion/NexoWeb/Components/Pages/Traspasos/ListaTraspasos.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUcmFzcGFzb3NcTGlzdGFUcmFzcGFzb3MucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-kwr3x9naik
+
+[C:/Produccion/NexoWeb/Components/Shared/InventarioNav.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcSW52ZW50YXJpb05hdi5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = b-u40hnt56pv
+
+[C:/Produccion/NexoWeb/Components/Shared/ProduccionNav.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcUHJvZHVjY2lvbk5hdi5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = b-sbn7lccl27

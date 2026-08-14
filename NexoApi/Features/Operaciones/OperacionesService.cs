@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using NexoApi.Common.Data;
 using NexoApi.Features.Operaciones.Dtos;
 
@@ -47,7 +47,7 @@ public class OperacionesService : IOperacionesService
                    ISNULL((
                        SELECT SUM(dd.Cantidad * a.PrecioVenta)
                        FROM Logistica.DespachoDetalle dd
-                       JOIN Catalogo.Articulos a ON a.ArticuloID = dd.ArticuloID
+                       JOIN Catalogo.Tarjetas a ON a.ArticuloID = dd.ArticuloID
                        WHERE dd.DespachoID = d.DespachoID
                    ), 0)                  AS Monto,
                    d.Estado               AS Estado

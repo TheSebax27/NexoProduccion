@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using NexoApi.Common.Data;
 using NexoApi.Features.Marketing.Dtos;
 
@@ -50,11 +50,10 @@ public class ComboService : IComboService
     );
 
     private const string SqlItems = @"
-        SELECT ci.ComboItemID, ci.ComboID, ci.ArticuloID, a.SKU, a.Nombre AS NombreArticulo,
-               ci.Cantidad, um.Abreviatura AS Unidad, ci.PrecioUnitarioSnapshot, a.PrecioVenta
+        SELECT ci.ComboItemID, ci.ComboID, ci.ArticuloID, a.Referencia AS SKU, a.Nombre AS NombreArticulo,
+               ci.Cantidad, a.PresentacionCodigo AS Unidad, ci.PrecioUnitarioSnapshot, a.PPublico AS PrecioVenta
         FROM Marketing.ComboItems ci
-        JOIN Catalogo.Articulos a ON a.ArticuloID = ci.ArticuloID
-        LEFT JOIN Catalogo.UnidadesMedida um ON um.UnidadID = a.UnidadID
+        JOIN Catalogo.Tarjetas a ON a.ArticuloID = ci.ArticuloID
         WHERE ci.ComboID IN @Ids";
 
     private static async Task<List<ItemCrudo>> CargarItemsAsync(
@@ -73,9 +72,9 @@ public class ComboService : IComboService
                    c.FechaInicio, c.FechaFin, c.PrecioManual, c.PorcentajeDescuento,
                    c.ImagenBase64, c.ImagenContentType,
                    c.FechaCreacion,
-                   (SELECT SUM(a.PrecioVenta * ci.Cantidad) * (1 - c.PorcentajeDescuento / 100.0)
+                   (SELECT SUM(a.PPublico * ci.Cantidad) * (1 - c.PorcentajeDescuento / 100.0)
                     FROM Marketing.ComboItems ci
-                    JOIN Catalogo.Articulos a ON a.ArticuloID = ci.ArticuloID
+                    JOIN Catalogo.Tarjetas a ON a.ArticuloID = ci.ArticuloID
                     WHERE ci.ComboID = c.ComboID) AS PrecioCalculado
             FROM Marketing.Combos c
             WHERE (@Estado IS NULL OR c.Estado = @Estado)
@@ -94,9 +93,9 @@ public class ComboService : IComboService
                    c.FechaInicio, c.FechaFin, c.PrecioManual, c.PorcentajeDescuento,
                    c.ImagenBase64, c.ImagenContentType,
                    c.FechaCreacion,
-                   (SELECT SUM(a.PrecioVenta * ci.Cantidad) * (1 - c.PorcentajeDescuento / 100.0)
+                   (SELECT SUM(a.PPublico * ci.Cantidad) * (1 - c.PorcentajeDescuento / 100.0)
                     FROM Marketing.ComboItems ci
-                    JOIN Catalogo.Articulos a ON a.ArticuloID = ci.ArticuloID
+                    JOIN Catalogo.Tarjetas a ON a.ArticuloID = ci.ArticuloID
                     WHERE ci.ComboID = c.ComboID) AS PrecioCalculado
             FROM Marketing.Combos c
             WHERE c.Estado = 'Activo'
@@ -119,11 +118,10 @@ public class ComboService : IComboService
         if (combo is null) return null;
 
         var items = (await con.QueryAsync<ItemCrudo>(@"
-            SELECT ci.ComboItemID, ci.ArticuloID, a.SKU, a.Nombre AS NombreArticulo,
-                   ci.Cantidad, um.Abreviatura AS Unidad, ci.PrecioUnitarioSnapshot, a.PrecioVenta
+            SELECT ci.ComboItemID, ci.ArticuloID, a.Referencia AS SKU, a.Nombre AS NombreArticulo,
+                   ci.Cantidad, a.PresentacionCodigo AS Unidad, ci.PrecioUnitarioSnapshot, a.PPublico AS PrecioVenta
             FROM Marketing.ComboItems ci
-            JOIN Catalogo.Articulos a ON a.ArticuloID = ci.ArticuloID
-            LEFT JOIN Catalogo.UnidadesMedida um ON um.UnidadID = a.UnidadID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = ci.ArticuloID
             WHERE ci.ComboID = @id
             ORDER BY ci.ComboItemID", new { id })).ToList();
 
@@ -192,9 +190,9 @@ public class ComboService : IComboService
     {
         using var con = _db.CreateConnection();
         return await con.ExecuteScalarAsync<decimal?>(@"
-            SELECT SUM(a.PrecioVenta * ci.Cantidad) * (1 - c.PorcentajeDescuento / 100.0)
+            SELECT SUM(a.PPublico * ci.Cantidad) * (1 - c.PorcentajeDescuento / 100.0)
             FROM Marketing.ComboItems ci
-            JOIN Catalogo.Articulos a ON a.ArticuloID = ci.ArticuloID
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = ci.ArticuloID
             JOIN Marketing.Combos c ON c.ComboID = ci.ComboID
             WHERE ci.ComboID = @id", new { id });
     }
@@ -207,7 +205,7 @@ public class ComboService : IComboService
         const string sql = @"
             INSERT INTO Marketing.ComboItems (ComboID, ArticuloID, Cantidad, PrecioUnitarioSnapshot)
             SELECT @ComboID, @ArticuloID, @Cantidad,
-                   (SELECT PrecioVenta FROM Catalogo.Articulos WHERE ArticuloID = @ArticuloID)";
+                   (SELECT PPublico FROM Catalogo.Tarjetas WHERE ArticuloID = @ArticuloID)";
         foreach (var item in items)
             await con.ExecuteAsync(sql, new { ComboID = comboId, item.ArticuloID, item.Cantidad }, tx);
     }
