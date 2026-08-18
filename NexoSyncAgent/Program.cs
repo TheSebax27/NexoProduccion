@@ -11,9 +11,12 @@ builder.Services.AddWindowsService();
 
 builder.Services.AddSingleton<IVisionsConnectionFactory, VisionsConnectionFactory>();
 
+builder.Services.AddScoped<TareaInicializarVisions>();
 builder.Services.AddScoped<TareaSincronizarConfiguracion>();
 builder.Services.AddScoped<TareaAplicarEntradasInventario>();
 builder.Services.AddScoped<TareaExportarVentas>();
+builder.Services.AddScoped<TareaSincronizarCatalogos>();
+builder.Services.AddScoped<TareaSincronizarFacturasNexoVisions>();
 
 // HttpClient tipado: cada vez que alguien pida INexoApiClient, le dan un
 // NexoApiClient ya configurado con la URL base y el header de autenticacion.

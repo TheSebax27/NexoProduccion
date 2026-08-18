@@ -1,0 +1,137 @@
+using Dapper;
+using NexoSyncAgent.NexoApiClient;
+using NexoSyncAgent.NexoApiClient.Dtos;
+using NexoSyncAgent.VisionsData;
+
+namespace NexoSyncAgent.Tareas;
+
+// NEXO → Visions: escribe en MOVDETALLES las facturas creadas en NEXO
+// que ya tienen stock descontado pero aun no fueron exportadas a Visions.
+// Para evitar que TareaExportarVentas las reimporte en la ronda siguiente,
+// pre-inserta cada linea en NEXO_VentasExportadas antes de confirmar.
+public class TareaSincronizarFacturasNexoVisions
+{
+    private readonly INexoApiClient _apiClient;
+    private readonly IVisionsConnectionFactory _visionsDb;
+    private readonly ILogger<TareaSincronizarFacturasNexoVisions> _logger;
+
+    public TareaSincronizarFacturasNexoVisions(
+        INexoApiClient apiClient, IVisionsConnectionFactory visionsDb, ILogger<TareaSincronizarFacturasNexoVisions> logger)
+    {
+        _apiClient = apiClient;
+        _visionsDb = visionsDb;
+        _logger = logger;
+    }
+
+    public async Task EjecutarAsync(int centroCostoVisions, CancellationToken ct)
+    {
+        var facturas = await _apiClient.ListarFacturasParaVisionsAsync(ct);
+
+        if (facturas.Count == 0)
+            return;
+
+        _logger.LogInformation("Encontradas {Cantidad} facturas NEXO para exportar a Visions", facturas.Count);
+
+        foreach (var factura in facturas)
+        {
+            try
+            {
+                await ExportarFacturaAsync(factura, centroCostoVisions, ct);
+                await _apiClient.MarcarFacturaExportadaVisionsAsync(factura.FacturaID, ct);
+                _logger.LogInformation("Factura NEXO {ID} ({TipDoc} {NroDoc}) exportada a Visions MOVDETALLES",
+                    factura.FacturaID, factura.TipDoc, factura.NroDoc ?? "-");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al exportar factura NEXO {ID} a Visions", factura.FacturaID);
+            }
+        }
+    }
+
+    private async Task ExportarFacturaAsync(FacturaParaVisionsDto factura, int cc, CancellationToken ct)
+    {
+        using var connection = _visionsDb.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+
+        try
+        {
+            foreach (var linea in factura.Lineas)
+            {
+                if (linea.ReferenciaVisions is null)
+                    continue;
+
+                // Leer IVA desde TARJETA de Visions para esta referencia.
+                var tarjeta = await connection.QueryFirstOrDefaultAsync<TarjetaIvaInfo>(
+                    "SELECT TOP 1 ISNULL(IVASINO,'S') AS IvaSino, ISNULL(IVADESCRIPCION,'IVA 19%') AS IvaDescripcion, ISNULL(IVAVALOR,19) AS IvaValor FROM dbo.TARJETA WHERE CENTROCOSTO=@CC AND REFERENCIA=@Ref",
+                    new { CC = cc, Ref = linea.ReferenciaVisions }, transaction);
+
+                var ivaSino = tarjeta?.IvaSino ?? "S";
+                var ivaDesc = tarjeta?.IvaDescripcion ?? "IVA 19%";
+                var ivaValor = tarjeta?.IvaValor ?? 19;
+
+                var subtotal = linea.Cantidad * linea.PrecioUnitario;
+                var ivaImporte = ivaSino == "S" ? Math.Round(subtotal * ivaValor / 100m, 2) : 0m;
+                var total = subtotal + ivaImporte;
+
+                // Insertar en MOVDETALLES.
+                await connection.ExecuteAsync(
+                    @"INSERT INTO dbo.MOVDETALLES
+                        (CENTROCOSTO, NIT, TIPDOC, NRODOC, FECDOC, ORDEN, REFERENCIA, DETALLE,
+                         CANTIDAD, PRECIO, COSTO, IVASINO, IVADESCRIPCION, IVAVALOR,
+                         SUBTOTAL, TOTAL, MARCA, GRUPOMENOR, VENDEDOR, CLIENTE)
+                      VALUES
+                        (@CC, @Nit, @TipDoc, @NroDoc, @Fecha, @Orden, @Referencia, @Detalle,
+                         @Cantidad, @Precio, @Costo, @IvaSino, @IvaDesc, @IvaValor,
+                         @Subtotal, @Total, @Marca, @GrupoMenor, NULL, @Cliente)",
+                    new
+                    {
+                        CC = cc,
+                        Nit = factura.ClienteNit,
+                        factura.TipDoc,
+                        NroDoc = factura.NroDoc ?? factura.FacturaID.ToString(),
+                        Fecha = factura.Fecha,
+                        linea.Orden,
+                        Referencia = linea.ReferenciaVisions,
+                        Detalle = linea.NombreArticulo,
+                        linea.Cantidad,
+                        Precio = linea.PrecioUnitario,
+                        linea.Costo,
+                        IvaSino = ivaSino,
+                        IvaDesc = ivaDesc,
+                        IvaValor = ivaValor,
+                        Subtotal = subtotal,
+                        Total = total,
+                        Marca = linea.MarcaCodigo,
+                        GrupoMenor = linea.GrupoMenorCodigo,
+                        Cliente = factura.ClienteNombre
+                    }, transaction);
+
+                // Pre-marcar en NEXO_VentasExportadas para que TareaExportarVentas no la reimporte.
+                await connection.ExecuteAsync(
+                    @"IF NOT EXISTS (SELECT 1 FROM dbo.NEXO_VentasExportadas
+                                    WHERE CENTROCOSTO=@CC AND TIPDOC=@TipDoc AND NRODOC=@NroDoc AND ORDEN=@Orden AND REFERENCIA=@Ref)
+                      INSERT INTO dbo.NEXO_VentasExportadas (CENTROCOSTO, TIPDOC, NRODOC, ORDEN, REFERENCIA, CANTIDAD)
+                      VALUES (@CC, @TipDoc, @NroDoc, @Orden, @Ref, @Cantidad)",
+                    new
+                    {
+                        CC = cc,
+                        factura.TipDoc,
+                        NroDoc = factura.NroDoc ?? factura.FacturaID.ToString(),
+                        linea.Orden,
+                        Ref = linea.ReferenciaVisions,
+                        linea.Cantidad
+                    }, transaction);
+            }
+
+            transaction.Commit();
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
+    private record TarjetaIvaInfo(string IvaSino, string IvaDescripcion, short IvaValor);
+}

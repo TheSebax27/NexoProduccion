@@ -26,11 +26,17 @@ public record EstadoIntegracionResponse(
     bool Activo,
     DateTime? UltimoLatido,
     string? VersionAgente,
+    string? VersionDisponible,
     int EventosPendientes,
     int EventosProcesadosHoy,
     int VentasImportadasHoy,
     int EventosConError
-);
+)
+{
+    public bool HayActualizacion =>
+        VersionAgente is not null && VersionDisponible is not null &&
+        VersionAgente != VersionDisponible;
+}
 
 public record ConfiguracionAgenteCompletaResponse(
     int AgenteSyncID,
@@ -41,6 +47,7 @@ public record ConfiguracionAgenteCompletaResponse(
     string? VisionsDbConexion,
     string? NexoApiBaseUrl,
     int IntervalMinutes,
+    int IntervalSeconds,
     string? AgentePath
 );
 
@@ -48,5 +55,6 @@ public record ActualizarConfiguracionAgenteRequest(
     string? VisionsDbConexion,
     string? NexoApiBaseUrl,
     int IntervalMinutes,
+    int IntervalSeconds,
     string? AgentePath
 );

@@ -5,6 +5,7 @@
 @inject IJSRuntime JS
 @inject IConfiguration Config
 @implements IDisposable
+@using NexoWeb.Common.Dtos
 
 <PageTitle>Integración Visions — NEXO ERP</PageTitle>
 
@@ -34,8 +35,8 @@
         else if (!_agentes.Any())
         {
             <MudAlert Severity="Severity.Info" Class="mb-4">
-                No hay agentes registrados. Genera una API Key en <strong>Catálogo → Centros de Costo</strong>
-                y luego configura e instala el agente desde la pestaña <strong>"Configurar agente"</strong>.
+                No hay agentes registrados. Ve a la pestaña <strong>"Configurar agente"</strong>
+                para crear uno.
             </MudAlert>
         }
         else
@@ -53,6 +54,16 @@
                                 </div>
                                 <div class="d-flex align-center gap-2">
                                     <MudChip T="string" Color="@estado.Color" Size="Size.Small">@estado.Texto</MudChip>
+                                    @if (ag.HayActualizacion)
+                                    {
+                                        <MudTooltip Text="@($"Versión instalada: {ag.VersionAgente} — Disponible: {ag.VersionDisponible}")">
+                                            <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small"
+                                                       StartIcon="@Icons.Material.Outlined.SystemUpdate"
+                                                       OnClick="@(() => ActualizarAgenteAsync(ag.AgenteSyncID))">
+                                                Actualizar
+                                            </MudButton>
+                                        </MudTooltip>
+                                    }
                                     <MudIconButton Icon="@Icons.Material.Outlined.Settings" Size="Size.Small"
                                                    Title="Configurar agente"
                                                    OnClick="@(() => AbrirConfigAsync(ag.AgenteSyncID))" />
@@ -124,30 +135,20 @@
         <div class="nexo-item-card pa-4 mb-3">
             <div class="d-flex align-center gap-3 mb-2">
                 <MudAvatar Color="Color.Primary" Size="Size.Small">1</MudAvatar>
-                <MudText Typo="Typo.subtitle1" Style="font-weight:500">Registrar el agente en NEXO</MudText>
+                <MudText Typo="Typo.subtitle1" Style="font-weight:500">Crear y configurar el agente</MudText>
             </div>
             <ol style="padding-left:1.25rem;font-size:0.875rem;line-height:1.9;">
-                <li>Ir a <strong>Catálogo → Centros de Costo</strong> → editar la sucursal</li>
-                <li>Activar <strong>"Tiene integración con Visions"</strong> y configurar código CENTROCOSTO, bodega y prefijos</li>
-                <li>Clic en <strong>"Generar API Key"</strong> — NEXO crea el agente automáticamente</li>
+                <li>Ir a la pestaña <strong>"Configurar agente"</strong></li>
+                <li>Seleccionar el Centro de Costo que usará este agente y hacer clic en <strong>"Crear"</strong></li>
+                <li>Completar el servidor SQL de Visions, la bodega de venta y los prefijos de documento</li>
+                <li>Clic en <strong>"Guardar configuración"</strong></li>
             </ol>
         </div>
 
         <div class="nexo-item-card pa-4 mb-3">
             <div class="d-flex align-center gap-3 mb-2">
                 <MudAvatar Color="Color.Primary" Size="Size.Small">2</MudAvatar>
-                <MudText Typo="Typo.subtitle1" Style="font-weight:500">Preparar la base de datos de Visions</MudText>
-            </div>
-            <MudPaper Class="pa-3" Style="background:#1e1e2e;border-radius:8px;overflow-x:auto;">
-                <MudText Typo="Typo.caption" Style="color:#a6adc8;font-family:monospace;white-space:pre;">sqlcmd -S SERVIDOR\INSTANCIA -d NombreBaseVisions -E -i "C:\NexoSyncAgent\ScriptsVisions\sincronizacionVisionsNexo.sql"</MudText>
-            </MudPaper>
-            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">Solo crea 3 tablas <code>NEXO_*</code>. No toca nada existente.</MudText>
-        </div>
-
-        <div class="nexo-item-card pa-4 mb-3">
-            <div class="d-flex align-center gap-3 mb-2">
-                <MudAvatar Color="Color.Primary" Size="Size.Small">3</MudAvatar>
-                <MudText Typo="Typo.subtitle1" Style="font-weight:500">Instalar el agente (elige el método según el servidor)</MudText>
+                <MudText Typo="Typo.subtitle1" Style="font-weight:500">Instalar el agente</MudText>
             </div>
             <MudPaper Class="pa-3" Outlined="true">
                 <div class="d-flex align-center gap-2 mb-3">
@@ -158,7 +159,6 @@
                     </div>
                 </div>
                 <ol style="padding-left:1.1rem;font-size:0.875rem;line-height:2;">
-                    <li>Ir a <strong>Configurar agente</strong> (ícono ⚙), completar la conexión a Visions y guardar</li>
                     <li>Clic en <strong>"Descargar instalador"</strong> — genera <code>NexoAgente-Setup.exe</code> con todo incluido</li>
                     <li>En el equipo del cliente: doble clic en <code>NexoAgente-Setup.exe</code></li>
                     <li>Aceptar el Control de cuentas (UAC) — único paso manual</li>
@@ -196,48 +196,13 @@
     <!-- ══════════════════════════════════════ TAB 3: CONFIGURAR -->
     <MudTabPanel Text="Configurar agente" Icon="@Icons.Material.Outlined.Settings" BadgeData="@(_agentes.Count > 0 ? null : "!")" BadgeColor="Color.Warning">
 
-        @if (!_agentes.Any())
-        {
-            <MudAlert Severity="Severity.Info">
-                Primero genera una API Key en <strong>Catálogo → Centros de Costo</strong>.
-                El agente aparecerá aquí una vez generada.
-            </MudAlert>
-        }
-        else if (_configAgente is null && !_cargandoConfig)
-        {
-            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
-                Selecciona el agente que deseas configurar:
-            </MudText>
-            <MudGrid>
-                @foreach (var ag in _agentes)
-                {
-                    <MudItem xs="12" md="6">
-                        <MudPaper Class="pa-3" Elevation="0"
-                                  Style="border: 0.5px solid var(--mud-palette-divider); border-radius: 10px;">
-                            <div class="d-flex align-center justify-space-between">
-                                <div class="d-flex align-center gap-2 cursor-pointer flex-grow-1"
-                                     @onclick="@(() => AbrirConfigAsync(ag.AgenteSyncID))">
-                                    <MudIcon Icon="@Icons.Material.Outlined.Router" Color="Color.Primary" />
-                                    <div>
-                                        <MudText Typo="Typo.subtitle2">@ag.NombreCentroCosto</MudText>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@ag.Descripcion</MudText>
-                                    </div>
-                                </div>
-                                <MudIconButton Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small"
-                                               Color="Color.Error" Title="Eliminar agente"
-                                               OnClick="@(() => EliminarAgenteAsync(ag.AgenteSyncID))" />
-                            </div>
-                        </MudPaper>
-                    </MudItem>
-                }
-            </MudGrid>
-        }
-        else if (_cargandoConfig)
+        @if (_cargandoConfig)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
         }
         else if (_configAgente is not null)
         {
+            <!-- ── Panel de configuracion de un agente existente ── -->
             <div class="d-flex align-center gap-2 mb-4">
                 <MudIconButton Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small"
                                OnClick="@(() => _configAgente = null)" />
@@ -267,6 +232,35 @@
                                      Variant="Variant.Outlined" FullWidth="true"
                                      Min="1" Max="60"
                                      HelperText="Cada cuántos minutos sincroniza con NEXO." />
+                </MudItem>
+
+                <!-- Bodega de venta Visions -->
+                <MudItem xs="12" md="6">
+                    <MudSelect T="int?" @bind-Value="_editBodegaVentaVisionsId"
+                               Label="Bodega de venta Visions"
+                               Variant="Variant.Outlined" FullWidth="true"
+                               Placeholder="Sin asignar"
+                               HelperText="Bodega desde donde se descuenta el stock al registrar una venta en Visions.">
+                        <MudSelectItem T="int?" Value="@((int?)null)">Sin asignar</MudSelectItem>
+                        @foreach (var b in _todasBodegas.Where(b => b.CentroCostoID == _configAgente.CentroCostoID && b.Estado))
+                        {
+                            <MudSelectItem T="int?" Value="@((int?)b.BodegaID)">@b.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <!-- Prefijos de documento -->
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.body2" Class="mb-1">Tipos de documento que cuentan como venta</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
+                        Solo los tipos marcados se exportan como venta hacia NEXO.
+                    </MudText>
+                    @foreach (var prefijo in PrefijosDisponibles)
+                    {
+                        <MudCheckBox T="bool" Value="@_prefijosSeleccionados.Contains(prefijo.Codigo)"
+                                     ValueChanged="@((bool v) => AlternarPrefijo(prefijo.Codigo, v))"
+                                     Label="@($"{prefijo.Codigo} - {prefijo.Descripcion}")" Dense="true" />
+                    }
                 </MudItem>
 
                 <!-- Botones -->
@@ -308,6 +302,73 @@
                 </MudItem>
             </MudGrid>
         }
+        else
+        {
+            <!-- ── Lista de agentes existentes ── -->
+            @if (_agentes.Any())
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                    Selecciona el agente que deseas configurar:
+                </MudText>
+                <MudGrid>
+                    @foreach (var ag in _agentes)
+                    {
+                        <MudItem xs="12" md="6">
+                            <MudPaper Class="pa-3" Elevation="0"
+                                      Style="border: 0.5px solid var(--mud-palette-divider); border-radius: 10px;">
+                                <div class="d-flex align-center justify-space-between">
+                                    <div class="d-flex align-center gap-2 cursor-pointer flex-grow-1"
+                                         @onclick="@(() => AbrirConfigAsync(ag.AgenteSyncID))">
+                                        <MudIcon Icon="@Icons.Material.Outlined.Router" Color="Color.Primary" />
+                                        <div>
+                                            <MudText Typo="Typo.subtitle2">@ag.NombreCentroCosto</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@ag.Descripcion</MudText>
+                                        </div>
+                                    </div>
+                                    <MudIconButton Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small"
+                                                   Color="Color.Error" Title="Eliminar agente"
+                                                   OnClick="@(() => EliminarAgenteAsync(ag.AgenteSyncID))" />
+                                </div>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+                <MudDivider Class="my-4" />
+            }
+
+            <!-- ── Crear nuevo agente ── -->
+            <MudText Typo="Typo.subtitle1" Style="font-weight:500" Class="mb-3">Crear nuevo agente</MudText>
+            @if (!CentrosCostoDisponibles.Any())
+            {
+                <MudAlert Severity="Severity.Info">Todos los centros de costo ya tienen un agente asignado.</MudAlert>
+            }
+            else
+            {
+                <MudGrid>
+                    <MudItem xs="12" md="5">
+                        <MudSelect T="int?" @bind-Value="_nuevoCcId" Label="Centro de Costo"
+                                   Variant="Variant.Outlined" FullWidth="true" Placeholder="Selecciona...">
+                            @foreach (var cc in CentrosCostoDisponibles)
+                            {
+                                <MudSelectItem T="int?" Value="@((int?)cc.CentroCostoID)">@cc.Nombre</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="5">
+                        <MudTextField @bind-Value="_nuevaDescripcion" Label="Descripcion (opcional)"
+                                      Variant="Variant.Outlined" FullWidth="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true"
+                                   Style="height:56px;"
+                                   OnClick="CrearAgenteAsync"
+                                   Disabled="@(_creandoAgente || _nuevoCcId is null)">
+                            @(_creandoAgente ? "Creando..." : "Crear")
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            }
+        }
     </MudTabPanel>
 
 </MudTabs>
@@ -317,6 +378,8 @@
     private bool _cargando = true;
     private string? _errorCarga;
     private List<EstadoIntegracionResponse> _agentes = new();
+    private List<CentroCostoItem> _centrosCosto = new();
+    private List<BodegaItem> _todasBodegas = new();
     private System.Timers.Timer? _timer;
 
     // ── Config agente ────────────────────────────────────────────────────
@@ -324,12 +387,31 @@
     private ConfiguracionAgenteCompletaResponse? _configAgente;
     private string? _editVisionsServer;
     private int _editIntervalMinutes = 5;
+    private int? _editBodegaVentaVisionsId;
+    private readonly HashSet<string> _prefijosSeleccionados = new();
     private bool _guardando;
     private bool _descargando;
 
+    // ── Crear agente ─────────────────────────────────────────────────────
+    private int? _nuevoCcId;
+    private string _nuevaDescripcion = string.Empty;
+    private bool _creandoAgente;
+
+    private static readonly (string Codigo, string Descripcion)[] PrefijosDisponibles =
+    {
+        ("POS", "Factura POS"),
+        ("FV",  "Factura de Venta"),
+        ("FE",  "Factura Electronica"),
+        ("NC",  "Nota Credito"),
+        ("ND",  "Nota Debito"),
+    };
+
+    private IEnumerable<CentroCostoItem> CentrosCostoDisponibles =>
+        _centrosCosto.Where(cc => !_agentes.Any(a => a.CentroCostoID == cc.CentroCostoID));
+
     protected override async Task OnInitializedAsync()
     {
-        await CargarEstadoAsync();
+        await Task.WhenAll(CargarEstadoAsync(), CargarCatalogoAsync());
         _timer = new System.Timers.Timer(30_000);
         _timer.Elapsed += async (_, _) =>
         {
@@ -348,6 +430,16 @@
         finally { _cargando = false; }
     }
 
+    private async Task CargarCatalogoAsync()
+    {
+        try
+        {
+            _centrosCosto = await ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true") ?? new();
+            _todasBodegas = await ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas") ?? new();
+        }
+        catch { /* no bloquea la UI si esto falla */ }
+    }
+
     private async Task AbrirConfigAsync(int agenteSyncId)
     {
         _cargandoConfig = true;
@@ -359,8 +451,16 @@
 
             if (_configAgente is not null)
             {
-                _editVisionsServer   = ExtraerServidorSql(_configAgente.VisionsDbConexion);
-                _editIntervalMinutes = _configAgente.IntervalMinutes > 0 ? _configAgente.IntervalMinutes : 5;
+                _editVisionsServer        = ExtraerServidorSql(_configAgente.VisionsDbConexion);
+                _editIntervalMinutes      = _configAgente.IntervalMinutes > 0 ? _configAgente.IntervalMinutes : 5;
+                _editBodegaVentaVisionsId = _configAgente.BodegaVentaVisionsID;
+
+                _prefijosSeleccionados.Clear();
+                if (!string.IsNullOrWhiteSpace(_configAgente.PrefijosDocumentoVentaVisions))
+                {
+                    foreach (var p in _configAgente.PrefijosDocumentoVentaVisions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                        _prefijosSeleccionados.Add(p);
+                }
             }
         }
         catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
@@ -373,18 +473,47 @@
         _guardando = true;
         try
         {
+            var prefijos = _prefijosSeleccionados.Count > 0 ? string.Join(",", _prefijosSeleccionados) : null;
             await ApiClient.PutAsync<ActualizarConfiguracionAgenteRequest, object>(
                 $"api/integracion/agentes/{_configAgente.AgenteSyncID}/config",
-                new ActualizarConfiguracionAgenteRequest(_editVisionsServer, null, _editIntervalMinutes, null));
+                new ActualizarConfiguracionAgenteRequest(
+                    _editVisionsServer, null, _editIntervalMinutes, null,
+                    _editBodegaVentaVisionsId, prefijos));
             Snackbar.Add("Configuración guardada.", Severity.Success);
             _configAgente = _configAgente with
             {
-                VisionsDbConexion = _editVisionsServer,
-                IntervalMinutes   = _editIntervalMinutes
+                VisionsDbConexion            = _editVisionsServer,
+                IntervalMinutes              = _editIntervalMinutes,
+                BodegaVentaVisionsID         = _editBodegaVentaVisionsId,
+                PrefijosDocumentoVentaVisions = prefijos
             };
         }
         catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
         finally { _guardando = false; }
+    }
+
+    private async Task CrearAgenteAsync()
+    {
+        if (_nuevoCcId is null) return;
+        _creandoAgente = true;
+        try
+        {
+            var cc = _centrosCosto.FirstOrDefault(c => c.CentroCostoID == _nuevoCcId.Value);
+            var descripcion = string.IsNullOrWhiteSpace(_nuevaDescripcion)
+                ? $"Agente Sync - {cc?.Nombre ?? _nuevoCcId.ToString()}"
+                : _nuevaDescripcion;
+
+            await ApiClient.PostAsync<GenerarApiKeyRequest, GenerarApiKeyResponse>(
+                "api/integracion/agentes/api-key",
+                new GenerarApiKeyRequest(_nuevoCcId.Value, descripcion));
+
+            Snackbar.Add("Agente creado. Configura el servidor SQL y descarga el instalador.", Severity.Success);
+            _nuevoCcId = null;
+            _nuevaDescripcion = string.Empty;
+            await Task.WhenAll(CargarEstadoAsync(), CargarCatalogoAsync());
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _creandoAgente = false; }
     }
 
     private async Task DescargarInstaladorAsync()
@@ -393,10 +522,8 @@
         _descargando = true;
         try
         {
-            // Guardar config primero para que el ZIP lleve los datos actuales.
             await GuardarConfigAsync();
 
-            // La API genera el ZIP + rota la API Key y devuelve un token de descarga de un solo uso.
             var resultado = await ApiClient.PostAsync<object, DescargaTokenResponse>(
                 $"api/integracion/agentes/{_configAgente.AgenteSyncID}/preparar-descarga", new { });
 
@@ -406,7 +533,6 @@
                 return;
             }
 
-            // El endpoint de descarga es AllowAnonymous; el navegador descarga el ZIP directamente.
             var apiBase = Config["NexoApi:BaseUrl"]!.TrimEnd('/');
             await JS.InvokeVoidAsync("nexoDescargarUrl", $"{apiBase}/api/integracion/descargar-agente/{resultado.Token}");
         }
@@ -429,6 +555,29 @@
         catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
     }
 
+    private async Task ActualizarAgenteAsync(int agenteSyncId)
+    {
+        _cargandoConfig = true;
+        try
+        {
+            _configAgente = await ApiClient.GetAsync<ConfiguracionAgenteCompletaResponse>(
+                $"api/integracion/agentes/{agenteSyncId}/config");
+            if (_configAgente is not null)
+            {
+                _editVisionsServer        = ExtraerServidorSql(_configAgente.VisionsDbConexion);
+                _editIntervalMinutes      = _configAgente.IntervalMinutes > 0 ? _configAgente.IntervalMinutes : 5;
+                _editBodegaVentaVisionsId = _configAgente.BodegaVentaVisionsID;
+                _prefijosSeleccionados.Clear();
+                if (!string.IsNullOrWhiteSpace(_configAgente.PrefijosDocumentoVentaVisions))
+                    foreach (var p in _configAgente.PrefijosDocumentoVentaVisions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                        _prefijosSeleccionados.Add(p);
+                await DescargarInstaladorAsync();
+            }
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _cargandoConfig = false; _configAgente = null; }
+    }
+
     private async Task EliminarAgenteAsync(int agenteSyncId)
     {
         try
@@ -437,12 +586,17 @@
             Snackbar.Add("Agente eliminado.", Severity.Success);
             if (_configAgente?.AgenteSyncID == agenteSyncId)
                 _configAgente = null;
-            await CargarEstadoAsync();
+            await Task.WhenAll(CargarEstadoAsync(), CargarCatalogoAsync());
         }
         catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
     }
 
-    // Extrae el nombre de servidor de una cadena de conexion completa o lo devuelve tal cual si ya es solo el nombre.
+    private void AlternarPrefijo(string codigo, bool seleccionado)
+    {
+        if (seleccionado) _prefijosSeleccionados.Add(codigo);
+        else _prefijosSeleccionados.Remove(codigo);
+    }
+
     private static string? ExtraerServidorSql(string? conexion)
     {
         if (string.IsNullOrWhiteSpace(conexion)) return null;

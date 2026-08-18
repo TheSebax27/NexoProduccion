@@ -41,4 +41,33 @@ public record ConfiguracionAgenteResponse(int? CentroCostoVisions, bool Activo, 
 
 // Respuesta del endpoint /latido -- confirma que la API recibio el latido
 // y devuelve la hora del servidor para que el agente pueda detectar desfase de reloj.
-public record LatidoResponse(DateTime HoraServidor, int EventosPendientes);
+public record LatidoResponse(DateTime HoraServidor, int EventosPendientes, string? VersionDisponible);
+
+// ──────────── Sincronizacion de catalogos ────────────
+
+public record MarcaSyncDto(string Codigo, string? Nombre);
+public record GrupoMayorSyncDto(string Codigo, string? Nombre);
+public record GrupoMenorSyncDto(string Codigo, string? Nombre, string GrupoMayor);
+public record IvaSyncDto(int IvaID, int IvaValor, string? Descripcion);
+public record PresentacionSyncDto(string Codigo, string Presentacion, decimal? Fracciones);
+
+// ──────────── Facturas NEXO → Visions ────────────
+
+public record FacturaParaVisionsDto(
+    int FacturaID,
+    string TipDoc, string? NroDoc,
+    DateTime Fecha,
+    string? ClienteNit, string ClienteNombre,
+    List<LineaFacturaParaVisionsDto> Lineas
+);
+
+public record LineaFacturaParaVisionsDto(
+    int Orden,
+    string? ReferenciaVisions,
+    string NombreArticulo,
+    string? MarcaCodigo,
+    string? GrupoMenorCodigo,
+    decimal Cantidad,
+    decimal PrecioUnitario,
+    decimal Costo
+);

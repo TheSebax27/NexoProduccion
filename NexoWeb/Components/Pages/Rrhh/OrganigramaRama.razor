@@ -1,22 +1,51 @@
-@* Recursivo: un nodo del organigrama mas sus subordinados directos. *@
+@* Nodo recursivo del organigrama — conectores CSS puros, funciona en claro y oscuro *@
 
-<div class="nexo-organigrama__nodo" style="margin-left: @(Nivel * 24)px;">
-    <MudPaper Class="pa-2 mb-2 d-flex align-center" Style="gap: 0.5rem; max-width: 420px;">
-        <MudAvatar Size="Size.Small" Color="Color.Secondary">@Nodo.Nombres[0]@Nodo.Apellidos[0]</MudAvatar>
-        <div>
-            <MudText Typo="Typo.body2"><strong>@Nodo.Nombres @Nodo.Apellidos</strong></MudText>
-            <MudText Typo="Typo.caption" Style="color: var(--n-text-3, #9B9BB4);">@(Nodo.Cargo ?? "Sin cargo")</MudText>
+<div class="org-node-wrapper">
+
+    <div class="org-card @(_expandido && _hijos.Count > 0 ? "org-card--open" : "")"
+         @onclick="ToggleExpandido">
+        <div class="org-avatar org-color-@ColorIdx">
+            @Nodo.Nombres[0]@Nodo.Apellidos[0]
         </div>
-    </MudPaper>
-</div>
+        <div class="org-info">
+            <span class="org-name">@Nodo.Nombres @Nodo.Apellidos</span>
+            <span class="org-role">@(Nodo.Cargo ?? "Sin cargo")</span>
+        </div>
+        @if (_hijos.Count > 0)
+        {
+            <span class="org-pill">
+                @(_expandido ? "▲" : "▼") @_hijos.Count @(_hijos.Count == 1 ? "Reporte" : "Reportes")
+            </span>
+        }
+    </div>
 
-@foreach (var hijo in Todos.Where(n => n.JefeDirectoID == Nodo.EmpleadoID))
-{
-    <OrganigramaRama Nodo="hijo" Todos="Todos" Nivel="Nivel + 1" />
-}
+    @if (_expandido && _hijos.Count > 0)
+    {
+        <div class="org-v-connector"></div>
+
+        <div class="org-children-row @(_hijos.Count == 1 ? "org-solo" : "")">
+            @foreach (var hijo in _hijos)
+            {
+                <div class="org-child">
+                    <div class="org-drop"></div>
+                    <OrganigramaRama Nodo="hijo" Todos="Todos" />
+                </div>
+            }
+        </div>
+    }
+</div>
 
 @code {
     [Parameter] public NexoWeb.Common.Dtos.OrganigramaNodo Nodo { get; set; } = default!;
     [Parameter] public List<NexoWeb.Common.Dtos.OrganigramaNodo> Todos { get; set; } = new();
-    [Parameter] public int Nivel { get; set; } = 0;
+
+    private List<NexoWeb.Common.Dtos.OrganigramaNodo> _hijos = new();
+    private bool _expandido = true;
+    private string ColorIdx => (Math.Abs((Nodo.Nombres + Nodo.Apellidos).GetHashCode()) % 8).ToString();
+
+    protected override void OnParametersSet()
+        => _hijos = Todos.Where(n => n.JefeDirectoID == Nodo.EmpleadoID).ToList();
+
+    private void ToggleExpandido()
+    { if (_hijos.Count > 0) _expandido = !_expandido; }
 }

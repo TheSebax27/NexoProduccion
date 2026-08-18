@@ -38,7 +38,8 @@ public record CrearOrdenProduccionRequest(
     decimal CantidadProgramada, int? ClienteID, int CentroCostoDestinoID,
     int BodegaOrigenMPID, int BodegaDestinoPTID, int? CentroTrabajoID,
     DateTime? FechaPlanificada, string? Observaciones,
-    List<MaquinariaOrdenInput>? Maquinas = null
+    List<MaquinariaOrdenInput>? Maquinas = null,
+    List<EmpleadoOrdenInput>? Empleados = null
 );
 
 // Solo aplica cuando la orden esta en estado Planificada; el codigo de la OP
@@ -106,3 +107,7 @@ public record AjustarConsumoRealRequest(decimal CantidadReal, int? MotivoExcesoI
 public record StockLineaItem(
     string Articulo, string Unidad,
     decimal CantidadRequerida, decimal StockDisponible);
+
+public record EmpleadoRecetaItem(int EmpleadoID, string Nombres, string Apellidos, string? Cargo, decimal? TarifaHora, decimal? HorasEstimadasPorLote, string? Notas);
+public record EmpleadoOrdenItem(int EmpleadoID, string Nombres, string Apellidos, string? Cargo, decimal? TarifaHora, decimal? HorasReales, string? Notas);
+public record EmpleadoOrdenInput(int EmpleadoID, decimal? HorasReales, string? Notas);

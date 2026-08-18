@@ -3,9 +3,12 @@
 @attribute [Authorize]
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @inject NexoWeb.Common.Auth.ConfiguracionEmpresaState ConfiguracionEmpresa
+@inject NexoWeb.Common.Auth.AuthStateService AuthState
+@inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject NavigationManager Navegacion
 @inject IDialogService DialogService
+@using NexoWeb.Common.Dtos
 
 <PageTitle>Configuración - NEXO</PageTitle>
 
@@ -25,6 +28,12 @@
     <MudPaper Class="nexo-settings-sidebar pa-2" Elevation="1">
 
         <div class="nexo-settings-nav-group">Personal</div>
+
+        <div class="nexo-settings-nav-item @(_seccion == "perfil" ? "ns-active" : "")"
+             @onclick='() => _seccion = "perfil"'>
+            <MudIcon Icon="@Icons.Material.Outlined.AccountCircle" Size="Size.Small" />
+            <span>Mi perfil</span>
+        </div>
 
         <div class="nexo-settings-nav-item @(_seccion == "apariencia" ? "ns-active" : "")"
              @onclick='() => _seccion = "apariencia"'>
@@ -93,6 +102,87 @@
 
     @* ── Panel de contenido ────────────────────────────────────────────── *@
     <div class="nexo-settings-content">
+
+        @* ── Perfil ── *@
+        @if (_seccion == "perfil")
+        {
+            <MudPaper Class="pa-0" Style="overflow:hidden">
+                <div class="nexo-chart-header pa-5 pb-4" style="border-bottom:1px solid var(--mud-palette-lines-default)">
+                    <MudIcon Icon="@Icons.Material.Outlined.AccountCircle" Size="Size.Small" Class="nexo-chart-header__icon" />
+                    <div>
+                        <div class="nexo-chart-header__title">Mi perfil</div>
+                        <div class="nexo-chart-header__sub">Tu foto y nombre visibles en la plataforma</div>
+                    </div>
+                </div>
+
+                @* Foto + datos en layout horizontal *@
+                <div style="display:grid; grid-template-columns:220px 1fr; gap:0; min-height:240px">
+
+                    @* Columna foto *@
+                    <div style="padding:24px; border-right:1px solid var(--mud-palette-lines-default);
+                                display:flex; flex-direction:column; align-items:center; gap:14px;
+                                background:color-mix(in srgb, var(--mud-palette-primary) 4%, transparent)">
+                        @if (AuthState.FotoPerfilDataUri is not null)
+                        {
+                            <div style="width:96px; height:96px; border-radius:50%; overflow:hidden;
+                                        border:3px solid var(--mud-palette-primary); flex-shrink:0">
+                                <img src="@AuthState.FotoPerfilDataUri" alt="Foto"
+                                     style="width:100%; height:100%; object-fit:cover" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div style="width:96px; height:96px; border-radius:50%;
+                                        background:var(--mud-palette-primary); color:#fff;
+                                        display:flex; align-items:center; justify-content:center;
+                                        font-size:2.2rem; font-weight:700; flex-shrink:0; letter-spacing:-1px">
+                                @(AuthState.Nombres?[0])@(AuthState.Apellidos?[0])
+                            </div>
+                        }
+
+                        <div style="font-weight:600; font-size:0.88rem; text-align:center; word-break:break-word">
+                            @AuthState.NombreCompleto
+                        </div>
+                        <div style="font-size:0.75rem; opacity:.6; text-align:center">@AuthState.Rol</div>
+
+                        <div style="display:flex; flex-direction:column; gap:6px; width:100%; margin-top:4px">
+                            <InputFile id="perfil-foto-input" OnChange="OnFotoPerfilSeleccionadaAsync"
+                                       accept="image/png,image/jpeg,image/webp" style="display:none;" />
+                            <label for="perfil-foto-input" class="nexo-perfil-panel__btn-archivo"
+                                   style="text-align:center; cursor:pointer">
+                                @(AuthState.FotoPerfilDataUri is null ? "Subir foto" : "Cambiar foto")
+                            </label>
+                            @if (AuthState.FotoPerfilDataUri is not null)
+                            {
+                                <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text"
+                                           FullWidth="true" OnClick="QuitarFotoPerfilAsync" Disabled="_procesandoFotoPerfil">
+                                    Quitar foto
+                                </MudButton>
+                            }
+                        </div>
+                        <div style="font-size:0.68rem; opacity:.5; text-align:center">Maximo 1 MB.</div>
+                    </div>
+
+                    @* Columna datos *@
+                    <div style="padding:24px; display:flex; flex-direction:column; gap:16px">
+                        <MudTextField @bind-Value="_perfilNombres" Label="Nombres" Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" />
+                        <MudTextField @bind-Value="_perfilApellidos" Label="Apellidos" Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" />
+
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   OnClick="GuardarPerfilAsync"
+                                   Disabled="@(_guardandoPerfil || string.IsNullOrWhiteSpace(_perfilNombres) || string.IsNullOrWhiteSpace(_perfilApellidos))">
+                            @(_guardandoPerfil ? "Guardando..." : "Guardar datos")
+                        </MudButton>
+
+                        <div style="font-size:0.75rem; opacity:.55; margin-top:4px">
+                            Esta informacion aparece en el menu lateral y en los registros del sistema.
+                        </div>
+                    </div>
+                </div>
+            </MudPaper>
+        }
 
         @* ── Apariencia ── *@
         @if (_seccion == "apariencia")
@@ -469,6 +559,63 @@
     private string? _nombrePropietario;
     private bool _procesandoLogo;
 
+    // ── Mi Perfil ─────────────────────────────────────────────────────
+    private string _perfilNombres = "";
+    private string _perfilApellidos = "";
+    private bool _guardandoPerfil;
+    private bool _procesandoFotoPerfil;
+
+    private async Task GuardarPerfilAsync()
+    {
+        _guardandoPerfil = true;
+        try
+        {
+            var resp = await ApiClient.PutAsync<ActualizarPerfilRequest, PerfilActualizadoResponse>(
+                "api/auth/perfil", new ActualizarPerfilRequest(_perfilNombres.Trim(), _perfilApellidos.Trim()));
+            await AuthState.ActualizarNombreAsync(_perfilNombres.Trim(), _perfilApellidos.Trim());
+            Snackbar.Add("Datos actualizados correctamente.", Severity.Success);
+        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _guardandoPerfil = false; }
+    }
+
+    private async Task OnFotoPerfilSeleccionadaAsync(InputFileChangeEventArgs e)
+    {
+        const long maxBytes = 1_000_000;
+        if (e.File.Size > maxBytes)
+        {
+            Snackbar.Add("La imagen es muy grande (maximo 1 MB).", Severity.Warning);
+            return;
+        }
+        _procesandoFotoPerfil = true;
+        try
+        {
+            using var stream = e.File.OpenReadStream(maxBytes);
+            using var memoria = new MemoryStream();
+            await stream.CopyToAsync(memoria);
+            var base64 = Convert.ToBase64String(memoria.ToArray());
+            await ApiClient.PutAsync<ActualizarFotoPerfilRequest, object?>(
+                "api/auth/perfil/foto", new ActualizarFotoPerfilRequest(base64, e.File.ContentType));
+            await AuthState.ActualizarFotoAsync(base64, e.File.ContentType);
+            Snackbar.Add("Foto actualizada.", Severity.Success);
+        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _procesandoFotoPerfil = false; }
+    }
+
+    private async Task QuitarFotoPerfilAsync()
+    {
+        _procesandoFotoPerfil = true;
+        try
+        {
+            await ApiClient.DeleteAsync("api/auth/perfil/foto");
+            await AuthState.EliminarFotoAsync();
+            Snackbar.Add("Foto eliminada.", Severity.Success);
+        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _procesandoFotoPerfil = false; }
+    }
+
     protected override void OnInitialized()
     {
         _nombreEmpresa = ConfiguracionEmpresa.NombreEmpresa;
@@ -476,6 +623,8 @@
         _modoLotes = ConfiguracionEmpresa.ModoLotes;
         _manejarVencimientos = ConfiguracionEmpresa.ManejarVencimientos;
         _diasAlertaVencimiento = ConfiguracionEmpresa.DiasAlertaVencimiento;
+        _perfilNombres = AuthState.Nombres ?? "";
+        _perfilApellidos = AuthState.Apellidos ?? "";
     }
 
     private async Task GuardarNombreEmpresaAsync()

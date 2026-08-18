@@ -5,17 +5,20 @@ public record EmpleadoItem(
     int? CargoID, string? Cargo, int? DepartamentoID, string? Departamento,
     int? CentroCostoID, string? CentroCosto, DateTime? FechaIngreso,
     string? Telefono, string? Email, bool Estado, bool TieneFoto,
-    int? JefeDirectoID, string? JefeDirecto, bool EnAusencia, bool TieneUsuario
+    int? JefeDirectoID, string? JefeDirecto, bool EnAusencia, bool TieneUsuario,
+    decimal? TarifaHora
 );
 
 public record CrearEmpleadoRequest(
     string Nombres, string Apellidos, int? CargoID, int? CentroCostoID,
-    DateTime? FechaIngreso, string? Telefono, string? Email, int? JefeDirectoID
+    DateTime? FechaIngreso, string? Telefono, string? Email, int? JefeDirectoID,
+    decimal? TarifaHora = null
 );
 
 public record ActualizarEmpleadoRequest(
     string Nombres, string Apellidos, int? CargoID, int? CentroCostoID,
-    DateTime? FechaIngreso, string? Telefono, string? Email, bool Estado, int? JefeDirectoID
+    DateTime? FechaIngreso, string? Telefono, string? Email, bool Estado, int? JefeDirectoID,
+    decimal? TarifaHora = null
 );
 
 public record ActualizarFotoEmpleadoRequest(string Base64, string ContentType);

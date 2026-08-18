@@ -45,7 +45,7 @@ public class OperacionesService : IOperacionesService
                    d.FechaDespacho        AS Fecha,
                    c.Nombre               AS Contraparte,
                    ISNULL((
-                       SELECT SUM(dd.Cantidad * a.PrecioVenta)
+                       SELECT SUM(dd.Cantidad * a.PrecioVentaUnidad)
                        FROM Logistica.DespachoDetalle dd
                        JOIN Catalogo.Tarjetas a ON a.ArticuloID = dd.ArticuloID
                        WHERE dd.DespachoID = d.DespachoID

@@ -36,7 +36,7 @@ public class PlanificacionService : IPlanificacionService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT d.DemandaID, d.ArticuloID, a.SKU AS SkuArticulo, a.Nombre AS NombreArticulo,
+            SELECT d.DemandaID, d.ArticuloID, a.Referencia AS SkuArticulo, a.Nombre AS NombreArticulo,
                    d.CentroCostoID, cc.Nombre AS CentroCosto, d.Periodo, d.CantidadProyectada,
                    ISNULL((
                        SELECT SUM(km.Cantidad)

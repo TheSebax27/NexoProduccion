@@ -23,7 +23,7 @@ public interface IIntegracionService
     Task CrearMapeoAsync(CrearMapeoArticuloRequest request);
     Task<IEnumerable<ArticuloPendienteMapeoItem>> ListarArticulosPendientesMapeoAsync(int centroCostoId);
     Task ResolverArticuloPendienteAsync(int pendienteId, ResolverArticuloPendienteRequest request);
-    Task<LatidoResponse> RegistrarLatidoAsync(int centroCostoId);
+    Task<LatidoResponse> RegistrarLatidoAsync(int centroCostoId, string? versionAgente = null);
     Task<IEnumerable<EstadoIntegracionResponse>> ObtenerEstadoIntegracionAsync();
     Task RegistrarFalloEventoAsync(long eventoId, int centroCostoId, string mensajeError);
     Task<ConfiguracionAgenteCompletaResponse> ObtenerConfiguracionCompletaAsync(int agenteSyncId);
@@ -33,6 +33,22 @@ public interface IIntegracionService
     Task<string> PrepararDescargaInstaladorAsync(int agenteSyncId);
     byte[]? ObtenerPaqueteInstalador(string token);
     Task DesactivarAgenteAsync(int agenteSyncId);
+
+    // Catalogos bidireccionales
+    Task<IEnumerable<MarcaSyncItem>> ListarMarcasSyncAsync();
+    Task UpsertMarcaAsync(MarcaSyncItem item);
+    Task<IEnumerable<GrupoMayorSyncItem>> ListarGruposMayorSyncAsync();
+    Task UpsertGrupoMayorAsync(GrupoMayorSyncItem item);
+    Task<IEnumerable<GrupoMenorSyncItem>> ListarGruposMenorSyncAsync();
+    Task UpsertGrupoMenorAsync(GrupoMenorSyncItem item);
+    Task<IEnumerable<IvaSyncItem>> ListarIvaSyncAsync();
+    Task UpsertIvaAsync(IvaSyncItem item);
+    Task<IEnumerable<PresentacionSyncItem>> ListarPresentacionesSyncAsync();
+    Task UpsertPresentacionAsync(PresentacionSyncItem item);
+
+    // Facturas NEXO → Visions
+    Task<IEnumerable<FacturaParaVisionsItem>> ListarFacturasParaVisionsAsync(int centroCostoId);
+    Task MarcarFacturaExportadaVisionsAsync(int facturaId, int centroCostoId);
 }
 
 public class IntegracionService : IIntegracionService
@@ -54,20 +70,19 @@ public class IntegracionService : IIntegracionService
     {
         using var connection = _db.CreateConnection();
 
-        // Nombre/PrecioVenta/StockMinimo del articulo se traen siempre (aunque
-        // solo los use el TipoEvento 'SINCRONIZAR_ARTICULO') porque es mas
-        // simple que hacer un JOIN condicional -- el agente los ignora en los
-        // demas tipos de evento.
+        // ReferenciaVisions: se resuelve directamente desde Tarjetas.Referencia
+        // (misma clave que TARJETA.REFERENCIA en Visions) sin necesidad de
+        // pasar por MapeoArticulos -- el mapeo es ahora automatico.
         const string sql = @"
             SELECT e.EventoID, e.TipoEvento, e.Cantidad, e.CostoUnitario, e.FechaCreacion,
                    cc.IdentificadorClienteVisions AS CentroCostoVisions,
-                   m.CodigoArticuloVisions AS ReferenciaVisions,
+                   a.Referencia AS ReferenciaVisions,
                    a.Nombre AS NombreArticulo, a.PPublico AS PrecioVentaArticulo, a.StockMinimo AS StockMinimoArticulo
             FROM Integracion.EventosSalientes e
             JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = e.CentroCostoID
-            JOIN Integracion.MapeoArticulos m ON m.ArticuloID = e.ArticuloID AND m.CentroCostoID = e.CentroCostoID
             JOIN Catalogo.Tarjetas a ON a.ArticuloID = e.ArticuloID
-            WHERE e.Estado = 'PENDIENTE' AND e.CentroCostoID = @CentroCostoId";
+            WHERE e.Estado = 'PENDIENTE' AND e.CentroCostoID = @CentroCostoId
+              AND a.Referencia IS NOT NULL AND a.Referencia <> ''";
 
         return await connection.QueryAsync<EventoPendienteItem>(sql, new { CentroCostoId = centroCostoId });
     }
@@ -171,6 +186,9 @@ public class IntegracionService : IIntegracionService
                   SET ApiKeyHash = @ApiKeyHash, Descripcion = @Descripcion
                   WHERE AgenteSyncID = @AgenteSyncID",
                 new { ApiKeyHash = apiKeyHash, r.Descripcion, AgenteSyncID = existingId.Value });
+            await connection.ExecuteAsync(
+                "UPDATE Organizacion.CentrosCosto SET TieneVisions = 1, IdentificadorClienteVisions = '1' WHERE CentroCostoID = @CentroCostoID",
+                new { r.CentroCostoID });
             return new GenerarApiKeyResponse(existingId.Value, apiKey);
         }
 
@@ -179,6 +197,10 @@ public class IntegracionService : IIntegracionService
               OUTPUT INSERTED.AgenteSyncID
               VALUES (@CentroCostoID, @ApiKeyHash, @Descripcion)",
             new { r.CentroCostoID, ApiKeyHash = apiKeyHash, r.Descripcion });
+
+        await connection.ExecuteAsync(
+            "UPDATE Organizacion.CentrosCosto SET TieneVisions = 1, IdentificadorClienteVisions = '1' WHERE CentroCostoID = @CentroCostoID",
+            new { r.CentroCostoID });
 
         return new GenerarApiKeyResponse(id, apiKey);
     }
@@ -345,20 +367,21 @@ public class IntegracionService : IIntegracionService
         }
     }
 
-    public async Task<LatidoResponse> RegistrarLatidoAsync(int centroCostoId)
+    public async Task<LatidoResponse> RegistrarLatidoAsync(int centroCostoId, string? versionAgente = null)
     {
         using var connection = _db.CreateConnection();
 
-        // Actualiza UltimaConexion y UltimoLatido en el AgentesSync de este centro.
         var parametros = new DynamicParameters();
         parametros.Add("AgenteSyncID", await ObtenerAgenteSyncIdAsync(connection, centroCostoId));
+        parametros.Add("VersionAgente", versionAgente);
         await connection.ExecuteAsync("Integracion.sp_RegistrarLatido", parametros, commandType: CommandType.StoredProcedure);
 
         var pendientes = await connection.ExecuteScalarAsync<int>(
             "SELECT COUNT(*) FROM Integracion.EventosSalientes WHERE Estado = 'PENDIENTE' AND CentroCostoID = @CentroCostoId",
             new { CentroCostoId = centroCostoId });
 
-        return new LatidoResponse(DateTime.UtcNow, pendientes);
+        var versionDisponible = _config.GetValue<string>("Sync:AgentVersion") ?? "1.0.0";
+        return new LatidoResponse(DateTime.UtcNow, pendientes, versionDisponible);
     }
 
     private static async Task<int> ObtenerAgenteSyncIdAsync(System.Data.IDbConnection connection, int centroCostoId)
@@ -409,6 +432,7 @@ public class IntegracionService : IIntegracionService
             resultado.Add(new EstadoIntegracionResponse(
                 ag.AgenteSyncID, ag.Descripcion, ag.CentroCostoID, ag.NombreCentroCosto,
                 ag.Activo, ag.UltimoLatido, ag.VersionAgente,
+                _config.GetValue<string>("Sync:AgentVersion") ?? "1.0.0",
                 pendientes, procesadosHoy, ventasHoy, conError));
         }
 
@@ -437,7 +461,7 @@ public class IntegracionService : IIntegracionService
 
         const string sql = @"
             SELECT a.AgenteSyncID, a.Descripcion, a.CentroCostoID, cc.Nombre AS NombreCentroCosto,
-                   a.Activo, a.VisionsDbConexion, a.NexoApiBaseUrl, a.IntervalMinutes, a.AgentePath
+                   a.Activo, a.VisionsDbConexion, a.NexoApiBaseUrl, a.IntervalMinutes, a.IntervalSeconds, a.AgentePath
             FROM Integracion.AgentesSync a
             JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = a.CentroCostoID
             WHERE a.AgenteSyncID = @AgenteSyncId";
@@ -455,20 +479,22 @@ public class IntegracionService : IIntegracionService
         // NexoApiBaseUrl siempre se toma del servidor — el cliente no tiene que escribirla.
         var nexoApiUrl = _config["NexoApi:BaseUrl"]?.TrimEnd('/') + "/";
 
-        const string sql = @"
+        const string sqlAgente = @"
             UPDATE Integracion.AgentesSync
             SET VisionsDbConexion = @VisionsDbConexion,
                 NexoApiBaseUrl    = @NexoApiBaseUrl,
                 IntervalMinutes   = @IntervalMinutes,
+                IntervalSeconds   = @IntervalSeconds,
                 AgentePath        = @AgentePath
             WHERE AgenteSyncID = @AgenteSyncId";
 
-        var filas = await connection.ExecuteAsync(sql, new
+        var filas = await connection.ExecuteAsync(sqlAgente, new
         {
-            AgenteSyncId         = agenteSyncId,
+            AgenteSyncId    = agenteSyncId,
             r.VisionsDbConexion,
-            NexoApiBaseUrl       = nexoApiUrl,
+            NexoApiBaseUrl  = nexoApiUrl,
             r.IntervalMinutes,
+            r.IntervalSeconds,
             r.AgentePath
         });
 
@@ -479,11 +505,24 @@ public class IntegracionService : IIntegracionService
     public async Task DesactivarAgenteAsync(int agenteSyncId)
     {
         using var connection = _db.CreateConnection();
+
+        var ccId = await connection.ExecuteScalarAsync<int?>(
+            "SELECT CentroCostoID FROM Integracion.AgentesSync WHERE AgenteSyncID = @Id AND Activo = 1",
+            new { Id = agenteSyncId });
+
         var filas = await connection.ExecuteAsync(
             "UPDATE Integracion.AgentesSync SET Activo = 0 WHERE AgenteSyncID = @Id",
             new { Id = agenteSyncId });
         if (filas == 0)
             throw new KeyNotFoundException($"No existe el agente {agenteSyncId}.");
+
+        if (ccId.HasValue)
+            await connection.ExecuteAsync(
+                @"UPDATE Organizacion.CentrosCosto
+                  SET TieneVisions = 0, IdentificadorClienteVisions = NULL,
+                      BodegaVentaVisionsID = NULL, PrefijosDocumentoVentaVisions = NULL
+                  WHERE CentroCostoID = @CcId",
+                new { CcId = ccId.Value });
     }
 
     // Formato del EXE combinado generado para el cliente:
@@ -565,10 +604,11 @@ public class IntegracionService : IIntegracionService
 
     public string GenerarAppsettingsJson(ConfiguracionAgenteCompletaResponse config, string apiKey)
     {
-        var intervalo   = config.IntervalMinutes > 0 ? config.IntervalMinutes : 5;
-        var serverName  = config.VisionsDbConexion ?? "SERVIDOR\\INSTANCIA";
-        var db          = $"Server={serverName};Database=VISIONSDBL1;Trusted_Connection=True;TrustServerCertificate=True;";
-        var url         = (config.NexoApiBaseUrl ?? _config["NexoApi:BaseUrl"] ?? "https://nexo.mi-empresa.com/").TrimEnd('/') + "/";
+        var serverName = config.VisionsDbConexion ?? "SERVIDOR\\INSTANCIA";
+        var db         = $"Server={serverName};Database=VISIONSDBL1;Trusted_Connection=True;TrustServerCertificate=True;";
+        var url        = (config.NexoApiBaseUrl ?? _config["NexoApi:BaseUrl"] ?? "https://nexo.mi-empresa.com/").TrimEnd('/') + "/";
+        var minutos    = config.IntervalMinutes > 0 ? config.IntervalMinutes : 5;
+        var segundos   = config.IntervalSeconds > 0 ? config.IntervalSeconds : 0;
 
         return $$"""
 {
@@ -586,10 +626,194 @@ public class IntegracionService : IIntegracionService
     "ApiKey": "{{apiKey}}"
   },
   "Sync": {
-    "IntervalMinutes": {{intervalo}},
-    "IntervalSeconds": 0
+    "IntervalMinutes": {{(segundos > 0 ? 0 : minutos)}},
+    "IntervalSeconds": {{segundos}}
   }
 }
 """;
+    }
+
+    // ──────────── Sincronizacion de catalogos ────────────
+
+    public async Task<IEnumerable<MarcaSyncItem>> ListarMarcasSyncAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<MarcaSyncItem>(
+            "SELECT Codigo, Marca AS Nombre FROM Catalogo.Marca");
+    }
+
+    public async Task UpsertMarcaAsync(MarcaSyncItem item)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            @"MERGE Catalogo.Marca AS d
+              USING (SELECT @Codigo AS Codigo) AS s ON d.Codigo = s.Codigo
+              WHEN MATCHED THEN UPDATE SET Marca = @Nombre
+              WHEN NOT MATCHED THEN INSERT (Codigo, Marca) VALUES (@Codigo, @Nombre);",
+            new { item.Codigo, item.Nombre });
+    }
+
+    public async Task<IEnumerable<GrupoMayorSyncItem>> ListarGruposMayorSyncAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<GrupoMayorSyncItem>(
+            "SELECT Codigo, Nombre FROM Catalogo.GrupoMayor");
+    }
+
+    public async Task UpsertGrupoMayorAsync(GrupoMayorSyncItem item)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            @"MERGE Catalogo.GrupoMayor AS d
+              USING (SELECT @Codigo AS Codigo) AS s ON d.Codigo = s.Codigo
+              WHEN MATCHED THEN UPDATE SET Nombre = @Nombre
+              WHEN NOT MATCHED THEN INSERT (Codigo, Nombre) VALUES (@Codigo, @Nombre);",
+            new { item.Codigo, item.Nombre });
+    }
+
+    public async Task<IEnumerable<GrupoMenorSyncItem>> ListarGruposMenorSyncAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<GrupoMenorSyncItem>(
+            "SELECT Codigo, Nombre, GrupoMayor FROM Catalogo.GrupoMenor");
+    }
+
+    public async Task UpsertGrupoMenorAsync(GrupoMenorSyncItem item)
+    {
+        using var connection = _db.CreateConnection();
+        // GrupoMayor debe existir en NEXO antes de insertar el menor.
+        // Si no existe se omite este elemento (se sincronizara en la proxima ronda tras crear el mayor).
+        var existeMayor = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(1) FROM Catalogo.GrupoMayor WHERE Codigo = @GrupoMayor", new { item.GrupoMayor });
+        if (existeMayor == 0) return;
+
+        await connection.ExecuteAsync(
+            @"MERGE Catalogo.GrupoMenor AS d
+              USING (SELECT @Codigo AS Codigo) AS s ON d.Codigo = s.Codigo
+              WHEN MATCHED THEN UPDATE SET Nombre = @Nombre, GrupoMayor = @GrupoMayor
+              WHEN NOT MATCHED THEN INSERT (Codigo, Nombre, GrupoMayor) VALUES (@Codigo, @Nombre, @GrupoMayor);",
+            new { item.Codigo, item.Nombre, item.GrupoMayor });
+    }
+
+    public async Task<IEnumerable<IvaSyncItem>> ListarIvaSyncAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<IvaSyncItem>(
+            "SELECT IvaID, Iva AS IvaValor, Descripcion FROM Catalogo.Iva");
+    }
+
+    public async Task UpsertIvaAsync(IvaSyncItem item)
+    {
+        using var connection = _db.CreateConnection();
+        // IVA se une por el valor numerico (Iva), no por IvaID (que es autoincrement en NEXO).
+        await connection.ExecuteAsync(
+            @"MERGE Catalogo.Iva AS d
+              USING (SELECT @IvaValor AS Iva) AS s ON d.Iva = s.Iva
+              WHEN MATCHED THEN UPDATE SET Descripcion = @Descripcion
+              WHEN NOT MATCHED THEN INSERT (Iva, Descripcion) VALUES (@IvaValor, @Descripcion);",
+            new { item.IvaValor, item.Descripcion });
+    }
+
+    public async Task<IEnumerable<PresentacionSyncItem>> ListarPresentacionesSyncAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<PresentacionSyncItem>(
+            "SELECT Codigo, Presentacion, Fracciones FROM Catalogo.Presentacion");
+    }
+
+    public async Task UpsertPresentacionAsync(PresentacionSyncItem item)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            @"MERGE Catalogo.Presentacion AS d
+              USING (SELECT @Codigo AS Codigo) AS s ON d.Codigo = s.Codigo
+              WHEN MATCHED THEN UPDATE SET Presentacion = @Presentacion, Fracciones = @Fracciones
+              WHEN NOT MATCHED THEN INSERT (Codigo, Presentacion, Fracciones) VALUES (@Codigo, @Presentacion, @Fracciones);",
+            new { item.Codigo, item.Presentacion, item.Fracciones });
+    }
+
+    // ──────────── Facturas NEXO → Visions ────────────
+
+    public async Task<IEnumerable<FacturaParaVisionsItem>> ListarFacturasParaVisionsAsync(int centroCostoId)
+    {
+        using var connection = _db.CreateConnection();
+
+        // Solo facturas del CC de este agente con stock descontado que aun no se han exportado.
+        // El filtro por CentroCostoID garantiza que cada agente solo procesa sus propias facturas
+        // y la tabla FacturasExportadasVisions impide duplicados entre agentes del mismo CC.
+        const string sqlFacturas = @"
+            SELECT f.FacturaID, f.TipDoc, f.NroDoc, f.Fecha,
+                   c.NIT AS ClienteNit, c.Nombre AS ClienteNombre
+            FROM Facturacion.Facturas f
+            JOIN Crm.Clientes c ON c.ClienteID = f.ClienteID
+            WHERE f.StockDescontado = 1
+              AND f.CentroCostoID = @CentroCostoId
+              AND NOT EXISTS (
+                  SELECT 1 FROM Facturacion.FacturasExportadasVisions fev
+                  WHERE fev.FacturaID = f.FacturaID AND fev.CentroCostoID = @CentroCostoId)";
+
+        var facturas = (await connection.QueryAsync<dynamic>(sqlFacturas, new { CentroCostoId = centroCostoId })).ToList();
+        if (facturas.Count == 0) return [];
+
+        // ReferenciaVisions viene de Tarjetas.Referencia directamente (mapeo automatico).
+        // Las lineas sin Referencia (combos o articulos sin codigo Visions) se omiten
+        // pero NO bloquean la exportacion de la factura completa.
+        const string sqlLineas = @"
+            SELECT
+                fl.LineaID,
+                fl.FacturaID,
+                ROW_NUMBER() OVER (PARTITION BY fl.FacturaID ORDER BY fl.LineaID) AS Orden,
+                a.Referencia AS ReferenciaVisions,
+                a.Nombre AS NombreArticulo,
+                a.MarcaCodigo,
+                a.GrupoMenorCodigo,
+                fl.Cantidad,
+                fl.PrecioUnitario,
+                ISNULL(a.Costo, 0) AS Costo
+            FROM Facturacion.FacturaLineas fl
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = fl.ArticuloID
+            WHERE fl.ArticuloID IS NOT NULL
+              AND a.Referencia IS NOT NULL AND a.Referencia <> ''";
+
+        var todasLineas = (await connection.QueryAsync<dynamic>(sqlLineas)).ToList();
+
+        var resultado = new List<FacturaParaVisionsItem>();
+        foreach (var f in facturas)
+        {
+            var lineas = todasLineas
+                .Where(l => l.FacturaID == f.FacturaID)
+                .Select(l => new LineaFacturaParaVisionsItem(
+                    (int)l.Orden,
+                    (string?)l.ReferenciaVisions,
+                    (string)l.NombreArticulo,
+                    (string?)l.MarcaCodigo,
+                    (string?)l.GrupoMenorCodigo,
+                    (decimal)l.Cantidad,
+                    (decimal)l.PrecioUnitario,
+                    (decimal)l.Costo))
+                .ToList();
+
+            // Exportar si al menos una linea tiene Referencia de Visions.
+            // Las lineas sin Referencia (combos u articulos sin codigo) se omiten silenciosamente.
+            if (lineas.Count > 0)
+            {
+                resultado.Add(new FacturaParaVisionsItem(
+                    (int)f.FacturaID, (string)f.TipDoc, (string?)f.NroDoc, (DateTime)f.Fecha,
+                    (string?)f.ClienteNit, (string)f.ClienteNombre, lineas));
+            }
+        }
+
+        return resultado;
+    }
+
+    public async Task MarcarFacturaExportadaVisionsAsync(int facturaId, int centroCostoId)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            @"IF NOT EXISTS (SELECT 1 FROM Facturacion.FacturasExportadasVisions
+                             WHERE FacturaID = @FacturaId AND CentroCostoID = @CentroCostoId)
+              INSERT INTO Facturacion.FacturasExportadasVisions (FacturaID, CentroCostoID)
+              VALUES (@FacturaId, @CentroCostoId)",
+            new { FacturaId = facturaId, CentroCostoId = centroCostoId });
     }
 }

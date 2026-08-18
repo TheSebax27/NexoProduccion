@@ -7,7 +7,8 @@ public record CrearOrdenProduccionRequest(
     decimal CantidadProgramada, int? ClienteID, int CentroCostoDestinoID,
     int BodegaOrigenMPID, int BodegaDestinoPTID, int? CentroTrabajoID,
     DateTime? FechaPlanificada, string? Observaciones,
-    List<MaquinariaOrdenInput>? Maquinas = null
+    List<MaquinariaOrdenInput>? Maquinas = null,
+    List<EmpleadoOrdenInput>? Empleados = null
 );
 
 // El codigo de la OP no se puede editar (es el identificador de negocio, igual

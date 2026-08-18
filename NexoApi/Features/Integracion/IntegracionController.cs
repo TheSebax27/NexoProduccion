@@ -109,11 +109,11 @@ public class IntegracionController : ControllerBase
     /// y actualizar UltimaConexion. Devuelve hora del servidor y eventos pendientes.</summary>
     [HttpPost("latido")]
     [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
-    public async Task<ActionResult<LatidoResponse>> RegistrarLatido()
+    public async Task<ActionResult<LatidoResponse>> RegistrarLatido([FromBody] LatidoRequest? request = null)
     {
         try
         {
-            var respuesta = await _service.RegistrarLatidoAsync(CentroCostoDelAgente);
+            var respuesta = await _service.RegistrarLatidoAsync(CentroCostoDelAgente, request?.Version);
             return Ok(respuesta);
         }
         catch (KeyNotFoundException ex)
@@ -187,6 +187,88 @@ public class IntegracionController : ControllerBase
             return NotFound(new { error = "El enlace de descarga expiró o ya fue usado. Genera uno nuevo." });
 
         return File(bytes, "application/octet-stream", "NexoAgente-Setup.exe");
+    }
+
+    // ──────── Sincronizacion de catalogos (bidireccional) ────────
+
+    [HttpGet("catalogo/marcas")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> ListarMarcasSync() =>
+        Ok(await _service.ListarMarcasSyncAsync());
+
+    [HttpPost("catalogo/marcas/upsert")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> UpsertMarca(MarcaSyncItem item)
+    {
+        await _service.UpsertMarcaAsync(item);
+        return Ok(new { mensaje = "Marca sincronizada." });
+    }
+
+    [HttpGet("catalogo/grupos-mayor")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> ListarGruposMayorSync() =>
+        Ok(await _service.ListarGruposMayorSyncAsync());
+
+    [HttpPost("catalogo/grupos-mayor/upsert")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> UpsertGrupoMayor(GrupoMayorSyncItem item)
+    {
+        await _service.UpsertGrupoMayorAsync(item);
+        return Ok(new { mensaje = "Grupo mayor sincronizado." });
+    }
+
+    [HttpGet("catalogo/grupos-menor")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> ListarGruposMenorSync() =>
+        Ok(await _service.ListarGruposMenorSyncAsync());
+
+    [HttpPost("catalogo/grupos-menor/upsert")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> UpsertGrupoMenor(GrupoMenorSyncItem item)
+    {
+        await _service.UpsertGrupoMenorAsync(item);
+        return Ok(new { mensaje = "Grupo menor sincronizado." });
+    }
+
+    [HttpGet("catalogo/iva")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> ListarIvaSync() =>
+        Ok(await _service.ListarIvaSyncAsync());
+
+    [HttpPost("catalogo/iva/upsert")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> UpsertIva(IvaSyncItem item)
+    {
+        await _service.UpsertIvaAsync(item);
+        return Ok(new { mensaje = "IVA sincronizado." });
+    }
+
+    [HttpGet("catalogo/presentaciones")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> ListarPresentacionesSync() =>
+        Ok(await _service.ListarPresentacionesSyncAsync());
+
+    [HttpPost("catalogo/presentaciones/upsert")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> UpsertPresentacion(PresentacionSyncItem item)
+    {
+        await _service.UpsertPresentacionAsync(item);
+        return Ok(new { mensaje = "Presentacion sincronizada." });
+    }
+
+    // ──────── Facturas NEXO → Visions ────────
+
+    [HttpGet("facturas-para-visions")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> ListarFacturasParaVisions() =>
+        Ok(await _service.ListarFacturasParaVisionsAsync(CentroCostoDelAgente));
+
+    [HttpPost("facturas/{id:int}/marcar-exportada-visions")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> MarcarFacturaExportadaVisions(int id)
+    {
+        await _service.MarcarFacturaExportadaVisionsAsync(id, CentroCostoDelAgente);
+        return Ok(new { mensaje = "Factura marcada como exportada a Visions." });
     }
 
     /// <summary>Desactiva (soft-delete) un agente. El servicio Windows puede seguir corriendo hasta que se detenga manualmente.</summary>

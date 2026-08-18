@@ -4264,6 +4264,150 @@
         }
       }
     },
+    "/api/produccion/recetas/{recetaId}/empleados": {
+      "get": {
+        "tags": [
+          "EmpleadoProduccion"
+        ],
+        "parameters": [
+          {
+            "name": "recetaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "EmpleadoProduccion"
+        ],
+        "parameters": [
+          {
+            "name": "recetaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EmpleadoRecetaInput"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EmpleadoRecetaInput"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EmpleadoRecetaInput"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/produccion/ordenes/{ordenId}/empleados": {
+      "get": {
+        "tags": [
+          "EmpleadoProduccion"
+        ],
+        "parameters": [
+          {
+            "name": "ordenId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "EmpleadoProduccion"
+        ],
+        "parameters": [
+          {
+            "name": "ordenId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EmpleadoOrdenInput"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EmpleadoOrdenInput"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EmpleadoOrdenInput"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/rrhh/empleados": {
       "get": {
         "tags": [
@@ -4847,6 +4991,44 @@
         }
       }
     },
+    "/api/facturacion/tipos-documento": {
+      "get": {
+        "tags": [
+          "Facturacion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/facturacion/facturas": {
       "get": {
         "tags": [
@@ -4862,10 +5044,41 @@
             }
           },
           {
+            "name": "centroCostoId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "tipDoc",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "estado",
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
             }
           }
         ],
@@ -5030,6 +5243,29 @@
       }
     },
     "/api/facturacion/facturas/{id}/descontar-stock": {
+      "post": {
+        "tags": [
+          "Facturacion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/facturacion/facturas/{id}/confirmar-visions": {
       "post": {
         "tags": [
           "Facturacion"
@@ -5571,6 +5807,25 @@
         "tags": [
           "Integracion"
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LatidoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LatidoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LatidoRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -5790,6 +6045,256 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/catalogo/marcas": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/catalogo/marcas/upsert": {
+      "post": {
+        "tags": [
+          "Integracion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarcaSyncItem"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarcaSyncItem"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarcaSyncItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/catalogo/grupos-mayor": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/catalogo/grupos-mayor/upsert": {
+      "post": {
+        "tags": [
+          "Integracion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GrupoMayorSyncItem"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GrupoMayorSyncItem"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GrupoMayorSyncItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/catalogo/grupos-menor": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/catalogo/grupos-menor/upsert": {
+      "post": {
+        "tags": [
+          "Integracion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GrupoMenorSyncItem"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GrupoMenorSyncItem"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GrupoMenorSyncItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/catalogo/iva": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/catalogo/iva/upsert": {
+      "post": {
+        "tags": [
+          "Integracion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IvaSyncItem"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IvaSyncItem"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/IvaSyncItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/catalogo/presentaciones": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/catalogo/presentaciones/upsert": {
+      "post": {
+        "tags": [
+          "Integracion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresentacionSyncItem"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresentacionSyncItem"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresentacionSyncItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/facturas-para-visions": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/facturas/{id}/marcar-exportada-visions": {
+      "post": {
+        "tags": [
+          "Integracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
             }
           }
         ],
@@ -11271,6 +11776,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "intervalSeconds": {
+            "type": "integer",
+            "format": "int32"
+          },
           "agentePath": {
             "type": "string",
             "nullable": true
@@ -11373,6 +11882,11 @@
           "jefeDirectoID": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "tarifaHora": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           }
         },
@@ -12877,6 +13391,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "intervalSeconds": {
+            "type": "integer",
+            "format": "int32"
+          },
           "agentePath": {
             "type": "string",
             "nullable": true
@@ -13780,6 +14298,11 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "tarifaHora": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -13873,11 +14396,24 @@
             "type": "string",
             "nullable": true
           },
+          "tipDoc": {
+            "type": "string",
+            "nullable": true
+          },
+          "nroDoc": {
+            "type": "string",
+            "nullable": true
+          },
           "lineas": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/LineaFacturaInput"
             },
+            "nullable": true
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           }
         },
@@ -14361,6 +14897,13 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/MaquinariaOrdenInput"
+            },
+            "nullable": true
+          },
+          "empleados": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmpleadoOrdenInput"
             },
             "nullable": true
           }
@@ -15101,6 +15644,49 @@
           },
           "tieneUsuario": {
             "type": "boolean"
+          },
+          "tarifaHora": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "EmpleadoOrdenInput": {
+        "type": "object",
+        "properties": {
+          "empleadoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "horasReales": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "EmpleadoRecetaInput": {
+        "type": "object",
+        "properties": {
+          "empleadoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "horasEstimadasPorLote": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -15225,6 +15811,10 @@
             "nullable": true
           },
           "versionAgente": {
+            "type": "string",
+            "nullable": true
+          },
+          "versionDisponible": {
             "type": "string",
             "nullable": true
           },
@@ -15429,11 +16019,23 @@
             "type": "string",
             "nullable": true
           },
+          "nitCliente": {
+            "type": "string",
+            "nullable": true
+          },
           "fecha": {
             "type": "string",
             "format": "date-time"
           },
           "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipDoc": {
+            "type": "string",
+            "nullable": true
+          },
+          "nroDoc": {
             "type": "string",
             "nullable": true
           },
@@ -15458,6 +16060,18 @@
           },
           "produccionAutoEjecutada": {
             "type": "boolean"
+          },
+          "visionsConfirmado": {
+            "type": "boolean"
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "centroCostoNombre": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -15495,6 +16109,10 @@
             "type": "string",
             "nullable": true
           },
+          "nota": {
+            "type": "string",
+            "nullable": true
+          },
           "cantidad": {
             "type": "number",
             "format": "double"
@@ -15515,6 +16133,14 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "esUnidadCaja": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "esCombo": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "additionalProperties": false
@@ -15591,6 +16217,20 @@
         },
         "additionalProperties": false
       },
+      "GrupoMayorSyncItem": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "GrupoMenorItem": {
         "type": "object",
         "properties": {
@@ -15607,6 +16247,24 @@
             "nullable": true
           },
           "grupoMayorNombre": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GrupoMenorSyncItem": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "grupoMayor": {
             "type": "string",
             "nullable": true
           }
@@ -15941,6 +16599,24 @@
         },
         "additionalProperties": false
       },
+      "IvaSyncItem": {
+        "type": "object",
+        "properties": {
+          "ivaID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ivaValor": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "KardexMovimientoItem": {
         "type": "object",
         "properties": {
@@ -16000,6 +16676,16 @@
         },
         "additionalProperties": false
       },
+      "LatidoRequest": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "LatidoResponse": {
         "type": "object",
         "properties": {
@@ -16010,6 +16696,10 @@
           "eventosPendientes": {
             "type": "integer",
             "format": "int32"
+          },
+          "versionDisponible": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -16136,6 +16826,10 @@
           "precioUnitario": {
             "type": "number",
             "format": "double"
+          },
+          "nota": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -16281,6 +16975,20 @@
         "additionalProperties": false
       },
       "MarcaItem": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MarcaSyncItem": {
         "type": "object",
         "properties": {
           "codigo": {
@@ -16906,6 +17614,25 @@
           },
           "tipo": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PresentacionSyncItem": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "presentacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "fracciones": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           }
         },

@@ -48,9 +48,9 @@ public class NexoApiClient : INexoApiClient
         return configuracion ?? throw new InvalidOperationException("La API no devolvio configuracion para este agente.");
     }
 
-    public async Task<LatidoResponse> EnviarLatidoAsync(CancellationToken ct)
+    public async Task<LatidoResponse> EnviarLatidoAsync(string version, CancellationToken ct)
     {
-        var respuesta = await _http.PostAsync("api/integracion/latido", null, ct);
+        var respuesta = await _http.PostAsJsonAsync("api/integracion/latido", new { Version = version }, ct);
         respuesta.EnsureSuccessStatusCode();
 
         var latido = await respuesta.Content.ReadFromJsonAsync<LatidoResponse>(cancellationToken: ct);
@@ -64,5 +64,87 @@ public class NexoApiClient : INexoApiClient
             new { MensajeError = mensajeError },
             ct);
         respuesta.EnsureSuccessStatusCode();
+    }
+
+    // ──────────── Catalogos ────────────
+
+    public async Task<List<MarcaSyncDto>> ListarMarcasSyncAsync(CancellationToken ct)
+    {
+        var r = await _http.GetAsync("api/integracion/catalogo/marcas", ct);
+        r.EnsureSuccessStatusCode();
+        return await r.Content.ReadFromJsonAsync<List<MarcaSyncDto>>(cancellationToken: ct) ?? [];
+    }
+
+    public async Task UpsertMarcaEnNexoAsync(MarcaSyncDto item, CancellationToken ct)
+    {
+        var r = await _http.PostAsJsonAsync("api/integracion/catalogo/marcas/upsert", item, ct);
+        r.EnsureSuccessStatusCode();
+    }
+
+    public async Task<List<GrupoMayorSyncDto>> ListarGruposMayorSyncAsync(CancellationToken ct)
+    {
+        var r = await _http.GetAsync("api/integracion/catalogo/grupos-mayor", ct);
+        r.EnsureSuccessStatusCode();
+        return await r.Content.ReadFromJsonAsync<List<GrupoMayorSyncDto>>(cancellationToken: ct) ?? [];
+    }
+
+    public async Task UpsertGrupoMayorEnNexoAsync(GrupoMayorSyncDto item, CancellationToken ct)
+    {
+        var r = await _http.PostAsJsonAsync("api/integracion/catalogo/grupos-mayor/upsert", item, ct);
+        r.EnsureSuccessStatusCode();
+    }
+
+    public async Task<List<GrupoMenorSyncDto>> ListarGruposMenorSyncAsync(CancellationToken ct)
+    {
+        var r = await _http.GetAsync("api/integracion/catalogo/grupos-menor", ct);
+        r.EnsureSuccessStatusCode();
+        return await r.Content.ReadFromJsonAsync<List<GrupoMenorSyncDto>>(cancellationToken: ct) ?? [];
+    }
+
+    public async Task UpsertGrupoMenorEnNexoAsync(GrupoMenorSyncDto item, CancellationToken ct)
+    {
+        var r = await _http.PostAsJsonAsync("api/integracion/catalogo/grupos-menor/upsert", item, ct);
+        r.EnsureSuccessStatusCode();
+    }
+
+    public async Task<List<IvaSyncDto>> ListarIvaSyncAsync(CancellationToken ct)
+    {
+        var r = await _http.GetAsync("api/integracion/catalogo/iva", ct);
+        r.EnsureSuccessStatusCode();
+        return await r.Content.ReadFromJsonAsync<List<IvaSyncDto>>(cancellationToken: ct) ?? [];
+    }
+
+    public async Task UpsertIvaEnNexoAsync(IvaSyncDto item, CancellationToken ct)
+    {
+        var r = await _http.PostAsJsonAsync("api/integracion/catalogo/iva/upsert", item, ct);
+        r.EnsureSuccessStatusCode();
+    }
+
+    public async Task<List<PresentacionSyncDto>> ListarPresentacionesSyncAsync(CancellationToken ct)
+    {
+        var r = await _http.GetAsync("api/integracion/catalogo/presentaciones", ct);
+        r.EnsureSuccessStatusCode();
+        return await r.Content.ReadFromJsonAsync<List<PresentacionSyncDto>>(cancellationToken: ct) ?? [];
+    }
+
+    public async Task UpsertPresentacionEnNexoAsync(PresentacionSyncDto item, CancellationToken ct)
+    {
+        var r = await _http.PostAsJsonAsync("api/integracion/catalogo/presentaciones/upsert", item, ct);
+        r.EnsureSuccessStatusCode();
+    }
+
+    // ──────────── Facturas NEXO → Visions ────────────
+
+    public async Task<List<FacturaParaVisionsDto>> ListarFacturasParaVisionsAsync(CancellationToken ct)
+    {
+        var r = await _http.GetAsync("api/integracion/facturas-para-visions", ct);
+        r.EnsureSuccessStatusCode();
+        return await r.Content.ReadFromJsonAsync<List<FacturaParaVisionsDto>>(cancellationToken: ct) ?? [];
+    }
+
+    public async Task MarcarFacturaExportadaVisionsAsync(int facturaId, CancellationToken ct)
+    {
+        var r = await _http.PostAsync($"api/integracion/facturas/{facturaId}/marcar-exportada-visions", null, ct);
+        r.EnsureSuccessStatusCode();
     }
 }

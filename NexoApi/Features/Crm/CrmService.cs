@@ -767,8 +767,11 @@ public class CrmService : ICrmService
             throw new InvalidOperationException("La cotización no tiene artículos para facturar.");
 
         var lineasFactura = lineas.Select(l => new LineaFacturaInput(l.ArticuloID, null, null, l.Cantidad, l.PrecioUnitario)).ToList();
-        var facturaRequest = new CrearFacturaRequest(cotizacion.ClienteID, DateTime.Today,
-            $"Generada desde Cotización #{cotizacionId}", lineasFactura);
+        var facturaRequest = new CrearFacturaRequest(
+            cotizacion.ClienteID, DateTime.Today,
+            $"Generada desde Cotización #{cotizacionId}",
+            TipDoc: "FACTURA", NroDoc: null,
+            Lineas: lineasFactura);
 
         var facturaId = await _facturacion.CrearFacturaAsync(facturaRequest, usuarioId);
 

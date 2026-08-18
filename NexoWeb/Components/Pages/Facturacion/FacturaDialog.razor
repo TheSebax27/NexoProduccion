@@ -3,143 +3,194 @@
 @inject ISnackbar Snackbar
 
 <MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center" style="gap:10px">
+            <MudIcon Icon="@Icons.Material.Outlined.Receipt" Style="color:var(--mud-palette-primary)" />
+            <div>
+                <div style="font-weight:700; font-size:1.05rem">Nueva Factura</div>
+                <div style="font-size:0.75rem; opacity:.65">Completa los datos del documento.</div>
+            </div>
+        </div>
+    </TitleContent>
     <DialogContent>
         <MudForm @ref="_form" Model="@this">
-            <div class="d-flex align-center mb-2" style="gap:1rem">
-                <MudSwitch @bind-Value="_consumidorFinal" Color="Color.Primary"
-                           Label="Consumidor Final" />
-            </div>
-            @if (!_consumidorFinal)
-            {
-                <MudSelect T="int?" @bind-Value="_clienteId" Label="Cliente" Required="true"
-                           RequiredError="Selecciona un cliente" Class="mb-3">
-                    @foreach (var c in Clientes)
+
+            @* ── Cabecera: Tipo de documento + Nro ── *@
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
+                <MudSelect T="string" @bind-Value="_tipDoc" Label="Tipo de Documento" Required="true"
+                           RequiredError="Selecciona un tipo" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @foreach (var td in TiposDocumento.Todos)
                     {
-                        <MudSelectItem T="int?" Value="@c.ClienteID">@c.Nombre</MudSelectItem>
+                        <MudSelectItem Value="@td">@td</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudTextField @bind-Value="_nroDoc" Label="Nro. Documento (opcional)"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </div>
+
+            @* ── Centro de Costo de venta ── *@
+            @if (CentrosCosto.Count > 0)
+            {
+                <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Clearable="true"
+                           Class="mb-3" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           Placeholder="Sin asignar">
+                    @foreach (var cc in CentrosCosto)
+                    {
+                        <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
                     }
                 </MudSelect>
             }
 
-            <MudDatePicker @bind-Date="_fecha" Label="Fecha" Required="true" Class="mb-3" />
-            <MudTextField @bind-Value="_notas" Label="Notas (opcional)" Lines="2" Class="mb-3" />
-
-            <MudDivider Class="mb-3" />
-            <MudText Typo="Typo.subtitle2" Class="mb-2">Artículos Vendidos</MudText>
-
-            @foreach (var linea in _lineas)
+            @* ── Cliente ── *@
+            <div class="d-flex align-center mb-2" style="gap:1rem">
+                <MudSwitch @bind-Value="_consumidorFinal" Color="Color.Primary" Label="Consumidor Final" />
+            </div>
+            @if (!_consumidorFinal)
             {
-                var art = Articulos.FirstOrDefault(a => a.ArticuloID == linea.ArticuloID);
-                <MudPaper Elevation="0" Class="mb-3 pa-2" Style="border:1px solid var(--mud-palette-divider); border-radius:8px;">
-                    <div class="d-flex align-center mb-2" style="gap: 0.5rem;">
-                        <MudSelect T="int?" Value="linea.ArticuloID" ValueChanged="@((int? v) => OnArticuloCambiado(linea, v))"
-                                   Label="Artículo" Style="flex: 1;">
-                            @foreach (var a in Articulos)
-                            {
-                                <MudSelectItem T="int?" Value="@a.ArticuloID">@a.SKU - @a.Nombre</MudSelectItem>
-                            }
-                        </MudSelect>
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
-                                       OnClick="@(() => _lineas.Remove(linea))" />
-                    </div>
-
-                    @* Cantidad: caja+unidades o simple *@
-                    @if (art?.EsUnidadCaja == true)
+                <MudSelect T="int?" @bind-Value="_clienteId" Label="Cliente" Required="true"
+                           RequiredError="Selecciona un cliente" Class="mb-3"
+                           Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @foreach (var c in Clientes)
                     {
-                        <div class="d-flex align-center mb-1" style="gap:0.5rem;">
-                            <MudNumericField T="int" @bind-Value="linea.Cajas" Label="Cajas" Min="0" Style="flex:1;" />
-                            @if (!art.SoloEnCajas)
-                            {
-                                <MudNumericField T="int" @bind-Value="linea.Unidades" Label="Unidades sueltas"
-                                                Min="0" Max="@((int)(art.UnidadesPorEmbalaje!.Value - 1))" Style="flex:1;" />
-                            }
-                            <MudText Typo="Typo.caption" Style="flex:1; color:var(--n-text-3);">
-                                = @StockHelper.CajasYUnidadesADecimal(linea.Cajas, linea.Unidades, art.UnidadesPorEmbalaje!.Value).ToString("N4") cajas
-                            </MudText>
-                        </div>
+                        <MudSelectItem T="int?" Value="@c.ClienteID">
+                            @c.Nombre @(c.NIT is not null ? $"— {c.NIT}" : "")
+                        </MudSelectItem>
                     }
-                    else
-                    {
-                        <MudNumericField T="decimal" @bind-Value="linea.CantidadSimple" Label="Cantidad"
-                                         Min="0.01m" Format="N2" Class="mb-1" />
-                    }
-
-                    @* Hint de precio por unidad si el artículo tiene uno definido *@
-                    @if (art?.EsUnidadCaja == true && art.PrecioVentaUnidad.HasValue)
-                    {
-                        <MudText Typo="Typo.caption" Style="color:var(--n-text-3);" Class="mt-1">
-                            Precio caja: @art.PrecioVenta.ToString("N0") · Precio unitario: @art.PrecioVentaUnidad.Value.ToString("N0")
-                        </MudText>
-                    }
-
-                    @* Precio: catálogo con indicador, o precio personalizado *@
-                    <div class="d-flex align-center mt-1" style="gap:0.5rem; flex-wrap:wrap;">
-                        <MudCheckBox T="bool" @bind-Value="linea.UsarPrecioCatalogo" Color="Color.Primary"
-                                     Label="Precio catálogo" Dense="true" />
-                        @if (linea.UsarPrecioCatalogo)
-                        {
-                            <MudText Typo="Typo.body2">@linea.PrecioUnitario.ToString("N0")</MudText>
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
-                                           OnClick="@(() => linea.UsarPrecioCatalogo = false)"
-                                           Title="Ingresar precio personalizado" />
-                        }
-                        else
-                        {
-                            <MudNumericField T="decimal" @bind-Value="linea.PrecioUnitario" Label="Precio unitario"
-                                            Min="0m" Format="N0" Style="flex:1;" />
-                            @if (art is not null && linea.PrecioUnitario != art.PrecioVenta)
-                            {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.LocalOffer">
-                                    Precio especial
-                                </MudChip>
-                            }
-                            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" Title="Restaurar precio catálogo"
-                                           OnClick="@(() => { linea.PrecioUnitario = art?.PrecioVenta ?? 0; linea.UsarPrecioCatalogo = true; })" />
-                        }
-                        <MudText Typo="Typo.body2" Style="margin-left:auto; font-weight:600;">
-                            @((CantidadFinal(linea) * linea.PrecioUnitario).ToString("C0"))
-                        </MudText>
-                    </div>
-                </MudPaper>
+                </MudSelect>
             }
 
-            <div class="d-flex flex-wrap mt-1 mb-3" style="gap:.5rem">
-                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add"
-                           OnClick="@(() => _lineas.Add(new LineaEditable()))">
-                    Agregar Artículo
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.LocalOffer"
-                           Color="Color.Secondary"
-                           OnClick="@(() => _combosLineas.Add(new ComboLinea()))">
-                    Agregar Combo
-                </MudButton>
+            <div style="display:grid; grid-template-columns:160px 1fr; gap:10px; margin-bottom:14px">
+                <MudDatePicker @bind-Date="_fecha" Label="Fecha" Required="true"
+                               DateFormat="dd/MM/yyyy" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudTextField @bind-Value="_notas" Label="Notas (opcional)"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" />
             </div>
 
-            @if (_combosLineas.Count > 0)
-            {
-                <MudDivider Class="mb-2"/>
-                <MudText Typo="Typo.subtitle2" Class="mb-2">Combos</MudText>
-                @foreach (var cl in _combosLineas)
-                {
-                    <MudPaper Elevation="0" Class="mb-2 pa-2" Style="border:1px solid var(--mud-palette-secondary); border-radius:8px;">
-                        <div class="d-flex align-center" style="gap:.5rem">
-                            <MudSelect T="int?" Value="cl.ComboID" ValueChanged="@((int? v) => OnComboCambiado(cl, v))"
-                                       Label="Combo" Style="flex:1">
-                                @foreach (var c in _combosActivos)
-                                {
-                                    <MudSelectItem T="int?" Value="@c.ComboID">@c.Nombre (@c.PrecioEfectivo.ToString("C0"))</MudSelectItem>
-                                }
-                            </MudSelect>
-                            <MudNumericField T="decimal" @bind-Value="cl.PrecioUnitario" Label="Precio" Min="0m" Format="N0" Style="width:130px" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
-                                           OnClick="@(() => _combosLineas.Remove(cl))" />
-                        </div>
-                    </MudPaper>
-                }
-            }
+            <MudDivider Class="mb-3" />
 
-            <MudText Typo="Typo.subtitle1" Class="d-block" Style="text-align: right;">
-                Total: @_lineas.Sum(l => CantidadFinal(l) * l.PrecioUnitario).ToString("C0")
-            </MudText>
+            @* ── Tabla unificada de lineas (articulos + combos) ── *@
+            <div class="d-flex align-center justify-space-between mb-2">
+                <MudText Typo="Typo.subtitle2">Artículos / Combos</MudText>
+                <div class="d-flex" style="gap:.4rem">
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="AgregarLinea">Agregar artículo</MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.LocalOffer"
+                               Color="Color.Secondary" OnClick="AgregarCombo">Agregar combo</MudButton>
+                </div>
+            </div>
+
+            @if (_lineas.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">Agrega al menos un artículo o combo.</MudAlert>
+            }
+            else
+            {
+                <MudTable Items="_lineas" Dense="true" Hover="false" Elevation="0"
+                          Style="border:1px solid var(--mud-palette-divider); border-radius:8px; overflow:hidden">
+                    <HeaderContent>
+                        <MudTh Style="width:40%">Artículo / Combo</MudTh>
+                        <MudTh Style="width:18%">Cantidad</MudTh>
+                        <MudTh Style="width:20%">Precio unit.</MudTh>
+                        <MudTh Style="text-align:right; width:14%">Subtotal</MudTh>
+                        <MudTh Style="width:8%"></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        @{
+                            var art = context.TipoLinea == TipoLinea.Articulo
+                                ? Articulos.FirstOrDefault(a => a.ArticuloID == context.ArticuloID)
+                                : null;
+                        }
+                        <MudTd>
+                            @if (context.TipoLinea == TipoLinea.Articulo)
+                            {
+                                <MudSelect T="int?" Value="context.ArticuloID"
+                                           ValueChanged="@((int? v) => OnArticuloCambiado(context, v))"
+                                           Dense="true" Margin="Margin.Dense" Variant="Variant.Text"
+                                           Style="font-size:0.85rem">
+                                    @foreach (var a in Articulos)
+                                    {
+                                        <MudSelectItem T="int?" Value="@a.ArticuloID">@a.SKU - @a.Nombre</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            }
+                            else
+                            {
+                                <div class="d-flex align-center" style="gap:4px">
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Secondary"
+                                             Icon="@Icons.Material.Filled.LocalOffer" Class="ma-0">COMBO</MudChip>
+                                    <MudSelect T="int?" Value="context.ComboID"
+                                               ValueChanged="@((int? v) => OnComboCambiado(context, v))"
+                                               Dense="true" Margin="Margin.Dense" Variant="Variant.Text"
+                                               Style="font-size:0.85rem; flex:1">
+                                        @foreach (var c in _combosActivos)
+                                        {
+                                            <MudSelectItem T="int?" Value="@c.ComboID">@c.Nombre</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </div>
+                            }
+                        </MudTd>
+                        <MudTd>
+                            @if (context.TipoLinea == TipoLinea.Articulo && art?.EsUnidadCaja == true)
+                            {
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px">
+                                    <MudNumericField T="int" @bind-Value="context.Cajas" Label="Cjs"
+                                                     Dense="true" Margin="Margin.Dense" Variant="Variant.Text" Min="0" />
+                                    @if (!art.SoloEnCajas)
+                                    {
+                                        <MudNumericField T="int" @bind-Value="context.Unidades" Label="Und"
+                                                         Dense="true" Margin="Margin.Dense" Variant="Variant.Text"
+                                                         Min="0" Max="@((int)(art.UnidadesPorEmbalaje!.Value - 1))" />
+                                    }
+                                </div>
+                                <MudText Typo="Typo.caption" Style="color:var(--n-text-3); font-size:0.7rem">
+                                    = @CantidadFinal(context).ToString("N4")
+                                </MudText>
+                            }
+                            else
+                            {
+                                <MudNumericField T="decimal" @bind-Value="context.CantidadSimple"
+                                                 Dense="true" Margin="Margin.Dense" Variant="Variant.Text"
+                                                 Min="0.01m" Format="N2" />
+                            }
+                        </MudTd>
+                        <MudTd>
+                            @if (context.UsarPrecioCatalogo && context.TipoLinea == TipoLinea.Articulo)
+                            {
+                                <div class="d-flex align-center" style="gap:2px">
+                                    <MudText Typo="Typo.body2">@context.PrecioUnitario.ToString("N0")</MudText>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                                   OnClick="@(() => context.UsarPrecioCatalogo = false)"
+                                                   Title="Precio personalizado" />
+                                </div>
+                            }
+                            else
+                            {
+                                <MudNumericField T="decimal" @bind-Value="context.PrecioUnitario"
+                                                 Dense="true" Margin="Margin.Dense" Variant="Variant.Text"
+                                                 Min="0m" Format="N0" />
+                            }
+                            @if (context.TipoLinea == TipoLinea.Articulo && art is not null
+                                 && !context.UsarPrecioCatalogo && context.PrecioUnitario != art.PrecioVenta)
+                            {
+                                <MudText Typo="Typo.caption" Style="color:var(--mud-palette-warning); font-size:0.7rem">Precio especial</MudText>
+                            }
+                        </MudTd>
+                        <MudTd Style="text-align:right; font-weight:600">
+                            @((CantidadFinal(context) * context.PrecioUnitario).ToString("C0"))
+                        </MudTd>
+                        <MudTd Style="text-align:center">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                           Size="Size.Small" OnClick="@(() => _lineas.Remove(context))" />
+                        </MudTd>
+                    </RowTemplate>
+                    <FooterContent>
+                        <MudTd colspan="5" Style="text-align:right; padding-right:12px; font-weight:700; font-size:1rem; border-top:1px solid var(--mud-palette-divider)">
+                            Total: @_lineas.Sum(l => CantidadFinal(l) * l.PrecioUnitario).ToString("C0")
+                        </MudTd>
+                    </FooterContent>
+                </MudTable>
+            }
         </MudForm>
     </DialogContent>
     <DialogActions>
@@ -156,40 +207,51 @@
     [Parameter] public List<ClienteItem> Clientes { get; set; } = new();
     [Parameter] public List<ArticuloItem> Articulos { get; set; } = new();
     [Parameter] public List<ComboItem> CombosActivos { get; set; } = new();
+    [Parameter] public List<CentroCostoBasicoItem> CentrosCosto { get; set; } = new();
+
+    private enum TipoLinea { Articulo, Combo }
 
     private class LineaEditable
     {
-        public int?    ArticuloID         { get; set; }
-        public int     Cajas              { get; set; } = 1;
-        public int     Unidades           { get; set; } = 0;
-        public decimal CantidadSimple     { get; set; } = 1;
-        public decimal PrecioUnitario     { get; set; }
-        public bool    UsarPrecioCatalogo { get; set; } = true;
-    }
-
-    private class ComboLinea
-    {
-        public int?    ComboID       { get; set; }
-        public string? NombreCombo   { get; set; }
-        public decimal PrecioUnitario { get; set; }
+        public TipoLinea TipoLinea     { get; set; } = TipoLinea.Articulo;
+        public int?      ArticuloID    { get; set; }
+        public int?      ComboID       { get; set; }
+        public string?   NombreCombo   { get; set; }
+        public int       Cajas         { get; set; } = 1;
+        public int       Unidades      { get; set; } = 0;
+        public decimal   CantidadSimple { get; set; } = 1;
+        public decimal   PrecioUnitario { get; set; }
+        public bool      UsarPrecioCatalogo { get; set; } = true;
     }
 
     private const int ClienteConsumidorFinalId = 11;
 
     private MudForm _form = default!;
+    private string _tipDoc = "FACTURA";
+    private string? _nroDoc;
     private bool _consumidorFinal;
     private int? _clienteId;
+    private int? _centroCostoId;
     private DateTime? _fecha = DateTime.Today;
     private string? _notas;
     private List<LineaEditable> _lineas = new() { new LineaEditable() };
-    private List<ComboLinea> _combosLineas = new();
     private List<ComboItem> _combosActivos => CombosActivos;
+
+    private void AgregarLinea() =>
+        _lineas.Add(new LineaEditable { TipoLinea = TipoLinea.Articulo });
+
+    private void AgregarCombo() =>
+        _lineas.Add(new LineaEditable { TipoLinea = TipoLinea.Combo });
 
     private decimal CantidadFinal(LineaEditable linea)
     {
+        if (linea.TipoLinea == TipoLinea.Combo)
+            return linea.CantidadSimple;
+
         var art = Articulos.FirstOrDefault(a => a.ArticuloID == linea.ArticuloID);
         if (art?.EsUnidadCaja == true)
             return StockHelper.CajasYUnidadesADecimal(linea.Cajas, linea.Unidades, art.UnidadesPorEmbalaje!.Value);
+
         return linea.CantidadSimple;
     }
 
@@ -204,12 +266,13 @@
         linea.UsarPrecioCatalogo = true;
     }
 
-    private void OnComboCambiado(ComboLinea cl, int? comboId)
+    private void OnComboCambiado(LineaEditable linea, int? comboId)
     {
-        cl.ComboID = comboId;
+        linea.ComboID = comboId;
         var combo = _combosActivos.FirstOrDefault(c => c.ComboID == comboId);
-        cl.NombreCombo = combo?.Nombre;
-        cl.PrecioUnitario = combo?.PrecioEfectivo ?? 0;
+        linea.NombreCombo = combo?.Nombre;
+        linea.PrecioUnitario = combo?.PrecioEfectivo ?? 0;
+        linea.CantidadSimple = 1;
     }
 
     private async Task GuardarAsync()
@@ -219,15 +282,14 @@
         if (!_form.IsValid || clienteIdFinal is null || _fecha is null)
             return;
 
-        var lineasArticulos = _lineas
-            .Where(l => l.ArticuloID is not null && CantidadFinal(l) > 0)
-            .Select(l => new LineaFacturaInput(l.ArticuloID, null, null, CantidadFinal(l), l.PrecioUnitario));
-
-        var lineasCombos = _combosLineas
-            .Where(c => c.ComboID.HasValue && c.PrecioUnitario > 0)
-            .Select(c => new LineaFacturaInput(null, c.ComboID, c.NombreCombo, 1, c.PrecioUnitario));
-
-        var lineasValidas = lineasArticulos.Concat(lineasCombos).ToList();
+        var lineasValidas = _lineas
+            .Where(l => l.TipoLinea == TipoLinea.Articulo
+                        ? l.ArticuloID is not null && CantidadFinal(l) > 0
+                        : l.ComboID is not null && CantidadFinal(l) > 0)
+            .Select(l => l.TipoLinea == TipoLinea.Articulo
+                ? new LineaFacturaInput(l.ArticuloID, null, null, CantidadFinal(l), l.PrecioUnitario)
+                : new LineaFacturaInput(null, l.ComboID, l.NombreCombo, CantidadFinal(l), l.PrecioUnitario))
+            .ToList();
 
         if (lineasValidas.Count == 0)
         {
@@ -235,7 +297,11 @@
             return;
         }
 
-        var request = new CrearFacturaRequest(clienteIdFinal!.Value, _fecha.Value, _notas, lineasValidas);
+        var request = new CrearFacturaRequest(
+            clienteIdFinal!.Value, _fecha.Value, _notas,
+            _tipDoc, _nroDoc,
+            lineasValidas,
+            _centroCostoId);
         MudDialog.Close(DialogResult.Ok(request));
     }
 

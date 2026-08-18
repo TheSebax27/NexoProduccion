@@ -175,7 +175,8 @@ else
             { x => x.Empleados, _empleados }
         };
 
-        var dialogo = await DialogService.ShowAsync<EmpleadoDialog>("Nuevo Empleado", parametros);
+        var dialogo = await DialogService.ShowAsync<EmpleadoDialog>("Nuevo Empleado", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
         var resultado = await dialogo.Result;
 
         if (resultado is null || resultado.Canceled)
@@ -252,7 +253,8 @@ else
             { x => x.Empleados, _empleados }
         };
 
-        var dialogo = await DialogService.ShowAsync<EmpleadoDialog>("Editar Empleado", parametros);
+        var dialogo = await DialogService.ShowAsync<EmpleadoDialog>("Editar Empleado", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
         var resultado = await dialogo.Result;
 
         if (resultado is null || resultado.Canceled)

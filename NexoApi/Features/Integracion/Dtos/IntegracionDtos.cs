@@ -54,6 +54,7 @@ public record ConfiguracionAgenteCompletaResponse(
     string? VisionsDbConexion,
     string? NexoApiBaseUrl,
     int IntervalMinutes,
+    int IntervalSeconds,
     string? AgentePath
 );
 
@@ -61,6 +62,7 @@ public record ActualizarConfiguracionAgenteRequest(
     string? VisionsDbConexion,
     string? NexoApiBaseUrl,
     int IntervalMinutes,
+    int IntervalSeconds,
     string? AgentePath
 );
 
@@ -101,7 +103,8 @@ public record ResolverArticuloPendienteRequest(
 
 // Respuesta al POST /latido -- confirma que la API recibio el heartbeat.
 // HoraServidor permite al agente detectar desfase de reloj entre maquinas.
-public record LatidoResponse(DateTime HoraServidor, int EventosPendientes);
+public record LatidoRequest(string? Version);
+public record LatidoResponse(DateTime HoraServidor, int EventosPendientes, string VersionDisponible);
 
 // Respuesta del GET /estado -- usada por NexoWeb para el panel de monitoreo.
 public record EstadoIntegracionResponse(
@@ -112,6 +115,7 @@ public record EstadoIntegracionResponse(
     bool Activo,
     DateTime? UltimoLatido,
     string? VersionAgente,
+    string? VersionDisponible,
     int EventosPendientes,
     int EventosProcesadosHoy,
     int VentasImportadasHoy,
@@ -121,3 +125,32 @@ public record EstadoIntegracionResponse(
 // Enviado por el Agente cuando no puede aplicar un evento en Visions.
 // Tras 3 intentos fallidos el evento pasa a ERROR y deja de reintentarse.
 public record RegistrarFalloRequest(string MensajeError);
+
+// ──────────── Sincronizacion de catalogos (agente ↔ Visions) ────────────
+
+public record MarcaSyncItem(string Codigo, string? Nombre);
+public record GrupoMayorSyncItem(string Codigo, string? Nombre);
+public record GrupoMenorSyncItem(string Codigo, string? Nombre, string GrupoMayor);
+public record IvaSyncItem(int IvaID, int IvaValor, string? Descripcion);
+public record PresentacionSyncItem(string Codigo, string Presentacion, decimal? Fracciones);
+
+// ──────────── Facturas NEXO → Visions ────────────
+
+public record FacturaParaVisionsItem(
+    int FacturaID,
+    string TipDoc, string? NroDoc,
+    DateTime Fecha,
+    string? ClienteNit, string ClienteNombre,
+    List<LineaFacturaParaVisionsItem> Lineas
+);
+
+public record LineaFacturaParaVisionsItem(
+    int Orden,
+    string? ReferenciaVisions,
+    string NombreArticulo,
+    string? MarcaCodigo,
+    string? GrupoMenorCodigo,
+    decimal Cantidad,
+    decimal PrecioUnitario,
+    decimal Costo
+);

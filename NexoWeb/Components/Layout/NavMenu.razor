@@ -18,10 +18,34 @@
         </MudNavLink>
     }
 
+    @* Catalogo *@
+    @if (Modulos.EsVisible("CATALOGO"))
+    {
+        <MudNavGroup Title="Catalogo" Icon="@Icons.Material.Filled.Category" Expanded="false">
+            @if (Modulos.EsVisible("CATALOGO.ARTICULOS"))
+            {
+                <MudNavLink Href="/catalogo/articulos" Icon="@Icons.Material.Filled.ViewInAr">Articulos</MudNavLink>
+            }
+            <MudNavLink Href="/catalogo/maestros" Icon="@Icons.Material.Filled.LibraryBooks">Catalogos Maestros</MudNavLink>
+            @if (Modulos.EsVisible("CATALOGO.CENTROSTRABAJO"))
+            {
+                <MudNavLink Href="/catalogo/centros-trabajo" Icon="@Icons.Material.Filled.Work">Centros de Trabajo</MudNavLink>
+            }
+            @if (Modulos.EsVisible("CATALOGO.BODEGAS"))
+            {
+                <MudNavLink Href="/catalogo/bodegas" Icon="@Icons.Material.Filled.Warehouse">Bodegas</MudNavLink>
+            }
+            @if (Modulos.EsVisible("CATALOGO.PROVEEDORES"))
+            {
+                <MudNavLink Href="/catalogo/proveedores" Icon="@Icons.Material.Filled.Store">Proveedores</MudNavLink>
+            }
+        </MudNavGroup>
+    }
+
     @* Produccion *@
     @if (Modulos.EsVisible("PRODUCCION"))
     {
-        <MudNavGroup Title="Produccion" Icon="@Icons.Material.Filled.Factory" Expanded="true">
+        <MudNavGroup Title="Produccion" Icon="@Icons.Material.Filled.Factory" Expanded="false">
             @if (Modulos.EsVisible("PRODUCCION.ORDENES"))
             {
                 <MudNavLink Href="/produccion/ordenes" Icon="@Icons.Material.Filled.Assignment">Ordenes de Produccion</MudNavLink>
@@ -49,6 +73,10 @@
             {
                 <MudNavLink Href="/inventario/kardex" Icon="@Icons.Material.Filled.ReceiptLong">Kardex de Articulos</MudNavLink>
             }
+            @if (Modulos.EsVisible("OPERACIONES.MOVIMIENTOS"))
+            {
+                <MudNavLink Href="/operaciones/movimientos" Icon="@Icons.Material.Filled.Timeline">Movimientos</MudNavLink>
+            }
             @if (Modulos.EsVisible("INVENTARIO.AJUSTES"))
             {
                 <MudNavLink Href="/inventario/ajustes" Icon="@Icons.Material.Filled.Tune">Ajuste de Inventario</MudNavLink>
@@ -68,10 +96,6 @@
     @if (Modulos.EsVisible("OPERACIONES"))
     {
         <MudNavGroup Title="Operaciones" Icon="@Icons.Material.Filled.SwapHoriz" Expanded="false">
-            @if (Modulos.EsVisible("OPERACIONES.MOVIMIENTOS"))
-            {
-                <MudNavLink Href="/operaciones/movimientos" Icon="@Icons.Material.Filled.Timeline">Movimientos</MudNavLink>
-            }
             @if (Modulos.EsVisible("OPERACIONES.COMPRAS"))
             {
                 <MudNavLink Href="/compras/ordenes" Icon="@Icons.Material.Filled.ShoppingCart">Ordenes de Compra</MudNavLink>
@@ -84,38 +108,6 @@
             {
                 <MudNavLink Href="/facturacion" Icon="@Icons.Material.Filled.Receipt">Facturacion</MudNavLink>
             }
-        </MudNavGroup>
-    }
-
-    @* Catalogo *@
-    @if (Modulos.EsVisible("CATALOGO"))
-    {
-        <MudNavGroup Title="Catalogo" Icon="@Icons.Material.Filled.Category" Expanded="false">
-            @if (Modulos.EsVisible("CATALOGO.ARTICULOS"))
-            {
-                <MudNavLink Href="/catalogo/articulos" Icon="@Icons.Material.Filled.ViewInAr">Articulos</MudNavLink>
-            }
-            @if (Modulos.EsVisible("CATALOGO.CENTROSCOSTO"))
-            {
-                <MudNavLink Href="/catalogo/centros-costo" Icon="@Icons.Material.Filled.BusinessCenter">Centros de Costo</MudNavLink>
-            }
-            @if (Modulos.EsVisible("CATALOGO.CENTROSTRABAJO"))
-            {
-                <MudNavLink Href="/catalogo/centros-trabajo" Icon="@Icons.Material.Filled.Work">Centros de Trabajo</MudNavLink>
-            }
-            @if (Modulos.EsVisible("CATALOGO.BODEGAS"))
-            {
-                <MudNavLink Href="/catalogo/bodegas" Icon="@Icons.Material.Filled.Warehouse">Bodegas</MudNavLink>
-            }
-            @if (Modulos.EsVisible("CATALOGO.PROVEEDORES"))
-            {
-                <MudNavLink Href="/catalogo/proveedores" Icon="@Icons.Material.Filled.Store">Proveedores</MudNavLink>
-                @if (ConfiguracionEmpresa.UsaVisions)
-                {
-                    <MudNavLink Href="/catalogo/mapeo-articulos-visions" Icon="@Icons.Material.Filled.SyncAlt">Mapeo Articulos Visions</MudNavLink>
-                }
-            }
-            <MudNavLink Href="/catalogo/maestros" Icon="@Icons.Material.Filled.LibraryBooks">Catalogos Maestros</MudNavLink>
         </MudNavGroup>
     }
 
@@ -185,17 +177,17 @@
             {
                 <MudNavLink Href="/rrhh/empleados" Icon="@Icons.Material.Filled.Person">Empleados</MudNavLink>
             }
-            @if (Modulos.EsVisible("RRHH.ASISTENCIA"))
+            @if (Modulos.EsVisible("RRHH.CARGOS"))
             {
-                <MudNavLink Href="/rrhh/asistencia" Icon="@Icons.Material.Filled.FactCheck">Asistencia</MudNavLink>
+                <MudNavLink Href="/rrhh/cargos" Icon="@Icons.Material.Filled.Work">Cargos y Departamentos</MudNavLink>
             }
             @if (Modulos.EsVisible("RRHH.HORARIOS"))
             {
                 <MudNavLink Href="/rrhh/horarios" Icon="@Icons.Material.Filled.Schedule">Horarios</MudNavLink>
             }
-            @if (Modulos.EsVisible("RRHH.CARGOS"))
+            @if (Modulos.EsVisible("RRHH.ASISTENCIA"))
             {
-                <MudNavLink Href="/rrhh/cargos" Icon="@Icons.Material.Filled.Work">Cargos y Departamentos</MudNavLink>
+                <MudNavLink Href="/rrhh/asistencia" Icon="@Icons.Material.Filled.FactCheck">Asistencia</MudNavLink>
             }
             @if (Modulos.EsVisible("RRHH.AUSENCIAS"))
             {

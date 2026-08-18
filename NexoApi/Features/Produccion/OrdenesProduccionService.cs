@@ -84,6 +84,16 @@ public class OrdenesProduccionService : IOrdenesProduccionService
                 await connection.ExecuteAsync(sqlMaq, new { OrdenProduccionID = ordenId, m.MaquinariaID, m.HorasReales, m.Notas });
         }
 
+        if (r.Empleados is { Count: > 0 })
+        {
+            const string sqlEmp = """
+                INSERT INTO Produccion.OrdenEmpleado (OrdenProduccionID, EmpleadoID, HorasReales, Notas)
+                VALUES (@OrdenProduccionID, @EmpleadoID, @HorasReales, @Notas)
+                """;
+            foreach (var e in r.Empleados)
+                await connection.ExecuteAsync(sqlEmp, new { OrdenProduccionID = ordenId, e.EmpleadoID, e.HorasReales, e.Notas });
+        }
+
         return ordenId;
     }
 
@@ -291,13 +301,14 @@ public class OrdenesProduccionService : IOrdenesProduccionService
                      * (1 + rd.PorcentajeMermaEstandar / 100.0) AS DECIMAL(18,4)) AS CantidadRequerida,
                 ISNULL(SUM(s.CantidadActual), 0)                                AS StockDisponible
             FROM Produccion.OrdenesProduccion op
+            JOIN Produccion.EstadosOP e              ON e.EstadoOPID      = op.EstadoOPID
             JOIN Produccion.RecetaBOM r              ON r.RecetaID        = op.RecetaID
             JOIN Produccion.RecetaBOM_Detalle rd      ON rd.RecetaID       = r.RecetaID
             JOIN Catalogo.Tarjetas a                 ON a.ArticuloID      = rd.InsumoID
             LEFT JOIN Inventario.InventarioStock s    ON s.ArticuloID      = rd.InsumoID
                                                      AND s.BodegaID       = op.BodegaOrigenMPID
             WHERE op.OrdenProduccionID = @ordenProduccionId
-              AND op.Estado = 'Planificada'
+              AND e.Nombre = 'Planificada'
             GROUP BY a.Nombre, a.PresentacionCodigo,
                      rd.CantidadRequerida, op.CantidadProgramada,
                      r.CantidadRendimientoBase, rd.PorcentajeMermaEstandar

@@ -1,4 +1,4 @@
-﻿@page "/produccion/ordenes/crear"
+@page "/produccion/ordenes/crear"
 @page "/produccion/ordenes/{OrdenProduccionId:int}/editar"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
@@ -8,7 +8,20 @@
 
 <PageTitle>@(EsEdicion ? "Editar Orden de Produccion" : "Nueva Orden de Produccion") - NEXO</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">@(EsEdicion ? $"Editar Orden {_codigoOp}" : "Nueva Orden de Produccion")</MudText>
+<div class="nexo-page-hero">
+    <div class="nexo-page-hero__left">
+        <div class="nexo-page-hero__accent"></div>
+        <div>
+            <p class="nexo-page-hero__module">Produccion</p>
+            <h1 class="nexo-page-hero__title">@(EsEdicion ? $"Editar {_codigoOp}" : "Nueva Orden de Produccion")</h1>
+        </div>
+    </div>
+    <a href="/produccion/ordenes" style="text-decoration:none">
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.ArrowBack" Size="Size.Small">
+            Volver
+        </MudButton>
+    </a>
+</div>
 
 @if (_cargandoCatalogos)
 {
@@ -18,179 +31,245 @@ else
 {
     @if (EsEdicion)
     {
-        <MudAlert Severity="Severity.Info" Class="mb-4">
-            Solo se puede editar mientras la orden esta en estado Planificada (aun no se ha
-            descontado materia prima). El codigo de la OP no se puede cambiar.
+        <MudAlert Severity="Severity.Info" Class="mb-4" Icon="@Icons.Material.Outlined.Info">
+            Solo se puede editar mientras la orden esta en estado <strong>Planificada</strong>. El codigo de la OP no se puede cambiar.
         </MudAlert>
     }
-    <MudPaper Class="pa-6" MaxWidth="700px">
-        <MudTextField @bind-Value="_codigoOp" Label="Codigo de la OP"
-                      Class="mb-4" Required="true" Disabled="@EsEdicion"
-                      HelperText="@(EsEdicion ? "No se puede cambiar una vez creada la orden." : null)" />
+
+    @* ── Información general ── *@
+    <MudPaper Class="pa-5 mb-4">
+        <div class="nexo-chart-header mb-4">
+            <MudIcon Icon="@Icons.Material.Outlined.Assignment" Size="Size.Small" Class="nexo-chart-header__icon" />
+            <div>
+                <div class="nexo-chart-header__title">Informacion general</div>
+                <div class="nexo-chart-header__sub">Completa la informacion para @(EsEdicion ? "actualizar" : "crear") la orden</div>
+            </div>
+        </div>
 
         @{
             var mtoItem = _tiposProduccion.FirstOrDefault(t => t.Codigo == "MTO");
         }
-        @if (!EsEdicion && mtoItem is not null)
-        {
-            <!-- Elección visual: General vs Por Cliente -->
-            <MudText Typo="Typo.subtitle2" Class="mb-2">¿Esta orden es para un cliente específico?</MudText>
-            <MudGrid Spacing="2" Class="mb-3">
-                <MudItem xs="6">
-                    <div @onclick="@(() => OnModoCambiadoAsync(false))"
-                         style="cursor:pointer;border-radius:12px;border:2px solid @(!_esMto ? "var(--mud-palette-primary)" : "var(--mud-palette-lines-default)");
-                                padding:16px;text-align:center;transition:border-color .15s">
-                        <MudIcon Icon="@Icons.Material.Filled.Factory" Color="@(!_esMto ? Color.Primary : Color.Default)" Size="Size.Large" Class="mb-1" />
-                        <MudText Typo="Typo.subtitle2" Color="@(!_esMto ? Color.Primary : Color.Default)">Producción General</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Stock para bodega</MudText>
+        <MudGrid Spacing="3">
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_codigoOp" Label="Codigo de la OP" Required="true"
+                              Disabled="@EsEdicion" Variant="Variant.Outlined"
+                              HelperText="@(EsEdicion ? "No se puede cambiar una vez creada." : "Este codigo es unico e identificara la orden.")" />
+            </MudItem>
+
+            @if (!EsEdicion && mtoItem is not null)
+            {
+                <MudItem xs="12">
+                    <div style="font-size:0.85rem; font-weight:600; margin-bottom:8px; color:var(--n-text-2)">
+                        ¿Esta orden es para un cliente especifico?
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; max-width:480px">
+                        <div @onclick="@(() => OnModoCambiadoAsync(false))"
+                             style="cursor:pointer;border-radius:10px;border:2px solid @(!_esMto ? "var(--mud-palette-primary)" : "var(--mud-palette-lines-default)");
+                                    padding:14px 16px;text-align:center;transition:all .15s">
+                            <MudIcon Icon="@Icons.Material.Filled.Factory" Color="@(!_esMto ? Color.Primary : Color.Default)" Class="mb-1" />
+                            <div style="font-weight:600; font-size:0.85rem; color:@(!_esMto ? "var(--mud-palette-primary)" : "inherit")">Produccion General</div>
+                            <div style="font-size:0.73rem; opacity:.7">Stock para bodega</div>
+                        </div>
+                        <div @onclick="@(() => OnModoCambiadoAsync(true))"
+                             style="cursor:pointer;border-radius:10px;border:2px solid @(_esMto ? "var(--mud-palette-primary)" : "var(--mud-palette-lines-default)");
+                                    padding:14px 16px;text-align:center;transition:all .15s">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Color="@(_esMto ? Color.Primary : Color.Default)" Class="mb-1" />
+                            <div style="font-weight:600; font-size:0.85rem; color:@(_esMto ? "var(--mud-palette-primary)" : "inherit")">Por Cliente</div>
+                            <div style="font-size:0.73rem; opacity:.7">Pedido especifico</div>
+                        </div>
                     </div>
                 </MudItem>
-                <MudItem xs="6">
-                    <div @onclick="@(() => OnModoCambiadoAsync(true))"
-                         style="cursor:pointer;border-radius:12px;border:2px solid @(_esMto ? "var(--mud-palette-primary)" : "var(--mud-palette-lines-default)");
-                                padding:16px;text-align:center;transition:border-color .15s">
-                        <MudIcon Icon="@Icons.Material.Filled.Person" Color="@(_esMto ? Color.Primary : Color.Default)" Size="Size.Large" Class="mb-1" />
-                        <MudText Typo="Typo.subtitle2" Color="@(_esMto ? Color.Primary : Color.Default)">Por Cliente</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Pedido específico</MudText>
-                    </div>
+            }
+
+            @if (!_esMto)
+            {
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="int?" Value="_tipoProduccionId" ValueChanged="OnTipoProduccionCambiadoAsync"
+                               Label="Tipo de Produccion" Placeholder="Selecciona un tipo" Required="true" Variant="Variant.Outlined">
+                        @foreach (var tipo in _tiposProduccion.Where(t => t.Codigo != "MTO"))
+                        {
+                            <MudSelectItem T="int?" Value="@((int?)tipo.TipoProduccionID)">@tipo.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
-            </MudGrid>
-        }
+            }
 
-        @if (!_esMto)
-        {
-            <MudSelect T="int?" Value="_tipoProduccionId" ValueChanged="OnTipoProduccionCambiadoAsync"
-                       Label="Tipo de Produccion" Placeholder="Selecciona un tipo" Class="mb-4" Required="true">
-                @foreach (var tipo in _tiposProduccion.Where(t => t.Codigo != "MTO"))
+            @if (_esMto)
+            {
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="int?" @bind-Value="_clienteId" Label="Cliente" Required="true" Variant="Variant.Outlined">
+                        @foreach (var cliente in _clientes)
+                        {
+                            <MudSelectItem T="int?" Value="@((int?)cliente.ClienteID)">@cliente.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            }
+
+            <MudItem xs="12" sm="6">
+                <MudSelect T="int?" Value="_productoTerminadoId" ValueChanged="OnProductoTerminadoCambiadoAsync"
+                           Label="Producto Terminado" Placeholder="Selecciona un producto" Required="true" Variant="Variant.Outlined">
+                    @foreach (var producto in _productosTerminados)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)producto.ArticuloID)">@producto.Referencia - @producto.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudSelect T="int?" Value="_recetaId" ValueChanged="@((int? v) => OnRecetaCambiadaAsync(v))"
+                           Label="Receta (BOM)" Placeholder="Selecciona una receta" Required="true" Variant="Variant.Outlined"
+                           Disabled="@(!_productoTerminadoId.HasValue)">
+                    @foreach (var receta in _recetas)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)receta.RecetaID)">@receta.NombreReceta (v@(receta.Version))</MudSelectItem>
+                    }
+                </MudSelect>
+                @if (_productoTerminadoId.HasValue && _recetas.Count == 0)
                 {
-                    <MudSelectItem T="int?" Value="@((int?)tipo.TipoProduccionID)">@tipo.Nombre</MudSelectItem>
+                    <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2">
+                        Este producto no tiene receta activa. Crea una receta antes de continuar.
+                    </MudAlert>
                 }
-            </MudSelect>
-        }
+            </MudItem>
 
-        @if (_esMto)
-        {
-            <MudSelect T="int?" @bind-Value="_clienteId" Label="Cliente" Class="mb-4" Required="true">
-                @foreach (var cliente in _clientes)
-                {
-                    <MudSelectItem T="int?" Value="@((int?)cliente.ClienteID)">@cliente.Nombre</MudSelectItem>
-                }
-            </MudSelect>
-        }
+            <MudItem xs="12" sm="4">
+                <MudNumericField @bind-Value="_cantidadProgramada" Label="Cantidad programada" Min="0.01m"
+                                 Format="N2" Required="true" Variant="Variant.Outlined" />
+            </MudItem>
 
-        <MudSelect T="int?" Value="_productoTerminadoId" ValueChanged="OnProductoTerminadoCambiadoAsync"
-                   Label="Producto Terminado" Placeholder="Selecciona un producto terminado" Class="mb-4" Required="true">
-            @foreach (var producto in _productosTerminados)
-            {
-                <MudSelectItem T="int?" Value="@((int?)producto.ArticuloID)">@producto.SKU - @producto.Nombre</MudSelectItem>
-            }
-        </MudSelect>
+            <MudItem xs="12" sm="4">
+                <MudSelect T="int?" @bind-Value="_centroCostoDestinoId" Label="Centro de Costos Destino"
+                           Placeholder="Selecciona" Required="true" Variant="Variant.Outlined">
+                    @foreach (var centro in _centrosCosto)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)centro.CentroCostoID)">@centro.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
 
-        <MudSelect T="int?" Value="_recetaId" ValueChanged="@((int? v) => OnRecetaCambiadaAsync(v))"
-                   Label="Receta (BOM)" Placeholder="Selecciona una receta" Class="mb-4" Required="true"
-                   Disabled="@(!_productoTerminadoId.HasValue)">
-            @foreach (var receta in _recetas)
-            {
-                <MudSelectItem T="int?" Value="@((int?)receta.RecetaID)">@receta.NombreReceta (v@(receta.Version))</MudSelectItem>
-            }
-        </MudSelect>
-        @if (_productoTerminadoId.HasValue && _recetas.Count == 0)
-        {
-            <MudAlert Severity="Severity.Warning" Class="mb-4">
-                Este producto no tiene ninguna receta activa. Crea una receta antes de continuar.
-            </MudAlert>
-        }
+            <MudItem xs="12" sm="4">
+                <MudDatePicker @bind-Date="_fechaPlanificada" Label="Fecha planificada"
+                               PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy" Variant="Variant.Outlined" />
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
 
-        <MudNumericField @bind-Value="_cantidadProgramada" Label="Cantidad programada" Min="0.01m" Format="N2" Class="mb-4" Required="true" />
+    @* ── Bodegas ── *@
+    <MudPaper Class="pa-5 mb-4">
+        <div class="nexo-chart-header mb-4">
+            <MudIcon Icon="@Icons.Material.Outlined.Warehouse" Size="Size.Small" Class="nexo-chart-header__icon" />
+            <div>
+                <div class="nexo-chart-header__title">Bodegas y centro de trabajo</div>
+            </div>
+        </div>
 
-        <MudSelect T="int?" @bind-Value="_centroCostoDestinoId" Label="Centro de Costo Destino"
-                   Placeholder="Selecciona un centro de costo" Class="mb-4" Required="true">
-            @foreach (var centro in _centrosCosto)
-            {
-                <MudSelectItem T="int?" Value="@((int?)centro.CentroCostoID)">@centro.Nombre</MudSelectItem>
-            }
-        </MudSelect>
-
-        <MudSwitch T="bool" Value="_produccionLocal" ValueChanged="OnProduccionLocalCambiadaAsync"
-                   Label="Produccion local (misma bodega para materia prima y producto terminado)"
-                   Color="Color.Primary" Class="mb-2" />
-        <MudText Typo="Typo.caption" Class="mb-4 d-block" Style="color: var(--n-text-3, #9B9BB4);">
+        <div class="d-flex align-center mb-1" style="gap:12px">
+            <MudSwitch T="bool" Value="_produccionLocal" ValueChanged="OnProduccionLocalCambiadaAsync"
+                       Label="Produccion local (misma bodega para materia prima y producto terminado)"
+                       Color="Color.Primary" />
+        </div>
+        <MudText Typo="Typo.caption" Class="mb-4 d-block" Style="color:var(--n-text-3)">
             @(_produccionLocal
                 ? "Se usara una sola bodega tanto para consumir materia prima como para almacenar el producto terminado."
                 : "Se usaran bodegas distintas de origen (materia prima) y destino (producto terminado).")
         </MudText>
 
-        @if (_produccionLocal)
-        {
-            <MudSelect T="int?" Value="_bodegaLocalId" ValueChanged="OnBodegaLocalCambiadaAsync"
-                       Label="Bodega (Materia Prima y Producto Terminado)" Placeholder="Selecciona una bodega" Class="mb-4" Required="true">
-                @foreach (var bodega in _todasLasBodegas)
-                {
-                    <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
-                }
-            </MudSelect>
-        }
-        else
-        {
-            <MudSelect T="int?" @bind-Value="_bodegaOrigenMpId" Label="Bodega Origen (Materia Prima)"
-                       Placeholder="Selecciona una bodega" Class="mb-4" Required="true">
-                @foreach (var bodega in _bodegasMateriaPrima)
-                {
-                    <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
-                }
-            </MudSelect>
-
-            <MudSelect T="int?" @bind-Value="_bodegaDestinoPtId" Label="Bodega Destino (Producto Terminado)"
-                       Placeholder="Selecciona una bodega" Class="mb-4" Required="true">
-                @foreach (var bodega in _bodegasProductoTerminado)
-                {
-                    <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
-                }
-            </MudSelect>
-        }
-
-        <MudSelect T="int?" @bind-Value="_centroTrabajoId" Label="Centro de Trabajo (opcional)" Class="mb-4" Clearable="true">
-            @foreach (var centro in _centrosTrabajo)
+        <MudGrid Spacing="3">
+            @if (_produccionLocal)
             {
-                <MudSelectItem T="int?" Value="@((int?)centro.CentroTrabajoID)">@centro.Nombre</MudSelectItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="int?" Value="_bodegaLocalId" ValueChanged="OnBodegaLocalCambiadaAsync"
+                               Label="Bodega (MP y PT)" Placeholder="Selecciona una bodega" Required="true" Variant="Variant.Outlined">
+                        @foreach (var bodega in _todasLasBodegas)
+                        {
+                            <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
             }
-        </MudSelect>
+            else
+            {
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="int?" @bind-Value="_bodegaOrigenMpId" Label="Bodega Origen (Materia Prima)"
+                               Placeholder="Selecciona" Required="true" Variant="Variant.Outlined">
+                        @foreach (var bodega in _bodegasMateriaPrima)
+                        {
+                            <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="int?" @bind-Value="_bodegaDestinoPtId" Label="Bodega Destino (Producto Terminado)"
+                               Placeholder="Selecciona" Required="true" Variant="Variant.Outlined">
+                        @foreach (var bodega in _bodegasProductoTerminado)
+                        {
+                            <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            }
 
-        <MudDatePicker @bind-Date="_fechaPlanificada" Label="Fecha planificada" Class="mb-4" PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy" />
+            <MudItem xs="12" sm="6">
+                <MudSelect T="int?" @bind-Value="_centroTrabajoId" Label="Centro de Trabajo (opcional)"
+                           Clearable="true" Variant="Variant.Outlined">
+                    @foreach (var centro in _centrosTrabajo)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)centro.CentroTrabajoID)">@centro.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
 
-        <MudTextField @bind-Value="_observaciones" Label="Observaciones (opcional)" Lines="2" Class="mb-4" />
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_observaciones" Label="Observaciones (opcional)"
+                              Lines="2" Variant="Variant.Outlined" />
+            </MudItem>
+        </MudGrid>
     </MudPaper>
 
-    @* ── Maquinaria (opcional) ── *@
-    <MudPaper Class="pa-6 mb-4" MaxWidth="700px">
-        <MudText Typo="Typo.subtitle1" Class="mb-1">
-            <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Size="Size.Small" Class="mr-1" />
-            Maquinaria utilizada <MudChip T="string" Size="Size.Small">opcional</MudChip>
-        </MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
-            Se pre-carga desde la receta seleccionada. Podés agregar, quitar o ajustar horas.
-        </MudText>
+    @* ── Maquinaria ── *@
+    <MudPaper Class="pa-5 mb-4">
+        <div class="d-flex align-center justify-space-between mb-1">
+            <div class="nexo-chart-header">
+                <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Size="Size.Small" Class="nexo-chart-header__icon" />
+                <div>
+                    <div class="nexo-chart-header__title">
+                        Maquinaria utilizada
+                        <MudChip T="string" Size="Size.Small" Class="ml-1">Opcional</MudChip>
+                    </div>
+                    <div class="nexo-chart-header__sub">Se pre-carga desde la receta. Podes agregar, quitar o ajustar horas.</div>
+                </div>
+            </div>
+            @if (_recetaId.HasValue && _maquinasDisponibles.Count > 0)
+            {
+                <MudButton Variant="Variant.Outlined" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Sync"
+                           OnClick="RecargarMaquinariaDesdeRecetaAsync">
+                    Agregar desde receta
+                </MudButton>
+            }
+        </div>
 
         @if (_maquinasOrden.Count > 0)
         {
-            <div style="overflow-x:auto" class="mb-2">
+            <div style="overflow-x:auto" class="mb-3 mt-3">
                 <table style="width:100%; border-collapse:collapse; font-size:0.85rem">
                     <thead>
                         <tr style="background:var(--mud-palette-background-grey)">
-                            <th style="padding:6px 8px; text-align:left">Máquina</th>
-                            <th style="padding:6px 8px; min-width:130px">Horas reales</th>
-                            <th style="padding:6px 8px; min-width:180px">Notas</th>
-                            <th style="padding:6px 8px; width:48px"></th>
+                            <th style="padding:8px 10px; text-align:left">Maquinaria</th>
+                            <th style="padding:8px 10px; min-width:130px">Horas programadas</th>
+                            <th style="padding:8px 10px; min-width:160px">Notas</th>
+                            <th style="padding:8px 10px; width:48px"></th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var fila in _maquinasOrden)
                         {
                             <tr style="border-bottom:1px solid var(--mud-palette-lines-default)">
-                                <td style="padding:4px 8px">
+                                <td style="padding:4px 10px">
                                     <MudSelect T="int?" Value="@((int?)fila.MaquinariaID)"
                                                ValueChanged="@((int? v) => fila.MaquinariaID = v ?? 0)"
-                                               Placeholder="Selecciona máquina" Margin="Margin.Dense">
+                                               Placeholder="Selecciona maquina" Margin="Margin.Dense">
                                         @foreach (var m in _maquinasDisponibles)
                                         {
                                             <MudSelectItem T="int?" Value="@((int?)m.MaquinariaID)">
@@ -199,14 +278,14 @@ else
                                         }
                                     </MudSelect>
                                 </td>
-                                <td style="padding:4px 8px">
+                                <td style="padding:4px 10px">
                                     <MudNumericField @bind-Value="fila.HorasReales" T="decimal?"
                                                      Placeholder="—" Format="0.##" Min="0" Margin="Margin.Dense" />
                                 </td>
-                                <td style="padding:4px 8px">
+                                <td style="padding:4px 10px">
                                     <MudTextField @bind-Value="fila.Notas" Placeholder="Opcional" Margin="Margin.Dense" />
                                 </td>
-                                <td style="padding:4px 8px">
+                                <td style="padding:4px 10px">
                                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
                                                    Size="Size.Small" OnClick="@(() => _maquinasOrden.Remove(fila))" />
                                 </td>
@@ -216,21 +295,124 @@ else
                 </table>
             </div>
         }
+        else
+        {
+            <div class="d-flex flex-column align-center py-4" style="opacity:.55">
+                <MudIcon Icon="@Icons.Material.Outlined.PrecisionManufacturing" Size="Size.Large" Class="mb-1" />
+                <MudText Typo="Typo.body2">Aun no has agregado maquinaria</MudText>
+            </div>
+        }
         @if (_maquinasDisponibles.Count > 0)
         {
             <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add"
                        OnClick="@(() => _maquinasOrden.Add(new FilaMaquinaOrden()))">
-                Agregar máquina
+                Agregar maquina
             </MudButton>
         }
     </MudPaper>
 
-    <MudPaper Class="pa-6" MaxWidth="700px">
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GuardarAsync"
-                   Disabled="@(!FormularioValido || _guardando)" StartIcon="@Icons.Material.Filled.Save">
-            @(_guardando ? "Guardando..." : (EsEdicion ? "Guardar Cambios" : "Crear Orden"))
-        </MudButton>
+    @* ── Empleados ── *@
+    <MudPaper Class="pa-5 mb-4">
+        <div class="d-flex align-center justify-space-between mb-1">
+            <div class="nexo-chart-header">
+                <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Class="nexo-chart-header__icon" />
+                <div>
+                    <div class="nexo-chart-header__title">
+                        Empleados asignados
+                        <MudChip T="string" Size="Size.Small" Class="ml-1">Opcional</MudChip>
+                    </div>
+                    <div class="nexo-chart-header__sub">Se pre-carga desde la receta. Las horas se usan para calcular costo de mano de obra.</div>
+                </div>
+            </div>
+            @if (_recetaId.HasValue && _empleadosDisponibles.Count > 0)
+            {
+                <MudButton Variant="Variant.Outlined" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Sync"
+                           OnClick="RecargarEmpleadosDesdeRecetaAsync">
+                    Agregar desde receta
+                </MudButton>
+            }
+        </div>
+
+        @if (_empleadosOrden.Count > 0)
+        {
+            <div style="overflow-x:auto" class="mb-3 mt-3">
+                <table style="width:100%; border-collapse:collapse; font-size:0.85rem">
+                    <thead>
+                        <tr style="background:var(--mud-palette-background-grey)">
+                            <th style="padding:8px 10px; text-align:left">Empleado</th>
+                            <th style="padding:8px 10px; min-width:130px">Horas reales</th>
+                            <th style="padding:8px 10px; min-width:160px">Notas</th>
+                            <th style="padding:8px 10px; width:48px"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var fila in _empleadosOrden)
+                        {
+                            <tr style="border-bottom:1px solid var(--mud-palette-lines-default)">
+                                <td style="padding:4px 10px">
+                                    <MudSelect T="int?" Value="@((int?)fila.EmpleadoID)"
+                                               ValueChanged="@((int? v) => fila.EmpleadoID = v ?? 0)"
+                                               Placeholder="Selecciona empleado" Margin="Margin.Dense">
+                                        @foreach (var emp in _empleadosDisponibles)
+                                        {
+                                            <MudSelectItem T="int?" Value="@((int?)emp.EmpleadoID)">
+                                                @emp.Nombres @emp.Apellidos
+                                                @if (emp.Cargo is not null)
+                                                {
+                                                    <small style="opacity:.6"> — @emp.Cargo</small>
+                                                }
+                                            </MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </td>
+                                <td style="padding:4px 10px">
+                                    <MudNumericField @bind-Value="fila.HorasReales" T="decimal?"
+                                                     Placeholder="—" Format="0.##" Min="0" Margin="Margin.Dense" />
+                                </td>
+                                <td style="padding:4px 10px">
+                                    <MudTextField @bind-Value="fila.Notas" Placeholder="Opcional" Margin="Margin.Dense" />
+                                </td>
+                                <td style="padding:4px 10px">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                                   Size="Size.Small" OnClick="@(() => _empleadosOrden.Remove(fila))" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex flex-column align-center py-4" style="opacity:.55">
+                <MudIcon Icon="@Icons.Material.Outlined.People" Size="Size.Large" Class="mb-1" />
+                <MudText Typo="Typo.body2">Aun no has asignado empleados</MudText>
+            </div>
+        }
+        @if (_empleadosDisponibles.Count > 0)
+        {
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.PersonAdd"
+                       OnClick="@(() => _empleadosOrden.Add(new FilaEmpleadoOrden()))">
+                Agregar empleado
+            </MudButton>
+        }
     </MudPaper>
+
+    @* ── Botonera ── *@
+    <div class="d-flex" style="gap:12px; max-width:800px; padding-bottom:2rem">
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" Size="Size.Large"
+                   OnClick="@(() => Navegacion.NavigateTo("/produccion/ordenes"))">
+            Cancelar
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   OnClick="GuardarAsync"
+                   Disabled="@(!FormularioValido || _guardando)"
+                   Style="min-width:180px">
+            @(_guardando ? "Guardando..." : (EsEdicion ? "Guardar cambios" : "Crear orden"))
+        </MudButton>
+    </div>
 }
 
 @code {
@@ -238,7 +420,6 @@ else
 
     private bool EsEdicion => OrdenProduccionId.HasValue;
 
-    // Catalogos para llenar los desplegables
     private List<TipoProduccionItem> _tiposProduccion = new();
     private List<ClienteItem> _clientes = new();
     private List<ArticuloItem> _productosTerminados = new();
@@ -249,6 +430,7 @@ else
     private List<BodegaItem> _todasLasBodegas = new();
     private List<CentroTrabajoItem> _centrosTrabajo = new();
     private List<MaquinariaItem> _maquinasDisponibles = [];
+    private List<EmpleadoItem> _empleadosDisponibles = [];
 
     private class FilaMaquinaOrden
     {
@@ -257,11 +439,16 @@ else
         public string? Notas { get; set; }
     }
 
-    private List<FilaMaquinaOrden> _maquinasOrden = [];
+    private class FilaEmpleadoOrden
+    {
+        public int EmpleadoID { get; set; }
+        public decimal? HorasReales { get; set; }
+        public string? Notas { get; set; }
+    }
 
-    // Valores del formulario. Los desplegables obligatorios se manejan como
-    // int? (en vez de int) para que MudSelect muestre el Placeholder mientras
-    // no hay seleccion, en lugar del valor por defecto "0" tal cual.
+    private List<FilaMaquinaOrden> _maquinasOrden = [];
+    private List<FilaEmpleadoOrden> _empleadosOrden = [];
+
     private string _codigoOp = "";
     private int? _tipoProduccionId;
     private bool _esMto;
@@ -289,30 +476,27 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var tareaTipos = ApiClient.GetAsync<List<TipoProduccionItem>>("api/produccion/ordenes/tipos-produccion");
-        var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
-        // Se filtra por nombre de tipo, no por ID: los IDs de Catalogo.TiposArticulo
-        // dependen del orden de insercion de los datos semilla y no son confiables
-        // como numero fijo (antes esto apuntaba por error al tipo Insumo).
-        var tareaProductos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
-        var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
-        var tareaBodegas = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
-        var tareaCentrosTrabajo = ApiClient.GetAsync<List<CentroTrabajoItem>>("api/catalogo/centros-trabajo");
-        var tareaMaquinas = ApiClient.GetAsync<List<MaquinariaItem>>("api/produccion/maquinaria?estado=Activa");
+        var tareaTipos      = ApiClient.GetAsync<List<TipoProduccionItem>>("api/produccion/ordenes/tipos-produccion");
+        var tareaClientes   = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
+        var tareaProductos  = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+        var tareaCentros    = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
+        var tareaBodegas    = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
+        var tareaCtrabajo   = ApiClient.GetAsync<List<CentroTrabajoItem>>("api/catalogo/centros-trabajo");
+        var tareaMaquinas   = ApiClient.GetAsync<List<MaquinariaItem>>("api/produccion/maquinaria?estado=Activa");
+        var tareaEmpleados  = ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados");
 
-        await Task.WhenAll(tareaTipos, tareaClientes, tareaProductos, tareaCentrosCosto, tareaBodegas, tareaCentrosTrabajo, tareaMaquinas);
+        await Task.WhenAll(tareaTipos, tareaClientes, tareaProductos, tareaCentros, tareaBodegas, tareaCtrabajo, tareaMaquinas, tareaEmpleados);
 
-        _tiposProduccion = await tareaTipos ?? new();
-        _clientes = await tareaClientes ?? new();
-        _productosTerminados = (await tareaProductos ?? new())
-            .Where(a => a.TipoArticulo == "Producto Terminado")
-            .ToList();
-        _centrosCosto = await tareaCentrosCosto ?? new();
-        _centrosTrabajo = await tareaCentrosTrabajo ?? new();
+        _tiposProduccion     = await tareaTipos ?? new();
+        _clientes            = await tareaClientes ?? new();
+        _productosTerminados = (await tareaProductos ?? new()).Where(a => a.TipoArticulo == "Producto Terminado").ToList();
+        _centrosCosto        = await tareaCentros ?? new();
+        _centrosTrabajo      = await tareaCtrabajo ?? new();
         _maquinasDisponibles = await tareaMaquinas ?? [];
+        _empleadosDisponibles = (await tareaEmpleados ?? []).Where(e => e.Estado).ToList();
 
-        _todasLasBodegas = await tareaBodegas ?? new();
-        _bodegasMateriaPrima = _todasLasBodegas.Where(b => b.TipoBodega == "MATERIA_PRIMA").ToList();
+        _todasLasBodegas         = await tareaBodegas ?? new();
+        _bodegasMateriaPrima     = _todasLasBodegas.Where(b => b.TipoBodega == "MATERIA_PRIMA").ToList();
         _bodegasProductoTerminado = _todasLasBodegas.Where(b => b.TipoBodega == "PRODUCTO_TERMINADO").ToList();
 
         if (EsEdicion)
@@ -322,39 +506,41 @@ else
 
             if (detalle is not null)
             {
-                _codigoOp = detalle.CodigoOP;
-                _tipoProduccionId = detalle.TipoProduccionID;
-                var tipoSeleccionado = _tiposProduccion.FirstOrDefault(t => t.TipoProduccionID == detalle.TipoProduccionID);
-                _esMto = tipoSeleccionado?.Codigo == "MTO";
-                _clienteId = detalle.ClienteID;
+                _codigoOp            = detalle.CodigoOP;
+                _tipoProduccionId    = detalle.TipoProduccionID;
+                var tipoSel = _tiposProduccion.FirstOrDefault(t => t.TipoProduccionID == detalle.TipoProduccionID);
+                _esMto               = tipoSel?.Codigo == "MTO";
+                _clienteId           = detalle.ClienteID;
                 _productoTerminadoId = detalle.ProductoTerminadoID;
-                _cantidadProgramada = detalle.CantidadProgramada;
+                _cantidadProgramada  = detalle.CantidadProgramada;
                 _centroCostoDestinoId = detalle.CentroCostoDestinoID;
-                _centroTrabajoId = detalle.CentroTrabajoID;
-                _fechaPlanificada = detalle.FechaPlanificada;
-                _observaciones = detalle.Observaciones;
+                _centroTrabajoId     = detalle.CentroTrabajoID;
+                _fechaPlanificada    = detalle.FechaPlanificada;
+                _observaciones       = detalle.Observaciones;
 
-                // soloActivas=false: si la version guardada en la orden ya fue
-                // reemplazada por una version nueva de la receta, igual debe
-                // aparecer en la lista para no perder la seleccion original.
                 _recetas = await ApiClient.GetAsync<List<RecetaResumen>>(
                     $"api/produccion/recetas?productoTerminadoId={detalle.ProductoTerminadoID}&soloActivas=false") ?? new();
                 _recetaId = detalle.RecetaID;
 
-                // Cargar máquinas ya guardadas en la orden
                 var maqOrden = await ApiClient.GetAsync<List<OrdenMaquinariaItem>>(
                     $"api/produccion/ordenes/{OrdenProduccionId}/maquinaria") ?? [];
                 _maquinasOrden = maqOrden
                     .Select(m => new FilaMaquinaOrden { MaquinariaID = m.MaquinariaID, HorasReales = m.HorasReales, Notas = m.Notas })
                     .ToList();
 
+                var empOrden = await ApiClient.GetAsync<List<EmpleadoOrdenItem>>(
+                    $"api/produccion/ordenes/{OrdenProduccionId}/empleados") ?? [];
+                _empleadosOrden = empOrden
+                    .Select(e => new FilaEmpleadoOrden { EmpleadoID = e.EmpleadoID, HorasReales = e.HorasReales, Notas = e.Notas })
+                    .ToList();
+
                 if (detalle.BodegaOrigenMPID == detalle.BodegaDestinoPTID)
                 {
                     _produccionLocal = true;
-                    _bodegaLocalId = detalle.BodegaOrigenMPID;
+                    _bodegaLocalId   = detalle.BodegaOrigenMPID;
                 }
-                _bodegaOrigenMpId = detalle.BodegaOrigenMPID;
-                _bodegaDestinoPtId = detalle.BodegaDestinoPTID;
+                _bodegaOrigenMpId   = detalle.BodegaOrigenMPID;
+                _bodegaDestinoPtId  = detalle.BodegaDestinoPTID;
             }
         }
 
@@ -364,43 +550,36 @@ else
     private Task OnProduccionLocalCambiadaAsync(bool valor)
     {
         _produccionLocal = valor;
-
         if (_produccionLocal)
         {
-            _bodegaLocalId = _bodegaOrigenMpId ?? _bodegaDestinoPtId;
-            _bodegaOrigenMpId = _bodegaLocalId;
+            _bodegaLocalId     = _bodegaOrigenMpId ?? _bodegaDestinoPtId;
+            _bodegaOrigenMpId  = _bodegaLocalId;
             _bodegaDestinoPtId = _bodegaLocalId;
         }
-
         return Task.CompletedTask;
     }
 
     private Task OnBodegaLocalCambiadaAsync(int? nuevaBodegaId)
     {
-        _bodegaLocalId = nuevaBodegaId;
-        _bodegaOrigenMpId = nuevaBodegaId;
+        _bodegaLocalId     = nuevaBodegaId;
+        _bodegaOrigenMpId  = nuevaBodegaId;
         _bodegaDestinoPtId = nuevaBodegaId;
         return Task.CompletedTask;
     }
 
-    // Cambia entre modo General y Por Cliente desde las tarjetas visuales
     private Task OnModoCambiadoAsync(bool esMto)
     {
         _esMto = esMto;
         if (!esMto)
         {
             _clienteId = null;
-            // Si el tipo actual era MTO, limpiar la selección
             var tipoActual = _tiposProduccion.FirstOrDefault(t => t.TipoProduccionID == _tipoProduccionId);
-            if (tipoActual?.Codigo == "MTO")
-                _tipoProduccionId = null;
+            if (tipoActual?.Codigo == "MTO") _tipoProduccionId = null;
         }
         else
         {
-            // Preseleccionar MTO
             var mto = _tiposProduccion.FirstOrDefault(t => t.Codigo == "MTO");
-            if (mto is not null)
-                _tipoProduccionId = mto.TipoProduccionID;
+            if (mto is not null) _tipoProduccionId = mto.TipoProduccionID;
         }
         return Task.CompletedTask;
     }
@@ -408,12 +587,9 @@ else
     private Task OnTipoProduccionCambiadoAsync(int? nuevoTipoId)
     {
         _tipoProduccionId = nuevoTipoId;
-        var tipoSeleccionado = _tiposProduccion.FirstOrDefault(t => t.TipoProduccionID == nuevoTipoId);
-        _esMto = tipoSeleccionado?.Codigo == "MTO";
-
-        if (!_esMto)
-            _clienteId = null;
-
+        var tipo = _tiposProduccion.FirstOrDefault(t => t.TipoProduccionID == nuevoTipoId);
+        _esMto = tipo?.Codigo == "MTO";
+        if (!_esMto) _clienteId = null;
         return Task.CompletedTask;
     }
 
@@ -422,6 +598,7 @@ else
         _productoTerminadoId = nuevoProductoId;
         _recetaId = null;
         _maquinasOrden = [];
+        _empleadosOrden = [];
         _recetas = nuevoProductoId.HasValue
             ? await ApiClient.GetAsync<List<RecetaResumen>>(
                 $"api/produccion/recetas?productoTerminadoId={nuevoProductoId}&soloActivas=true") ?? new()
@@ -438,20 +615,45 @@ else
             _maquinasOrden = maqReceta
                 .Select(m => new FilaMaquinaOrden { MaquinariaID = m.MaquinariaID, HorasReales = m.HorasEstimadasPorLote })
                 .ToList();
+
+            var empReceta = await ApiClient.GetAsync<List<EmpleadoRecetaItem>>(
+                $"api/produccion/recetas/{recetaId}/empleados") ?? [];
+            _empleadosOrden = empReceta
+                .Select(e => new FilaEmpleadoOrden { EmpleadoID = e.EmpleadoID, HorasReales = e.HorasEstimadasPorLote, Notas = e.Notas })
+                .ToList();
         }
         else
         {
             _maquinasOrden = [];
+            _empleadosOrden = [];
         }
+    }
+
+    private async Task RecargarMaquinariaDesdeRecetaAsync()
+    {
+        if (!_recetaId.HasValue) return;
+        var maqReceta = await ApiClient.GetAsync<List<RecetaMaquinariaItem>>(
+            $"api/produccion/recetas/{_recetaId}/maquinaria") ?? [];
+        _maquinasOrden = maqReceta
+            .Select(m => new FilaMaquinaOrden { MaquinariaID = m.MaquinariaID, HorasReales = m.HorasEstimadasPorLote })
+            .ToList();
+    }
+
+    private async Task RecargarEmpleadosDesdeRecetaAsync()
+    {
+        if (!_recetaId.HasValue) return;
+        var empReceta = await ApiClient.GetAsync<List<EmpleadoRecetaItem>>(
+            $"api/produccion/recetas/{_recetaId}/empleados") ?? [];
+        _empleadosOrden = empReceta
+            .Select(e => new FilaEmpleadoOrden { EmpleadoID = e.EmpleadoID, HorasReales = e.HorasEstimadasPorLote, Notas = e.Notas })
+            .ToList();
     }
 
     private async Task GuardarAsync()
     {
-        if (!FormularioValido)
-            return;
+        if (!FormularioValido) return;
 
         _guardando = true;
-
         try
         {
             var mtoId = _tiposProduccion.FirstOrDefault(t => t.Codigo == "MTO")?.TipoProduccionID;
@@ -460,6 +662,11 @@ else
             var maquinas = _maquinasOrden
                 .Where(m => m.MaquinariaID > 0)
                 .Select(m => new MaquinariaOrdenInput(m.MaquinariaID, m.HorasReales, m.Notas))
+                .ToList();
+
+            var empleados = _empleadosOrden
+                .Where(e => e.EmpleadoID > 0)
+                .Select(e => new EmpleadoOrdenInput(e.EmpleadoID, e.HorasReales, e.Notas))
                 .ToList();
 
             if (EsEdicion)
@@ -472,23 +679,28 @@ else
                 await ApiClient.PutAsync<ActualizarOrdenProduccionRequest, object?>(
                     $"api/produccion/ordenes/{OrdenProduccionId}", request);
 
-                // Actualizar máquinas por separado (el SP no las maneja)
                 if (maquinas.Count > 0 || _maquinasOrden.Count == 0)
                     await ApiClient.PutAsync<List<MaquinariaOrdenInput>, object?>(
                         $"api/produccion/ordenes/{OrdenProduccionId}/maquinaria", maquinas);
 
-                Snackbar.Add("Orden de produccion actualizada correctamente.", Severity.Success);
+                await ApiClient.PutAsync<List<EmpleadoOrdenInput>, object?>(
+                    $"api/produccion/ordenes/{OrdenProduccionId}/empleados", empleados);
+
+                Snackbar.Add("Orden actualizada correctamente.", Severity.Success);
             }
             else
             {
                 var request = new CrearOrdenProduccionRequest(
                     _codigoOp, tipoEfectivo, _productoTerminadoId!.Value, _recetaId!.Value, _cantidadProgramada,
                     _esMto ? _clienteId : null, _centroCostoDestinoId!.Value, _bodegaOrigenMpId!.Value, _bodegaDestinoPtId!.Value,
-                    _centroTrabajoId, _fechaPlanificada, _observaciones, maquinas.Count > 0 ? maquinas : null);
+                    _centroTrabajoId, _fechaPlanificada, _observaciones,
+                    maquinas.Count > 0 ? maquinas : null,
+                    empleados.Count > 0 ? empleados : null);
 
-                await ApiClient.PostAsync<CrearOrdenProduccionRequest, object?>("api/produccion/ordenes", request);
+                await ApiClient.PostAsync<CrearOrdenProduccionRequest, object?>(
+                    "api/produccion/ordenes", request);
 
-                Snackbar.Add("Orden de produccion creada correctamente.", Severity.Success);
+                Snackbar.Add("Orden creada correctamente.", Severity.Success);
             }
 
             Navegacion.NavigateTo("/produccion/ordenes");

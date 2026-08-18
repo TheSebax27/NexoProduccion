@@ -55,9 +55,9 @@ public class RrhhService : IRrhhService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            INSERT INTO Rrhh.Empleados (Nombres, Apellidos, CargoID, CentroCostoID, FechaIngreso, Telefono, Email, JefeDirectoID)
+            INSERT INTO Rrhh.Empleados (Nombres, Apellidos, CargoID, CentroCostoID, FechaIngreso, Telefono, Email, JefeDirectoID, TarifaHora)
             OUTPUT INSERTED.EmpleadoID
-            VALUES (@Nombres, @Apellidos, @CargoID, @CentroCostoID, @FechaIngreso, @Telefono, @Email, @JefeDirectoID)";
+            VALUES (@Nombres, @Apellidos, @CargoID, @CentroCostoID, @FechaIngreso, @Telefono, @Email, @JefeDirectoID, @TarifaHora)";
 
         return await connection.ExecuteScalarAsync<int>(sql, r);
     }
@@ -79,7 +79,8 @@ public class RrhhService : IRrhhService
                    ) THEN 1 ELSE 0 END AS BIT) AS EnAusencia,
                    CAST(CASE WHEN EXISTS (
                        SELECT 1 FROM Seguridad.Usuarios u WHERE u.EmpleadoID = e.EmpleadoID
-                   ) THEN 1 ELSE 0 END AS BIT) AS TieneUsuario
+                   ) THEN 1 ELSE 0 END AS BIT) AS TieneUsuario,
+                   e.TarifaHora
             FROM Rrhh.Empleados e
             LEFT JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = e.CentroCostoID
             LEFT JOIN Rrhh.Cargos c ON c.CargoID = e.CargoID
@@ -138,13 +139,13 @@ public class RrhhService : IRrhhService
                 UPDATE Rrhh.Empleados
                 SET Nombres = @Nombres, Apellidos = @Apellidos, CargoID = @CargoID, CentroCostoID = @CentroCostoID,
                     FechaIngreso = @FechaIngreso, Telefono = @Telefono, Email = @Email, Estado = @Estado,
-                    JefeDirectoID = @JefeDirectoID
+                    JefeDirectoID = @JefeDirectoID, TarifaHora = @TarifaHora
                 WHERE EmpleadoID = @EmpleadoId";
 
             await connection.ExecuteAsync(sql, new
             {
                 EmpleadoId = empleadoId,
-                r.Nombres, r.Apellidos, r.CargoID, r.CentroCostoID, r.FechaIngreso, r.Telefono, r.Email, r.Estado, r.JefeDirectoID
+                r.Nombres, r.Apellidos, r.CargoID, r.CentroCostoID, r.FechaIngreso, r.Telefono, r.Email, r.Estado, r.JefeDirectoID, r.TarifaHora
             }, transaction);
 
             if (actual.CargoID != r.CargoID)
@@ -211,6 +212,10 @@ public class RrhhService : IRrhhService
 
         if (filas == 0)
             throw new KeyNotFoundException($"No existe el empleado {empleadoId}.");
+
+        await connection.ExecuteAsync(
+            "UPDATE Seguridad.Usuarios SET FotoPerfil = @Datos, FotoPerfilContentType = @ContentType WHERE EmpleadoID = @EmpleadoId",
+            new { EmpleadoId = empleadoId, Datos = datos, r.ContentType });
     }
 
     public async Task EliminarFotoEmpleadoAsync(int empleadoId)
@@ -223,6 +228,10 @@ public class RrhhService : IRrhhService
 
         if (filas == 0)
             throw new KeyNotFoundException($"No existe el empleado {empleadoId}.");
+
+        await connection.ExecuteAsync(
+            "UPDATE Seguridad.Usuarios SET FotoPerfil = NULL, FotoPerfilContentType = NULL WHERE EmpleadoID = @EmpleadoId",
+            new { EmpleadoId = empleadoId });
     }
 
     // ---------- Departamentos y Cargos ----------

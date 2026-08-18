@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexoApi.Features.Facturacion.Dtos;
-using NexoApi.Features.Produccion.Dtos;
 
 namespace NexoApi.Features.Facturacion;
 
@@ -13,17 +12,26 @@ public class FacturacionController : ControllerBase
 {
     private readonly IFacturacionService _service;
 
-    public FacturacionController(IFacturacionService service)
-    {
-        _service = service;
-    }
+    public FacturacionController(IFacturacionService service) => _service = service;
 
     private int UsuarioActualId =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
+    // ──────────── Tipos de documento ────────────
+    [HttpGet("tipos-documento")]
+    public ActionResult<IReadOnlyList<string>> ListarTiposDocumento()
+        => Ok(Dtos.TiposDocumento.Todos);
+
+    // ──────────── Facturas ────────────
     [HttpGet("facturas")]
-    public async Task<ActionResult<IEnumerable<FacturaItem>>> ListarFacturas([FromQuery] int? clienteId, [FromQuery] string? estado)
-        => Ok(await _service.ListarFacturasAsync(clienteId, estado));
+    public async Task<ActionResult<IEnumerable<FacturaItem>>> ListarFacturas(
+        [FromQuery] int? clienteId,
+        [FromQuery] int? centroCostoId,
+        [FromQuery] string? tipDoc,
+        [FromQuery] string? estado,
+        [FromQuery] DateTime? desde,
+        [FromQuery] DateTime? hasta)
+        => Ok(await _service.ListarFacturasAsync(clienteId, centroCostoId, tipDoc, estado, desde, hasta));
 
     [HttpPost("facturas")]
     public async Task<ActionResult> CrearFactura(CrearFacturaRequest request)
@@ -33,10 +41,7 @@ public class FacturacionController : ControllerBase
             var id = await _service.CrearFacturaAsync(request, UsuarioActualId);
             return Ok(new { facturaId = id });
         }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
     [HttpGet("facturas/{id:int}/lineas")]
@@ -59,17 +64,26 @@ public class FacturacionController : ControllerBase
         catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
     }
 
+    [HttpPost("facturas/{id:int}/confirmar-visions")]
+    public async Task<ActionResult> ConfirmarVisions(int id)
+    {
+        try
+        {
+            await _service.ConfirmarVisionsAsync(id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+    }
+
     [HttpGet("facturas/{id:int}/verificar-produccion")]
     public async Task<ActionResult<List<VerificarProduccionItem>>> VerificarProduccion(int id)
         => Ok(await _service.VerificarProduccionFacturaAsync(id));
 
     [HttpPost("facturas/{id:int}/auto-producir")]
     public async Task<ActionResult<List<AutoProducirResultItem>>> AutoProducir(int id)
-    {
-        var resultado = await _service.AutoProducirFacturaAsync(id, UsuarioActualId);
-        return Ok(resultado);
-    }
+        => Ok(await _service.AutoProducirFacturaAsync(id, UsuarioActualId));
 
+    // ──────────── Pagos ────────────
     [HttpGet("facturas/{id:int}/pagos")]
     public async Task<ActionResult<IEnumerable<PagoItem>>> ListarPagos(int id)
         => Ok(await _service.ListarPagosAsync(id));
@@ -82,9 +96,6 @@ public class FacturacionController : ControllerBase
             var id = await _service.CrearPagoAsync(request, UsuarioActualId);
             return Ok(new { pagoId = id });
         }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 }

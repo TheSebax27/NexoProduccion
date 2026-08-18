@@ -261,6 +261,12 @@ public class AuthService : IAuthService
 
         if (filas == 0)
             throw new KeyNotFoundException($"No existe el usuario {usuarioId}.");
+
+        await connection.ExecuteAsync(@"
+            UPDATE Rrhh.Empleados
+            SET Foto = @Datos, FotoContentType = @ContentType
+            WHERE EmpleadoID = (SELECT EmpleadoID FROM Seguridad.Usuarios WHERE UsuarioID = @UsuarioId)",
+            new { UsuarioId = usuarioId, Datos = datos, r.ContentType });
     }
 
     public async Task EliminarFotoPerfilAsync(int usuarioId)
@@ -273,6 +279,12 @@ public class AuthService : IAuthService
 
         if (filas == 0)
             throw new KeyNotFoundException($"No existe el usuario {usuarioId}.");
+
+        await connection.ExecuteAsync(@"
+            UPDATE Rrhh.Empleados
+            SET Foto = NULL, FotoContentType = NULL
+            WHERE EmpleadoID = (SELECT EmpleadoID FROM Seguridad.Usuarios WHERE UsuarioID = @UsuarioId)",
+            new { UsuarioId = usuarioId });
     }
 
     private record UsuarioRenewData(string Username, string Rol, int? CentroCostoID);

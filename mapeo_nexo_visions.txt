@@ -151,16 +151,78 @@ CAMPOS QUE VISIONS TIENE Y NEXO NO SINCRONIZA (por ahora)
 - GRUPOMENOR.CODIGODANE          Codigo DANE
 
 --------------------------------------------------------------
+FACTURAS NEXO <-> VISIONS (MOVDETALLES)
+--------------------------------------------------------------
+
+NEXO (Facturacion.Facturas + FacturaLineas)   VISIONS (dbo.MOVDETALLES)
+--------------------------------------------   ---------------------------
+TipDoc                                         TIPDOC
+NroDoc                                         NRODOC
+Fecha                                          FECDOC
+Linea.Orden (ROW_NUMBER)                       ORDEN
+MapeoArticulos.CodigoArticuloVisions           REFERENCIA
+Tarjetas.Nombre                                DETALLE
+Linea.Cantidad                                 CANTIDAD
+Linea.PrecioUnitario                           PRECIO
+Tarjetas.Costo                                 COSTO
+TARJETA.IVASINO                                IVASINO         (leido de Visions al exportar)
+TARJETA.IVADESCRIPCION                         IVADESCRIPCION  (leido de Visions al exportar)
+TARJETA.IVAVALOR                               IVAVALOR        (leido de Visions al exportar)
+Cantidad * Precio                              SUBTOTAL
+SUBTOTAL + IVA                                 TOTAL
+Tarjetas.MarcaCodigo                           MARCA
+Tarjetas.GrupoMenorCodigo                      GRUPOMENOR
+Clientes.NIT                                   NIT
+Clientes.Nombre                                CLIENTE
+CentroCostoVisions (del agente)               CENTROCOSTO
+(sin equivalente)                              VENDEDOR        (NULL al exportar desde NEXO)
+
+Flujo de sincronizacion de Facturas:
+  Visions → NEXO:  TareaExportarVentas lee MOVDETALLES filtrado por CENTROCOSTO y TIPDOC,
+                    envia via RegistrarEventoEntranteAsync. Cada fila procesada se pre-marca
+                    en NEXO_VentasExportadas para idempotencia.
+  NEXO → Visions:  TareaSincronizarFacturasNexoVisions lee Facturas con StockDescontado=1
+                    y ExportadaVisions=0, escribe en MOVDETALLES linea por linea, pre-inserta
+                    en NEXO_VentasExportadas para evitar reimportacion, luego llama
+                    marcar-exportada-visions (ExportadaVisions=1).
+  Condicion: Solo facturas donde TODAS las lineas tienen mapeo en Integracion.MapeoArticulos
+             para este CentroCosto se exportan a Visions.
+  Nueva columna requerida: Facturacion.Facturas.ExportadaVisions BIT DEFAULT 0
+  Ver: sql/migration_nexo_sync_v1.sql
+
+--------------------------------------------------------------
+SINCRONIZACION DE CATALOGOS (bidireccional automatica)
+--------------------------------------------------------------
+
+Ejecutada en cada ronda del agente (TareaSincronizarCatalogos).
+Logica: si el codigo existe en un lado pero no en el otro, se crea via MERGE.
+        Si ya existe en ambos, se actualiza nombre/descripcion.
+
+Entidad           Clave sync          Direccion
+---------------   ------------------  ----------------------
+Marca             Codigo              bidireccional
+GrupoMayor        Codigo              bidireccional
+GrupoMenor        Codigo              bidireccional (requiere GrupoMayor previo)
+IVA               valor IVA (int)     bidireccional (IvaID/Id son autoincrements independientes)
+Presentacion      Codigo              bidireccional
+
+IVA especial: el IvaID de NEXO y el Id de Visions son identities independientes.
+La clave de union es el valor numerico del impuesto (Iva int = IVA int).
+
+--------------------------------------------------------------
 NOTAS GENERALES DE SINCRONIZACION
 --------------------------------------------------------------
-1. La clave de sincronizacion principal es: NEXO.Referencia = VISIONS.TARJETA.REFERENCIA
+1. La clave de sincronizacion principal de articulos es: NEXO.Referencia = VISIONS.TARJETA.REFERENCIA
 2. Visions tiene PK compuesta (CENTROCOSTO + REFERENCIA). NEXO usa CentroCostoID
    del contexto del usuario autenticado para resolver el CENTROCOSTO.
 3. GrupoMenorCodigo en Tarjetas es referencia blanda (sin FK formal) porque
    GrupoMenor tiene PK compuesta (Codigo + GrupoMayor) -- igual que en Visions.
 4. Precios P (PPublico/PBodega/PCredito) = precio de venta por canal. U (UPublico/UBodega/UCredito) = utilidad/margen vs costo. Ambos grupos se sincronizan directamente.
 5. NEXO.Presentacion.Fracciones = VISIONS.TARJETA.FRACCIONES — Tarjetas ya no tiene columna Fracciones propia; se obtiene via JOIN a Presentacion.
-5. IVA: NEXO agrega Iva2/IvaDescripcion2 para productos con doble impuesto;
+6. IVA: NEXO agrega Iva2/IvaDescripcion2 para productos con doble impuesto;
    Visions no tiene este campo -- al exportar a Visions se ignora.
+7. MOVDETALLES es la tabla de movimientos de Visions (ventas, devoluciones, etc.).
+   NEXO NUNCA modifica MOVDETALLES directamente -- solo el agente escribe en ella
+   durante la exportacion NEXO→Visions. El resto de Visions es de solo lectura para NEXO.
 
 ==============================================================

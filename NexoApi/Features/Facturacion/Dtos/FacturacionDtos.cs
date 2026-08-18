@@ -1,12 +1,50 @@
 namespace NexoApi.Features.Facturacion.Dtos;
 
-// Estado se calcula al vuelo comparando TotalPagado contra Total -- nunca se
-// guarda como columna fija (evita que quede desactualizado si se borra un pago).
+// ──────────────────────── Tipos de documento ────────────────────────
+public static class TiposDocumento
+{
+    public static readonly IReadOnlyList<string> Todos =
+    [
+        "DEVOLUCION PROVEEDOR", "EGRESO", "FACTURA", "GARANTIA",
+        "NOTA DEBITO", "NOTA DEVOLUCION", "ORDEN COMPRA",
+        "PERDIDA INVENTARIO", "REMISION", "SEPARADOS"
+    ];
+}
+
+// ──────────────────────── Facturas ────────────────────────
+// Estado (PAGADA/PARCIAL/PENDIENTE) y SaldoPendiente se calculan en C#
+// a partir de Total y TotalPagado — nunca se guardan como columna fija.
 public record FacturaItem(
-    int FacturaID, int ClienteID, string Cliente, DateTime Fecha, string? Notas,
+    int FacturaID, int ClienteID, string Cliente, string? NitCliente,
+    DateTime Fecha, string? Notas,
+    string TipDoc, string? NroDoc,
     decimal Total, decimal TotalPagado, decimal SaldoPendiente, string Estado,
-    bool StockDescontado, bool ProduccionAutoEjecutada
+    bool StockDescontado, bool ProduccionAutoEjecutada, bool VisionsConfirmado,
+    int? CentroCostoID, string? CentroCostoNombre
 );
+
+public record LineaFacturaInput(
+    int? ArticuloID, int? ComboID, string? DescripcionLinea,
+    decimal Cantidad, decimal PrecioUnitario, string? Nota = null
+);
+
+public record CrearFacturaRequest(
+    int ClienteID, DateTime Fecha, string? Notas,
+    string TipDoc, string? NroDoc,
+    List<LineaFacturaInput> Lineas,
+    int? CentroCostoID = null
+);
+
+public record FacturaLineaItem(
+    int LineaID, int FacturaID, int? ArticuloID, string? SkuArticulo, string NombreArticulo,
+    int? ComboID, string? DescripcionLinea, string? Nota,
+    decimal Cantidad, decimal PrecioUnitario, decimal Subtotal,
+    string? Unidad, decimal? UnidadesPorEmbalaje
+)
+{
+    public bool EsUnidadCaja => Unidad == "cja" && UnidadesPorEmbalaje is > 0;
+    public bool EsCombo => ComboID.HasValue;
+}
 
 public record FacturaLineaStockItem(
     int ArticuloID, string SkuArticulo, string NombreArticulo,
@@ -14,21 +52,13 @@ public record FacturaLineaStockItem(
 )
 {
     public bool EsInsuficiente => StockDisponible < CantidadFacturada;
-};
+}
 
-public record LineaFacturaInput(int? ArticuloID, int? ComboID, string? DescripcionLinea, decimal Cantidad, decimal PrecioUnitario);
-public record CrearFacturaRequest(int ClienteID, DateTime Fecha, string? Notas, List<LineaFacturaInput> Lineas);
-
-public record FacturaLineaItem(
-    int LineaID, int FacturaID, int? ArticuloID, string? SkuArticulo, string NombreArticulo,
-    int? ComboID, string? DescripcionLinea,
-    decimal Cantidad, decimal PrecioUnitario, decimal Subtotal,
-    string? Unidad, decimal? UnidadesPorEmbalaje
-);
-
+// ──────────────────────── Pagos ────────────────────────
 public record PagoItem(int PagoID, int FacturaID, decimal Monto, DateTime FechaPago, string MetodoPago, string? Notas, string? Usuario);
 public record CrearPagoRequest(int FacturaID, decimal Monto, DateTime FechaPago, string MetodoPago, string? Notas);
 
+// ──────────────────────── Verificacion produccion ────────────────────────
 public record InsumoVerificacionItem(
     int ArticuloID, string Nombre, string Unidad,
     decimal CantidadRequerida, decimal StockDisponible

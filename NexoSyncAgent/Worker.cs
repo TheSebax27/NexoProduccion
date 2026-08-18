@@ -14,10 +14,13 @@ public class Worker : BackgroundService
     private readonly TimeSpan? _overrideSegundos;
     private TimeSpan _backoffActual = TimeSpan.Zero;
 
+    private readonly string _version;
+
     public Worker(IServiceProvider serviceProvider, ILogger<Worker> logger, IConfiguration configuration)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+        _version = configuration.GetValue<string>("Sync:AgentVersion") ?? "1.0.0";
 
         var segundos = configuration.GetValue<int>("Sync:IntervalSeconds", 0);
         if (segundos > 0)
@@ -29,7 +32,14 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Agente NEXO iniciado. Intervalo: {Intervalo}", _intervalo);
+        _logger.LogInformation("Agente NEXO v{Version} iniciado. Intervalo: {Intervalo}", _version, _intervalo);
+
+        // Crear tablas NEXO_* en Visions si no existen (primera vez o reinstalacion).
+        using (var scope = _serviceProvider.CreateScope())
+        {
+            var tareaInit = scope.ServiceProvider.GetRequiredService<TareaInicializarVisions>();
+            await tareaInit.EjecutarAsync();
+        }
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -45,11 +55,16 @@ public class Worker : BackgroundService
                 LatidoResponse latido;
                 try
                 {
-                    latido = await apiClient.EnviarLatidoAsync(stoppingToken);
+                    latido = await apiClient.EnviarLatidoAsync(_version, stoppingToken);
                     _backoffActual = TimeSpan.Zero;
                     _logger.LogInformation(
                         "Latido OK. Hora servidor: {HoraServidor:HH:mm:ss}. Eventos pendientes en NEXO: {Pendientes}",
                         latido.HoraServidor, latido.EventosPendientes);
+
+                    if (latido.VersionDisponible is not null && latido.VersionDisponible != _version)
+                        _logger.LogWarning(
+                            "Hay una actualizacion del agente disponible: v{Disponible} (instalada: v{Actual}). Descarga el instalador desde NEXO Web > Integracion Visions.",
+                            latido.VersionDisponible, _version);
                 }
                 catch (Exception exLatido) when (EsErrorDeConectividad(exLatido))
                 {
@@ -78,6 +93,14 @@ public class Worker : BackgroundService
                 {
                     var tareaVentas = scope.ServiceProvider.GetRequiredService<TareaExportarVentas>();
                     await tareaVentas.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
+
+                    // 5. Sincronizar catalogos bidireccional (Marcas, GrupoMayor, GrupoMenor, IVA, Presentaciones).
+                    var tareaCatalogos = scope.ServiceProvider.GetRequiredService<TareaSincronizarCatalogos>();
+                    await tareaCatalogos.EjecutarAsync(stoppingToken);
+
+                    // 6. Exportar facturas NEXO → Visions (las que tienen stock descontado y aun no estan en MOVDETALLES).
+                    var tareaFacturasVisions = scope.ServiceProvider.GetRequiredService<TareaSincronizarFacturasNexoVisions>();
+                    await tareaFacturasVisions.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
                 }
             }
             catch (Exception ex)
