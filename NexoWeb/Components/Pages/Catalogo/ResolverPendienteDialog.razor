@@ -18,7 +18,7 @@
             <MudSelect T="int?" @bind-Value="_articuloIdExistente" Label="Articulo (Producto Terminado)" Class="mb-3">
                 @foreach (var articulo in ArticulosDisponibles)
                 {
-                    <MudSelectItem T="int?" Value="@articulo.ArticuloID">@articulo.SKU - @articulo.Nombre</MudSelectItem>
+                    <MudSelectItem T="int?" Value="@articulo.ArticuloID">@articulo.Referencia - @articulo.Nombre</MudSelectItem>
                 }
             </MudSelect>
         }

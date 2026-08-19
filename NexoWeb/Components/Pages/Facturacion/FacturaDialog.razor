@@ -15,30 +15,40 @@
     <DialogContent>
         <MudForm @ref="_form" Model="@this">
 
-            @* ── Cabecera: Tipo de documento + Nro ── *@
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
-                <MudSelect T="string" @bind-Value="_tipDoc" Label="Tipo de Documento" Required="true"
-                           RequiredError="Selecciona un tipo" Variant="Variant.Outlined" Margin="Margin.Dense">
-                    @foreach (var td in TiposDocumento.Todos)
-                    {
-                        <MudSelectItem Value="@td">@td</MudSelectItem>
-                    }
-                </MudSelect>
-                <MudTextField @bind-Value="_nroDoc" Label="Nro. Documento (opcional)"
-                              Variant="Variant.Outlined" Margin="Margin.Dense" />
-            </div>
-
-            @* ── Centro de Costo de venta ── *@
+            @* ── Centro de Costo de venta (va primero para determinar si Visions gestiona el número) ── *@
             @if (CentrosCosto.Count > 0)
             {
-                <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Clearable="true"
+                <MudSelect T="int?" Value="_centroCostoId" Label="Centro de Costo" Clearable="true"
                            Class="mb-3" Variant="Variant.Outlined" Margin="Margin.Dense"
-                           Placeholder="Sin asignar">
+                           Placeholder="Sin asignar"
+                           ValueChanged="OnCentroCostoCambiado">
                     @foreach (var cc in CentrosCosto)
                     {
                         <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
                     }
                 </MudSelect>
+            }
+
+            @* ── Cabecera: Tipo de documento + Nro ── *@
+            @if (_ccTieneVisions)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3" Icon="@Icons.Material.Outlined.ReceiptLong">
+                    Visions asignará el tipo y número de documento de forma automática.
+                </MudAlert>
+            }
+            else
+            {
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
+                    <MudSelect T="string" @bind-Value="_tipDoc" Label="Tipo de Documento" Required="true"
+                               RequiredError="Selecciona un tipo" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @foreach (var td in TiposDocumento.Todos)
+                        {
+                            <MudSelectItem Value="@td">@td</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudTextField @bind-Value="_nroDoc" Label="Nro. Documento (opcional)"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </div>
             }
 
             @* ── Cliente ── *@
@@ -232,10 +242,23 @@
     private bool _consumidorFinal;
     private int? _clienteId;
     private int? _centroCostoId;
+    private bool _ccTieneVisions;
     private DateTime? _fecha = DateTime.Today;
     private string? _notas;
     private List<LineaEditable> _lineas = new() { new LineaEditable() };
     private List<ComboItem> _combosActivos => CombosActivos;
+
+    private void OnCentroCostoCambiado(int? id)
+    {
+        _centroCostoId = id;
+        var cc = CentrosCosto.FirstOrDefault(c => c.CentroCostoID == id);
+        _ccTieneVisions = cc?.TieneVisions ?? false;
+        if (_ccTieneVisions)
+        {
+            _tipDoc = "FACTURA";
+            _nroDoc = null;
+        }
+    }
 
     private void AgregarLinea() =>
         _lineas.Add(new LineaEditable { TipoLinea = TipoLinea.Articulo });

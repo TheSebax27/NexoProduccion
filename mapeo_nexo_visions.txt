@@ -56,8 +56,8 @@ IvaID (identity PK)              Id (identity PK)
 Iva                              IVA
 Descripcion                      DESCRIPCION
 
-NEXO NO sincroniza: CUENTA, BASE, COSTO, INVENTARIO
-(campos contables de Visions, no aplican en NEXO)
+NEXO NO sincroniza: CUENTA, BASE (campos contables de Visions, los gestiona Visions internamente)
+NEXO SI sincroniza: INVENTARIO = 'S' al crear una fila nueva en TARJETA (via MERGE en TareaAplicarEntradasInventario)
 
 Nota: TARJETA.IVAVALOR y TARJETA.IVADESCRIPCION almacenan los
       valores directamente (copia plana), sin FK a IVA.
@@ -128,9 +128,11 @@ CAMPOS QUE NEXO TIENE Y VISIONS NO
 - Tarjetas.TipoArticuloID        Clasificacion propia de NEXO
 - Tarjetas.Estado                Activo/Inactivo (Visions elimina directamente)
 - Tarjetas.FechaCreacion         Auditoria
+- Tarjetas.FechaModificacion     Timestamp de ultima actualizacion (resolucion de conflictos sync)
 - Tarjetas.Imagen                Foto del producto
 - Tarjetas.Fracciona             Control de venta fraccionada (SI/NO); antes 'ModoVentaCaja'
 - Tarjetas.Iva2 / IvaDescripcion2   Soporte para doble impuesto
+- Crm.Clientes.FechaModificacion Timestamp de ultima actualizacion (resolucion de conflictos sync)
 - Toda la tabla Organizacion.*   Centros de Costo, Bodegas (Visions los maneja internamente)
 - Toda la gestion de Kardex      NEXO tiene su propio Kardex detallado
 
@@ -210,6 +212,162 @@ IVA especial: el IvaID de NEXO y el Id de Visions son identities independientes.
 La clave de union es el valor numerico del impuesto (Iva int = IVA int).
 
 --------------------------------------------------------------
+INVENTARIO BIDIRECCIONAL (EXISTENCIAS)
+--------------------------------------------------------------
+
+Evento                         Direccion         Tarea del agente
+-----------------------------  ----------------  ---------------------------------
+Cierre OrdenProduccion NEXO    NEXO → Visions    TareaAplicarEntradasInventario
+                               (ENTRADA_PRODUCTO_TERMINADO, Cantidad positiva)
+Recepcion OrdenCompra NEXO     NEXO → Visions    TareaAplicarEntradasInventario
+                               (RECEPCION_COMPRA, Cantidad positiva)
+Ajuste positivo NEXO           NEXO → Visions    TareaAplicarEntradasInventario
+                               (AJUSTE_INVENTARIO, Cantidad positiva)
+Baja/merma NEXO                NEXO → Visions    TareaAplicarEntradasInventario
+                               (BAJA_INVENTARIO, Cantidad negativa)
+Factura NEXO exportada         NEXO → Visions    TareaSincronizarFacturasNexoVisions
+a Visions                      (descuenta TARJETA.EXISTENCIAS en la misma transaccion
+                               que escribe MOVDETALLES)
+Venta POS en Visions           Visions → NEXO    TareaExportarVentas +
+                               sp_ProcesarEventoEntrante
+                               (descuenta Inventario.InventarioStock en NEXO)
+
+Todos los eventos de inventario viajan via Integracion.EventosSalientes en NEXO.
+El agente los lee por CENTROCOSTO y aplica UPDATE EXISTENCIAS += Cantidad en TARJETA.
+Si la TARJETA no existe al momento de la entrada, el evento lanza error (el articulo
+debe estar mapeado y sincronizado previamente via SINCRONIZAR_ARTICULO).
+
+--------------------------------------------------------------
+PRECIOS / NOMBRE BIDIRECCIONAL
+--------------------------------------------------------------
+
+Direccion       Mecanismo                                   Resolucion conflictos
+--------------  ------------------------------------------- --------------------------------
+NEXO → Visions  ActualizarArticuloAsync encola              Siempre aplica (NEXO es master)
+                SINCRONIZAR_ARTICULO → agente hace MERGE
+                en TARJETA (DETALLE, COSTO, PPUBLICO,
+                EXISTENCIASMINIMAS). NUNCA toca EXISTENCIAS.
+Visions → NEXO  Trigger TR_TARJETA_NexoCambios en TARJETA   Solo aplica si FechaCambioVisions
+                llena NEXO_TarjetasCambios. Agente lee        > FechaModificacion NEXO + 5s
+                via TareaImportarCambiosTarjeta y llama       (evita bucle de sync)
+                POST /api/integracion/sync/articulo-desde-visions.
+
+--------------------------------------------------------------
+CLIENTES BIDIRECCIONAL
+--------------------------------------------------------------
+
+Direccion       Mecanismo
+--------------  -----------------------------------------------------------
+NEXO → Visions  TareaSincronizarClientes: llama GET /api/integracion/sync/clientes
+                con timestamp de ultima sync (delta). Upsert en NEXO_Clientes en Visions.
+                NEXO_Clientes: NIT (PK), Nombre, Telefono, Email, Direccion, FechaSync.
+Visions → NEXO  TareaExportarVentas: incluye NIT y CLIENTE de cada linea de MOVDETALLES.
+                RegistrarEventoEntranteAsync auto-crea el cliente en Crm.Clientes
+                si el NIT no existe (FuenteContacto='VISIONS', TipoCliente='CLIENTE').
+
+--------------------------------------------------------------
+TABLAS NEXO_* EN VISIONS (creadas automaticamente por el agente al arrancar)
+--------------------------------------------------------------
+
+Tabla                    Proposito
+------------------------  -------------------------------------------------------
+NEXO_ConfiguracionSync    Configuracion activa/prefijos de venta por CENTROCOSTO
+NEXO_VentasExportadas     Idempotencia: evita reimportar ventas ya procesadas
+NEXO_EntradasInventario   Log de entradas de inventario aplicadas desde NEXO
+NEXO_TarjetasCambios      Cola de cambios en TARJETA (llenada por trigger) para
+                          sincronizar precios/nombre de vuelta a NEXO
+NEXO_Clientes             Clientes de NEXO replicados para referencia en el POS
+
+Trigger en Visions (creado automaticamente):
+  TR_TARJETA_NexoCambios  AFTER UPDATE en dbo.TARJETA. MERGE en NEXO_TarjetasCambios
+                          (upserta para no acumular filas duplicadas sin procesar).
+
+--------------------------------------------------------------
+ARTÍCULOS PENDIENTES DE MAPEO (flujo automático)
+--------------------------------------------------------------
+
+Cuando Visions registra una venta de un artículo cuyo CodigoArticuloVisions
+no tiene match en Integracion.MapeoArticulos NI en Catalogo.Tarjetas.Referencia,
+el sistema (desde agosto 2026) NO lanza error al agente. En su lugar:
+
+  1. sp_ProcesarEventoEntrante lanza THROW 54000
+  2. RegistrarEventoEntranteAsync captura el 54000
+  3. Hace UPSERT en Integracion.ArticulosPendientesMapeo con nombre/costo/precio
+     que el agente ya incluyó en la petición (datos de TARJETA al momento de la venta)
+  4. Devuelve 200 OK → el agente deja de reintentar el evento
+  5. El evento queda en EventosEntrantes con Procesado=0 esperando resolución
+
+Tabla Integracion.ArticulosPendientesMapeo:
+  PendienteID, CentroCostoID, CodigoArticuloVisions, NombreVisions,
+  CostoVisions, PrecioVisions, CantidadDetectada, FechaDetectado,
+  Resuelto BIT, FechaResuelto
+
+Flujo auto-creación (agosto 2026):
+  Hay DOS vías de auto-creación:
+
+  VÍA 1 — Desde venta (error 54000):
+    Cuando llega una venta de artículo desconocido (54000), NexoApi auto-crea
+    el artículo en Catalogo.Tarjetas y reintenta sp_ProcesarEventoEntrante.
+    También crea Integracion.MapeoArticulos y marca ArticulosPendientesMapeo.Resuelto=1.
+
+  VÍA 2 — Desde sincronización proactiva (TareaDetectarArticulosFaltantes):
+    El agente lee TODOS los artículos de dbo.TARJETA en Visions (500 por ciclo)
+    y para cada uno sin entrada en NEXO_TarjetasCambios llama SyncArticuloDesdeVisionsAsync.
+    La API ahora auto-crea cuando no existe mapeo (igual que VÍA 1).
+    Esto resuelve los 3470 pendientes sin necesidad de una venta.
+
+  Datos usados para auto-crear:
+    Referencia    = CodigoArticuloVisions / ReferenciaVisions
+    Nombre        = DETALLE de Visions (o el código si viene vacío)
+    TipoArticuloID = "Producto Terminado"
+    PPublico      = PPUBLICO de Visions ?? 0
+    StockMinimo   = 0, PuntoReorden = 0, Fracciona = 0
+
+  Datos que llegan después (vía SINCRONIZAR_ARTICULO / TR_TARJETA_NexoCambios):
+    Marca, GrupoMayor/GrupoMenor, IVA, Presentacion — NO vienen en el evento
+    VENTA ni en la venta proactiva, solo en cambios explícitos de TARJETA.
+
+  Nombre de cliente en ventas (fix agosto 2026):
+    TareaExportarVentas hace LEFT JOIN dbo.USUARIOS ON NIT = m.NIT para obtener
+    NOMBRE1+NOMBRE2+APELLIDO1+APELLIDO2 del cliente real. Ya no depende de
+    m.CLIENTE (que en MOVDETALLES suele venir vacío).
+
+  Cuando el Admin resuelve un pendiente manualmente:
+  - Elige artículo existente en NEXO  →  solo se crea el MapeoArticulos
+  - O crea artículo nuevo             →  INSERT en Catalogo.Tarjetas + MapeoArticulos
+  - Tras crear el mapeo, ResolverArticuloPendienteAsync procesa retroactivamente
+    todos los EventosEntrantes con ese CodigoArticuloVisions + Procesado=0
+
+--------------------------------------------------------------
+SINCRONIZACION DE EXISTENCIAS en SINCRONIZAR_ARTICULO
+--------------------------------------------------------------
+
+Desde agosto 2026, el evento SINCRONIZAR_ARTICULO (NEXO → Visions) SÍ actualiza
+TARJETA.EXISTENCIAS con el stock actual de NEXO (suma de Inventario.InventarioStock
+para ese artículo y CentroCosto). Antes solo actualizaba nombre/costo/precio.
+El campo MARCA también se sincroniza (campo MARCA de dbo.TARJETA).
+
+La API devuelve MarcaCodigo en EventoPendienteItem (último campo del record),
+y el agente lo aplica en el MERGE de dbo.TARJETA.
+
+--------------------------------------------------------------
+MIGRACIONES SQL NEXO (ejecutar en NEXO_ERP)
+--------------------------------------------------------------
+
+Archivo                             Descripcion
+----------------------------------  -----------------------------------------------
+ScriptsProcesos/IntegracionProduccionNexo.sql   Esquema completo Integracion.* (idempotente con CREATE OR ALTER)
+sql/migration_nexo_sync_v1.sql      Tablas base de integracion (EventosSalientes, etc.)
+sql/migration_interval_seconds.sql  IntervalSeconds en AgentesSync
+sql/migration_bidireccional_v1.sql  FechaModificacion en Catalogo.Tarjetas y Crm.Clientes
+
+Columnas adicionales en EventosEntrantes (agregadas post-v1, no en el script original):
+  NombreArticuloVisions NVARCHAR(200) NULL
+  CostoArticuloVisions  DECIMAL(18,4) NULL
+  PrecioArticuloVisions DECIMAL(18,4) NULL
+(usadas para poblar ArticulosPendientesMapeo cuando el artículo no está mapeado)
+
+--------------------------------------------------------------
 NOTAS GENERALES DE SINCRONIZACION
 --------------------------------------------------------------
 1. La clave de sincronizacion principal de articulos es: NEXO.Referencia = VISIONS.TARJETA.REFERENCIA
@@ -222,7 +380,10 @@ NOTAS GENERALES DE SINCRONIZACION
 6. IVA: NEXO agrega Iva2/IvaDescripcion2 para productos con doble impuesto;
    Visions no tiene este campo -- al exportar a Visions se ignora.
 7. MOVDETALLES es la tabla de movimientos de Visions (ventas, devoluciones, etc.).
-   NEXO NUNCA modifica MOVDETALLES directamente -- solo el agente escribe en ella
-   durante la exportacion NEXO→Visions. El resto de Visions es de solo lectura para NEXO.
+   NEXO NUNCA modifica tablas nativas de Visions directamente -- solo el agente escribe en
+   MOVDETALLES (exportacion NEXO→Visions) y en TARJETA.EXISTENCIAS (descuento de stock).
+   El resto de Visions es de solo lectura para NEXO. Excepcion: tablas NEXO_* son propias.
+8. Resolucion de conflictos de precios: gana el cambio mas reciente segun FechaModificacion.
+   Buffer de 5 segundos para absorber la latencia del trigger al aplicar NEXO→Visions.
 
 ==============================================================

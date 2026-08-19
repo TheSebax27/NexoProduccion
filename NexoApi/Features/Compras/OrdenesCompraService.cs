@@ -107,6 +107,11 @@ public class OrdenesCompraService : IOrdenesCompraService
     {
         using var connection = _db.CreateConnection();
 
+        // Leer ArticuloID y costo para poder encolar el evento hacia Visions.
+        var detalle = await connection.QuerySingleOrDefaultAsync<(int ArticuloID, decimal CostoUnitario)>(
+            "SELECT ArticuloID, CostoUnitario FROM Compras.OrdenesCompraDetalle WHERE OrdenCompraDetalleID = @Id",
+            new { Id = ordenCompraDetalleId });
+
         var parametros = new DynamicParameters();
         parametros.Add("OrdenCompraDetalleID", ordenCompraDetalleId);
         parametros.Add("CantidadRecibida", r.CantidadRecibida);
@@ -118,6 +123,18 @@ public class OrdenesCompraService : IOrdenesCompraService
             "Compras.sp_RecibirOrdenCompra",
             parametros,
             commandType: CommandType.StoredProcedure);
+
+        // Replicar entrada de compra en Visions para todos los CC mapeados.
+        if (detalle.ArticuloID > 0)
+        {
+            await connection.ExecuteAsync(@"
+                INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
+                SELECT 'RECEPCION_COMPRA', ma.CentroCostoID, ma.ArticuloID, @Cantidad, @CostoUnitario
+                FROM Integracion.MapeoArticulos ma
+                JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = ma.CentroCostoID
+                WHERE ma.ArticuloID = @ArticuloId AND ma.Estado = 1 AND cc.TieneVisions = 1",
+                new { ArticuloId = detalle.ArticuloID, Cantidad = r.CantidadRecibida, CostoUnitario = detalle.CostoUnitario });
+        }
 
         return (resultado.LoteID, resultado.NuevoCostoPromedio);
     }

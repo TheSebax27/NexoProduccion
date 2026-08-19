@@ -2,43 +2,134 @@
 
 <MudDialog>
     <DialogContent>
-        <MudTextField @bind-Value="_nombre" Label="Nombre / Razon Social" Required="true" Class="mb-3" />
-        <MudTextField @bind-Value="_nit" Label="NIT" Class="mb-3"
-                      HelperText="No puede repetirse -- el sistema lo rechaza si ya existe otro cliente con el mismo NIT." />
-        <MudTextField @bind-Value="_telefono" Label="Telefono" Class="mb-3" />
-        <MudTextField @bind-Value="_email" Label="Email" Class="mb-3" InputType="InputType.Email" />
-        <MudTextField @bind-Value="_direccion" Label="Direccion" Class="mb-3" />
+        <!-- Tipo de persona -->
+        <div class="d-flex gap-3 mb-4">
+            <MudButton Variant="@(_tipoPersona == "Natural" ? Variant.Filled : Variant.Outlined)"
+                       Color="Color.Primary" Size="Size.Small"
+                       OnClick="@(() => CambiarTipo("Natural"))">
+                Persona Natural
+            </MudButton>
+            <MudButton Variant="@(_tipoPersona == "Juridica" ? Variant.Filled : Variant.Outlined)"
+                       Color="Color.Primary" Size="Size.Small"
+                       OnClick="@(() => CambiarTipo("Juridica"))">
+                Persona Jurídica
+            </MudButton>
+        </div>
 
-        <MudSelect T="string" @bind-Value="_tipoCliente" Label="Tipo de Cliente" Clearable="true" Class="mb-3">
-            <MudSelectItem Value="@("Empresa")">Empresa</MudSelectItem>
-            <MudSelectItem Value="@("Persona Natural")">Persona Natural</MudSelectItem>
-        </MudSelect>
+        @if (_tipoPersona == "Natural")
+        {
+            <MudGrid Spacing="2">
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_primerNombre" Label="Primer Nombre" Required="true"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_segundoNombre" Label="Segundo Nombre"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_primerApellido" Label="Primer Apellido" Required="true"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_segundoApellido" Label="Segundo Apellido"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_nit" Label="C.C. / NIT"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_telefono" Label="Teléfono"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_departamento" Label="Departamento"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_ciudad" Label="Ciudad"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_direccion" Label="Dirección"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_email" Label="Email" InputType="InputType.Email"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+            </MudGrid>
+        }
+        else
+        {
+            <MudGrid Spacing="2">
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_nit" Label="NIT Empresa"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_nombre" Label="Nombre / Razón Social" Required="true"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_departamento" Label="Departamento"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_ciudad" Label="Ciudad"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_telefono" Label="Teléfono"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_email" Label="Email" InputType="InputType.Email"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_direccion" Label="Dirección"
+                                  Variant="Variant.Outlined" FullWidth="true" />
+                </MudItem>
+            </MudGrid>
+        }
 
-        <MudSelect T="string" @bind-Value="_fuenteContacto" Label="Fuente del Contacto" Clearable="true" Class="mb-3">
-            <MudSelectItem Value="@("Referido")">Referido</MudSelectItem>
-            <MudSelectItem Value="@("Redes Sociales")">Redes Sociales</MudSelectItem>
-            <MudSelectItem Value="@("Llamada en Frio")">Llamada en Frío</MudSelectItem>
-            <MudSelectItem Value="@("Pagina Web")">Página Web</MudSelectItem>
-            <MudSelectItem Value="@("Otro")">Otro</MudSelectItem>
-        </MudSelect>
+        <MudDivider Class="my-3" />
 
-        <MudSelect T="int?" @bind-Value="_responsableId" Label="Responsable Comercial" Clearable="true" Class="mb-3">
-            @foreach (var e in Empleados)
-            {
-                <MudSelectItem T="int?" Value="@e.EmpleadoID">@e.Nombres @e.Apellidos</MudSelectItem>
-            }
-        </MudSelect>
+        <!-- Campos CRM comunes -->
+        <MudGrid Spacing="2">
+            <MudItem xs="12" md="6">
+                <MudSelect T="string" @bind-Value="_fuenteContacto" Label="Fuente del Contacto" Clearable="true"
+                           Variant="Variant.Outlined" FullWidth="true">
+                    <MudSelectItem Value="@("Referido")">Referido</MudSelectItem>
+                    <MudSelectItem Value="@("Redes Sociales")">Redes Sociales</MudSelectItem>
+                    <MudSelectItem Value="@("Llamada en Frio")">Llamada en Frío</MudSelectItem>
+                    <MudSelectItem Value="@("Pagina Web")">Página Web</MudSelectItem>
+                    <MudSelectItem Value="@("Otro")">Otro</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudSelect T="int?" @bind-Value="_responsableId" Label="Responsable Comercial" Clearable="true"
+                           Variant="Variant.Outlined" FullWidth="true">
+                    @foreach (var e in Empleados)
+                    {
+                        <MudSelectItem T="int?" Value="@e.EmpleadoID">@e.Nombres @e.Apellidos</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
 
         @if (Cliente is not null)
         {
-            <MudDatePicker @bind-Date="_proximoContacto" Label="Proximo Contacto" Clearable="true" Class="mb-3" />
-            <MudSwitch T="bool" @bind-Value="_estado" Label="Activo" Color="Color.Success" />
+            <MudDatePicker @bind-Date="_proximoContacto" Label="Próximo Contacto" Clearable="true" Class="mt-3" />
+            <MudSwitch T="bool" @bind-Value="_estado" Label="Activo" Color="Color.Success" Class="mt-2" />
         }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancelar">Cancelar</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled"
-                   Disabled="@(string.IsNullOrWhiteSpace(_nombre))"
+                   Disabled="@(!PuedeGuardar)"
                    OnClick="Guardar">
             Guardar
         </MudButton>
@@ -50,39 +141,80 @@
     [Parameter] public ClienteItem? Cliente { get; set; }
     [Parameter] public List<EmpleadoItem> Empleados { get; set; } = new();
 
+    private string _tipoPersona = "Natural";
     private string _nombre = "";
     private string? _nit;
+    private string? _primerNombre;
+    private string? _segundoNombre;
+    private string? _primerApellido;
+    private string? _segundoApellido;
     private string? _telefono;
     private string? _email;
     private string? _direccion;
-    private string? _tipoCliente;
+    private string? _departamento;
+    private string? _ciudad;
     private string? _fuenteContacto;
     private int? _responsableId;
     private DateTime? _proximoContacto;
     private bool _estado = true;
 
+    private bool PuedeGuardar => _tipoPersona == "Natural"
+        ? !string.IsNullOrWhiteSpace(_primerNombre) && !string.IsNullOrWhiteSpace(_primerApellido)
+        : !string.IsNullOrWhiteSpace(_nombre);
+
+    private string NombreCompleto => _tipoPersona == "Natural"
+        ? string.Join(" ", new[] { _primerNombre, _segundoNombre, _primerApellido, _segundoApellido }
+            .Where(s => !string.IsNullOrWhiteSpace(s)))
+        : _nombre.Trim();
+
+    private void CambiarTipo(string tipo)
+    {
+        _tipoPersona = tipo;
+        // Si el campo Nombre ya tenía algo y cambia a Natural, no lo borramos
+    }
+
     protected override void OnParametersSet()
     {
         if (Cliente is not null)
         {
-            _nombre = Cliente.Nombre;
-            _nit = Cliente.NIT;
-            _telefono = Cliente.Telefono;
-            _email = Cliente.Email;
-            _direccion = Cliente.Direccion;
-            _tipoCliente = Cliente.TipoCliente;
-            _fuenteContacto = Cliente.FuenteContacto;
-            _responsableId = Cliente.ResponsableID;
-            _proximoContacto = Cliente.ProximoContacto;
-            _estado = Cliente.Estado;
+            _tipoPersona      = Cliente.TipoPersona ?? (Cliente.TipoCliente == "Empresa" ? "Juridica" : "Natural");
+            _nombre           = Cliente.Nombre;
+            _nit              = Cliente.NIT;
+            _primerNombre     = Cliente.PrimerNombre;
+            _segundoNombre    = Cliente.SegundoNombre;
+            _primerApellido   = Cliente.PrimerApellido;
+            _segundoApellido  = Cliente.SegundoApellido;
+            _telefono         = Cliente.Telefono;
+            _email            = Cliente.Email;
+            _direccion        = Cliente.Direccion;
+            _departamento     = Cliente.Departamento;
+            _ciudad           = Cliente.Ciudad;
+            _fuenteContacto   = Cliente.FuenteContacto;
+            _responsableId    = Cliente.ResponsableID;
+            _proximoContacto  = Cliente.ProximoContacto;
+            _estado           = Cliente.Estado;
         }
     }
 
     private void Guardar()
     {
+        var nombreFinal = NombreCompleto;
+        var tipoCliente = _tipoPersona == "Natural" ? "Persona Natural" : "Empresa";
+
         object resultado = Cliente is null
-            ? new CrearClienteRequest(_nombre.Trim(), _nit?.Trim(), _telefono?.Trim(), _email?.Trim(), _direccion?.Trim(), _fuenteContacto, _tipoCliente, _responsableId)
-            : new ActualizarClienteRequest(_nombre.Trim(), _nit?.Trim(), _telefono?.Trim(), _email?.Trim(), _direccion?.Trim(), _estado, _fuenteContacto, _tipoCliente, _responsableId, _proximoContacto);
+            ? new CrearClienteRequest(
+                nombreFinal, _nit?.Trim(), _telefono?.Trim(), _email?.Trim(), _direccion?.Trim(),
+                _fuenteContacto, tipoCliente, _responsableId,
+                _tipoPersona, _primerNombre?.Trim(), _segundoNombre?.Trim(),
+                _primerApellido?.Trim(), _segundoApellido?.Trim(),
+                _departamento?.Trim(), _ciudad?.Trim())
+            : new ActualizarClienteRequest(
+                nombreFinal, _nit?.Trim(), _telefono?.Trim(), _email?.Trim(), _direccion?.Trim(),
+                _estado, _fuenteContacto, tipoCliente, _responsableId, _proximoContacto,
+                _tipoPersona, _primerNombre?.Trim(), _segundoNombre?.Trim(),
+                _primerApellido?.Trim(), _segundoApellido?.Trim(),
+                _departamento?.Trim(), _ciudad?.Trim());
+
         MudDialog.Close(DialogResult.Ok(resultado));
     }
 

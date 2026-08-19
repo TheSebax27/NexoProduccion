@@ -4,8 +4,10 @@
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
 @inject IConfiguration Config
+@inject IDialogService DialogService
 @implements IDisposable
 @using NexoWeb.Common.Dtos
+@using NexoWeb.Components.Pages.Catalogo
 
 <PageTitle>Integración Visions — NEXO ERP</PageTitle>
 
@@ -19,7 +21,7 @@
     </div>
 </div>
 
-<MudTabs Elevation="0" Rounded="false" ApplyEffectsToContainer="true" PanelClass="pt-4">
+<MudTabs @ref="_tabs" Elevation="0" Rounded="false" ApplyEffectsToContainer="true" PanelClass="pt-4">
 
     <!-- ══════════════════════════════════════ TAB 1: ESTADO -->
     <MudTabPanel Text="Estado del agente" Icon="@Icons.Material.Outlined.MonitorHeart">
@@ -41,83 +43,299 @@
         }
         else
         {
-            <MudGrid>
-                @foreach (var ag in _agentes)
-                {
-                    var estado = EstadoAgente(ag);
-                    <MudItem xs="12" md="6">
-                        <MudPaper Class="pa-4" Elevation="0" Style="border: 0.5px solid var(--mud-palette-divider); border-radius: 12px;">
-                            <div class="d-flex justify-space-between align-center mb-2">
-                                <div>
-                                    <MudText Typo="Typo.subtitle1" Style="font-weight:500">@ag.NombreCentroCosto</MudText>
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@ag.Descripcion</MudText>
-                                </div>
-                                <div class="d-flex align-center gap-2">
-                                    <MudChip T="string" Color="@estado.Color" Size="Size.Small">@estado.Texto</MudChip>
-                                    @if (ag.HayActualizacion)
-                                    {
-                                        <MudTooltip Text="@($"Versión instalada: {ag.VersionAgente} — Disponible: {ag.VersionDisponible}")">
-                                            <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small"
-                                                       StartIcon="@Icons.Material.Outlined.SystemUpdate"
-                                                       OnClick="@(() => ActualizarAgenteAsync(ag.AgenteSyncID))">
-                                                Actualizar
-                                            </MudButton>
-                                        </MudTooltip>
-                                    }
-                                    <MudIconButton Icon="@Icons.Material.Outlined.Settings" Size="Size.Small"
-                                                   Title="Configurar agente"
-                                                   OnClick="@(() => AbrirConfigAsync(ag.AgenteSyncID))" />
-                                    <MudIconButton Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small"
-                                                   Color="Color.Error" Title="Eliminar agente"
-                                                   OnClick="@(() => EliminarAgenteAsync(ag.AgenteSyncID))" />
-                                </div>
+            @foreach (var ag in _agentes)
+            {
+                var estado = EstadoAgente(ag);
+                var expandido = _actividadExpandida.Contains(ag.AgenteSyncID);
+                var act = _actividad.GetValueOrDefault(ag.AgenteSyncID);
+
+                <MudPaper Class="mb-4 pa-0" Elevation="0"
+                          Style="border: 1px solid var(--mud-palette-divider); border-radius: 16px; overflow:hidden;">
+
+                    <!-- ── Cabecera del agente ── -->
+                    <div style="background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-darken) 100%); padding: 20px 24px;"
+                         class="d-flex justify-space-between align-center flex-wrap gap-2">
+                        <div class="d-flex align-center gap-3">
+                            <MudIcon Icon="@Icons.Material.Outlined.Router" Style="color:white; font-size:2rem;" />
+                            <div>
+                                <MudText Typo="Typo.h6" Style="color:white; font-weight:600; margin:0;">@ag.NombreCentroCosto</MudText>
+                                <MudText Typo="Typo.caption" Style="color:rgba(255,255,255,0.75);">@ag.Descripcion</MudText>
                             </div>
-
-                            <MudDivider Class="mb-3" />
-
-                            <MudGrid Spacing="2">
-                                <MudItem xs="6">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Último latido</MudText>
-                                    <MudText Typo="Typo.body2">
-                                        @(ag.UltimoLatido.HasValue ? ag.UltimoLatido.Value.ToLocalTime().ToString("dd/MM HH:mm:ss") : "Nunca")
-                                    </MudText>
-                                </MudItem>
-                                <MudItem xs="6">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Versión agente</MudText>
-                                    <MudText Typo="Typo.body2">@(ag.VersionAgente ?? "–")</MudText>
-                                </MudItem>
-                                <MudItem xs="3">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Pendientes</MudText>
-                                    <MudText Typo="Typo.body2" Color="@(ag.EventosPendientes > 0 ? Color.Warning : Color.Default)">@ag.EventosPendientes</MudText>
-                                </MudItem>
-                                <MudItem xs="3">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Con error</MudText>
-                                    <MudText Typo="Typo.body2" Color="@(ag.EventosConError > 0 ? Color.Error : Color.Default)">@ag.EventosConError</MudText>
-                                </MudItem>
-                                <MudItem xs="3">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Enviados hoy</MudText>
-                                    <MudText Typo="Typo.body2">@ag.EventosProcesadosHoy</MudText>
-                                </MudItem>
-                                <MudItem xs="3">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Ventas hoy</MudText>
-                                    <MudText Typo="Typo.body2">@ag.VentasImportadasHoy</MudText>
-                                </MudItem>
-                            </MudGrid>
-
-                            @if (ag.EventosConError > 0)
+                        </div>
+                        <div class="d-flex align-center gap-2 flex-wrap">
+                            <MudChip T="string" Color="@estado.Color" Size="Size.Medium"
+                                     Style="font-weight:600; min-width:110px; justify-content:center;">
+                                @if (estado.Color == Color.Success) { <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-1" /> }
+                                else if (estado.Color == Color.Error) { <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" Class="mr-1" /> }
+                                else { <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-1" /> }
+                                @estado.Texto
+                            </MudChip>
+                            @if (ag.HayActualizacion)
                             {
-                                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3">
-                                    @ag.EventosConError evento(s) bloqueado(s) — revisa el mapeo de artículos.
-                                </MudAlert>
+                                <MudTooltip Text="@($"v{ag.VersionAgente} instalada — v{ag.VersionDisponible} disponible")">
+                                    <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small"
+                                               StartIcon="@Icons.Material.Outlined.SystemUpdate"
+                                               OnClick="@(() => ActualizarAgenteAsync(ag.AgenteSyncID))">
+                                        Actualizar ahora
+                                    </MudButton>
+                                </MudTooltip>
                             }
-                        </MudPaper>
-                    </MudItem>
-                }
-            </MudGrid>
+                            <MudIconButton Icon="@Icons.Material.Outlined.Settings" Size="Size.Small"
+                                           Style="color:white;" Title="Configurar agente"
+                                           OnClick="@(() => AbrirConfigAsync(ag.AgenteSyncID))" />
+                            <MudIconButton Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small"
+                                           Style="color:rgba(255,255,255,0.7);" Title="Eliminar agente"
+                                           OnClick="@(() => EliminarAgenteAsync(ag.AgenteSyncID))" />
+                        </div>
+                    </div>
 
-            <div class="mt-3 d-flex align-center gap-2">
+                    <!-- ── Métricas rápidas ── -->
+                    <div class="pa-4">
+                        <MudGrid Spacing="3">
+                            <MudItem xs="6" sm="3">
+                                <div style="text-align:center; padding:12px; background:var(--mud-palette-background-grey); border-radius:10px;">
+                                    <MudIcon Icon="@Icons.Material.Outlined.AccessTime" Color="Color.Primary" Size="Size.Small" />
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:block;">Último latido</MudText>
+                                    <MudText Typo="Typo.body2" Style="font-weight:500;">
+                                        @(ag.UltimoLatido.HasValue ? ag.UltimoLatido.Value.ToLocalTime().ToString("dd/MM HH:mm") : "Nunca")
+                                    </MudText>
+                                    @if (ag.UltimoLatido.HasValue)
+                                    {
+                                        var hace = DateTime.UtcNow - ag.UltimoLatido.Value;
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                            Hace @(hace.TotalMinutes < 1 ? "menos de 1 min" : $"{(int)hace.TotalMinutes} min")
+                                        </MudText>
+                                    }
+                                </div>
+                            </MudItem>
+                            <MudItem xs="6" sm="3">
+                                <div style="text-align:center; padding:12px; background:var(--mud-palette-background-grey); border-radius:10px;">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Send" Color="Color.Success" Size="Size.Small" />
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:block;">Enviados hoy</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight:700; color: var(--mud-palette-success);">@ag.EventosProcesadosHoy</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">sincronizaciones</MudText>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="6" sm="3">
+                                <div style="text-align:center; padding:12px; background:var(--mud-palette-background-grey); border-radius:10px;">
+                                    <MudIcon Icon="@Icons.Material.Outlined.ShoppingCart" Color="Color.Info" Size="Size.Small" />
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:block;">Ventas importadas hoy</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight:700; color: var(--mud-palette-info);">@ag.VentasImportadasHoy</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">desde Visions</MudText>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="6" sm="3">
+                                <div style="text-align:center; padding:12px; background:@(ag.EventosConError > 0 ? "rgba(var(--mud-palette-error-rgb),0.08)" : "var(--mud-palette-background-grey)"); border-radius:10px;">
+                                    <MudIcon Icon="@Icons.Material.Outlined.ErrorOutline"
+                                             Color="@(ag.EventosConError > 0 ? Color.Error : Color.Default)" Size="Size.Small" />
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:block;">Con error</MudText>
+                                    <MudText Typo="Typo.h6" Style="@($"font-weight:700; color:{(ag.EventosConError > 0 ? "var(--mud-palette-error)" : "inherit")}")">
+                                        @ag.EventosConError
+                                    </MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        @(ag.EventosPendientes > 0 ? $"{ag.EventosPendientes} pendientes" : "sin pendientes")
+                                    </MudText>
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+
+                        @if (ag.EventosConError > 0)
+                        {
+                            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3" Icon="@Icons.Material.Outlined.BugReport">
+                                <strong>@ag.EventosConError evento(s) con error</strong> — expande el historial para ver el detalle.
+                                Posible causa: artículo no mapeado o referencia inexistente en Visions.
+                            </MudAlert>
+                        }
+
+                        <!-- ── Actividad / historial ── -->
+                        <div class="mt-3">
+                            <MudButton Variant="Variant.Text" Size="Size.Small"
+                                       StartIcon="@(expandido ? Icons.Material.Outlined.ExpandLess : Icons.Material.Outlined.ExpandMore)"
+                                       OnClick="@(() => ToggleActividadAsync(ag.AgenteSyncID))">
+                                @(expandido ? "Ocultar historial" : "Ver historial de sincronización")
+                            </MudButton>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Últimos 25 eventos</MudText>
+                        </div>
+
+                        @if (expandido)
+                        {
+                            @if (act is null)
+                            {
+                                <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mt-2" />
+                            }
+                            else
+                            {
+                                <!-- ── Facturas hoy ── -->
+                                <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mt-3 mb-1" Style="display:block; letter-spacing:.08em;">
+                                    FACTURAS HOY
+                                </MudText>
+                                <MudGrid Spacing="2" Class="mb-3">
+                                    <MudItem xs="6" sm="3">
+                                        <div style="padding:10px 14px; border-left:3px solid var(--mud-palette-success); background:var(--mud-palette-background-grey); border-radius:0 8px 8px 0;">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">NEXO → Visions</MudText>
+                                            <MudText Typo="Typo.subtitle1" Style="font-weight:700; color:var(--mud-palette-success);">@act.FacturasNexoVisionsHoy</MudText>
+                                        </div>
+                                    </MudItem>
+                                    <MudItem xs="6" sm="3">
+                                        <div style="padding:10px 14px; border-left:3px solid var(--mud-palette-info); background:var(--mud-palette-background-grey); border-radius:0 8px 8px 0;">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Ventas Visions → NEXO</MudText>
+                                            <MudText Typo="Typo.subtitle1" Style="font-weight:700; color:var(--mud-palette-info);">@act.VentasVisionsNexoHoy</MudText>
+                                        </div>
+                                    </MudItem>
+                                    <MudItem xs="6" sm="3">
+                                        <div style="padding:10px 14px; border-left:3px solid var(--mud-palette-info); background:var(--mud-palette-background-grey); border-radius:0 8px 8px 0;">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Compras recibidas hoy</MudText>
+                                            <MudText Typo="Typo.subtitle1" Style="font-weight:700; color:var(--mud-palette-info);">@act.ComprasHoy</MudText>
+                                        </div>
+                                    </MudItem>
+                                    <MudItem xs="6" sm="3">
+                                        <div style="padding:10px 14px; border-left:3px solid var(--mud-palette-warning); background:var(--mud-palette-background-grey); border-radius:0 8px 8px 0;">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Ajustes / Bajas hoy</MudText>
+                                            <MudText Typo="Typo.subtitle1" Style="font-weight:700; color:var(--mud-palette-warning);">@act.AjustesHoy</MudText>
+                                        </div>
+                                    </MudItem>
+                                </MudGrid>
+
+                                <!-- ── Catálogo sincronizado ── -->
+                                <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-1" Style="display:block; letter-spacing:.08em;">
+                                    CATÁLOGO SINCRONIZADO (TOTAL EN NEXO)
+                                </MudText>
+                                <MudGrid Spacing="2" Class="mb-3">
+                                    <MudItem xs="6" sm="2">
+                                        <div style="padding:10px 14px; border-left:3px solid var(--mud-palette-primary); background:var(--mud-palette-background-grey); border-radius:0 8px 8px 0;">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Artículos</MudText>
+                                            <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@act.TotalArticulos</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@act.ArticulosEnlazados mapeados</MudText>
+                                        </div>
+                                    </MudItem>
+                                    <MudItem xs="6" sm="2">
+                                        <div style="padding:10px 14px; border-left:3px solid var(--mud-palette-primary); background:var(--mud-palette-background-grey); border-radius:0 8px 8px 0;">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Marcas</MudText>
+                                            <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@act.TotalMarcas</MudText>
+                                        </div>
+                                    </MudItem>
+                                    <MudItem xs="6" sm="2">
+                                        <div style="padding:10px 14px; border-left:3px solid var(--mud-palette-primary); background:var(--mud-palette-background-grey); border-radius:0 8px 8px 0;">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Grupos Mayor</MudText>
+                                            <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@act.TotalGruposMayor</MudText>
+                                        </div>
+                                    </MudItem>
+                                    <MudItem xs="6" sm="2">
+                                        <div style="padding:10px 14px; border-left:3px solid var(--mud-palette-primary); background:var(--mud-palette-background-grey); border-radius:0 8px 8px 0;">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Grupos Menor</MudText>
+                                            <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@act.TotalGruposMenor</MudText>
+                                        </div>
+                                    </MudItem>
+                                    <MudItem xs="6" sm="2">
+                                        <div style="padding:10px 14px; border-left:3px solid var(--mud-palette-primary); background:var(--mud-palette-background-grey); border-radius:0 8px 8px 0;">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Clientes</MudText>
+                                            <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@act.TotalClientes</MudText>
+                                        </div>
+                                    </MudItem>
+                                </MudGrid>
+
+                                <!-- Timeline de eventos -->
+                                @if (!act.UltimosEventos.Any())
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">Sin eventos registrados aún.</MudText>
+                                }
+                                else
+                                {
+                                    <MudTable Items="@act.UltimosEventos" Dense="true" Hover="true" Elevation="0"
+                                              Style="border:1px solid var(--mud-palette-divider); border-radius:8px; overflow:hidden;">
+                                        <HeaderContent>
+                                            <MudTh Style="width:130px;">Fecha</MudTh>
+                                            <MudTh>Tipo</MudTh>
+                                            <MudTh>Artículo</MudTh>
+                                            <MudTh Style="width:80px; text-align:right;">Cantidad</MudTh>
+                                            <MudTh Style="width:100px; text-align:center;">Estado</MudTh>
+                                            <MudTh>Detalle</MudTh>
+                                        </HeaderContent>
+                                        <RowTemplate>
+                                            <MudTd>
+                                                <MudText Typo="Typo.caption">
+                                                    @((context.FechaEnvio ?? context.FechaCreacion).ToLocalTime().ToString("dd/MM HH:mm"))
+                                                </MudText>
+                                            </MudTd>
+                                            <MudTd>
+                                                <div class="d-flex align-center gap-1">
+                                                    <MudIcon Icon="@IconoEvento(context.TipoEvento)" Size="Size.Small"
+                                                             Color="@ColorIconoEvento(context.TipoEvento)" />
+                                                    <MudText Typo="Typo.caption" Style="font-size:11px;">
+                                                        @EtiquetaEvento(context.TipoEvento)
+                                                    </MudText>
+                                                </div>
+                                            </MudTd>
+                                            <MudTd>
+                                                <MudText Typo="Typo.caption" Style="font-family:monospace;">
+                                                    @(context.ReferenciaVisions ?? "–")
+                                                </MudText>
+                                                @if (!string.IsNullOrWhiteSpace(context.NombreArticulo))
+                                                {
+                                                    <MudText Typo="Typo.caption" Color="Color.Secondary"
+                                                             Style="display:block; font-size:10px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                                        @context.NombreArticulo
+                                                    </MudText>
+                                                }
+                                            </MudTd>
+                                            <MudTd Style="text-align:right;">
+                                                <MudText Typo="Typo.caption" Style="font-family:monospace;">
+                                                    @(context.Cantidad != 0 ? context.Cantidad.ToString("N2") : "–")
+                                                </MudText>
+                                            </MudTd>
+                                            <MudTd Style="text-align:center;">
+                                                @if (context.Estado == "CONFIRMADO")
+                                                {
+                                                    <MudChip T="string" Color="Color.Success" Size="Size.Small" Style="height:20px;">✓ OK</MudChip>
+                                                }
+                                                else if (context.Estado == "ERROR")
+                                                {
+                                                    <MudChip T="string" Color="Color.Error" Size="Size.Small" Style="height:20px;">✗ Error</MudChip>
+                                                }
+                                                else
+                                                {
+                                                    <MudChip T="string" Color="Color.Warning" Size="Size.Small" Style="height:20px;">⏳ Pendiente</MudChip>
+                                                }
+                                            </MudTd>
+                                            <MudTd>
+                                                @if (!string.IsNullOrWhiteSpace(context.MensajeError))
+                                                {
+                                                    <MudTooltip Text="@context.MensajeError" Placement="Placement.Left">
+                                                        <MudText Typo="Typo.caption" Color="Color.Error"
+                                                                 Style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; cursor:help;">
+                                                            @context.MensajeError
+                                                        </MudText>
+                                                    </MudTooltip>
+                                                }
+                                                else
+                                                {
+                                                    <MudText Typo="Typo.caption" Color="Color.Tertiary">—</MudText>
+                                                }
+                                            </MudTd>
+                                        </RowTemplate>
+                                    </MudTable>
+                                    <MudButton Variant="Variant.Text" Size="Size.Small" Class="mt-2"
+                                               StartIcon="@Icons.Material.Outlined.Refresh"
+                                               OnClick="@(() => { _actividad.Remove(ag.AgenteSyncID); _ = CargarActividadAsync(ag.AgenteSyncID); })">
+                                        Actualizar historial
+                                    </MudButton>
+                                }
+                            }
+                        }
+
+                        <!-- Versión -->
+                        <MudDivider Class="mt-3 mb-2" />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            Versión agente: <strong>@(ag.VersionAgente ?? "desconocida")</strong>
+                            @if (ag.HayActualizacion) { <span style="color:var(--mud-palette-warning);"> — v@(ag.VersionDisponible) disponible · haz clic en "Actualizar ahora"</span> }
+                        </MudText>
+                    </div>
+                </MudPaper>
+            }
+
+            <div class="d-flex align-center gap-2">
                 <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Outlined.Refresh"
-                           OnClick="CargarEstadoAsync" Disabled="_cargando">Actualizar</MudButton>
+                           OnClick="CargarEstadoAsync" Disabled="_cargando">Actualizar estado</MudButton>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">Se actualiza cada 30 segundos</MudText>
             </div>
         }
@@ -140,7 +358,7 @@
             <ol style="padding-left:1.25rem;font-size:0.875rem;line-height:1.9;">
                 <li>Ir a la pestaña <strong>"Configurar agente"</strong></li>
                 <li>Seleccionar el Centro de Costo que usará este agente y hacer clic en <strong>"Crear"</strong></li>
-                <li>Completar el servidor SQL de Visions, la bodega de venta y los prefijos de documento</li>
+                <li>Completar el servidor SQL de Visions y el intervalo de sincronización</li>
                 <li>Clic en <strong>"Guardar configuración"</strong></li>
             </ol>
         </div>
@@ -225,41 +443,31 @@
                                   HelperText="Solo el nombre del servidor o instancia. Ej: DESKTOP-ABC123\JONATHAN" />
                 </MudItem>
 
+
                 <!-- Intervalo -->
                 <MudItem xs="12" md="4">
-                    <MudNumericField @bind-Value="_editIntervalMinutes"
-                                     Label="Intervalo de sincronización (min)"
-                                     Variant="Variant.Outlined" FullWidth="true"
-                                     Min="1" Max="60"
-                                     HelperText="Cada cuántos minutos sincroniza con NEXO." />
-                </MudItem>
-
-                <!-- Bodega de venta Visions -->
-                <MudItem xs="12" md="6">
-                    <MudSelect T="int?" @bind-Value="_editBodegaVentaVisionsId"
-                               Label="Bodega de venta Visions"
-                               Variant="Variant.Outlined" FullWidth="true"
-                               Placeholder="Sin asignar"
-                               HelperText="Bodega desde donde se descuenta el stock al registrar una venta en Visions.">
-                        <MudSelectItem T="int?" Value="@((int?)null)">Sin asignar</MudSelectItem>
-                        @foreach (var b in _todasBodegas.Where(b => b.CentroCostoID == _configAgente.CentroCostoID && b.Estado))
-                        {
-                            <MudSelectItem T="int?" Value="@((int?)b.BodegaID)">@b.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-
-                <!-- Prefijos de documento -->
-                <MudItem xs="12" md="6">
-                    <MudText Typo="Typo.body2" Class="mb-1">Tipos de documento que cuentan como venta</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
-                        Solo los tipos marcados se exportan como venta hacia NEXO.
-                    </MudText>
-                    @foreach (var prefijo in PrefijosDisponibles)
+                    <div class="d-flex align-center gap-2 mb-2">
+                        <MudText Typo="Typo.body2">Unidad:</MudText>
+                        <MudChip T="string" Color="@(!_usarSegundos ? Color.Primary : Color.Default)"
+                                 Size="Size.Small" OnClick="@(() => _usarSegundos = false)">Minutos</MudChip>
+                        <MudChip T="string" Color="@(_usarSegundos ? Color.Primary : Color.Default)"
+                                 Size="Size.Small" OnClick="@(() => _usarSegundos = true)">Segundos</MudChip>
+                    </div>
+                    @if (_usarSegundos)
                     {
-                        <MudCheckBox T="bool" Value="@_prefijosSeleccionados.Contains(prefijo.Codigo)"
-                                     ValueChanged="@((bool v) => AlternarPrefijo(prefijo.Codigo, v))"
-                                     Label="@($"{prefijo.Codigo} - {prefijo.Descripcion}")" Dense="true" />
+                        <MudNumericField @bind-Value="_editIntervalSeconds"
+                                         Label="Intervalo (segundos)"
+                                         Variant="Variant.Outlined" FullWidth="true"
+                                         Min="10" Max="3600"
+                                         HelperText="Mínimo 10 s. Útil para alta frecuencia o pruebas." />
+                    }
+                    else
+                    {
+                        <MudNumericField @bind-Value="_editIntervalMinutes"
+                                         Label="Intervalo (minutos)"
+                                         Variant="Variant.Outlined" FullWidth="true"
+                                         Min="1" Max="60"
+                                         HelperText="Cada cuántos minutos sincroniza con NEXO." />
                     }
                 </MudItem>
 
@@ -371,40 +579,97 @@
         }
     </MudTabPanel>
 
+    <!-- ══════════════════════════════════════ TAB 4: ARTÍCULOS PENDIENTES -->
+    <MudTabPanel Text="Artículos pendientes" Icon="@Icons.Material.Outlined.LinkOff"
+                 BadgeData="@(_totalPendientes > 0 ? _totalPendientes.ToString() : null)"
+                 BadgeColor="Color.Warning">
+
+        @if (_cargandoPendientes)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Warning" Class="mb-4" />
+        }
+        else if (!_pendientesPorAgente.Any(kv => kv.Value.Any()))
+        {
+            <MudAlert Severity="Severity.Success" Class="mb-4">
+                No hay artículos de Visions pendientes de mapeo. Todo está vinculado.
+            </MudAlert>
+        }
+        else
+        {
+            @foreach (var ag in _agentes)
+            {
+                var pendientes = _pendientesPorAgente.GetValueOrDefault(ag.AgenteSyncID);
+                if (pendientes is null || !pendientes.Any()) continue;
+
+                <MudText Typo="Typo.subtitle1" Class="mb-2 mt-4">
+                    <MudIcon Icon="@Icons.Material.Outlined.Store" Size="Size.Small" Class="mr-1" />
+                    @ag.NombreCentroCosto — @pendientes.Count artículo(s) sin mapear
+                </MudText>
+
+                <MudTable Items="@pendientes" Dense="true" Hover="true" Class="mb-6"
+                          Style="border:1px solid var(--mud-palette-divider); border-radius:12px;">
+                    <HeaderContent>
+                        <MudTh>Código Visions</MudTh>
+                        <MudTh>Nombre en Visions</MudTh>
+                        <MudTh Style="text-align:right">Costo</MudTh>
+                        <MudTh Style="text-align:right">Precio</MudTh>
+                        <MudTh Style="text-align:right">Cant. vendida</MudTh>
+                        <MudTh Style="text-align:right">Detectado</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd><code>@context.CodigoArticuloVisions</code></MudTd>
+                        <MudTd>@(context.NombreVisions ?? "—")</MudTd>
+                        <MudTd Style="text-align:right">@(context.CostoVisions?.ToString("N2") ?? "—")</MudTd>
+                        <MudTd Style="text-align:right">@(context.PrecioVisions?.ToString("N2") ?? "—")</MudTd>
+                        <MudTd Style="text-align:right">@context.CantidadDetectada.ToString("N2")</MudTd>
+                        <MudTd Style="text-align:right">@context.FechaDetectado.ToString("dd/MM/yy HH:mm")</MudTd>
+                        <MudTd Style="text-align:right">
+                            <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary"
+                                       OnClick="@(() => AbrirResolverAsync(ag.AgenteSyncID, ag.CentroCostoID, context))">
+                                Resolver
+                            </MudButton>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        }
+    </MudTabPanel>
+
 </MudTabs>
 
 @code {
     // ── Estado ──────────────────────────────────────────────────────────
+    private MudTabs? _tabs;
     private bool _cargando = true;
     private string? _errorCarga;
     private List<EstadoIntegracionResponse> _agentes = new();
     private List<CentroCostoItem> _centrosCosto = new();
-    private List<BodegaItem> _todasBodegas = new();
     private System.Timers.Timer? _timer;
+
+    // ── Actividad por agente ─────────────────────────────────────────────
+    private Dictionary<int, ActividadAgenteResponse> _actividad = new();
+    private HashSet<int> _actividadExpandida = new();
 
     // ── Config agente ────────────────────────────────────────────────────
     private bool _cargandoConfig;
     private ConfiguracionAgenteCompletaResponse? _configAgente;
     private string? _editVisionsServer;
     private int _editIntervalMinutes = 5;
-    private int? _editBodegaVentaVisionsId;
-    private readonly HashSet<string> _prefijosSeleccionados = new();
+    private int _editIntervalSeconds = 30;
+    private bool _usarSegundos;
     private bool _guardando;
     private bool _descargando;
+
+    // ── Artículos pendientes de mapeo ────────────────────────────────────
+    private bool _cargandoPendientes;
+    private Dictionary<int, List<ArticuloPendienteMapeoItem>> _pendientesPorAgente = new();
+    private int _totalPendientes => _pendientesPorAgente.Values.Sum(l => l.Count);
 
     // ── Crear agente ─────────────────────────────────────────────────────
     private int? _nuevoCcId;
     private string _nuevaDescripcion = string.Empty;
     private bool _creandoAgente;
-
-    private static readonly (string Codigo, string Descripcion)[] PrefijosDisponibles =
-    {
-        ("POS", "Factura POS"),
-        ("FV",  "Factura de Venta"),
-        ("FE",  "Factura Electronica"),
-        ("NC",  "Nota Credito"),
-        ("ND",  "Nota Debito"),
-    };
 
     private IEnumerable<CentroCostoItem> CentrosCostoDisponibles =>
         _centrosCosto.Where(cc => !_agentes.Any(a => a.CentroCostoID == cc.CentroCostoID));
@@ -412,6 +677,7 @@
     protected override async Task OnInitializedAsync()
     {
         await Task.WhenAll(CargarEstadoAsync(), CargarCatalogoAsync());
+        await CargarPendientesAsync();
         _timer = new System.Timers.Timer(30_000);
         _timer.Elapsed += async (_, _) =>
         {
@@ -435,15 +701,66 @@
         try
         {
             _centrosCosto = await ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true") ?? new();
-            _todasBodegas = await ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas") ?? new();
         }
         catch { /* no bloquea la UI si esto falla */ }
+    }
+
+    private async Task CargarPendientesAsync()
+    {
+        _cargandoPendientes = true;
+        _pendientesPorAgente = new();
+        try
+        {
+            foreach (var ag in _agentes)
+            {
+                var lista = await ApiClient.GetAsync<List<ArticuloPendienteMapeoItem>>(
+                    $"api/integracion/articulos-pendientes?centroCostoId={ag.CentroCostoID}") ?? new();
+                _pendientesPorAgente[ag.AgenteSyncID] = lista;
+            }
+        }
+        catch { /* silencioso */ }
+        finally { _cargandoPendientes = false; }
+    }
+
+    private async Task AbrirResolverAsync(int agenteSyncId, int centroCostoId, ArticuloPendienteMapeoItem pendiente)
+    {
+        List<ArticuloItem> articulos;
+        try
+        {
+            articulos = await ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos") ?? new();
+        }
+        catch { articulos = new(); }
+
+        var parameters = new DialogParameters<ResolverPendienteDialog>
+        {
+            { x => x.Pendiente, pendiente },
+            { x => x.ArticulosDisponibles, articulos }
+        };
+
+        var dialog = await DialogService.ShowAsync<ResolverPendienteDialog>("Resolver artículo pendiente", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: ResolverArticuloPendienteRequest request })
+        {
+            try
+            {
+                await ApiClient.PostAsync($"api/integracion/articulos-pendientes/{pendiente.PendienteID}/resolver", request);
+                Snackbar.Add("Artículo resuelto y ventas procesadas correctamente.", Severity.Success);
+                await CargarPendientesAsync();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error al resolver: {ex.Message}", Severity.Error);
+            }
+        }
     }
 
     private async Task AbrirConfigAsync(int agenteSyncId)
     {
         _cargandoConfig = true;
         _configAgente = null;
+        _tabs?.ActivatePanel(2);
         try
         {
             _configAgente = await ApiClient.GetAsync<ConfiguracionAgenteCompletaResponse>(
@@ -451,20 +768,36 @@
 
             if (_configAgente is not null)
             {
-                _editVisionsServer        = ExtraerServidorSql(_configAgente.VisionsDbConexion);
-                _editIntervalMinutes      = _configAgente.IntervalMinutes > 0 ? _configAgente.IntervalMinutes : 5;
-                _editBodegaVentaVisionsId = _configAgente.BodegaVentaVisionsID;
-
-                _prefijosSeleccionados.Clear();
-                if (!string.IsNullOrWhiteSpace(_configAgente.PrefijosDocumentoVentaVisions))
-                {
-                    foreach (var p in _configAgente.PrefijosDocumentoVentaVisions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                        _prefijosSeleccionados.Add(p);
-                }
+                _editVisionsServer    = ExtraerServidorSql(_configAgente.VisionsDbConexion);
+                _usarSegundos        = _configAgente.IntervalSeconds > 0;
+                _editIntervalMinutes = _configAgente.IntervalMinutes > 0 ? _configAgente.IntervalMinutes : 5;
+                _editIntervalSeconds = _configAgente.IntervalSeconds > 0 ? _configAgente.IntervalSeconds : 30;
             }
         }
         catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
         finally { _cargandoConfig = false; }
+    }
+
+    private async Task ToggleActividadAsync(int agenteSyncId)
+    {
+        if (_actividadExpandida.Contains(agenteSyncId))
+        {
+            _actividadExpandida.Remove(agenteSyncId);
+            return;
+        }
+        _actividadExpandida.Add(agenteSyncId);
+        if (!_actividad.ContainsKey(agenteSyncId))
+            await CargarActividadAsync(agenteSyncId);
+    }
+
+    private async Task CargarActividadAsync(int agenteSyncId)
+    {
+        try
+        {
+            var r = await ApiClient.GetAsync<ActividadAgenteResponse>($"api/integracion/agentes/{agenteSyncId}/actividad");
+            if (r is not null) _actividad[agenteSyncId] = r;
+        }
+        catch { /* silencioso — no bloquea la UI */ }
     }
 
     private async Task GuardarConfigAsync()
@@ -473,19 +806,18 @@
         _guardando = true;
         try
         {
-            var prefijos = _prefijosSeleccionados.Count > 0 ? string.Join(",", _prefijosSeleccionados) : null;
+            var minutos  = _usarSegundos ? 0 : _editIntervalMinutes;
+            var segundos = _usarSegundos ? _editIntervalSeconds : 0;
             await ApiClient.PutAsync<ActualizarConfiguracionAgenteRequest, object>(
                 $"api/integracion/agentes/{_configAgente.AgenteSyncID}/config",
                 new ActualizarConfiguracionAgenteRequest(
-                    _editVisionsServer, null, _editIntervalMinutes, null,
-                    _editBodegaVentaVisionsId, prefijos));
+                    _editVisionsServer, null, minutos, segundos, null, null));
             Snackbar.Add("Configuración guardada.", Severity.Success);
             _configAgente = _configAgente with
             {
-                VisionsDbConexion            = _editVisionsServer,
-                IntervalMinutes              = _editIntervalMinutes,
-                BodegaVentaVisionsID         = _editBodegaVentaVisionsId,
-                PrefijosDocumentoVentaVisions = prefijos
+                VisionsDbConexion = _editVisionsServer,
+                IntervalMinutes   = minutos,
+                IntervalSeconds   = segundos,
             };
         }
         catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
@@ -564,13 +896,10 @@
                 $"api/integracion/agentes/{agenteSyncId}/config");
             if (_configAgente is not null)
             {
-                _editVisionsServer        = ExtraerServidorSql(_configAgente.VisionsDbConexion);
-                _editIntervalMinutes      = _configAgente.IntervalMinutes > 0 ? _configAgente.IntervalMinutes : 5;
-                _editBodegaVentaVisionsId = _configAgente.BodegaVentaVisionsID;
-                _prefijosSeleccionados.Clear();
-                if (!string.IsNullOrWhiteSpace(_configAgente.PrefijosDocumentoVentaVisions))
-                    foreach (var p in _configAgente.PrefijosDocumentoVentaVisions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                        _prefijosSeleccionados.Add(p);
+                _editVisionsServer    = ExtraerServidorSql(_configAgente.VisionsDbConexion);
+                _usarSegundos        = _configAgente.IntervalSeconds > 0;
+                _editIntervalMinutes = _configAgente.IntervalMinutes > 0 ? _configAgente.IntervalMinutes : 5;
+                _editIntervalSeconds = _configAgente.IntervalSeconds > 0 ? _configAgente.IntervalSeconds : 30;
                 await DescargarInstaladorAsync();
             }
         }
@@ -580,6 +909,14 @@
 
     private async Task EliminarAgenteAsync(int agenteSyncId)
     {
+        var confirmado = await DialogService.ShowMessageBox(
+            "Eliminar agente",
+            "¿Seguro que deseas eliminar este agente? Se detendrá la sincronización con Visions para ese Centro de Costo. Esta acción no se puede deshacer.",
+            yesText: "Sí, eliminar",
+            cancelText: "Cancelar");
+
+        if (confirmado != true) return;
+
         try
         {
             await ApiClient.DeleteAsync($"api/integracion/agentes/{agenteSyncId}");
@@ -591,12 +928,6 @@
         catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
     }
 
-    private void AlternarPrefijo(string codigo, bool seleccionado)
-    {
-        if (seleccionado) _prefijosSeleccionados.Add(codigo);
-        else _prefijosSeleccionados.Remove(codigo);
-    }
-
     private static string? ExtraerServidorSql(string? conexion)
     {
         if (string.IsNullOrWhiteSpace(conexion)) return null;
@@ -605,6 +936,39 @@
     }
 
     private record DescargaTokenResponse(string Token);
+
+    private static string IconoEvento(string tipo) => tipo switch
+    {
+        "SINCRONIZAR_ARTICULO"      => Icons.Material.Outlined.Sync,
+        "RECEPCION_COMPRA"          => Icons.Material.Outlined.LocalShipping,
+        "AJUSTE_INVENTARIO"         => Icons.Material.Outlined.Tune,
+        "BAJA_INVENTARIO"           => Icons.Material.Outlined.RemoveShoppingCart,
+        "FACTURA_NEXO"              => Icons.Material.Outlined.Receipt,
+        "ENTRADA_PRODUCTO_TERMINADO"=> Icons.Material.Outlined.Inventory2,
+        _                           => Icons.Material.Outlined.SwapHoriz
+    };
+
+    private static Color ColorIconoEvento(string tipo) => tipo switch
+    {
+        "SINCRONIZAR_ARTICULO"      => Color.Primary,
+        "RECEPCION_COMPRA"          => Color.Info,
+        "AJUSTE_INVENTARIO"         => Color.Warning,
+        "BAJA_INVENTARIO"           => Color.Error,
+        "FACTURA_NEXO"              => Color.Success,
+        "ENTRADA_PRODUCTO_TERMINADO"=> Color.Secondary,
+        _                           => Color.Default
+    };
+
+    private static string EtiquetaEvento(string tipo) => tipo switch
+    {
+        "SINCRONIZAR_ARTICULO"      => "Sync artículo",
+        "RECEPCION_COMPRA"          => "Recepción compra",
+        "AJUSTE_INVENTARIO"         => "Ajuste inventario",
+        "BAJA_INVENTARIO"           => "Baja inventario",
+        "FACTURA_NEXO"              => "Factura NEXO",
+        "ENTRADA_PRODUCTO_TERMINADO"=> "Prod. terminado",
+        _                           => tipo
+    };
 
     private (Color Color, string Texto) EstadoAgente(EstadoIntegracionResponse ag)
     {

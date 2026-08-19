@@ -68,6 +68,16 @@ public class InventarioService : IInventarioService
             parametros,
             commandType: CommandType.StoredProcedure);
 
+        // Replicar baja en Visions para todos los CC mapeados (Cantidad negativa = descuento).
+        await connection.ExecuteAsync(@"
+            INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
+            SELECT 'BAJA_INVENTARIO', ma.CentroCostoID, ma.ArticuloID, -@Cantidad, ISNULL(a.CostoPromedio, 0)
+            FROM Integracion.MapeoArticulos ma
+            JOIN Catalogo.Tarjetas a          ON a.ArticuloID    = ma.ArticuloID
+            JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = ma.CentroCostoID
+            WHERE ma.ArticuloID = @ArticuloId AND ma.Estado = 1 AND cc.TieneVisions = 1",
+            new { ArticuloId = r.ArticuloID, Cantidad = r.CantidadPerdida });
+
         return resultado;
     }
 
@@ -87,6 +97,15 @@ public class InventarioService : IInventarioService
             "Kardex.sp_AjustePositivoInventario",
             parametros,
             commandType: CommandType.StoredProcedure);
+
+        // Replicar ajuste en Visions para todos los CC mapeados.
+        await connection.ExecuteAsync(@"
+            INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
+            SELECT 'AJUSTE_INVENTARIO', ma.CentroCostoID, ma.ArticuloID, @Cantidad, @CostoUnitario
+            FROM Integracion.MapeoArticulos ma
+            JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = ma.CentroCostoID
+            WHERE ma.ArticuloID = @ArticuloId AND ma.Estado = 1 AND cc.TieneVisions = 1",
+            new { ArticuloId = r.ArticuloID, r.Cantidad, CostoUnitario = r.CostoUnitario });
 
         return resultado;
     }

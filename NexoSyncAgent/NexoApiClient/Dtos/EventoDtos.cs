@@ -12,7 +12,10 @@ public record EventoPendienteItem(
     string ReferenciaVisions,
     string? NombreArticulo,
     decimal? PrecioVentaArticulo,
-    decimal? StockMinimoArticulo
+    decimal? StockMinimoArticulo,
+    decimal? Fracciones,
+    string? PresentacionCodigo,
+    string? MarcaCodigo
 );
 
 // NombreArticuloVisions/CostoArticuloVisions/PrecioArticuloVisions: lo que ya
@@ -27,7 +30,9 @@ public record RegistrarEventoEntranteRequest(
     DateTime FechaEventoOrigen,
     string? NombreArticuloVisions,
     decimal? CostoArticuloVisions,
-    decimal? PrecioArticuloVisions
+    decimal? PrecioArticuloVisions,
+    string? ClienteNit,
+    string? ClienteNombre
 );
 
 // Configuracion que el Administrador dejo en NEXO Web (Catalogo > Centros de
@@ -60,6 +65,44 @@ public record FacturaParaVisionsDto(
     string? ClienteNit, string ClienteNombre,
     List<LineaFacturaParaVisionsDto> Lineas
 );
+
+// ──────────── Sync bidireccional articulos (Visions → NEXO) ────────────
+
+public record SyncArticuloDesdeVisionsRequest(
+    string ReferenciaVisions,
+    string CentroCostoVisions,
+    string? Nombre,
+    decimal? Costo,
+    decimal? PPublico,
+    DateTime FechaCambio
+);
+
+// ──────────── Clientes para sync NEXO → Visions ────────────
+
+public record ClienteParaSyncDto(
+    int ClienteID,
+    string? NIT,
+    string Nombre,
+    string? Telefono,
+    string? Email,
+    string? Direccion,
+    DateTime FechaModificacion,
+    string? TipoPersona,
+    string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
+    string? Departamento, string? Ciudad
+);
+
+public record SyncClienteDesdeVisionsRequest(
+    string NIT,
+    string? TipoPersona,
+    string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
+    string? NombreEmpresa,
+    string? Telefono, string? Email, string? Direccion,
+    string? Departamento, string? Ciudad
+);
+
+// Enviado al endpoint PUT facturas/{id}/numero-visions cuando Visions asigna el número real.
+public record ActualizarNumeroVisionsRequest(string TipDoc, string NroDoc);
 
 public record LineaFacturaParaVisionsDto(
     int Orden,

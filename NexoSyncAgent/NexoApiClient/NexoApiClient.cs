@@ -147,4 +147,32 @@ public class NexoApiClient : INexoApiClient
         var r = await _http.PostAsync($"api/integracion/facturas/{facturaId}/marcar-exportada-visions", null, ct);
         r.EnsureSuccessStatusCode();
     }
+
+    public async Task SyncArticuloDesdeVisionsAsync(SyncArticuloDesdeVisionsRequest request, CancellationToken ct)
+    {
+        var r = await _http.PostAsJsonAsync("api/integracion/sync/articulo-desde-visions", request, ct);
+        r.EnsureSuccessStatusCode();
+    }
+
+    public async Task<List<ClienteParaSyncDto>> ListarClientesParaSyncAsync(DateTime? desde, CancellationToken ct)
+    {
+        var url = desde.HasValue
+            ? $"api/integracion/sync/clientes?desde={desde.Value:O}"
+            : "api/integracion/sync/clientes";
+        var r = await _http.GetAsync(url, ct);
+        r.EnsureSuccessStatusCode();
+        return await r.Content.ReadFromJsonAsync<List<ClienteParaSyncDto>>(cancellationToken: ct) ?? [];
+    }
+
+    public async Task SyncClienteDesdeVisionsAsync(SyncClienteDesdeVisionsRequest request, CancellationToken ct)
+    {
+        var r = await _http.PostAsJsonAsync("api/integracion/sync/cliente-desde-visions", request, ct);
+        r.EnsureSuccessStatusCode();
+    }
+
+    public async Task ActualizarNumeroVisionsAsync(int facturaId, ActualizarNumeroVisionsRequest request, CancellationToken ct)
+    {
+        var r = await _http.PutAsJsonAsync($"api/integracion/facturas/{facturaId}/numero-visions", request, ct);
+        r.EnsureSuccessStatusCode();
+    }
 }

@@ -271,6 +271,49 @@ public class IntegracionController : ControllerBase
         return Ok(new { mensaje = "Factura marcada como exportada a Visions." });
     }
 
+    [HttpPut("facturas/{id:int}/numero-visions")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> ActualizarNumeroVisions(int id, ActualizarNumeroVisionsRequest request)
+    {
+        await _service.ActualizarNumeroVisionsAsync(id, request);
+        return Ok(new { mensaje = "Número de factura actualizado desde Visions." });
+    }
+
+    /// <summary>Llamado por el Agente cuando detecta un cambio de precio/nombre en TARJETA de Visions.
+    /// Actualiza Catalogo.Tarjetas en NEXO si el cambio de Visions es mas reciente.</summary>
+    [HttpPost("sync/articulo-desde-visions")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> SyncArticuloDesdeVisions(SyncArticuloDesdeVisionsRequest request)
+    {
+        await _service.SyncArticuloDesdeVisionsAsync(request);
+        return Ok(new { mensaje = "Sync procesado." });
+    }
+
+    /// <summary>Llamado por el Agente para obtener clientes activos de NEXO y sincronizarlos a NEXO_Clientes en Visions.</summary>
+    [HttpGet("sync/clientes")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult<IEnumerable<ClienteParaSyncDto>>> ListarClientesParaSync([FromQuery] DateTime? desde)
+    {
+        return Ok(await _service.ListarClientesParaSyncAsync(desde, CentroCostoDelAgente));
+    }
+
+    /// <summary>Llamado por el Agente cuando detecta un cliente/usuario nuevo o modificado en dbo.USUARIOS de Visions.</summary>
+    [HttpPost("sync/cliente-desde-visions")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> SyncClienteDesdeVisions(SyncClienteDesdeVisionsRequest request)
+    {
+        await _service.SyncClienteDesdeVisionsAsync(request);
+        return Ok(new { mensaje = "Cliente sincronizado." });
+    }
+
+    [HttpGet("agentes/{id:int}/actividad")]
+    [Authorize(Roles = "Administracion")]
+    public async Task<ActionResult<ActividadAgenteResponse>> ObtenerActividad(int id)
+    {
+        try { return Ok(await _service.ObtenerActividadAsync(id)); }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+    }
+
     /// <summary>Desactiva (soft-delete) un agente. El servicio Windows puede seguir corriendo hasta que se detenga manualmente.</summary>
     [HttpDelete("agentes/{id:int}")]
     [Authorize(Roles = "Administracion")]

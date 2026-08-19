@@ -48,7 +48,8 @@ public record ConfiguracionAgenteCompletaResponse(
     string? NexoApiBaseUrl,
     int IntervalMinutes,
     int IntervalSeconds,
-    string? AgentePath
+    string? AgentePath,
+    string? PrefijosDocumentoVenta
 );
 
 public record ActualizarConfiguracionAgenteRequest(
@@ -56,5 +57,33 @@ public record ActualizarConfiguracionAgenteRequest(
     string? NexoApiBaseUrl,
     int IntervalMinutes,
     int IntervalSeconds,
-    string? AgentePath
+    string? AgentePath,
+    string? PrefijosDocumentoVenta
+);
+
+public record EventoActividadItem(
+    long EventoID,
+    string TipoEvento,
+    string Estado,
+    string? ReferenciaVisions,
+    string? NombreArticulo,
+    decimal Cantidad,
+    string? MensajeError,
+    DateTime FechaCreacion,
+    DateTime? FechaEnvio
+);
+
+public record ActividadAgenteResponse(
+    int ArticulosEnlazados,
+    int FacturasHoy,
+    int ComprasHoy,
+    int AjustesHoy,
+    List<EventoActividadItem> UltimosEventos,
+    int TotalArticulos,
+    int TotalMarcas,
+    int TotalGruposMayor,
+    int TotalGruposMenor,
+    int TotalClientes,
+    int FacturasNexoVisionsHoy,
+    int VentasVisionsNexoHoy
 );

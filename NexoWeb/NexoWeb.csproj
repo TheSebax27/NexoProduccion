@@ -14,6 +14,13 @@
     <Folder Include="Shared\" />
   </ItemGroup>
 
+  <!-- Excluir carpeta de publicacion para que VS no la trate como assets -->
+  <ItemGroup>
+    <Content Remove="publish\**" />
+    <None Remove="publish\**" />
+    <Compile Remove="publish\**" />
+  </ItemGroup>
+
   <!-- ── Tailwind CSS (Standalone CLI, sin Node.js) ──────────────────
        Genera wwwroot/tailwind.css escaneando todos los archivos .razor.
        Corre antes de la compilación de .NET para que el archivo esté

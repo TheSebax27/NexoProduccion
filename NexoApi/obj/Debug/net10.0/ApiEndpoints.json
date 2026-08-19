@@ -2820,6 +2820,32 @@
   },
   {
     "ContainingType": "NexoApi.Features.Integracion.IntegracionController",
+    "Method": "ObtenerActividad",
+    "RelativePath": "api/integracion/agentes/{id}/actividad",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Integracion.Dtos.ActividadAgenteResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Integracion.IntegracionController",
     "Method": "GenerarAppsettingsJson",
     "RelativePath": "api/integracion/agentes/{id}/appsettings-json",
     "HttpMethod": "GET",
@@ -3267,6 +3293,27 @@
   },
   {
     "ContainingType": "NexoApi.Features.Integracion.IntegracionController",
+    "Method": "ActualizarNumeroVisions",
+    "RelativePath": "api/integracion/facturas/{id}/numero-visions",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Integracion.Dtos.ActualizarNumeroVisionsRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Integracion.IntegracionController",
     "Method": "RegistrarLatido",
     "RelativePath": "api/integracion/latido",
     "HttpMethod": "POST",
@@ -3332,6 +3379,64 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Integracion.IntegracionController",
+    "Method": "SyncArticuloDesdeVisions",
+    "RelativePath": "api/integracion/sync/articulo-desde-visions",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Integracion.Dtos.SyncArticuloDesdeVisionsRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Integracion.IntegracionController",
+    "Method": "SyncClienteDesdeVisions",
+    "RelativePath": "api/integracion/sync/cliente-desde-visions",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Integracion.Dtos.SyncClienteDesdeVisionsRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Integracion.IntegracionController",
+    "Method": "ListarClientesParaSync",
+    "RelativePath": "api/integracion/sync/clientes",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "desde",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Integracion.Dtos.ClienteParaSyncDto, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "NexoApi.Features.Inventario.InventarioController",

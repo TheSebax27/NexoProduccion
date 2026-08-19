@@ -26,4 +26,15 @@ public interface INexoApiClient
     // Facturas NEXO → Visions
     Task<List<FacturaParaVisionsDto>> ListarFacturasParaVisionsAsync(CancellationToken ct);
     Task MarcarFacturaExportadaVisionsAsync(int facturaId, CancellationToken ct);
+
+    // Sync bidireccional articulos (Visions → NEXO)
+    Task SyncArticuloDesdeVisionsAsync(SyncArticuloDesdeVisionsRequest request, CancellationToken ct);
+
+    // Clientes para sync NEXO → Visions
+    Task<List<ClienteParaSyncDto>> ListarClientesParaSyncAsync(DateTime? desde, CancellationToken ct);
+    // Clientes Visions → NEXO
+    Task SyncClienteDesdeVisionsAsync(SyncClienteDesdeVisionsRequest request, CancellationToken ct);
+
+    // Número de factura asignado por Visions → actualizar NEXO
+    Task ActualizarNumeroVisionsAsync(int facturaId, ActualizarNumeroVisionsRequest request, CancellationToken ct);
 }

@@ -10,17 +10,26 @@ public record ClienteItem(
     string? Telefono, string? Email, string? Direccion, bool Estado,
     string? FuenteContacto, string? TipoCliente,
     int? ResponsableID, string? Responsable, DateTime? ProximoContacto,
-    int TotalContactos, DateTime? UltimaInteraccion
+    int TotalContactos, DateTime? UltimaInteraccion,
+    string? TipoPersona,
+    string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
+    string? Departamento, string? Ciudad
 );
 
 public record CrearClienteRequest(
     string Nombre, string? NIT, string? Telefono, string? Email, string? Direccion,
-    string? FuenteContacto, string? TipoCliente, int? ResponsableID
+    string? FuenteContacto, string? TipoCliente, int? ResponsableID,
+    string? TipoPersona,
+    string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
+    string? Departamento, string? Ciudad
 );
 
 public record ActualizarClienteRequest(
     string Nombre, string? NIT, string? Telefono, string? Email, string? Direccion, bool Estado,
-    string? FuenteContacto, string? TipoCliente, int? ResponsableID, DateTime? ProximoContacto
+    string? FuenteContacto, string? TipoCliente, int? ResponsableID, DateTime? ProximoContacto,
+    string? TipoPersona,
+    string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
+    string? Departamento, string? Ciudad
 );
 
 // Bitacora de interacciones -- llamadas, correos, reuniones con un cliente.

@@ -200,7 +200,7 @@ else
             _combosActivos = (await tareaCombos ?? new()).Where(c => c.Estado != "Inactivo").ToList();
             _centrosCosto = (await tareaCentros ?? new())
                 .Where(c => c.Estado)
-                .Select(c => new CentroCostoBasicoItem(c.CentroCostoID, c.Nombre))
+                .Select(c => new CentroCostoBasicoItem(c.CentroCostoID, c.Nombre, c.TieneVisions))
                 .ToList();
         }
         catch (Exception ex)

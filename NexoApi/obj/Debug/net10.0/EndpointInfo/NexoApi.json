@@ -6305,6 +6305,198 @@
         }
       }
     },
+    "/api/integracion/facturas/{id}/numero-visions": {
+      "put": {
+        "tags": [
+          "Integracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarNumeroVisionsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarNumeroVisionsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarNumeroVisionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/sync/articulo-desde-visions": {
+      "post": {
+        "tags": [
+          "Integracion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncArticuloDesdeVisionsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncArticuloDesdeVisionsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncArticuloDesdeVisionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/sync/clientes": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "parameters": [
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClienteParaSyncDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClienteParaSyncDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClienteParaSyncDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integracion/sync/cliente-desde-visions": {
+      "post": {
+        "tags": [
+          "Integracion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncClienteDesdeVisionsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncClienteDesdeVisionsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncClienteDesdeVisionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/agentes/{id}/actividad": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActividadAgenteResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActividadAgenteResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActividadAgenteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/integracion/agentes/{id}": {
       "delete": {
         "tags": [
@@ -11361,6 +11553,63 @@
   },
   "components": {
     "schemas": {
+      "ActividadAgenteResponse": {
+        "type": "object",
+        "properties": {
+          "articulosEnlazados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "facturasHoy": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comprasHoy": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ajustesHoy": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ultimosEventos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventoActividadItem"
+            },
+            "nullable": true
+          },
+          "totalArticulos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalMarcas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalGruposMayor": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalGruposMenor": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalClientes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "facturasNexoVisionsHoy": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ventasVisionsNexoHoy": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "ActividadItem": {
         "type": "object",
         "properties": {
@@ -11684,6 +11933,34 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "tipoPersona": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "departamento": {
+            "type": "string",
+            "nullable": true
+          },
+          "ciudad": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11781,6 +12058,10 @@
             "format": "int32"
           },
           "agentePath": {
+            "type": "string",
+            "nullable": true
+          },
+          "prefijosDocumentoVenta": {
             "type": "string",
             "nullable": true
           }
@@ -12218,6 +12499,20 @@
             "nullable": true
           },
           "nombrePropietario": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarNumeroVisionsRequest": {
+        "type": "object",
+        "properties": {
+          "tipDoc": {
+            "type": "string",
+            "nullable": true
+          },
+          "nroDoc": {
             "type": "string",
             "nullable": true
           }
@@ -13304,6 +13599,96 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "tipoPersona": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "departamento": {
+            "type": "string",
+            "nullable": true
+          },
+          "ciudad": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClienteParaSyncDto": {
+        "type": "object",
+        "properties": {
+          "clienteID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaModificacion": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tipoPersona": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "departamento": {
+            "type": "string",
+            "nullable": true
+          },
+          "ciudad": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -13396,6 +13781,10 @@
             "format": "int32"
           },
           "agentePath": {
+            "type": "string",
+            "nullable": true
+          },
+          "prefijosDocumentoVenta": {
             "type": "string",
             "nullable": true
           }
@@ -14017,6 +14406,34 @@
           "responsableID": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "tipoPersona": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "departamento": {
+            "type": "string",
+            "nullable": true
+          },
+          "ciudad": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -15872,6 +16289,49 @@
         },
         "additionalProperties": false
       },
+      "EventoActividadItem": {
+        "type": "object",
+        "properties": {
+          "eventoID": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tipoEvento": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string",
+            "nullable": true
+          },
+          "referenciaVisions": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreArticulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidad": {
+            "type": "number",
+            "format": "double"
+          },
+          "mensajeError": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaCreacion": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaEnvio": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "EventoCalendarioItem": {
         "type": "object",
         "properties": {
@@ -15999,6 +16459,19 @@
           "stockMinimoArticulo": {
             "type": "number",
             "format": "double",
+            "nullable": true
+          },
+          "fracciones": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "presentacionCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "marcaCodigo": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -18001,6 +18474,14 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "clienteNit": {
+            "type": "string",
+            "nullable": true
+          },
+          "clienteNombre": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -18540,6 +19021,92 @@
           "mesesConsiderados": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SyncArticuloDesdeVisionsRequest": {
+        "type": "object",
+        "properties": {
+          "referenciaVisions": {
+            "type": "string",
+            "nullable": true
+          },
+          "centroCostoVisions": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "costo": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pPublico": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "fechaCambio": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SyncClienteDesdeVisionsRequest": {
+        "type": "object",
+        "properties": {
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoPersona": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreEmpresa": {
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "departamento": {
+            "type": "string",
+            "nullable": true
+          },
+          "ciudad": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

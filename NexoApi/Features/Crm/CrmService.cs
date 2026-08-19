@@ -80,7 +80,9 @@ public class CrmService : ICrmService
                    c.FuenteContacto, c.TipoCliente, c.ResponsableID,
                    e.Nombres + ' ' + e.Apellidos AS Responsable, c.ProximoContacto,
                    (SELECT COUNT(*) FROM Crm.Contactos ct WHERE ct.ClienteID = c.ClienteID AND ct.Estado = 1) AS TotalContactos,
-                   (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion
+                   (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion,
+                   c.TipoPersona, c.PrimerNombre, c.SegundoNombre, c.PrimerApellido, c.SegundoApellido,
+                   c.Departamento, c.Ciudad
             FROM Crm.Clientes c
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = c.ResponsableID
             WHERE (@ResponsableId IS NULL OR c.ResponsableID = @ResponsableId)
@@ -110,7 +112,9 @@ public class CrmService : ICrmService
                    c.FuenteContacto, c.TipoCliente, c.ResponsableID,
                    e.Nombres + ' ' + e.Apellidos AS Responsable, c.ProximoContacto,
                    (SELECT COUNT(*) FROM Crm.Contactos ct WHERE ct.ClienteID = c.ClienteID AND ct.Estado = 1) AS TotalContactos,
-                   (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion
+                   (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion,
+                   c.TipoPersona, c.PrimerNombre, c.SegundoNombre, c.PrimerApellido, c.SegundoApellido,
+                   c.Departamento, c.Ciudad
             FROM Crm.Clientes c
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = c.ResponsableID
             WHERE c.ExternalId = @ExternalId";
@@ -122,12 +126,20 @@ public class CrmService : ICrmService
     {
         using var connection = _db.CreateConnection();
 
-        const string sql = @"
-            INSERT INTO Crm.Clientes (Nombre, NIT, Telefono, Email, Direccion, FuenteContacto, TipoCliente, ResponsableID)
-            OUTPUT INSERTED.ClienteID
-            VALUES (@Nombre, @NIT, @Telefono, @Email, @Direccion, @FuenteContacto, @TipoCliente, @ResponsableID)";
+        var tipoCliente = r.TipoCliente ?? (r.TipoPersona == "Natural" ? "Persona Natural" : r.TipoPersona == "Juridica" ? "Empresa" : null);
 
-        var id = await connection.ExecuteScalarAsync<int>(sql, r);
+        const string sql = @"
+            INSERT INTO Crm.Clientes (Nombre, NIT, Telefono, Email, Direccion, FuenteContacto, TipoCliente, ResponsableID,
+                TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido, Departamento, Ciudad)
+            OUTPUT INSERTED.ClienteID
+            VALUES (@Nombre, @NIT, @Telefono, @Email, @Direccion, @FuenteContacto, @TipoCliente, @ResponsableID,
+                @TipoPersona, @PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido, @Departamento, @Ciudad)";
+
+        var id = await connection.ExecuteScalarAsync<int>(sql, new
+        {
+            r.Nombre, r.NIT, r.Telefono, r.Email, r.Direccion, r.FuenteContacto, TipoCliente = tipoCliente, r.ResponsableID,
+            r.TipoPersona, r.PrimerNombre, r.SegundoNombre, r.PrimerApellido, r.SegundoApellido, r.Departamento, r.Ciudad
+        });
 
         if (!string.IsNullOrWhiteSpace(r.Email))
         {
@@ -144,19 +156,27 @@ public class CrmService : ICrmService
     {
         using var connection = _db.CreateConnection();
 
+        var tipoClienteAct = r.TipoCliente ?? (r.TipoPersona == "Natural" ? "Persona Natural" : r.TipoPersona == "Juridica" ? "Empresa" : null);
+
         const string sql = @"
             UPDATE Crm.Clientes
             SET Nombre = @Nombre, NIT = @NIT, Telefono = @Telefono,
                 Email = @Email, Direccion = @Direccion, Estado = @Estado,
                 FuenteContacto = @FuenteContacto, TipoCliente = @TipoCliente,
-                ResponsableID = @ResponsableID, ProximoContacto = @ProximoContacto
+                ResponsableID = @ResponsableID, ProximoContacto = @ProximoContacto,
+                TipoPersona = @TipoPersona, PrimerNombre = @PrimerNombre, SegundoNombre = @SegundoNombre,
+                PrimerApellido = @PrimerApellido, SegundoApellido = @SegundoApellido,
+                Departamento = @Departamento, Ciudad = @Ciudad,
+                FechaModificacion = GETDATE()
             WHERE ClienteID = @ClienteId";
 
         var filas = await connection.ExecuteAsync(sql, new
         {
             ClienteId = clienteId,
             r.Nombre, r.NIT, r.Telefono, r.Email, r.Direccion, r.Estado,
-            r.FuenteContacto, r.TipoCliente, r.ResponsableID, r.ProximoContacto
+            r.FuenteContacto, TipoCliente = tipoClienteAct, r.ResponsableID, r.ProximoContacto,
+            r.TipoPersona, r.PrimerNombre, r.SegundoNombre, r.PrimerApellido, r.SegundoApellido,
+            r.Departamento, r.Ciudad
         });
 
         if (filas == 0)

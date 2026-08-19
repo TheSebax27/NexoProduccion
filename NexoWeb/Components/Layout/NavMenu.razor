@@ -27,14 +27,7 @@
                 <MudNavLink Href="/catalogo/articulos" Icon="@Icons.Material.Filled.ViewInAr">Articulos</MudNavLink>
             }
             <MudNavLink Href="/catalogo/maestros" Icon="@Icons.Material.Filled.LibraryBooks">Catalogos Maestros</MudNavLink>
-            @if (Modulos.EsVisible("CATALOGO.CENTROSTRABAJO"))
-            {
-                <MudNavLink Href="/catalogo/centros-trabajo" Icon="@Icons.Material.Filled.Work">Centros de Trabajo</MudNavLink>
-            }
-            @if (Modulos.EsVisible("CATALOGO.BODEGAS"))
-            {
-                <MudNavLink Href="/catalogo/bodegas" Icon="@Icons.Material.Filled.Warehouse">Bodegas</MudNavLink>
-            }
+            <MudNavLink Href="/catalogo/centros" Icon="@Icons.Material.Filled.Business">Centros</MudNavLink>
             @if (Modulos.EsVisible("CATALOGO.PROVEEDORES"))
             {
                 <MudNavLink Href="/catalogo/proveedores" Icon="@Icons.Material.Filled.Store">Proveedores</MudNavLink>

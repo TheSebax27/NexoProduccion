@@ -129,18 +129,23 @@ BEGIN
 
     DECLARE @ArticuloID INT, @CentroCostoID INT, @Cantidad DECIMAL(18,4), @Procesado BIT;
 
+    -- Intenta resolver el articulo primero por MapeoArticulos (mapeo explicito)
+    -- y como fallback por Catalogo.Tarjetas.Referencia (articulos cuya referencia
+    -- coincide directamente con el codigo que usa Visions, sin necesidad de mapear).
     SELECT
-        @ArticuloID = m.ArticuloID,
+        @ArticuloID = COALESCE(m.ArticuloID, t.ArticuloID),
         @CentroCostoID = e.CentroCostoID,
         @Cantidad = e.Cantidad,
         @Procesado = e.Procesado
     FROM Integracion.EventosEntrantes e
-    JOIN Integracion.MapeoArticulos m
+    LEFT JOIN Integracion.MapeoArticulos m
         ON m.CodigoArticuloVisions = e.CodigoArticuloVisions AND m.CentroCostoID = e.CentroCostoID
+    LEFT JOIN Catalogo.Tarjetas t
+        ON t.Referencia = e.CodigoArticuloVisions
     WHERE e.EventoEntranteID = @EventoEntranteID;
 
     IF @ArticuloID IS NULL
-        THROW 54000, 'No existe mapeo de articulo para este evento entrante; revisar Integracion.MapeoArticulos.', 1;
+        THROW 54000, 'No existe mapeo de articulo para este evento entrante; revisar Integracion.MapeoArticulos o asegurar que la Referencia del articulo coincida con el codigo en Visions.', 1;
 
     IF @Procesado = 1
         RETURN;

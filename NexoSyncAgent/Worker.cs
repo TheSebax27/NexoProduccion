@@ -15,6 +15,8 @@ public class Worker : BackgroundService
     private TimeSpan _backoffActual = TimeSpan.Zero;
 
     private readonly string _version;
+    // Timestamp de la ultima sync de clientes exitosa (persiste durante la vida del servicio).
+    private DateTime? _ultimaSyncClientes;
 
     public Worker(IServiceProvider serviceProvider, ILogger<Worker> logger, IConfiguration configuration)
     {
@@ -101,7 +103,24 @@ public class Worker : BackgroundService
                     // 6. Exportar facturas NEXO → Visions (las que tienen stock descontado y aun no estan en MOVDETALLES).
                     var tareaFacturasVisions = scope.ServiceProvider.GetRequiredService<TareaSincronizarFacturasNexoVisions>();
                     await tareaFacturasVisions.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
+
+                    // 7. Importar cambios de TARJETA desde Visions → NEXO (precio/nombre modificados en el POS).
+                    var tareaImportarTarjeta = scope.ServiceProvider.GetRequiredService<TareaImportarCambiosTarjeta>();
+                    await tareaImportarTarjeta.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
+
+                    // 7b. Detectar articulos de Visions que aun no existen en NEXO y crearlos (en lotes).
+                    var tareaArticulosFaltantes = scope.ServiceProvider.GetRequiredService<TareaDetectarArticulosFaltantes>();
+                    await tareaArticulosFaltantes.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
+
+                    // 8. Sincronizar clientes NEXO → Visions (upsert en NEXO_Clientes).
+                    var tareaClientes = scope.ServiceProvider.GetRequiredService<TareaSincronizarClientes>();
+                    await tareaClientes.EjecutarAsync(_ultimaSyncClientes, stoppingToken);
+                    _ultimaSyncClientes = DateTime.UtcNow;
                 }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
             }
             catch (Exception ex)
             {

@@ -301,7 +301,8 @@ public class CatalogoService : ICatalogoService
                 MarcaCodigo = @MarcaCodigo, GrupoMenorCodigo = @GrupoMenorCodigo,
                 PresentacionCodigo = @PresentacionCodigo,
                 Peso = @Peso, IvaSiNo = @IvaSiNo, IvaValor = @IvaValor, IvaDescripcion = @IvaDescripcion,
-                Iva2 = @Iva2, IvaDescripcion2 = @IvaDescripcion2
+                Iva2 = @Iva2, IvaDescripcion2 = @IvaDescripcion2,
+                FechaModificacion = GETDATE()
             WHERE ArticuloID = @ArticuloId";
 
         var filas = await connection.ExecuteAsync(sql, new
@@ -319,6 +320,15 @@ public class CatalogoService : ICatalogoService
 
         if (filas == 0)
             throw new KeyNotFoundException($"No existe el articulo {articuloId}.");
+
+        await connection.ExecuteAsync(@"
+            INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
+            SELECT 'SINCRONIZAR_ARTICULO', ma.CentroCostoID, ma.ArticuloID, 0, ISNULL(a.CostoPromedio, 0)
+            FROM Integracion.MapeoArticulos ma
+            JOIN Catalogo.Tarjetas a          ON a.ArticuloID    = ma.ArticuloID
+            JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = ma.CentroCostoID
+            WHERE ma.ArticuloID = @ArticuloId AND ma.Estado = 1 AND cc.TieneVisions = 1",
+            new { ArticuloId = articuloId });
     }
 
     private record ImagenArticulo(byte[] Imagen, string ImagenContentType);

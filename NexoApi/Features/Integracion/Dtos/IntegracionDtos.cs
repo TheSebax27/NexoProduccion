@@ -13,7 +13,10 @@ public record EventoPendienteItem(
     string ReferenciaVisions,
     string? NombreArticulo,
     decimal? PrecioVentaArticulo,
-    decimal? StockMinimoArticulo
+    decimal? StockMinimoArticulo,
+    decimal? Fracciones,
+    string? PresentacionCodigo,
+    string? MarcaCodigo
 );
 
 // NombreArticuloVisions/CostoArticuloVisions/PrecioArticuloVisions: datos del
@@ -30,7 +33,9 @@ public record RegistrarEventoEntranteRequest(
     DateTime FechaEventoOrigen,
     string? NombreArticuloVisions,
     decimal? CostoArticuloVisions,
-    decimal? PrecioArticuloVisions
+    decimal? PrecioArticuloVisions,
+    string? ClienteNit,
+    string? ClienteNombre
 );
 
 // Configuracion que el Agente de Sincronizacion lee de NEXO y aplica en la
@@ -55,7 +60,8 @@ public record ConfiguracionAgenteCompletaResponse(
     string? NexoApiBaseUrl,
     int IntervalMinutes,
     int IntervalSeconds,
-    string? AgentePath
+    string? AgentePath,
+    string? PrefijosDocumentoVenta
 );
 
 public record ActualizarConfiguracionAgenteRequest(
@@ -63,7 +69,8 @@ public record ActualizarConfiguracionAgenteRequest(
     string? NexoApiBaseUrl,
     int IntervalMinutes,
     int IntervalSeconds,
-    string? AgentePath
+    string? AgentePath,
+    string? PrefijosDocumentoVenta
 );
 
 public record GenerarApiKeyRequest(int CentroCostoID, string Descripcion);
@@ -126,6 +133,37 @@ public record EstadoIntegracionResponse(
 // Tras 3 intentos fallidos el evento pasa a ERROR y deja de reintentarse.
 public record RegistrarFalloRequest(string MensajeError);
 
+// ──────────── Actividad detallada del agente (panel de administración) ────────────
+
+public record EventoActividadItem(
+    long EventoID,
+    string TipoEvento,
+    string Estado,
+    string? ReferenciaVisions,
+    string? NombreArticulo,
+    decimal Cantidad,
+    string? MensajeError,
+    DateTime FechaCreacion,
+    DateTime? FechaEnvio
+);
+
+public record ActividadAgenteResponse(
+    int ArticulosEnlazados,
+    int FacturasHoy,
+    int ComprasHoy,
+    int AjustesHoy,
+    List<EventoActividadItem> UltimosEventos,
+    // Catálogo — totales globales en NEXO
+    int TotalArticulos,
+    int TotalMarcas,
+    int TotalGruposMayor,
+    int TotalGruposMenor,
+    int TotalClientes,
+    // Sync hoy por dirección
+    int FacturasNexoVisionsHoy,   // NEXO → Visions (FACTURA_NEXO confirmadas)
+    int VentasVisionsNexoHoy      // Visions → NEXO (EventosEntrantes procesados)
+);
+
 // ──────────── Sincronizacion de catalogos (agente ↔ Visions) ────────────
 
 public record MarcaSyncItem(string Codigo, string? Nombre);
@@ -153,4 +191,50 @@ public record LineaFacturaParaVisionsItem(
     decimal Cantidad,
     decimal PrecioUnitario,
     decimal Costo
+);
+
+// ──────────── Sync bidireccional articulos (Visions → NEXO) ────────────
+
+// Enviado por el agente cuando detecta un cambio en TARJETA de Visions.
+// La API compara FechaCambio con Catalogo.Tarjetas.FechaModificacion y
+// solo aplica si Visions es mas reciente (+ 5s de margen) para no
+// sobreescribir cambios que el Admin acaba de hacer en NEXO.
+public record SyncArticuloDesdeVisionsRequest(
+    string ReferenciaVisions,
+    string CentroCostoVisions,
+    string? Nombre,
+    decimal? Costo,
+    decimal? PPublico,
+    DateTime FechaCambio
+);
+
+// ──────────── Clientes para sync NEXO → Visions ────────────
+
+public record ClienteParaSyncDto(
+    int ClienteID,
+    string? NIT,
+    string Nombre,
+    string? Telefono,
+    string? Email,
+    string? Direccion,
+    DateTime FechaModificacion,
+    string? TipoPersona,
+    string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
+    string? Departamento, string? Ciudad
+);
+
+// ──────────── Actualización número de factura desde Visions ────────────
+// El agente llama este endpoint cuando Visions asigna el número real a
+// una factura que fue exportada con un placeholder NEXO-{FacturaID}.
+public record ActualizarNumeroVisionsRequest(string TipDoc, string NroDoc);
+
+// ──────────── Clientes desde Visions → NEXO ────────────
+// Enviado por el agente cuando lee dbo.USUARIOS de Visions.
+public record SyncClienteDesdeVisionsRequest(
+    string NIT,
+    string? TipoPersona,
+    string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
+    string? NombreEmpresa,
+    string? Telefono, string? Email, string? Direccion,
+    string? Departamento, string? Ciudad
 );

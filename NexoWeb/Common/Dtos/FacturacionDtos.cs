@@ -21,7 +21,7 @@ public record FacturaItem(
     int? CentroCostoID, string? CentroCostoNombre
 );
 
-public record CentroCostoBasicoItem(int CentroCostoID, string Nombre);
+public record CentroCostoBasicoItem(int CentroCostoID, string Nombre, bool TieneVisions = false);
 
 public record LineaFacturaInput(
     int? ArticuloID, int? ComboID, string? DescripcionLinea,

@@ -205,7 +205,7 @@ public class TareaSincronizarCatalogos
 
         using var connection = _visionsDb.CreateConnection();
         var enVisions = (await connection.QueryAsync<PresentacionSyncDto>(
-            "SELECT CODIGO AS Codigo, PRESENTACION AS Presentacion, FRACCIONES AS Fracciones FROM dbo.PRESENTACION")).ToList();
+            "SELECT CODIGO AS Codigo, PRESENTACION AS Presentacion, CAST(NULL AS DECIMAL(18,4)) AS Fracciones FROM dbo.PRESENTACION")).ToList();
 
         var codigosVisions = enVisions.Select(p => p.Codigo).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -226,9 +226,9 @@ public class TareaSincronizarCatalogos
                 await connection.ExecuteAsync(
                     @"MERGE dbo.PRESENTACION AS d
                       USING (SELECT @Codigo AS CODIGO) AS s ON d.CODIGO = s.CODIGO
-                      WHEN MATCHED THEN UPDATE SET PRESENTACION = @Presentacion, FRACCIONES = @Fracciones
-                      WHEN NOT MATCHED THEN INSERT (CODIGO, PRESENTACION, FRACCIONES) VALUES (@Codigo, @Presentacion, @Fracciones);",
-                    new { item.Codigo, item.Presentacion, item.Fracciones });
+                      WHEN MATCHED THEN UPDATE SET PRESENTACION = @Presentacion
+                      WHEN NOT MATCHED THEN INSERT (CODIGO, PRESENTACION) VALUES (@Codigo, @Presentacion);",
+                    new { item.Codigo, item.Presentacion });
                 _logger.LogInformation("Presentacion {Codigo} creada en Visions", item.Codigo);
             }
             catch (Exception ex) { _logger.LogError(ex, "Error al crear Presentacion {Codigo} en Visions", item.Codigo); }

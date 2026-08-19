@@ -250,6 +250,10 @@
   justify-content: center
 }
 
+.gap-1 {
+  gap: 0.25rem
+}
+
 .gap-2 {
   gap: 0.5rem
 }
@@ -310,6 +314,10 @@
 
 .font-semibold {
   font-weight: 600
+}
+
+.overline {
+  text-decoration-line: overline
 }
 
 .transition {

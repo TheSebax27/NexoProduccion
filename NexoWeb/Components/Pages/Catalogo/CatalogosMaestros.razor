@@ -176,49 +176,6 @@
         }
     </MudTabPanel>
 
-    @* ── Centros de Costo ─────────────────────────────────────────────── *@
-    <MudTabPanel Text="Centros de Costo" Icon="@Icons.Material.Filled.BusinessCenter">
-        <div class="d-flex align-center justify-space-between mb-3">
-            <MudText Typo="Typo.subtitle1">Centros de Costo</MudText>
-            <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Add"
-                       OnClick="AbrirCrearCCAsync" Size="Size.Small">Nuevo Centro de Costo</MudButton>
-        </div>
-
-        @if (_cargandoCentrosCosto)
-        {
-            <MudProgressCircular Indeterminate="true" Class="ma-4" />
-        }
-        else if (_centrosCosto.Count == 0)
-        {
-            <MudText Style="color: var(--n-text-3);">No hay centros de costo registrados.</MudText>
-        }
-        else
-        {
-            <MudTable Items="_centrosCosto" Hover="true" Dense="true" Striped="true">
-                <HeaderContent>
-                    <MudTh>Codigo</MudTh>
-                    <MudTh>Nombre</MudTh>
-                    <MudTh>Tipo</MudTh>
-                    <MudTh>Estado</MudTh>
-                    <MudTh>Acciones</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Codigo">@context.Codigo</MudTd>
-                    <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
-                    <MudTd DataLabel="Tipo">@context.TipoCentro</MudTd>
-                    <MudTd DataLabel="Estado">
-                        <MudChip T="string" Color="@(context.Estado ? Color.Success : Color.Error)" Size="Size.Small">
-                            @(context.Estado ? "Activo" : "Inactivo")
-                        </MudChip>
-                    </MudTd>
-                    <MudTd>
-                        <MudButton Size="Size.Small" OnClick="@(() => AbrirEditarCCAsync(context))">Editar</MudButton>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-    </MudTabPanel>
-
     @* ── Presentaciones ──────────────────────────────────────────────── *@
     <MudTabPanel Text="Presentaciones" Icon="@Icons.Material.Filled.Inventory2">
         <div class="d-flex align-center justify-space-between mb-3">
@@ -282,10 +239,6 @@
     private List<IvaItem> _ivas = new();
     private bool _cargandoIvas = true;
 
-    // ── Centros de Costo ──────────────────────────────────────────────────
-    private List<CentroCostoItem> _centrosCosto = new();
-    private bool _cargandoCentrosCosto = true;
-
     protected override async Task OnInitializedAsync()
     {
         await Task.WhenAll(
@@ -293,8 +246,7 @@
             CargarGruposMayoresAsync(),
             CargarGruposMenoresAsync(),
             CargarPresentacionesAsync(),
-            CargarIvasAsync(),
-            CargarCentrosCostoAsync()
+            CargarIvasAsync()
         );
     }
 
@@ -564,49 +516,6 @@
             await ApiClient.DeleteAsync($"api/catalogo/ivas/{iva.IvaID}");
             Snackbar.Add("Tipo de IVA eliminado.", Severity.Success);
             await CargarIvasAsync();
-        }
-        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
-    }
-
-    // ── Centros de Costo CRUD ─────────────────────────────────────────────
-
-    private async Task CargarCentrosCostoAsync()
-    {
-        _cargandoCentrosCosto = true;
-        _centrosCosto = await ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=false") ?? new();
-        _cargandoCentrosCosto = false;
-    }
-
-    private async Task AbrirCrearCCAsync()
-    {
-        var dialogo = await DialogService.ShowAsync<CentroCostoDialog>("Nuevo Centro de Costo");
-        var resultado = await dialogo.Result;
-        if (resultado is null || resultado.Canceled) return;
-        try
-        {
-            var request = (CrearCentroCostoRequest)resultado.Data!;
-            await ApiClient.PostAsync<CrearCentroCostoRequest, object?>("api/catalogo/centros-costo", request);
-            Snackbar.Add("Centro de costo creado.", Severity.Success);
-            await CargarCentrosCostoAsync();
-        }
-        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
-    }
-
-    private async Task AbrirEditarCCAsync(CentroCostoItem cc)
-    {
-        var parametros = new DialogParameters<CentroCostoDialog>
-        {
-            { x => x.CentroCosto, cc }
-        };
-        var dialogo = await DialogService.ShowAsync<CentroCostoDialog>("Editar Centro de Costo", parametros);
-        var resultado = await dialogo.Result;
-        if (resultado is null || resultado.Canceled) return;
-        try
-        {
-            var request = (ActualizarCentroCostoRequest)resultado.Data!;
-            await ApiClient.PutAsync<ActualizarCentroCostoRequest, object?>($"api/catalogo/centros-costo/{cc.CentroCostoID}", request);
-            Snackbar.Add("Centro de costo actualizado.", Severity.Success);
-            await CargarCentrosCostoAsync();
         }
         catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
     }

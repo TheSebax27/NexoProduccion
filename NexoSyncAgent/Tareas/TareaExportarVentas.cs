@@ -10,9 +10,11 @@ public class TareaExportarVentas
     // DetalleTarjeta/CostoTarjeta/PPublicoTarjeta: lo que ya tiene Visions para
     // esa REFERENCIA en dbo.TARJETA -- viajan como sugerencia por si NEXO no
     // tiene mapeo para este articulo todavia.
+    // NIT/Cliente: datos del comprador para que NEXO cree el cliente si no existe.
     private record VentaPendiente(
         short CENTROCOSTO, string TIPDOC, string NRODOC, decimal ORDEN, string REFERENCIA, decimal CANTIDAD, DateTime FECDOC,
-        string? DetalleTarjeta, decimal? CostoTarjeta, decimal? PPublicoTarjeta);
+        string? DetalleTarjeta, decimal? CostoTarjeta, decimal? PPublicoTarjeta,
+        string? NIT, string? CLIENTE);
 
     private readonly INexoApiClient _apiClient;
     private readonly IVisionsConnectionFactory _visionsDb;
@@ -37,13 +39,24 @@ public class TareaExportarVentas
 
         const string sqlVentasNuevas = @"
             SELECT m.CENTROCOSTO, m.TIPDOC, m.NRODOC, m.ORDEN, m.REFERENCIA, m.CANTIDAD, m.FECDOC,
-                   t.DETALLE AS DetalleTarjeta, t.COSTO AS CostoTarjeta, t.PPUBLICO AS PPublicoTarjeta
+                   t.DETALLE AS DetalleTarjeta, t.COSTO AS CostoTarjeta, t.PPUBLICO AS PPublicoTarjeta,
+                   m.NIT,
+                   CASE
+                     WHEN NULLIF(LTRIM(RTRIM(ISNULL(u.NOMBRE1,'') + ' ' + ISNULL(u.APELLIDO1,''))), '') IS NOT NULL
+                     THEN LTRIM(RTRIM(
+                            ISNULL(u.NOMBRE1,'') + ' ' +
+                            ISNULL(u.NOMBRE2+' ','') +
+                            ISNULL(u.APELLIDO1,'') + ' ' +
+                            ISNULL(u.APELLIDO2,'')
+                          ))
+                     ELSE ISNULL(NULLIF(m.CLIENTE,''), m.NIT)
+                   END AS CLIENTE
             FROM dbo.MOVDETALLES m
             JOIN dbo.NEXO_ConfiguracionSync cfg ON cfg.CENTROCOSTO = m.CENTROCOSTO
             LEFT JOIN dbo.TARJETA t ON t.CENTROCOSTO = m.CENTROCOSTO AND t.REFERENCIA = m.REFERENCIA
+            LEFT JOIN dbo.USUARIOS u ON u.NIT = m.NIT
             WHERE cfg.Activo = 1
               AND m.CENTROCOSTO = @CentroCostoVisions
-              AND ',' + cfg.TiposDocumentoVenta + ',' LIKE '%,' + m.TIPDOC + ',%'
               AND NOT EXISTS (
                   SELECT 1 FROM dbo.NEXO_VentasExportadas v
                   WHERE v.CENTROCOSTO = m.CENTROCOSTO AND v.TIPDOC = m.TIPDOC
@@ -65,10 +78,13 @@ public class TareaExportarVentas
 
                 await _apiClient.RegistrarEventoEntranteAsync(new RegistrarEventoEntranteRequest(
                     idEventoExterno, "VENTA", venta.REFERENCIA, venta.CANTIDAD, venta.FECDOC,
-                    venta.DetalleTarjeta, venta.CostoTarjeta, venta.PPublicoTarjeta), ct);
+                    venta.DetalleTarjeta, venta.CostoTarjeta, venta.PPublicoTarjeta,
+                    venta.NIT, venta.CLIENTE), ct);
 
                 await connection.ExecuteAsync(
-                    @"INSERT INTO dbo.NEXO_VentasExportadas (CENTROCOSTO, TIPDOC, NRODOC, ORDEN, REFERENCIA, CANTIDAD)
+                    @"IF NOT EXISTS (SELECT 1 FROM dbo.NEXO_VentasExportadas
+                                    WHERE CENTROCOSTO=@CENTROCOSTO AND TIPDOC=@TIPDOC AND NRODOC=@NRODOC AND ORDEN=@ORDEN AND REFERENCIA=@REFERENCIA)
+                      INSERT INTO dbo.NEXO_VentasExportadas (CENTROCOSTO, TIPDOC, NRODOC, ORDEN, REFERENCIA, CANTIDAD)
                       VALUES (@CENTROCOSTO, @TIPDOC, @NRODOC, @ORDEN, @REFERENCIA, @CANTIDAD)",
                     venta);
 

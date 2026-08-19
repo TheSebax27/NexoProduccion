@@ -61,11 +61,9 @@ public class TareaAplicarEntradasInventario
         AplicarEntradaInventario(evento);
     }
 
-    // Crea o actualiza el articulo en dbo.TARJETA (nombre, costo, precio
-    // publico, existencias minimas). A proposito NUNCA toca EXISTENCIAS aqui
-    // -- el stock se mueve solo por los eventos de entrada de inventario
-    // (AplicarEntradaInventario), para no pisar cantidades reales de Visions
-    // con un 0 cada vez que se resincroniza el nombre o el precio.
+    // Crea o actualiza el articulo en dbo.TARJETA sincronizando nombre, costo,
+    // precio publico, existencias minimas y el stock actual de NEXO (Cantidad
+    // en el evento = SUM de Inventario.InventarioStock en el momento del evento).
     private void SincronizarArticulo(NexoApiClient.Dtos.EventoPendienteItem evento)
     {
         using var connection = _visionsDb.CreateConnection();
@@ -75,10 +73,14 @@ public class TareaAplicarEntradasInventario
               USING (SELECT @CentroCosto AS CENTROCOSTO, @Referencia AS REFERENCIA) AS origen
               ON destino.CENTROCOSTO = origen.CENTROCOSTO AND destino.REFERENCIA = origen.REFERENCIA
               WHEN MATCHED THEN UPDATE SET
-                  DETALLE = @Detalle, COSTO = @Costo, PPUBLICO = @PPublico, EXISTENCIASMINIMAS = @ExistenciasMinimas
+                  DETALLE = @Detalle, COSTO = @Costo, PPUBLICO = @PPublico, EXISTENCIASMINIMAS = @ExistenciasMinimas,
+                  FRACCIONES = COALESCE(@Fracciones, FRACCIONES),
+                  PRESENTACION = COALESCE(@Presentacion, PRESENTACION),
+                  EXISTENCIAS = @Existencias,
+                  MARCA = COALESCE(@Marca, MARCA)
               WHEN NOT MATCHED THEN
-                  INSERT (CENTROCOSTO, REFERENCIA, DETALLE, COSTO, PPUBLICO, EXISTENCIASMINIMAS, EXISTENCIAS)
-                  VALUES (@CentroCosto, @Referencia, @Detalle, @Costo, @PPublico, @ExistenciasMinimas, 0);",
+                  INSERT (CENTROCOSTO, REFERENCIA, DETALLE, COSTO, PPUBLICO, EXISTENCIASMINIMAS, FRACCIONES, PRESENTACION, EXISTENCIAS, MARCA)
+                  VALUES (@CentroCosto, @Referencia, @Detalle, @Costo, @PPublico, @ExistenciasMinimas, @Fracciones, @Presentacion, @Existencias, @Marca);",
             new
             {
                 CentroCosto = evento.CentroCostoVisions,
@@ -86,7 +88,11 @@ public class TareaAplicarEntradasInventario
                 Detalle = evento.NombreArticulo,
                 Costo = evento.CostoUnitario,
                 PPublico = evento.PrecioVentaArticulo,
-                ExistenciasMinimas = evento.StockMinimoArticulo
+                ExistenciasMinimas = evento.StockMinimoArticulo,
+                Fracciones = evento.Fracciones,
+                Presentacion = evento.PresentacionCodigo,
+                Existencias = evento.Cantidad,
+                Marca = evento.MarcaCodigo
             });
     }
 

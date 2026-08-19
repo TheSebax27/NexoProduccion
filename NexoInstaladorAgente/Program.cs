@@ -100,7 +100,12 @@ Directory.CreateDirectory(Carpeta);
 Verde("[OK]");
 
 Paso("Instalando ejecutable del agente...  ");
-File.WriteAllBytes(Path.Combine(Carpeta, "NexoSyncAgent.exe"), agentBin);
+var exeDest = Path.Combine(Carpeta, "NexoSyncAgent.exe");
+for (int intento = 1; intento <= 10; intento++)
+{
+    try { File.WriteAllBytes(exeDest, agentBin); break; }
+    catch (IOException) when (intento < 10) { Thread.Sleep(1000); }
+}
 Verde("[OK]");
 
 Paso("Escribiendo configuracion...         ");
@@ -108,7 +113,7 @@ File.WriteAllText(Path.Combine(Carpeta, "appsettings.json"), appsettingsJson, En
 Verde("[OK]");
 
 // ── 5. Registrar e iniciar el servicio de Windows ───────────────────────────
-var exePath = Path.Combine(Carpeta, "NexoSyncAgent.exe");
+var exePath = exeDest;
 Paso("Registrando servicio de Windows...  ");
 Sc("create",      $"{NombreServicio} binPath= \"{exePath}\" start= auto DisplayName= {NombreServicio}");
 Sc("description", $"{NombreServicio} \"{DescServicio}\"");
