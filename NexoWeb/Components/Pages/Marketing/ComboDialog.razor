@@ -1,4 +1,4 @@
-@using NexoWeb.Common.Dtos
+﻿@using NexoWeb.Common.Dtos
 @using Microsoft.AspNetCore.Components.Forms
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -269,7 +269,7 @@
 
     private async Task<List<ArticuloSimple>> CargarArticulosAsync()
     {
-        var raw = await ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos") ?? [];
+        var raw = await ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos") ?? [];
         return raw.Where(a => a.Estado)
                   .Select(a => new ArticuloSimple(a.ArticuloID, a.SKU, a.Nombre, a.PrecioVenta))
                   .ToList();

@@ -94,7 +94,7 @@ else
             var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
             var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true");
             var tareaEmpleados = ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados?soloActivos=true");
-            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
 
             await Task.WhenAll(tareaProyectos, tareaClientes, tareaCentrosCosto, tareaEmpleados, tareaArticulos);
 

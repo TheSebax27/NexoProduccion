@@ -93,7 +93,7 @@ public class DashboardExportService : IDashboardExportService
         var cumplimiento = (await _dashboardService.ObtenerCumplimientoAsync()).ToList();
         var perdidas = (await _dashboardService.ObtenerPerdidasPorMotivoAsync(desde, hasta)).ToList();
         var stock = (await _inventarioService.ConsultarStockAsync(null, null, null)).ToList();
-        var articulos = (await _catalogoService.ListarArticulosAsync(null, null)).ToList();
+        var articulos = (await _catalogoService.ListarArticulosAsync(null, null, tamano: 5000)).Items;
 
         ResumenCrmItem? resumenCrm = null;
         List<ClienteFrioItem> clientesFrios = new();

@@ -43,8 +43,8 @@ Peso                             PESO                            Peso del produc
 IvaSiNo                          IVASINO                         'SI' o 'NO'
 IvaValor                         IVAVALOR                        Porcentaje (ej. 19)
 IvaDescripcion                   IVADESCRIPCION                  Ej. "IVA 19%"
-Iva2                             (sin equivalente en Visions)    Adicion NEXO: segundo impuesto
-IvaDescripcion2                  (sin equivalente en Visions)    Adicion NEXO: desc. 2do impuesto
+Iva2                             VF4  (numeric/decimal)           Segundo impuesto bidireccional (desde agosto 2026)
+IvaDescripcion2                  UBICA4  (nvarchar)              Descripcion 2do impuesto bidireccional (desde agosto 2026)
 
 --------------------------------------------------------------
 IVA
@@ -143,11 +143,11 @@ CAMPOS QUE VISIONS TIENE Y NEXO NO SINCRONIZA (por ahora)
 - TARJETA.BARRAS                 Codigo de barras (pendiente agregar a NEXO)
 - TARJETA.TIPOTARJETA            Tipo interno de Visions
 - TARJETA.INVENTA / ADVIERTE     Flags de inventario de Visions
-- TARJETA.VF1..VF4 / VV1..VV4   Valores especiales Visions
+- TARJETA.VF1..VF3 / VV1..VV4   Valores especiales Visions (VF4 ya sincronizado como Iva2)
 - TARJETA.ROTA1/ROTA2            Rotacion
 - TARJETA.MARGEN1/2/3            Margenes Visions
 - TARJETA.PUC                    Plan unico de cuentas
-- TARJETA.UBICA / UBICA1..4      Ubicacion fisica en bodega
+- TARJETA.UBICA / UBICA1..3      Ubicacion fisica en bodega (UBICA4 ya sincronizado como IvaDescripcion2)
 - GRUPOMAYOR.NOTACONTABILIDAD    Nota contable
 - GRUPOMENOR.NOTACONTABILIDAD    Nota contable
 - GRUPOMENOR.CODIGODANE          Codigo DANE
@@ -197,6 +197,9 @@ SINCRONIZACION DE CATALOGOS (bidireccional automatica)
 --------------------------------------------------------------
 
 Ejecutada en cada ronda del agente (TareaSincronizarCatalogos).
+Va PRIMERO dentro del bloque de sync (antes de ventas, articulos y facturas)
+para que Marca/GrupoMenor/Presentacion existan en ambas bases antes de cualquier
+sync de articulos en cualquier direccion.
 Logica: si el codigo existe en un lado pero no en el otro, se crea via MERGE.
         Si ya existe en ambos, se actualiza nombre/descripcion.
 
@@ -245,8 +248,11 @@ Direccion       Mecanismo                                   Resolucion conflicto
 --------------  ------------------------------------------- --------------------------------
 NEXO → Visions  ActualizarArticuloAsync encola              Siempre aplica (NEXO es master)
                 SINCRONIZAR_ARTICULO → agente hace MERGE
-                en TARJETA (DETALLE, COSTO, PPUBLICO,
-                EXISTENCIASMINIMAS). NUNCA toca EXISTENCIAS.
+                en TARJETA: DETALLE, COSTO, PPUBLICO,
+                EXISTENCIASMINIMAS, EXISTENCIAS (stock actual),
+                MARCA, PRESENTACION, FRACCIONES,
+                GRUPOMENOR, IVASINO, IVAVALOR, IVADESCRIPCION,
+                VF4 (Iva2), UBICA4 (IvaDescripcion2).
 Visions → NEXO  Trigger TR_TARJETA_NexoCambios en TARJETA   Solo aplica si FechaCambioVisions
                 llena NEXO_TarjetasCambios. Agente lee        > FechaModificacion NEXO + 5s
                 via TareaImportarCambiosTarjeta y llama       (evita bucle de sync)
@@ -347,8 +353,12 @@ TARJETA.EXISTENCIAS con el stock actual de NEXO (suma de Inventario.InventarioSt
 para ese artículo y CentroCosto). Antes solo actualizaba nombre/costo/precio.
 El campo MARCA también se sincroniza (campo MARCA de dbo.TARJETA).
 
-La API devuelve MarcaCodigo en EventoPendienteItem (último campo del record),
-y el agente lo aplica en el MERGE de dbo.TARJETA.
+La API devuelve en EventoPendienteItem (NEXO → Visions):
+  MarcaCodigo, GrupoMenorCodigo, PresentacionCodigo,
+  IvaSiNo ("SI"/"NO" en NEXO → "S"/"N" en Visions), IvaValor, IvaDescripcion,
+  Iva2 (→ VF4), IvaDescripcion2 (→ UBICA4).
+El agente aplica todos en el MERGE de dbo.TARJETA con COALESCE para no
+sobreescribir si el campo viene null.
 
 --------------------------------------------------------------
 MIGRACIONES SQL NEXO (ejecutar en NEXO_ERP)
@@ -377,13 +387,43 @@ NOTAS GENERALES DE SINCRONIZACION
    GrupoMenor tiene PK compuesta (Codigo + GrupoMayor) -- igual que en Visions.
 4. Precios P (PPublico/PBodega/PCredito) = precio de venta por canal. U (UPublico/UBodega/UCredito) = utilidad/margen vs costo. Ambos grupos se sincronizan directamente.
 5. NEXO.Presentacion.Fracciones = VISIONS.TARJETA.FRACCIONES — Tarjetas ya no tiene columna Fracciones propia; se obtiene via JOIN a Presentacion.
-6. IVA: NEXO agrega Iva2/IvaDescripcion2 para productos con doble impuesto;
-   Visions no tiene este campo -- al exportar a Visions se ignora.
+6. IVA doble impuesto: NEXO.Iva2 ↔ VISIONS.TARJETA.VF4 (numeric→decimal),
+   NEXO.IvaDescripcion2 ↔ VISIONS.TARJETA.UBICA4 (nvarchar).
+   Sincronizacion bidireccional desde agosto 2026 via TareaDetectarArticulosFaltantes,
+   TareaImportarCambiosTarjeta y TareaAplicarEntradasInventario.
+   Nota tecnica: TARJETA.IVAVALOR es smallint en Visions — Dapper requiere
+   CAST(ISNULL(IVAVALOR, 19) AS DECIMAL(18,4)) para evitar error de materializacion.
 7. MOVDETALLES es la tabla de movimientos de Visions (ventas, devoluciones, etc.).
    NEXO NUNCA modifica tablas nativas de Visions directamente -- solo el agente escribe en
    MOVDETALLES (exportacion NEXO→Visions) y en TARJETA.EXISTENCIAS (descuento de stock).
    El resto de Visions es de solo lectura para NEXO. Excepcion: tablas NEXO_* son propias.
 8. Resolucion de conflictos de precios: gana el cambio mas reciente segun FechaModificacion.
    Buffer de 5 segundos para absorber la latencia del trigger al aplicar NEXO→Visions.
+
+--------------------------------------------------------------
+CORRECCIONES APLICADAS (agosto 2026)
+--------------------------------------------------------------
+
+1. SP ACTUALIZARTARJETA (VISIONSDBL1) - BUG CRITICO CORREGIDO
+   WHERE [CENTROCOSTO] = CENTROCOSTO AND [REFERENCIA] = REFERENCIA
+   → fue corregido a:
+   WHERE [CENTROCOSTO] = @CENTROCOSTO AND [REFERENCIA] = @REFERENCIA
+   El bug causaba que CADA UPDATE de tarjeta sobreescribiera TODAS las filas
+   de dbo.TARJETA. Esto explicaba por qué todos los artículos llegaban con
+   MARCA/GRUPOMENOR/PRESENTACION NULL en Visions.
+   Se resetearon los 5 eventos CONFIRMADOS de artículos 15082710* a PENDIENTE
+   para que se re-envíen con el SP corregido.
+
+2. Ventas Visions en Facturación (NEXO Web) - arquitectura correcta
+   La API NUNCA se conecta a Visions directamente.
+   Se agregaron columnas TipDoc, NroDoc, NitCliente, NombreCliente a
+   Integracion.EventosEntrantes. El agente ya enviaba TipDoc/NroDoc al registrar
+   una venta; ahora RegistrarEventoEntranteAsync los guarda en la fila.
+   Índice filtrado: IX_EventosEntrantes_VentasVisions (WHERE TipDoc IS NOT NULL).
+   Endpoint: GET /api/integracion/ventas-visions — agrupa EventosEntrantes
+   por CentroCostoID+TipDoc+NroDoc+Fecha, con paginación y filtros.
+   Visible en Facturas.razor como MudExpansionPanel "Ventas de Visions".
+   Solo muestra documentos recibidos DESDE que se activó la integración
+   (registros históricos anteriores no tienen TipDoc y no aparecen).
 
 ==============================================================

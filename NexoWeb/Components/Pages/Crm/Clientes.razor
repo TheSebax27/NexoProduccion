@@ -22,6 +22,12 @@
 
 <MudGrid Class="mb-4">
     <MudItem xs="12" sm="4">
+        <MudTextField T="string" @bind-Value="_filtroBusqueda" Label="Buscar por nombre o NIT"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Immediate="true" DebounceInterval="300" Clearable="true"
+                      Variant="Variant.Outlined" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem xs="12" sm="4">
         <MudSelect T="int?" Value="_filtroResponsableId" ValueChanged="OnFiltroCambiadoAsync" Label="Responsable" Clearable="true">
             @foreach (var e in _empleados)
             {
@@ -29,13 +35,13 @@
             }
         </MudSelect>
     </MudItem>
-    <MudItem xs="12" sm="4">
+    <MudItem xs="12" sm="2">
         <MudSelect T="string" @bind-Value="_filtroTipoCliente" Label="Tipo de Cliente" Clearable="true">
             <MudSelectItem Value="@("Empresa")">Empresa</MudSelectItem>
             <MudSelectItem Value="@("Persona Natural")">Persona Natural</MudSelectItem>
         </MudSelect>
     </MudItem>
-    <MudItem xs="12" sm="4">
+    <MudItem xs="12" sm="2">
         <MudSelect T="string" @bind-Value="_filtroFuenteContacto" Label="Fuente del Contacto" Clearable="true">
             <MudSelectItem Value="@("Referido")">Referido</MudSelectItem>
             <MudSelectItem Value="@("Redes Sociales")">Redes Sociales</MudSelectItem>
@@ -136,11 +142,15 @@ else
     private int? _filtroResponsableId;
     private string? _filtroTipoCliente;
     private string? _filtroFuenteContacto;
+    private string? _filtroBusqueda;
 
     private IEnumerable<ClienteItem> _clientesFiltrados => _clientes
         .Where(c => _filtroResponsableId is null || c.ResponsableID == _filtroResponsableId)
         .Where(c => _filtroTipoCliente is null || c.TipoCliente == _filtroTipoCliente)
-        .Where(c => _filtroFuenteContacto is null || c.FuenteContacto == _filtroFuenteContacto);
+        .Where(c => _filtroFuenteContacto is null || c.FuenteContacto == _filtroFuenteContacto)
+        .Where(c => string.IsNullOrWhiteSpace(_filtroBusqueda) ||
+                    c.Nombre.Contains(_filtroBusqueda, StringComparison.OrdinalIgnoreCase) ||
+                    (c.NIT != null && c.NIT.Contains(_filtroBusqueda, StringComparison.OrdinalIgnoreCase)));
 
     protected override async Task OnInitializedAsync()
     {

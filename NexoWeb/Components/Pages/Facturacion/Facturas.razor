@@ -1,4 +1,4 @@
-@page "/facturacion"
+﻿@page "/facturacion"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -79,6 +79,15 @@ else if (_facturas.Count == 0)
 }
 else
 {
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:0.85rem; opacity:.7">
+        <span>@_total documentos · página @_pagina de @_totalPaginas</span>
+        <div style="display:flex; gap:4px">
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Size="Size.Small"
+                           Disabled="@(_pagina <= 1)" OnClick="@(() => IrPaginaAsync(_pagina - 1))" />
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small"
+                           Disabled="@(_pagina >= _totalPaginas)" OnClick="@(() => IrPaginaAsync(_pagina + 1))" />
+        </div>
+    </div>
     <MudTable Items="_facturas" Hover="true" Dense="true" Striped="true"
               Style="overflow-x:auto">
         <HeaderContent>
@@ -142,6 +151,85 @@ else
     </MudTable>
 }
 
+@* ── Ventas recibidas desde Visions ── *@
+<MudExpansionPanels Class="mt-4">
+    <MudExpansionPanel Text="@($"Ventas de Visions ({_totalVisions:N0} documentos)")"
+                       Icon="@Icons.Material.Filled.Store" IsInitiallyExpanded="false">
+        <MudPaper Elevation="0" Class="pa-3 mb-3"
+                  Style="border:1px solid var(--mud-palette-lines-default); border-radius:8px">
+            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end">
+                <MudSelect T="string?" Value="_vTipDoc"
+                           ValueChanged="@(async v => { _vTipDoc = v; _vPagina=1; await CargarVentasVisionsAsync(); })"
+                           Label="Tipo documento" Clearable="true" Variant="Variant.Outlined"
+                           Margin="Margin.Dense" Style="min-width:160px">
+                    @foreach (var td in TiposDocumento.Todos)
+                    {
+                        <MudSelectItem T="string?" Value="@td">@td</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudDatePicker Date="_vDesde"
+                               DateChanged="@(async v => { _vDesde = v; _vPagina=1; await CargarVentasVisionsAsync(); })"
+                               Label="Desde" DateFormat="dd/MM/yyyy"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:140px" />
+                <MudDatePicker Date="_vHasta"
+                               DateChanged="@(async v => { _vHasta = v; _vPagina=1; await CargarVentasVisionsAsync(); })"
+                               Label="Hasta" DateFormat="dd/MM/yyyy"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:140px" />
+            </div>
+        </MudPaper>
+
+        @if (_vCargando)
+        {
+            <MudProgressLinear Indeterminate="true" Class="mb-2" />
+        }
+        else if (_ventasVisions.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-2">
+                No hay ventas de Visions en el rango seleccionado.
+                Solo aparecen documentos recibidos desde que se activó la integración.
+            </MudAlert>
+        }
+        else
+        {
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:0.85rem; opacity:.7">
+                <span>@_totalVisions documentos · página @_vPagina de @_vTotalPaginas</span>
+                <div style="display:flex; gap:4px">
+                    <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Size="Size.Small"
+                                   Disabled="@(_vPagina <= 1)"
+                                   OnClick="@(async () => { _vPagina--; await CargarVentasVisionsAsync(); })" />
+                    <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small"
+                                   Disabled="@(_vPagina >= _vTotalPaginas)"
+                                   OnClick="@(async () => { _vPagina++; await CargarVentasVisionsAsync(); })" />
+                </div>
+            </div>
+            <MudTable Items="_ventasVisions" Hover="true" Dense="true" Striped="true" Style="overflow-x:auto">
+                <HeaderContent>
+                    <MudTh>Tipo Doc</MudTh>
+                    <MudTh>Nro. Doc</MudTh>
+                    <MudTh>Fecha</MudTh>
+                    <MudTh>NIT</MudTh>
+                    <MudTh>Cliente</MudTh>
+                    <MudTh>CC</MudTh>
+                    <MudTh Style="text-align:right">Total</MudTh>
+                    <MudTh Style="text-align:right">Líneas</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Tipo Doc">
+                        <MudChip T="string" Size="Size.Small" Color="@ColorTipDoc(context.TipDoc)">@context.TipDoc</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Nro. Doc" Style="font-size:0.82rem">@context.NroDoc</MudTd>
+                    <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yyyy")</MudTd>
+                    <MudTd DataLabel="NIT" Style="font-size:0.82rem">@(context.NitCliente ?? "-")</MudTd>
+                    <MudTd DataLabel="Cliente" Style="font-size:0.82rem">@(context.NombreCliente ?? "-")</MudTd>
+                    <MudTd DataLabel="CC" Style="font-size:0.82rem">@context.CentroCostoID</MudTd>
+                    <MudTd DataLabel="Total" Style="text-align:right">@context.TotalVenta.ToString("C0")</MudTd>
+                    <MudTd DataLabel="Líneas" Style="text-align:right">@context.Lineas</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
 @code {
     private List<FacturaItem> _facturas = new();
     private List<ClienteItem> _clientes = new();
@@ -155,8 +243,24 @@ else
     private int? _filtroClienteId;
     private int? _filtroCentroCostoId;
     private string? _filtroEstado;
-    private DateTime? _filtroDesde;
+    private DateTime? _filtroDesde = DateTime.Today.AddDays(-30);
     private DateTime? _filtroHasta;
+
+    private int _pagina = 1;
+    private int _tamano = 50;
+    private int _total  = 0;
+    private int _totalPaginas => (int)Math.Ceiling((double)_total / _tamano);
+
+    // Ventas Visions
+    private List<VentaVisionsItem> _ventasVisions = new();
+    private bool   _vCargando = false;
+    private string? _vTipDoc;
+    private DateTime? _vDesde = DateTime.Today.AddDays(-30);
+    private DateTime? _vHasta;
+    private int _vPagina = 1;
+    private const int _vTamano = 50;
+    private int _totalVisions = 0;
+    private int _vTotalPaginas => (int)Math.Ceiling((double)_totalVisions / _vTamano);
 
     private Color ColorTipDoc(string tipDoc) => tipDoc switch
     {
@@ -187,16 +291,15 @@ else
         try
         {
             var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
-            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
-            var tareaFacturas = ApiClient.GetAsync<List<FacturaItem>>("api/facturacion/facturas");
-            var tareaCombos = ApiClient.GetAsync<List<ComboItem>>("api/marketing/combos");
-            var tareaCentros = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
+            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
+            var tareaCombos   = ApiClient.GetAsync<List<ComboItem>>("api/marketing/combos");
+            var tareaCentros  = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
+            var tareaFacturas = CargarFacturasAsync();
 
-            await Task.WhenAll(tareaClientes, tareaArticulos, tareaFacturas, tareaCombos, tareaCentros);
+            await Task.WhenAll(tareaClientes, tareaArticulos, tareaCombos, tareaCentros, tareaFacturas);
 
             _clientes = (await tareaClientes ?? new()).Where(c => c.Estado).ToList();
             _articulos = (await tareaArticulos ?? new()).Where(a => a.Estado).ToList();
-            _facturas = await tareaFacturas ?? new();
             _combosActivos = (await tareaCombos ?? new()).Where(c => c.Estado != "Inactivo").ToList();
             _centrosCosto = (await tareaCentros ?? new())
                 .Where(c => c.Estado)
@@ -213,32 +316,64 @@ else
         }
     }
 
+    private async Task CargarVentasVisionsAsync()
+    {
+        _vCargando = true;
+        StateHasChanged();
+        try
+        {
+            var q = new List<string>();
+            if (_vTipDoc  is not null) q.Add($"tipDoc={Uri.EscapeDataString(_vTipDoc)}");
+            if (_vDesde   is not null) q.Add($"desde={_vDesde.Value:yyyy-MM-dd}");
+            if (_vHasta   is not null) q.Add($"hasta={_vHasta.Value:yyyy-MM-dd}");
+            q.Add($"pagina={_vPagina}");
+            q.Add($"tamano={_vTamano}");
+            var resp = await ApiClient.GetAsync<VentasVisionsPaginadasResponse>(
+                "api/integracion/ventas-visions?" + string.Join("&", q));
+            _ventasVisions = resp?.Items ?? new();
+            _totalVisions  = resp?.Total ?? 0;
+        }
+        catch { _ventasVisions = new(); _totalVisions = 0; }
+        finally { _vCargando = false; }
+    }
+
     private async Task CargarFacturasAsync()
     {
+        _cargando = true;
         try
         {
             var query = new List<string>();
-            if (_filtroClienteId is not null) query.Add($"clienteId={_filtroClienteId}");
+            if (_filtroClienteId is not null)    query.Add($"clienteId={_filtroClienteId}");
             if (_filtroCentroCostoId is not null) query.Add($"centroCostoId={_filtroCentroCostoId}");
-            if (_filtroTipDoc is not null) query.Add($"tipDoc={Uri.EscapeDataString(_filtroTipDoc)}");
-            if (_filtroEstado is not null) query.Add($"estado={_filtroEstado}");
-            if (_filtroDesde is not null) query.Add($"desde={_filtroDesde.Value:yyyy-MM-dd}");
-            if (_filtroHasta is not null) query.Add($"hasta={_filtroHasta.Value:yyyy-MM-dd}");
+            if (_filtroTipDoc is not null)        query.Add($"tipDoc={Uri.EscapeDataString(_filtroTipDoc)}");
+            if (_filtroEstado is not null)        query.Add($"estado={_filtroEstado}");
+            if (_filtroDesde is not null)         query.Add($"desde={_filtroDesde.Value:yyyy-MM-dd}");
+            if (_filtroHasta is not null)         query.Add($"hasta={_filtroHasta.Value:yyyy-MM-dd}");
+            query.Add($"pagina={_pagina}");
+            query.Add($"tamano={_tamano}");
 
-            var ruta = "api/facturacion/facturas" + (query.Count > 0 ? "?" + string.Join("&", query) : "");
-            _facturas = await ApiClient.GetAsync<List<FacturaItem>>(ruta) ?? new();
+            var ruta = "api/facturacion/facturas?" + string.Join("&", query);
+            var resp = await ApiClient.GetAsync<FacturasPaginadasResponse>(ruta);
+            _facturas = resp?.Items ?? new();
+            _total    = resp?.Total ?? 0;
             _errorCarga = null;
         }
         catch (Exception ex)
         {
             _errorCarga = ex.Message;
         }
+        finally
+        {
+            _cargando = false;
+        }
     }
 
-    private async Task OnFiltroTipDocAsync(string? v) { _filtroTipDoc = v; await CargarFacturasAsync(); }
-    private async Task OnFiltroClienteAsync(int? v) { _filtroClienteId = v; await CargarFacturasAsync(); }
-    private async Task OnFiltroCCAsync(int? v) { _filtroCentroCostoId = v; await CargarFacturasAsync(); }
-    private async Task OnFiltroEstadoAsync(string? v) { _filtroEstado = v; await CargarFacturasAsync(); }
+    private async Task IrPaginaAsync(int p) { _pagina = p; await CargarFacturasAsync(); }
+
+    private async Task OnFiltroTipDocAsync(string? v)  { _filtroTipDoc = v;          _pagina = 1; await CargarFacturasAsync(); }
+    private async Task OnFiltroClienteAsync(int? v)    { _filtroClienteId = v;        _pagina = 1; await CargarFacturasAsync(); }
+    private async Task OnFiltroCCAsync(int? v)         { _filtroCentroCostoId = v;    _pagina = 1; await CargarFacturasAsync(); }
+    private async Task OnFiltroEstadoAsync(string? v)  { _filtroEstado = v;           _pagina = 1; await CargarFacturasAsync(); }
 
     private async Task AbrirCreacionAsync()
     {

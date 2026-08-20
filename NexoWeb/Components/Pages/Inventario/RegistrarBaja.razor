@@ -1,4 +1,4 @@
-@page "/inventario/bajas"
+﻿@page "/inventario/bajas"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -166,7 +166,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var t1 = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+        var t1 = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
         var t2 = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
         var t3 = ApiClient.GetAsync<List<StockConsolidadoItem>>("api/inventario/stock");
         var t4 = ApiClient.GetAsync<List<MotivoPerdidaItem>>("api/inventario/motivos-perdida");

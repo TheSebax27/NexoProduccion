@@ -747,7 +747,7 @@ else
             // Se filtra por nombre de tipo, no por ID: los IDs de Catalogo.TiposArticulo
             // dependen del orden de insercion de los datos semilla y no son confiables
             // como numero fijo (antes esto apuntaba por error al tipo Insumo).
-            var tareaProductos     = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+            var tareaProductos     = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
             var tareaCumplimiento  = ApiClient.GetAsync<List<CumplimientoCentroCostoItem>>("api/dashboard/cumplimiento-planificacion");
 
             await Task.WhenAll(tareaPlanVsReal, tareaVariacionHistorico, tareaDistribucion, tareaPerdidas, tareaProductos, tareaCumplimiento);

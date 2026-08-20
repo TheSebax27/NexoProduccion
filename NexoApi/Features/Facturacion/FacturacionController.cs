@@ -24,14 +24,16 @@ public class FacturacionController : ControllerBase
 
     // ──────────── Facturas ────────────
     [HttpGet("facturas")]
-    public async Task<ActionResult<IEnumerable<FacturaItem>>> ListarFacturas(
+    public async Task<ActionResult<FacturasPaginadasResponse>> ListarFacturas(
         [FromQuery] int? clienteId,
         [FromQuery] int? centroCostoId,
         [FromQuery] string? tipDoc,
         [FromQuery] string? estado,
         [FromQuery] DateTime? desde,
-        [FromQuery] DateTime? hasta)
-        => Ok(await _service.ListarFacturasAsync(clienteId, centroCostoId, tipDoc, estado, desde, hasta));
+        [FromQuery] DateTime? hasta,
+        [FromQuery] int pagina = 1,
+        [FromQuery] int tamano = 50)
+        => Ok(await _service.ListarFacturasAsync(clienteId, centroCostoId, tipDoc, estado, desde, hasta, pagina, tamano));
 
     [HttpPost("facturas")]
     public async Task<ActionResult> CrearFactura(CrearFacturaRequest request)

@@ -1,4 +1,4 @@
-@page "/inventario/kardex"
+﻿@page "/inventario/kardex"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
@@ -245,7 +245,7 @@ else
     {
         try
         {
-            var t1 = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+            var t1 = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
             var t2 = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
             await Task.WhenAll(t1, t2);
             _articulos = await t1 ?? new();

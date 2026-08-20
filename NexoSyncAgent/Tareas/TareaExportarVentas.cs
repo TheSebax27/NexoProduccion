@@ -79,7 +79,8 @@ public class TareaExportarVentas
                 await _apiClient.RegistrarEventoEntranteAsync(new RegistrarEventoEntranteRequest(
                     idEventoExterno, "VENTA", venta.REFERENCIA, venta.CANTIDAD, venta.FECDOC,
                     venta.DetalleTarjeta, venta.CostoTarjeta, venta.PPublicoTarjeta,
-                    venta.NIT, venta.CLIENTE), ct);
+                    venta.NIT, venta.CLIENTE,
+                    TipDoc: venta.TIPDOC, NroDoc: venta.NRODOC), ct);
 
                 await connection.ExecuteAsync(
                     @"IF NOT EXISTS (SELECT 1 FROM dbo.NEXO_VentasExportadas

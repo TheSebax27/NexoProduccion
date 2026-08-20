@@ -1,4 +1,4 @@
-@page "/inventario/traspasos"
+﻿@page "/inventario/traspasos"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -198,7 +198,7 @@ else
         if (_bodegas.Count == 0)
         {
             var t1 = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
-            var t2 = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+            var t2 = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
             await Task.WhenAll(t1, t2);
             _bodegas   = await t1 ?? new();
             _articulos = await t2 ?? new();

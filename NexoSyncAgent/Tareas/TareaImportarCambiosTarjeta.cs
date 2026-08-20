@@ -6,9 +6,9 @@ using NexoSyncAgent.VisionsData;
 namespace NexoSyncAgent.Tareas;
 
 // Lee NEXO_TarjetasCambios (rellenada por el trigger TR_TARJETA_NexoCambios en Visions)
-// y envia los cambios de precio/nombre a NEXO para mantener Catalogo.Tarjetas sincronizado.
-// La API aplica el cambio solo si el timestamp de Visions es mas reciente que FechaModificacion
-// en NEXO (+ 5s de margen), evitando bucles de sincronizacion.
+// y envia los cambios de precio/nombre/marca/grupo a NEXO para mantener Catalogo.Tarjetas
+// sincronizado. La API aplica el cambio solo si el timestamp de Visions es mas reciente
+// que FechaModificacion en NEXO (+ 5s de margen), evitando bucles de sincronizacion.
 public class TareaImportarCambiosTarjeta
 {
     private readonly INexoApiClient _apiClient;
@@ -28,15 +28,32 @@ public class TareaImportarCambiosTarjeta
         using var connection = _visionsDb.CreateConnection();
 
         // Tomar el cambio mas reciente por CENTROCOSTO+REFERENCIA (si hay varios pendientes).
+        // Se hace JOIN a dbo.TARJETA para obtener el estado actual de Marca, Grupo, IVA y
+        // Presentacion, ya que NEXO_TarjetasCambios solo guarda nombre/costo/precio.
         var cambios = (await connection.QueryAsync<CambioPendiente>(
-            @"SELECT t.Id, t.CENTROCOSTO, t.REFERENCIA, t.DETALLE, t.COSTO, t.PPUBLICO, t.FechaCambio
+            @"SELECT t.Id, t.CENTROCOSTO, t.REFERENCIA, t.DETALLE, t.COSTO, t.PPUBLICO, t.FechaCambio,
+                     NULLIF(tar.PBODEGA,  0)                              AS PBodega,
+                     NULLIF(tar.PCREDITO, 0)                              AS PCredito,
+                     NULLIF(tar.UPUBLICO, 0)                              AS UPublico,
+                     NULLIF(tar.UBODEGA,  0)                              AS UBodega,
+                     NULLIF(tar.UCREDITO, 0)                              AS UCredito,
+                     tar.MARCA         AS MarcaCodigo,
+                     tar.GRUPOMENOR    AS GrupoMenorCodigo,
+                     tar.PRESENTACION  AS PresentacionCodigo,
+                     ISNULL(tar.IVASINO,'SI')                             AS IvaSiNo,
+                     CAST(ISNULL(tar.IVAVALOR,19) AS DECIMAL(18,4))      AS IvaValor,
+                     ISNULL(tar.IVADESCRIPCION,'IVA 19%')                 AS IvaDescripcion,
+                     CAST(tar.VF4 AS DECIMAL(18,4))                       AS Iva2,
+                     tar.UBICA4                                            AS IvaDescripcion2,
+                     CAST(CASE WHEN tar.REFERENCIA IS NULL THEN 1 ELSE 0 END AS BIT) AS EliminadoEnVisions
               FROM dbo.NEXO_TarjetasCambios t
               INNER JOIN (
                   SELECT CENTROCOSTO, REFERENCIA, MAX(Id) AS UltimoId
                   FROM dbo.NEXO_TarjetasCambios
                   WHERE Procesado = 0 AND CENTROCOSTO = @CC
                   GROUP BY CENTROCOSTO, REFERENCIA
-              ) ult ON ult.UltimoId = t.Id",
+              ) ult ON ult.UltimoId = t.Id
+              LEFT JOIN dbo.TARJETA tar ON tar.CENTROCOSTO = t.CENTROCOSTO AND tar.REFERENCIA = t.REFERENCIA",
             new { CC = centroCostoVisions })).ToList();
 
         if (cambios.Count == 0)
@@ -48,20 +65,40 @@ public class TareaImportarCambiosTarjeta
         {
             try
             {
-                await _apiClient.SyncArticuloDesdeVisionsAsync(new SyncArticuloDesdeVisionsRequest(
-                    ReferenciaVisions: cambio.REFERENCIA,
-                    CentroCostoVisions: cambio.CENTROCOSTO.ToString(),
-                    Nombre: cambio.DETALLE,
-                    Costo: cambio.COSTO,
-                    PPublico: cambio.PPUBLICO,
-                    FechaCambio: cambio.FechaCambio), ct);
+                if (cambio.EliminadoEnVisions)
+                {
+                    await _apiClient.InactivarArticuloDesdeVisionsAsync(cambio.REFERENCIA, ct);
+                    _logger.LogInformation("Articulo {Ref} ya no existe en Visions — inactivado en NEXO", cambio.REFERENCIA);
+                }
+                else
+                {
+                    await _apiClient.SyncArticuloDesdeVisionsAsync(new SyncArticuloDesdeVisionsRequest(
+                        ReferenciaVisions:  cambio.REFERENCIA,
+                        CentroCostoVisions: cambio.CENTROCOSTO.ToString(),
+                        Nombre:             cambio.DETALLE,
+                        Costo:              cambio.COSTO,
+                        PPublico:           cambio.PPUBLICO,
+                        FechaCambio:        cambio.FechaCambio,
+                        MarcaCodigo:        cambio.MarcaCodigo,
+                        GrupoMenorCodigo:   cambio.GrupoMenorCodigo,
+                        PresentacionCodigo: cambio.PresentacionCodigo,
+                        IvaSiNo:            cambio.IvaSiNo ?? "SI",
+                        IvaValor:           cambio.IvaValor,
+                        IvaDescripcion:     cambio.IvaDescripcion,
+                        Iva2:               cambio.Iva2,
+                        IvaDescripcion2:    cambio.IvaDescripcion2,
+                        PBodega:            cambio.PBodega,
+                        PCredito:           cambio.PCredito,
+                        UPublico:           cambio.UPublico,
+                        UBodega:            cambio.UBodega,
+                        UCredito:           cambio.UCredito), ct);
+                    _logger.LogInformation("Cambio de TARJETA ({Ref}) sincronizado a NEXO", cambio.REFERENCIA);
+                }
 
                 // Marcar todos los registros de esta referencia como procesados.
                 await connection.ExecuteAsync(
                     "UPDATE dbo.NEXO_TarjetasCambios SET Procesado = 1 WHERE CENTROCOSTO = @CC AND REFERENCIA = @Ref AND Procesado = 0",
                     new { CC = cambio.CENTROCOSTO, Ref = cambio.REFERENCIA });
-
-                _logger.LogInformation("Cambio de TARJETA ({Ref}) sincronizado a NEXO", cambio.REFERENCIA);
             }
             catch (Exception ex)
             {
@@ -72,5 +109,11 @@ public class TareaImportarCambiosTarjeta
 
     private record CambioPendiente(
         long Id, int CENTROCOSTO, string REFERENCIA,
-        string? DETALLE, decimal? COSTO, decimal? PPUBLICO, DateTime FechaCambio);
+        string? DETALLE, decimal? COSTO, decimal? PPUBLICO, DateTime FechaCambio,
+        decimal? PBodega, decimal? PCredito,
+        decimal? UPublico, decimal? UBodega, decimal? UCredito,
+        string? MarcaCodigo, string? GrupoMenorCodigo, string? PresentacionCodigo,
+        string? IvaSiNo, decimal? IvaValor, string? IvaDescripcion,
+        decimal? Iva2, string? IvaDescripcion2,
+        bool EliminadoEnVisions = false);
 }

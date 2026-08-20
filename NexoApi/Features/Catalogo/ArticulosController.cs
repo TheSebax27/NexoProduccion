@@ -17,10 +17,12 @@ public class ArticulosController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ArticuloItem>>> Listar(
-        [FromQuery] int? tipoArticuloId, [FromQuery] string? texto)
+    public async Task<ActionResult<ArticulosPaginadosResponse>> Listar(
+        [FromQuery] int? tipoArticuloId, [FromQuery] string? texto,
+        [FromQuery] bool? estado,
+        [FromQuery] int pagina = 1, [FromQuery] int tamano = 100)
     {
-        return Ok(await _service.ListarArticulosAsync(tipoArticuloId, texto));
+        return Ok(await _service.ListarArticulosAsync(tipoArticuloId, texto, estado, pagina, tamano));
     }
 
     [HttpGet("{id:int}")]
@@ -53,6 +55,13 @@ public class ArticulosController : ControllerBase
         {
             return NotFound(new { error = ex.Message });
         }
+    }
+
+    [HttpGet("todos")]
+    public async Task<ActionResult<IEnumerable<ArticuloItem>>> ListarTodos(
+        [FromQuery] int? tipoArticuloId, [FromQuery] bool? estado)
+    {
+        return Ok(await _service.ListarTodosArticulosAsync(tipoArticuloId, estado));
     }
 
     [HttpGet("tipos")]

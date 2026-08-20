@@ -25,6 +25,7 @@ public interface IIntegracionService
     Task ResolverArticuloPendienteAsync(int pendienteId, ResolverArticuloPendienteRequest request);
     Task<LatidoResponse> RegistrarLatidoAsync(int centroCostoId, string? versionAgente = null);
     Task<IEnumerable<EstadoIntegracionResponse>> ObtenerEstadoIntegracionAsync();
+    Task<IEnumerable<ProgresoSyncResponse>> ObtenerProgresoSyncAsync();
     Task RegistrarFalloEventoAsync(long eventoId, int centroCostoId, string mensajeError);
     Task<ConfiguracionAgenteCompletaResponse> ObtenerConfiguracionCompletaAsync(int agenteSyncId);
     Task ActualizarConfiguracionCompletaAsync(int agenteSyncId, ActualizarConfiguracionAgenteRequest request);
@@ -53,6 +54,7 @@ public interface IIntegracionService
 
     // Sync bidireccional articulos (Visions → NEXO)
     Task SyncArticuloDesdeVisionsAsync(SyncArticuloDesdeVisionsRequest request);
+    Task InactivarArticuloDesdeVisionsAsync(string referencia);
 
     // Clientes para sync NEXO → Visions
     Task<IEnumerable<ClienteParaSyncDto>> ListarClientesParaSyncAsync(DateTime? desde, int centroCostoId);
@@ -61,6 +63,12 @@ public interface IIntegracionService
 
     // Número de factura asignado por Visions → actualizar NEXO
     Task ActualizarNumeroVisionsAsync(int facturaId, ActualizarNumeroVisionsRequest request);
+
+    // Salud del catálogo sincronizado (totales, completos, sin datos)
+    Task<SaludCatalogoResponse> ObtenerSaludCatalogoAsync();
+
+    // Ventas de Visions registradas en EventosEntrantes (solo lectura, sin conexión a Visions)
+    Task<VentasVisionsPaginadasResponse> ListarVentasVisionsAsync(int? centroCostoId, string? tipDoc, DateTime? desde, DateTime? hasta, int pagina = 1, int tamano = 50);
 }
 
 public class IntegracionService : IIntegracionService
@@ -92,7 +100,17 @@ public class IntegracionService : IIntegracionService
                    cc.IdentificadorClienteVisions AS CentroCostoVisions,
                    a.Referencia AS ReferenciaVisions,
                    a.Nombre AS NombreArticulo, a.PPublico AS PrecioVentaArticulo, a.StockMinimo AS StockMinimoArticulo,
-                   CAST(NULL AS DECIMAL(18,4)) AS Fracciones, a.PresentacionCodigo, a.MarcaCodigo
+                   CAST(NULL AS DECIMAL(18,4)) AS Fracciones, a.PresentacionCodigo, a.MarcaCodigo,
+                   CAST(a.Iva2 AS DECIMAL(18,4)) AS Iva2, a.IvaDescripcion2,
+                   a.GrupoMenorCodigo,
+                   a.IvaSiNo,
+                   CAST(a.IvaValor AS DECIMAL(18,4)) AS IvaValor,
+                   a.IvaDescripcion,
+                   a.PBodega,
+                   a.PCredito,
+                   a.UPublico,
+                   a.UBodega,
+                   a.UCredito
             FROM Integracion.EventosSalientes e
             JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = e.CentroCostoID
             JOIN Catalogo.Tarjetas a ON a.ArticuloID = e.ArticuloID
@@ -151,10 +169,12 @@ public class IntegracionService : IIntegracionService
             const string sqlInsert = @"
                 INSERT INTO Integracion.EventosEntrantes
                     (IdEventoExterno, TipoEvento, CentroCostoID, CodigoArticuloVisions, Cantidad, FechaEventoOrigen,
-                     NombreArticuloVisions, CostoArticuloVisions, PrecioArticuloVisions)
+                     NombreArticuloVisions, CostoArticuloVisions, PrecioArticuloVisions,
+                     TipDoc, NroDoc, NitCliente, NombreCliente)
                 OUTPUT INSERTED.EventoEntranteID
                 VALUES (@IdEventoExterno, @TipoEvento, @CentroCostoId, @CodigoArticuloVisions, @Cantidad, @FechaEventoOrigen,
-                        @NombreArticuloVisions, @CostoArticuloVisions, @PrecioArticuloVisions)";
+                        @NombreArticuloVisions, @CostoArticuloVisions, @PrecioArticuloVisions,
+                        @TipDoc, @NroDoc, @NitCliente, @NombreCliente)";
 
             eventoEntranteId = await connection.ExecuteScalarAsync<long>(sqlInsert, new
             {
@@ -166,7 +186,11 @@ public class IntegracionService : IIntegracionService
                 r.FechaEventoOrigen,
                 r.NombreArticuloVisions,
                 r.CostoArticuloVisions,
-                r.PrecioArticuloVisions
+                r.PrecioArticuloVisions,
+                r.TipDoc,
+                r.NroDoc,
+                NitCliente    = r.ClienteNit,
+                NombreCliente = r.ClienteNombre
             });
         }
 
@@ -196,16 +220,18 @@ public class IntegracionService : IIntegracionService
                 return;
             }
 
+            var sinDatos = string.IsNullOrWhiteSpace(r.NombreArticuloVisions) || (r.PrecioArticuloVisions ?? 0m) == 0m;
             await connection.ExecuteAsync(@"
                 IF NOT EXISTS (SELECT 1 FROM Catalogo.Tarjetas WHERE Referencia = @Referencia)
-                INSERT INTO Catalogo.Tarjetas (Referencia, Nombre, TipoArticuloID, PPublico, StockMinimo, PuntoReorden, Fracciona)
-                VALUES (@Referencia, @Nombre, @TipoArticuloID, @PPublico, 0, 0, 0)",
+                INSERT INTO Catalogo.Tarjetas (Referencia, Nombre, TipoArticuloID, PPublico, StockMinimo, PuntoReorden, Fracciona, Estado)
+                VALUES (@Referencia, @Nombre, @TipoArticuloID, @PPublico, 0, 0, 0, @Estado)",
                 new
                 {
-                    Referencia    = r.CodigoArticuloVisions,
-                    Nombre        = r.NombreArticuloVisions ?? r.CodigoArticuloVisions,
+                    Referencia     = r.CodigoArticuloVisions,
+                    Nombre         = r.NombreArticuloVisions ?? r.CodigoArticuloVisions,
                     TipoArticuloID = tipoId.Value,
-                    PPublico      = r.PrecioArticuloVisions ?? 0m
+                    PPublico       = r.PrecioArticuloVisions ?? 0m,
+                    Estado         = sinDatos ? 0 : 1
                 });
 
             _logger.LogInformation("Articulo {Codigo} auto-creado en NEXO desde Visions", r.CodigoArticuloVisions);
@@ -247,6 +273,72 @@ public class IntegracionService : IIntegracionService
                   INSERT INTO Crm.Clientes (Nombre, NIT, FuenteContacto, TipoCliente, FechaModificacion)
                   VALUES (@Nombre, @Nit, 'VISIONS', 'CLIENTE', GETDATE())",
                 new { Nit = r.ClienteNit, Nombre = r.ClienteNombre ?? r.ClienteNit });
+        }
+
+        // Crear o complementar la Factura en NEXO que agrupa las lineas del mismo documento Visions.
+        // Solo cuando el agente envio TipDoc/NroDoc (ventas recientes; ventas históricas no lo traen).
+        if (!string.IsNullOrWhiteSpace(r.TipDoc) && !string.IsNullOrWhiteSpace(r.NroDoc))
+        {
+            var articuloIdFactura = await connection.ExecuteScalarAsync<int?>(
+                @"SELECT TOP 1 ma.ArticuloID
+                  FROM Integracion.MapeoArticulos ma
+                  JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = ma.CentroCostoID
+                  WHERE ma.Estado = 1 AND cc.TieneVisions = 1
+                    AND cc.IdentificadorClienteVisions = CAST(@CentroCostoID AS NVARCHAR(20))
+                    AND ma.CodigoArticuloVisions = @CodigoArticuloVisions",
+                new { CentroCostoID = centroCostoId, r.CodigoArticuloVisions });
+
+            if (articuloIdFactura.HasValue)
+            {
+                var clienteIdFactura = await connection.ExecuteScalarAsync<int?>(
+                    "SELECT TOP 1 ClienteID FROM Crm.Clientes WHERE NIT = @Nit AND Estado = 1",
+                    new { Nit = r.ClienteNit ?? "CF-SYS" });
+                clienteIdFactura ??= await connection.ExecuteScalarAsync<int?>(
+                    "SELECT TOP 1 ClienteID FROM Crm.Clientes WHERE Estado = 1 ORDER BY ClienteID");
+
+                var usuarioSistemaId = await connection.ExecuteScalarAsync<int?>(
+                    "SELECT UsuarioID FROM Seguridad.Usuarios WHERE Username = 'sistema.sync'");
+
+                if (clienteIdFactura.HasValue && usuarioSistemaId.HasValue)
+                {
+                    var facturaId = await connection.ExecuteScalarAsync<int?>(
+                        @"SELECT FacturaID FROM Facturacion.Facturas
+                          WHERE TipDoc = @TipDoc AND NroDoc = @NroDoc AND CentroCostoID = @CentroCostoID",
+                        new { r.TipDoc, r.NroDoc, CentroCostoID = centroCostoId });
+
+                    if (facturaId is null)
+                    {
+                        facturaId = await connection.ExecuteScalarAsync<int>(
+                            @"INSERT INTO Facturacion.Facturas
+                                  (ClienteID, Fecha, TipDoc, NroDoc, UsuarioID, CentroCostoID, StockDescontado, VisionsConfirmado)
+                              OUTPUT INSERTED.FacturaID
+                              VALUES (@ClienteID, @Fecha, @TipDoc, @NroDoc, @UsuarioID, @CentroCostoID, 1, 1)",
+                            new {
+                                ClienteID     = clienteIdFactura.Value,
+                                Fecha         = r.FechaEventoOrigen,
+                                r.TipDoc, r.NroDoc,
+                                UsuarioID     = usuarioSistemaId.Value,
+                                CentroCostoID = centroCostoId
+                            });
+                    }
+
+                    await connection.ExecuteAsync(
+                        @"IF NOT EXISTS (
+                              SELECT 1 FROM Facturacion.FacturaLineas
+                              WHERE FacturaID = @FacturaID AND ArticuloID = @ArticuloID
+                                AND ABS(Cantidad - @Cantidad) < 0.001)
+                          INSERT INTO Facturacion.FacturaLineas
+                              (FacturaID, ArticuloID, DescripcionLinea, Cantidad, PrecioUnitario)
+                          VALUES (@FacturaID, @ArticuloID, @DescripcionLinea, @Cantidad, @PrecioUnitario)",
+                        new {
+                            FacturaID        = facturaId.Value,
+                            ArticuloID       = articuloIdFactura.Value,
+                            DescripcionLinea = r.NombreArticuloVisions,
+                            r.Cantidad,
+                            PrecioUnitario   = r.PrecioArticuloVisions ?? 0m
+                        });
+                }
+            }
         }
     }
 
@@ -538,6 +630,47 @@ public class IntegracionService : IIntegracionService
                 ag.Activo, ag.UltimoLatido, ag.VersionAgente,
                 _config.GetValue<string>("Sync:AgentVersion") ?? "1.0.0",
                 pendientes, procesadosHoy, ventasHoy, conError));
+        }
+
+        return resultado;
+    }
+
+    public async Task<IEnumerable<ProgresoSyncResponse>> ObtenerProgresoSyncAsync()
+    {
+        using var connection = _db.CreateConnection();
+
+        var agentes = (await connection.QueryAsync<(int AgenteSyncID, int CentroCostoID, string NombreCentroCosto, DateTime? UltimoLatido)>(
+            @"SELECT a.AgenteSyncID, a.CentroCostoID, cc.Nombre AS NombreCentroCosto, a.UltimoLatido
+              FROM Integracion.AgentesSync a
+              JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = a.CentroCostoID
+              WHERE a.Activo = 1")).ToList();
+
+        var resultado = new List<ProgresoSyncResponse>();
+        var totalArticulosNexo = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM Catalogo.Tarjetas WHERE Estado = 1");
+
+        foreach (var ag in agentes)
+        {
+            var mapeados = await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(DISTINCT ArticuloID) FROM Integracion.MapeoArticulos WHERE CentroCostoID = @CcId AND Estado = 1",
+                new { CcId = ag.CentroCostoID });
+
+            var pendientes = await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM Integracion.ArticulosPendientesMapeo WHERE CentroCostoID = @CcId AND Resuelto = 0",
+                new { CcId = ag.CentroCostoID });
+
+            var eventosProcesados = await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM Integracion.EventosEntrantes WHERE CentroCostoID = @CcId AND Procesado = 1",
+                new { CcId = ag.CentroCostoID });
+
+            var facturasVisions = await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM Facturacion.Facturas WHERE CentroCostoID = @CcId AND VisionsConfirmado = 1",
+                new { CcId = ag.CentroCostoID });
+
+            resultado.Add(new ProgresoSyncResponse(
+                ag.AgenteSyncID, ag.NombreCentroCosto,
+                totalArticulosNexo, mapeados, pendientes,
+                eventosProcesados, facturasVisions, ag.UltimoLatido));
         }
 
         return resultado;
@@ -1035,15 +1168,54 @@ public class IntegracionService : IIntegracionService
                 new { r.CentroCostoVisions });
             if (ccId is null) return;
 
+            // Auto-crear Marca y Presentacion si Visions trae codigos huerfanos
+            // (codigos en TARJETA que no existen en dbo.MARCA / dbo.PRESENTACION).
+            if (!string.IsNullOrWhiteSpace(r.MarcaCodigo))
+                await connection.ExecuteAsync(
+                    "IF NOT EXISTS (SELECT 1 FROM Catalogo.Marca WHERE Codigo = @Codigo) INSERT INTO Catalogo.Marca (Codigo, Marca) VALUES (@Codigo, @Codigo)",
+                    new { Codigo = r.MarcaCodigo });
+            if (!string.IsNullOrWhiteSpace(r.PresentacionCodigo))
+                await connection.ExecuteAsync(
+                    "IF NOT EXISTS (SELECT 1 FROM Catalogo.Presentacion WHERE Codigo = @Codigo) INSERT INTO Catalogo.Presentacion (Codigo, Presentacion) VALUES (@Codigo, @Codigo)",
+                    new { Codigo = r.PresentacionCodigo });
+
             await connection.ExecuteAsync(@"
                 IF NOT EXISTS (SELECT 1 FROM Catalogo.Tarjetas WHERE Referencia = @Referencia)
-                INSERT INTO Catalogo.Tarjetas (Referencia, Nombre, TipoArticuloID, PPublico, StockMinimo, PuntoReorden, Fracciona)
-                VALUES (@Referencia, @Nombre, @TipoArticuloID, @PPublico, 0, 0, 0)",
+                INSERT INTO Catalogo.Tarjetas
+                    (Referencia, Nombre, TipoArticuloID, PPublico, Costo,
+                     PBodega, PCredito, UPublico, UBodega, UCredito,
+                     StockMinimo, PuntoReorden, Fracciona,
+                     MarcaCodigo, GrupoMenorCodigo, PresentacionCodigo,
+                     IvaSiNo, IvaValor, IvaDescripcion,
+                     Iva2, IvaDescripcion2)
+                VALUES
+                    (@Referencia, @Nombre, @TipoArticuloID, @PPublico, @Costo,
+                     @PBodega, @PCredito, @UPublico, @UBodega, @UCredito,
+                     0, 0, 0,
+                     @MarcaCodigo,
+                     (SELECT Codigo FROM Catalogo.GrupoMenor WHERE Codigo = @GrupoMenorCodigo),
+                     @PresentacionCodigo,
+                     @IvaSiNo, @IvaValor, @IvaDescripcion,
+                     @Iva2, @IvaDescripcion2)",
                 new {
-                    Referencia     = r.ReferenciaVisions,
-                    Nombre         = r.Nombre ?? r.ReferenciaVisions,
-                    TipoArticuloID = tipoId.Value,
-                    PPublico       = r.PPublico ?? 0m
+                    Referencia         = r.ReferenciaVisions,
+                    Nombre             = r.Nombre ?? r.ReferenciaVisions,
+                    TipoArticuloID     = tipoId.Value,
+                    PPublico           = r.PPublico ?? 0m,
+                    Costo              = r.Costo ?? 0m,
+                    PBodega            = r.PBodega > 0 ? r.PBodega : (decimal?)null,
+                    PCredito           = r.PCredito > 0 ? r.PCredito : (decimal?)null,
+                    UPublico           = r.UPublico > 0 ? r.UPublico : (decimal?)null,
+                    UBodega            = r.UBodega  > 0 ? r.UBodega  : (decimal?)null,
+                    UCredito           = r.UCredito > 0 ? r.UCredito : (decimal?)null,
+                    MarcaCodigo        = string.IsNullOrWhiteSpace(r.MarcaCodigo)        ? null : r.MarcaCodigo,
+                    GrupoMenorCodigo   = string.IsNullOrWhiteSpace(r.GrupoMenorCodigo)   ? null : r.GrupoMenorCodigo,
+                    PresentacionCodigo = string.IsNullOrWhiteSpace(r.PresentacionCodigo) ? null : r.PresentacionCodigo,
+                    IvaSiNo            = r.IvaSiNo ?? "SI",
+                    IvaValor           = r.IvaValor ?? 19m,
+                    IvaDescripcion     = r.IvaDescripcion ?? "IVA 19%",
+                    Iva2               = r.Iva2,
+                    IvaDescripcion2    = r.IvaDescripcion2
                 });
 
             articuloId = await connection.ExecuteScalarAsync<int?>(
@@ -1071,15 +1243,53 @@ public class IntegracionService : IIntegracionService
 
         // Solo aplica si el cambio de Visions es mas de 5 segundos posterior
         // a la ultima modificacion de NEXO (evita bucle: NEXO→Visions→NEXO).
+
+        // Auto-crear Marca y Presentacion si Visions trae codigos huerfanos.
+        // GrupoMenor se omite condicionalmente (requiere GrupoMayor padre que no viaja en el request).
+        if (!string.IsNullOrWhiteSpace(r.MarcaCodigo))
+            await connection.ExecuteAsync(
+                "IF NOT EXISTS (SELECT 1 FROM Catalogo.Marca WHERE Codigo = @Codigo) INSERT INTO Catalogo.Marca (Codigo, Marca) VALUES (@Codigo, @Codigo)",
+                new { Codigo = r.MarcaCodigo });
+        if (!string.IsNullOrWhiteSpace(r.PresentacionCodigo))
+            await connection.ExecuteAsync(
+                "IF NOT EXISTS (SELECT 1 FROM Catalogo.Presentacion WHERE Codigo = @Codigo) INSERT INTO Catalogo.Presentacion (Codigo, Presentacion) VALUES (@Codigo, @Codigo)",
+                new { Codigo = r.PresentacionCodigo });
+
         var filas = await connection.ExecuteAsync(
             @"UPDATE Catalogo.Tarjetas
-              SET Nombre            = COALESCE(@Nombre,  Nombre),
-                  Costo             = COALESCE(@Costo,   Costo),
-                  PPublico          = COALESCE(@PPublico, PPublico),
-                  FechaModificacion = @FechaCambio
+              SET Nombre             = COALESCE(@Nombre,  Nombre),
+                  Costo              = COALESCE(@Costo,   Costo),
+                  PPublico           = COALESCE(@PPublico, PPublico),
+                  PBodega            = CASE WHEN @PBodega IS NOT NULL THEN @PBodega ELSE PBodega END,
+                  PCredito           = CASE WHEN @PCredito IS NOT NULL THEN @PCredito ELSE PCredito END,
+                  UPublico           = CASE WHEN @UPublico IS NOT NULL THEN @UPublico ELSE UPublico END,
+                  UBodega            = CASE WHEN @UBodega IS NOT NULL THEN @UBodega ELSE UBodega END,
+                  UCredito           = CASE WHEN @UCredito IS NOT NULL THEN @UCredito ELSE UCredito END,
+                  MarcaCodigo        = COALESCE(NULLIF(@MarcaCodigo, ''),        MarcaCodigo),
+                  GrupoMenorCodigo   = CASE WHEN NULLIF(@GrupoMenorCodigo, '') IS NULL THEN GrupoMenorCodigo
+                                            WHEN EXISTS (SELECT 1 FROM Catalogo.GrupoMenor WHERE Codigo = @GrupoMenorCodigo) THEN @GrupoMenorCodigo
+                                            ELSE GrupoMenorCodigo END,
+                  PresentacionCodigo = COALESCE(NULLIF(@PresentacionCodigo, ''), PresentacionCodigo),
+                  IvaSiNo            = COALESCE(@IvaSiNo,            IvaSiNo),
+                  IvaValor           = COALESCE(@IvaValor,           IvaValor),
+                  IvaDescripcion     = COALESCE(@IvaDescripcion,     IvaDescripcion),
+                  Iva2               = COALESCE(@Iva2,               Iva2),
+                  IvaDescripcion2    = COALESCE(@IvaDescripcion2,    IvaDescripcion2),
+                  FechaModificacion  = @FechaCambio
               WHERE ArticuloID = @ArticuloId
-                AND (FechaModificacion IS NULL OR DATEADD(SECOND, 5, FechaModificacion) < @FechaCambio)",
-            new { r.Nombre, r.Costo, r.PPublico, r.FechaCambio, ArticuloId = articuloId });
+                AND (FechaModificacion IS NULL OR MarcaCodigo IS NULL OR DATEADD(SECOND, 5, FechaModificacion) < @FechaCambio)",
+            new {
+                r.Nombre, r.Costo, r.PPublico,
+                PBodega  = r.PBodega  > 0 ? r.PBodega  : (decimal?)null,
+                PCredito = r.PCredito > 0 ? r.PCredito : (decimal?)null,
+                UPublico = r.UPublico > 0 ? r.UPublico : (decimal?)null,
+                UBodega  = r.UBodega  > 0 ? r.UBodega  : (decimal?)null,
+                UCredito = r.UCredito > 0 ? r.UCredito : (decimal?)null,
+                r.MarcaCodigo, r.GrupoMenorCodigo, r.PresentacionCodigo,
+                r.IvaSiNo, r.IvaValor, r.IvaDescripcion,
+                r.Iva2, r.IvaDescripcion2,
+                r.FechaCambio, ArticuloId = articuloId
+            });
 
         if (filas > 0)
             _logger.LogInformation(
@@ -1101,6 +1311,19 @@ public class IntegracionService : IIntegracionService
             new { Desde = desde });
     }
 
+    public async Task InactivarArticuloDesdeVisionsAsync(string referencia)
+    {
+        using var connection = _db.CreateConnection();
+        var filas = await connection.ExecuteAsync(@"
+            UPDATE Catalogo.Tarjetas
+            SET Estado = 0, FechaModificacion = GETDATE()
+            WHERE Referencia = @Referencia AND Estado = 1",
+            new { Referencia = referencia });
+
+        if (filas > 0)
+            _logger.LogInformation("Articulo {Ref} inactivado en NEXO (eliminado en Visions)", referencia);
+    }
+
     public async Task SyncClienteDesdeVisionsAsync(SyncClienteDesdeVisionsRequest r)
     {
         using var connection = _db.CreateConnection();
@@ -1112,7 +1335,8 @@ public class IntegracionService : IIntegracionService
 
         var nombre = tipoPersona == "Juridica"
             ? (r.NombreEmpresa ?? r.NIT)
-            : string.Join(" ", new[] { r.PrimerNombre, r.PrimerApellido }.Where(s => !string.IsNullOrWhiteSpace(s)));
+            : string.Join(" ", new[] { r.PrimerNombre, r.SegundoNombre, r.PrimerApellido, r.SegundoApellido }
+                .Where(s => !string.IsNullOrWhiteSpace(s)));
         if (string.IsNullOrWhiteSpace(nombre)) nombre = r.NIT;
 
         var tipoCliente = tipoPersona == "Natural" ? "Persona Natural" : "Empresa";
@@ -1152,5 +1376,64 @@ public class IntegracionService : IIntegracionService
               SET TipDoc = @TipDoc, NroDoc = @NroDoc
               WHERE FacturaID = @FacturaId",
             new { FacturaId = facturaId, request.TipDoc, request.NroDoc });
+    }
+
+    public async Task<SaludCatalogoResponse> ObtenerSaludCatalogoAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QuerySingleAsync<SaludCatalogoResponse>(@"
+            SELECT
+                (SELECT COUNT(*) FROM Catalogo.Tarjetas)                                                      AS TotalArticulos,
+                (SELECT COUNT(*) FROM Catalogo.Tarjetas WHERE MarcaCodigo IS NOT NULL AND IvaValor IS NOT NULL) AS ArticulosCompletos,
+                (SELECT COUNT(*) FROM Catalogo.Tarjetas WHERE MarcaCodigo IS NULL OR IvaValor IS NULL)         AS ArticulosSinDatos,
+                (SELECT COUNT(*) FROM Catalogo.Marca)                                                          AS TotalMarcas,
+                (SELECT COUNT(*) FROM Catalogo.GrupoMayor)                                                     AS TotalGruposMayor,
+                (SELECT COUNT(*) FROM Catalogo.GrupoMenor)                                                     AS TotalGruposMenor,
+                (SELECT COUNT(*) FROM Catalogo.Presentacion)                                                   AS TotalPresentaciones,
+                (SELECT COUNT(*) FROM Crm.Clientes WHERE Estado = 1)                                          AS TotalClientes");
+    }
+
+    private record VentaVisionsCruda(
+        int TotalRegistros,
+        int CentroCostoID, string TipDoc, string NroDoc, DateTime Fecha,
+        string? NitCliente, string? NombreCliente,
+        decimal TotalVenta, int Lineas
+    );
+
+    public async Task<VentasVisionsPaginadasResponse> ListarVentasVisionsAsync(
+        int? centroCostoId, string? tipDoc, DateTime? desde, DateTime? hasta,
+        int pagina = 1, int tamano = 50)
+    {
+        var offset = (pagina - 1) * tamano;
+        const string sql = @"
+            SELECT
+                COUNT(*) OVER () AS TotalRegistros,
+                ee.CentroCostoID,
+                ee.TipDoc,
+                ee.NroDoc,
+                CAST(ee.FechaEventoOrigen AS DATE) AS Fecha,
+                MAX(ee.NitCliente)    AS NitCliente,
+                MAX(ee.NombreCliente) AS NombreCliente,
+                SUM(ISNULL(ee.Cantidad, 0) * ISNULL(ee.PrecioArticuloVisions, 0)) AS TotalVenta,
+                COUNT(*) AS Lineas
+            FROM Integracion.EventosEntrantes ee
+            WHERE ee.TipDoc IS NOT NULL
+              AND (@CentroCostoId IS NULL OR ee.CentroCostoID = @CentroCostoId)
+              AND (@TipDoc       IS NULL OR ee.TipDoc = @TipDoc)
+              AND (@Desde        IS NULL OR ee.FechaEventoOrigen >= @Desde)
+              AND (@Hasta        IS NULL OR ee.FechaEventoOrigen <  DATEADD(DAY, 1, @Hasta))
+            GROUP BY ee.CentroCostoID, ee.TipDoc, ee.NroDoc, CAST(ee.FechaEventoOrigen AS DATE)
+            ORDER BY Fecha DESC, ee.NroDoc
+            OFFSET @Offset ROWS FETCH NEXT @Tamano ROWS ONLY";
+
+        using var conn = _db.CreateConnection();
+        var rows = (await conn.QueryAsync<VentaVisionsCruda>(sql,
+            new { CentroCostoId = centroCostoId, TipDoc = tipDoc, Desde = desde, Hasta = hasta, Offset = offset, Tamano = tamano })).ToList();
+
+        var total = rows.FirstOrDefault()?.TotalRegistros ?? 0;
+        var items = rows.Select(r => new VentaVisionsItem(
+            r.CentroCostoID, r.TipDoc, r.NroDoc, r.Fecha,
+            r.NitCliente, r.NombreCliente, r.TotalVenta, r.Lineas)).ToList();
+        return new VentasVisionsPaginadasResponse(items, total, pagina, tamano);
     }
 }

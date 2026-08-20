@@ -31,8 +31,23 @@ public class TareaDetectarArticulosFaltantes
 
         // Tomar articulos de TARJETA que no tienen ninguna entrada en NEXO_TarjetasCambios
         // (pendiente o procesada) — solo los que nunca han sido enviados a NEXO.
+        // Se incluyen Marca, Grupo, Presentacion e IVA para crear el articulo con datos completos.
         var articulos = (await connection.QueryAsync<ArticuloVisions>(@"
-            SELECT TOP (@Lote) t.REFERENCIA, t.DETALLE, t.COSTO, t.PPUBLICO
+            SELECT TOP (@Lote)
+                t.REFERENCIA, t.DETALLE, t.COSTO, t.PPUBLICO,
+                NULLIF(t.PBODEGA,  0)                          AS PBodega,
+                NULLIF(t.PCREDITO, 0)                          AS PCredito,
+                NULLIF(t.UPUBLICO, 0)                          AS UPublico,
+                NULLIF(t.UBODEGA,  0)                          AS UBodega,
+                NULLIF(t.UCREDITO, 0)                          AS UCredito,
+                t.MARCA         AS MarcaCodigo,
+                t.GRUPOMENOR    AS GrupoMenorCodigo,
+                t.PRESENTACION  AS PresentacionCodigo,
+                ISNULL(t.IVASINO, 'SI')                        AS IvaSiNo,
+                CAST(ISNULL(t.IVAVALOR, 19) AS DECIMAL(18,4)) AS IvaValor,
+                ISNULL(t.IVADESCRIPCION, 'IVA 19%')            AS IvaDescripcion,
+                CAST(t.VF4 AS DECIMAL(18,4))                   AS Iva2,
+                t.UBICA4                                        AS IvaDescripcion2
             FROM dbo.TARJETA t
             WHERE t.CENTROCOSTO = @CC
               AND t.REFERENCIA IS NOT NULL AND t.REFERENCIA <> ''
@@ -55,12 +70,25 @@ public class TareaDetectarArticulosFaltantes
             try
             {
                 await _apiClient.SyncArticuloDesdeVisionsAsync(new SyncArticuloDesdeVisionsRequest(
-                    ReferenciaVisions: a.REFERENCIA,
-                    CentroCostoVisions: centroCostoVisions.ToString(),
-                    Nombre: a.DETALLE,
-                    Costo: a.COSTO,
-                    PPublico: a.PPUBLICO,
-                    FechaCambio: DateTime.Now), ct);
+                    ReferenciaVisions:    a.REFERENCIA,
+                    CentroCostoVisions:   centroCostoVisions.ToString(),
+                    Nombre:               a.DETALLE,
+                    Costo:                a.COSTO,
+                    PPublico:             a.PPUBLICO,
+                    FechaCambio:          DateTime.Now,
+                    MarcaCodigo:          a.MarcaCodigo,
+                    GrupoMenorCodigo:     a.GrupoMenorCodigo,
+                    PresentacionCodigo:   a.PresentacionCodigo,
+                    IvaSiNo:              a.IvaSiNo ?? "SI",
+                    IvaValor:             a.IvaValor,
+                    IvaDescripcion:       a.IvaDescripcion,
+                    Iva2:                 a.Iva2,
+                    IvaDescripcion2:      a.IvaDescripcion2,
+                    PBodega:              a.PBodega,
+                    PCredito:             a.PCredito,
+                    UPublico:             a.UPublico,
+                    UBodega:              a.UBodega,
+                    UCredito:             a.UCredito), ct);
 
                 // Marcar en NEXO_TarjetasCambios como procesado para no repetir.
                 await connection.ExecuteAsync(@"
@@ -80,5 +108,11 @@ public class TareaDetectarArticulosFaltantes
         _logger.LogInformation("TareaDetectarArticulosFaltantes: lote completado ({N} articulos)", articulos.Count);
     }
 
-    private record ArticuloVisions(string REFERENCIA, string? DETALLE, decimal? COSTO, decimal? PPUBLICO);
+    private record ArticuloVisions(
+        string REFERENCIA, string? DETALLE, decimal? COSTO, decimal? PPUBLICO,
+        decimal? PBodega, decimal? PCredito,
+        decimal? UPublico, decimal? UBodega, decimal? UCredito,
+        string? MarcaCodigo, string? GrupoMenorCodigo, string? PresentacionCodigo,
+        string? IvaSiNo, decimal? IvaValor, string? IvaDescripcion,
+        decimal? Iva2, string? IvaDescripcion2);
 }

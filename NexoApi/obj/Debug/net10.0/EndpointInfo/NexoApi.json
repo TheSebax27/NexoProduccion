@@ -25,6 +25,31 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "tamano",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 100
+            }
           }
         ],
         "responses": {
@@ -33,26 +58,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ArticuloItem"
-                  }
+                  "$ref": "#/components/schemas/ArticulosPaginadosResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ArticuloItem"
-                  }
+                  "$ref": "#/components/schemas/ArticulosPaginadosResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ArticuloItem"
-                  }
+                  "$ref": "#/components/schemas/ArticulosPaginadosResponse"
                 }
               }
             }
@@ -165,6 +181,61 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/articulos/todos": {
+      "get": {
+        "tags": [
+          "Articulos"
+        ],
+        "parameters": [
+          {
+            "name": "tipoArticuloId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ArticuloItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ArticuloItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ArticuloItem"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -5080,6 +5151,24 @@
               "type": "string",
               "format": "date-time"
             }
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "tamano",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
           }
         ],
         "responses": {
@@ -5088,26 +5177,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FacturaItem"
-                  }
+                  "$ref": "#/components/schemas/FacturasPaginadasResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FacturaItem"
-                  }
+                  "$ref": "#/components/schemas/FacturasPaginadasResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FacturaItem"
-                  }
+                  "$ref": "#/components/schemas/FacturasPaginadasResponse"
                 }
               }
             }
@@ -5888,6 +5968,44 @@
         }
       }
     },
+    "/api/integracion/progreso-sync": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProgresoSyncResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProgresoSyncResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProgresoSyncResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/integracion/eventos-salientes/{id}/fallar": {
       "post": {
         "tags": [
@@ -6378,6 +6496,27 @@
         }
       }
     },
+    "/api/integracion/sync/articulo-inactivar": {
+      "post": {
+        "tags": [
+          "Integracion"
+        ],
+        "parameters": [
+          {
+            "name": "referencia",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/integracion/sync/clientes": {
       "get": {
         "tags": [
@@ -6516,6 +6655,115 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/salud-catalogo": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaludCatalogoResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaludCatalogoResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaludCatalogoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integracion/ventas-visions": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "parameters": [
+          {
+            "name": "centroCostoId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "tipDoc",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "tamano",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/VentasVisionsPaginadasResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VentasVisionsPaginadasResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VentasVisionsPaginadasResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -13138,6 +13386,31 @@
         },
         "additionalProperties": false
       },
+      "ArticulosPaginadosResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArticuloItem"
+            },
+            "nullable": true
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pagina": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tamano": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "AsignarHorarioRequest": {
         "type": "object",
         "properties": {
@@ -16473,6 +16746,57 @@
           "marcaCodigo": {
             "type": "string",
             "nullable": true
+          },
+          "iva2": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "ivaDescripcion2": {
+            "type": "string",
+            "nullable": true
+          },
+          "grupoMenorCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "ivaSiNo": {
+            "type": "string",
+            "nullable": true
+          },
+          "ivaValor": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "ivaDescripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "pBodega": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pCredito": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uPublico": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uBodega": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uCredito": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -16644,6 +16968,31 @@
           "esInsuficiente": {
             "type": "boolean",
             "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FacturasPaginadasResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FacturaItem"
+            },
+            "nullable": true
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pagina": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tamano": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -18125,6 +18474,45 @@
         },
         "additionalProperties": false
       },
+      "ProgresoSyncResponse": {
+        "type": "object",
+        "properties": {
+          "agenteSyncID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nombreCentroCosto": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalArticulosNexo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalMapeados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPendientesMapeo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalEventosProcesados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalFacturasVisions": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ultimoLatido": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ProveedorItem": {
         "type": "object",
         "properties": {
@@ -18482,6 +18870,14 @@
           "clienteNombre": {
             "type": "string",
             "nullable": true
+          },
+          "tipDoc": {
+            "type": "string",
+            "nullable": true
+          },
+          "nroDoc": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -18814,6 +19210,44 @@
         },
         "additionalProperties": false
       },
+      "SaludCatalogoResponse": {
+        "type": "object",
+        "properties": {
+          "totalArticulos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "articulosCompletos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "articulosSinDatos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalMarcas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalGruposMayor": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalGruposMenor": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPresentaciones": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalClientes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "StockConsolidadoItem": {
         "type": "object",
         "properties": {
@@ -19053,6 +19487,65 @@
           "fechaCambio": {
             "type": "string",
             "format": "date-time"
+          },
+          "marcaCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "grupoMenorCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "presentacionCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "ivaSiNo": {
+            "type": "string",
+            "nullable": true
+          },
+          "ivaValor": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "ivaDescripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "iva2": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "ivaDescripcion2": {
+            "type": "string",
+            "nullable": true
+          },
+          "pBodega": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pCredito": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uPublico": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uBodega": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uCredito": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -19378,6 +19871,69 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "VentaVisionsItem": {
+        "type": "object",
+        "properties": {
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tipDoc": {
+            "type": "string",
+            "nullable": true
+          },
+          "nroDoc": {
+            "type": "string",
+            "nullable": true
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nitCliente": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreCliente": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalVenta": {
+            "type": "number",
+            "format": "double"
+          },
+          "lineas": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VentasVisionsPaginadasResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VentaVisionsItem"
+            },
+            "nullable": true
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pagina": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tamano": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false

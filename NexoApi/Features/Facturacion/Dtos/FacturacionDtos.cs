@@ -54,6 +54,8 @@ public record FacturaLineaStockItem(
     public bool EsInsuficiente => StockDisponible < CantidadFacturada;
 }
 
+public record FacturasPaginadasResponse(List<FacturaItem> Items, int Total, int Pagina, int Tamano);
+
 // ──────────────────────── Pagos ────────────────────────
 public record PagoItem(int PagoID, int FacturaID, decimal Monto, DateTime FechaPago, string MetodoPago, string? Notas, string? Usuario);
 public record CrearPagoRequest(int FacturaID, decimal Monto, DateTime FechaPago, string MetodoPago, string? Notas);

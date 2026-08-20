@@ -378,11 +378,26 @@
         "Name": "texto",
         "Type": "System.String",
         "IsRequired": false
+      },
+      {
+        "Name": "estado",
+        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "pagina",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "tamano",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Catalogo.Dtos.ArticuloItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "NexoApi.Features.Catalogo.Dtos.ArticulosPaginadosResponse",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -519,6 +534,37 @@
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Catalogo.Dtos.TipoArticuloItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Catalogo.ArticulosController",
+    "Method": "ListarTodos",
+    "RelativePath": "api/catalogo/articulos/todos",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "tipoArticuloId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "estado",
+        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Catalogo.Dtos.ArticuloItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2574,11 +2620,21 @@
         "Name": "hasta",
         "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": false
+      },
+      {
+        "Name": "pagina",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "tamano",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Facturacion.Dtos.FacturaItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "NexoApi.Features.Facturacion.Dtos.FacturasPaginadasResponse",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3382,6 +3438,46 @@
   },
   {
     "ContainingType": "NexoApi.Features.Integracion.IntegracionController",
+    "Method": "ObtenerProgreso",
+    "RelativePath": "api/integracion/progreso-sync",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Integracion.Dtos.ProgresoSyncResponse, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Integracion.IntegracionController",
+    "Method": "ObtenerSaludCatalogo",
+    "RelativePath": "api/integracion/salud-catalogo",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Integracion.Dtos.SaludCatalogoResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Integracion.IntegracionController",
     "Method": "SyncArticuloDesdeVisions",
     "RelativePath": "api/integracion/sync/articulo-desde-visions",
     "HttpMethod": "POST",
@@ -3392,6 +3488,22 @@
         "Name": "request",
         "Type": "NexoApi.Features.Integracion.Dtos.SyncArticuloDesdeVisionsRequest",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Integracion.IntegracionController",
+    "Method": "InactivarArticuloDesdeVisions",
+    "RelativePath": "api/integracion/sync/articulo-inactivar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "referencia",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -3429,6 +3541,57 @@
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Integracion.Dtos.ClienteParaSyncDto, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Integracion.IntegracionController",
+    "Method": "ListarVentasVisions",
+    "RelativePath": "api/integracion/ventas-visions",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "centroCostoId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "tipDoc",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "desde",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "hasta",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "pagina",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "tamano",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Integracion.Dtos.VentasVisionsPaginadasResponse",
         "MediaTypes": [
           "text/plain",
           "application/json",

@@ -95,7 +95,7 @@ else
     {
         try
         {
-            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
             var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true");
             var tareaDemanda = ApiClient.GetAsync<List<DemandaProyectadaItem>>("api/planificacion/demanda");
             var tareaHistorico = ApiClient.GetAsync<List<HistoricoCumplimientoItem>>("api/planificacion/historico-cumplimiento?meses=12");

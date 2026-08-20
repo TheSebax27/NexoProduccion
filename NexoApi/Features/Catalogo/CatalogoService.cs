@@ -20,7 +20,8 @@ public interface ICatalogoService
 
     // Articulos / Tarjetas
     Task<int> CrearArticuloAsync(CrearArticuloRequest request);
-    Task<IEnumerable<ArticuloItem>> ListarArticulosAsync(int? tipoArticuloId, string? texto);
+    Task<ArticulosPaginadosResponse> ListarArticulosAsync(int? tipoArticuloId, string? texto, bool? estado = null, int pagina = 1, int tamano = 100);
+    Task<IEnumerable<ArticuloItem>> ListarTodosArticulosAsync(int? tipoArticuloId = null, bool? estado = null);
     Task<ArticuloItem?> ObtenerArticuloAsync(int articuloId);
     Task ActualizarArticuloAsync(int articuloId, ActualizarArticuloRequest request);
     Task<(byte[] Datos, string ContentType)?> ObtenerImagenArticuloAsync(int articuloId);
@@ -217,22 +218,62 @@ public class CatalogoService : ICatalogoService
                  @MarcaCodigo, @GrupoMenorCodigo, @PresentacionCodigo,
                  @Peso, @IvaSiNo, @IvaValor, @IvaDescripcion, @Iva2, @IvaDescripcion2)";
 
-        return await connection.ExecuteScalarAsync<int>(sql, r);
+        var articuloId = await connection.ExecuteScalarAsync<int>(sql, r);
+
+        // Auto-mapear a todos los centros de costo con Visions y crear evento de sync inicial.
+        // Usa la propia Referencia del articulo como CodigoArticuloVisions (convencion NEXO↔Visions).
+        await connection.ExecuteAsync(@"
+            INSERT INTO Integracion.MapeoArticulos (ArticuloID, CentroCostoID, CodigoArticuloVisions, Estado)
+            SELECT @ArticuloId, cc.CentroCostoID, @Referencia, 1
+            FROM Organizacion.CentrosCosto cc
+            WHERE cc.TieneVisions = 1
+              AND NOT EXISTS (
+                  SELECT 1 FROM Integracion.MapeoArticulos ma
+                  WHERE ma.ArticuloID = @ArticuloId AND ma.CentroCostoID = cc.CentroCostoID);
+
+            INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
+            SELECT 'SINCRONIZAR_ARTICULO', ma.CentroCostoID, ma.ArticuloID, 0, ISNULL(a.CostoPromedio, 0)
+            FROM Integracion.MapeoArticulos ma
+            JOIN Catalogo.Tarjetas a          ON a.ArticuloID     = ma.ArticuloID
+            JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = ma.CentroCostoID
+            WHERE ma.ArticuloID = @ArticuloId AND ma.Estado = 1 AND cc.TieneVisions = 1",
+            new { ArticuloId = articuloId, r.Referencia });
+
+        return articuloId;
     }
 
-    public async Task<IEnumerable<ArticuloItem>> ListarArticulosAsync(int? tipoArticuloId, string? texto)
+    public async Task<ArticulosPaginadosResponse> ListarArticulosAsync(int? tipoArticuloId, string? texto, bool? estado = null, int pagina = 1, int tamano = 100)
     {
         using var connection = _db.CreateConnection();
+        var offset = (pagina - 1) * tamano;
 
-        const string sql = @"
+        const string sqlBase = @"
+            FROM Catalogo.Tarjetas a
+            JOIN Catalogo.TiposArticulo ta ON ta.TipoArticuloID = a.TipoArticuloID
+            LEFT JOIN Catalogo.Marca m ON m.Codigo = a.MarcaCodigo
+            LEFT JOIN Catalogo.GrupoMenor gm ON gm.Codigo = a.GrupoMenorCodigo
+            LEFT JOIN Catalogo.GrupoMayor gmay ON gmay.Codigo = gm.GrupoMayor
+            LEFT JOIN Catalogo.Presentacion p ON p.Codigo = a.PresentacionCodigo
+            LEFT JOIN (
+                SELECT ArticuloID, SUM(CantidadActual) AS Existencias
+                FROM Inventario.InventarioStock
+                GROUP BY ArticuloID
+            ) stk ON stk.ArticuloID = a.ArticuloID
+            WHERE (@TipoArticuloId IS NULL OR a.TipoArticuloID = @TipoArticuloId)
+              AND (@Texto IS NULL OR a.Nombre LIKE '%' + @Texto + '%' OR a.Referencia LIKE '%' + @Texto + '%')
+              AND (@Estado IS NULL OR a.Estado = @Estado)";
+
+        var total = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) " + sqlBase,
+            new { TipoArticuloId = tipoArticuloId, Texto = texto, Estado = estado });
+
+        var items = (await connection.QueryAsync<ArticuloItem>(@"
             SELECT a.ArticuloID, a.Referencia, a.Nombre, a.Descripcion, ta.Nombre AS TipoArticulo,
                    a.CostoPromedio, a.StockMinimo, a.PuntoReorden, a.Estado,
-                   (SELECT ISNULL(SUM(ist.CantidadActual),0) FROM Inventario.InventarioStock ist WHERE ist.ArticuloID = a.ArticuloID) AS Existencias,
-                   a.DiasVidaUtil,
-                   p.Fracciones,
+                   ISNULL(stk.Existencias, 0) AS Existencias,
+                   a.DiasVidaUtil, p.Fracciones,
                    CAST(CASE WHEN a.Imagen IS NULL THEN 0 ELSE 1 END AS BIT) AS TieneImagen,
-                   a.Fracciona, a.PrecioVentaUnidad,
-                   a.Costo,
+                   a.Fracciona, a.PrecioVentaUnidad, a.Costo,
                    a.PPublico, a.PBodega, a.PCredito,
                    a.UPublico,  a.UBodega, a.UCredito,
                    a.MarcaCodigo, m.Marca AS MarcaNombre,
@@ -240,18 +281,52 @@ public class CatalogoService : ICatalogoService
                    gm.GrupoMayor AS GrupoMayorCodigo, gmay.Nombre AS GrupoMayorNombre,
                    a.PresentacionCodigo, p.Presentacion AS PresentacionNombre,
                    a.Peso, a.IvaSiNo, a.IvaValor, a.IvaDescripcion,
-                   a.Iva2, a.IvaDescripcion2
+                   a.Iva2, a.IvaDescripcion2 " + sqlBase + @"
+            ORDER BY a.Nombre
+            OFFSET @Offset ROWS FETCH NEXT @Tamano ROWS ONLY",
+            new { TipoArticuloId = tipoArticuloId, Texto = texto, Estado = estado, Offset = offset, Tamano = tamano },
+            commandTimeout: 60)).ToList();
+
+        return new ArticulosPaginadosResponse(items, total, pagina, tamano);
+    }
+
+    public async Task<IEnumerable<ArticuloItem>> ListarTodosArticulosAsync(int? tipoArticuloId = null, bool? estado = null)
+    {
+        using var connection = _db.CreateConnection();
+
+        const string sqlBase = @"
             FROM Catalogo.Tarjetas a
             JOIN Catalogo.TiposArticulo ta ON ta.TipoArticuloID = a.TipoArticuloID
             LEFT JOIN Catalogo.Marca m ON m.Codigo = a.MarcaCodigo
             LEFT JOIN Catalogo.GrupoMenor gm ON gm.Codigo = a.GrupoMenorCodigo
             LEFT JOIN Catalogo.GrupoMayor gmay ON gmay.Codigo = gm.GrupoMayor
             LEFT JOIN Catalogo.Presentacion p ON p.Codigo = a.PresentacionCodigo
+            LEFT JOIN (
+                SELECT ArticuloID, SUM(CantidadActual) AS Existencias
+                FROM Inventario.InventarioStock
+                GROUP BY ArticuloID
+            ) stk ON stk.ArticuloID = a.ArticuloID
             WHERE (@TipoArticuloId IS NULL OR a.TipoArticuloID = @TipoArticuloId)
-              AND (@Texto IS NULL OR a.Nombre LIKE '%' + @Texto + '%' OR a.Referencia LIKE '%' + @Texto + '%')
-            ORDER BY a.Nombre";
+              AND (@Estado IS NULL OR a.Estado = @Estado)";
 
-        return await connection.QueryAsync<ArticuloItem>(sql, new { TipoArticuloId = tipoArticuloId, Texto = texto });
+        return await connection.QueryAsync<ArticuloItem>(@"
+            SELECT a.ArticuloID, a.Referencia, a.Nombre, a.Descripcion, ta.Nombre AS TipoArticulo,
+                   a.CostoPromedio, a.StockMinimo, a.PuntoReorden, a.Estado,
+                   ISNULL(stk.Existencias, 0) AS Existencias,
+                   a.DiasVidaUtil, p.Fracciones,
+                   CAST(CASE WHEN a.Imagen IS NULL THEN 0 ELSE 1 END AS BIT) AS TieneImagen,
+                   a.Fracciona, a.PrecioVentaUnidad, a.Costo,
+                   a.PPublico, a.PBodega, a.PCredito,
+                   a.UPublico,  a.UBodega, a.UCredito,
+                   a.MarcaCodigo, m.Marca AS MarcaNombre,
+                   a.GrupoMenorCodigo, gm.Nombre AS GrupoMenorNombre,
+                   gm.GrupoMayor AS GrupoMayorCodigo, gmay.Nombre AS GrupoMayorNombre,
+                   a.PresentacionCodigo, p.Presentacion AS PresentacionNombre,
+                   a.Peso, a.IvaSiNo, a.IvaValor, a.IvaDescripcion,
+                   a.Iva2, a.IvaDescripcion2 " + sqlBase + @"
+            ORDER BY a.Nombre",
+            new { TipoArticuloId = tipoArticuloId, Estado = estado },
+            commandTimeout: 60);
     }
 
     public async Task<ArticuloItem?> ObtenerArticuloAsync(int articuloId)

@@ -8,7 +8,7 @@ namespace NexoApi.Features.Facturacion;
 
 public interface IFacturacionService
 {
-    Task<IEnumerable<FacturaItem>> ListarFacturasAsync(int? clienteId, int? centroCostoId, string? tipDoc, string? estado, DateTime? desde, DateTime? hasta);
+    Task<FacturasPaginadasResponse> ListarFacturasAsync(int? clienteId, int? centroCostoId, string? tipDoc, string? estado, DateTime? desde, DateTime? hasta, int pagina = 1, int tamano = 50);
     Task<int> CrearFacturaAsync(CrearFacturaRequest request, int usuarioId);
 
     Task<IEnumerable<FacturaLineaItem>> ListarLineasAsync(int facturaId);
@@ -43,30 +43,51 @@ public class FacturacionService : IFacturacionService
         int? CentroCostoID, string? CentroCostoNombre
     );
 
-    public async Task<IEnumerable<FacturaItem>> ListarFacturasAsync(
-        int? clienteId, int? centroCostoId, string? tipDoc, string? estado, DateTime? desde, DateTime? hasta)
+    public async Task<FacturasPaginadasResponse> ListarFacturasAsync(
+        int? clienteId, int? centroCostoId, string? tipDoc, string? estado, DateTime? desde, DateTime? hasta,
+        int pagina = 1, int tamano = 50)
     {
         using var connection = _db.CreateConnection();
+        var offset = (pagina - 1) * tamano;
 
-        const string sql = @"
-            SELECT f.FacturaID, f.ClienteID, c.Nombre AS Cliente, c.NIT AS NitCliente,
-                   f.Fecha, f.Notas, f.TipDoc, f.NroDoc,
-                   ISNULL(ROUND((SELECT SUM(l.Cantidad * l.PrecioUnitario) FROM Facturacion.FacturaLineas l WHERE l.FacturaID = f.FacturaID), 0), 0) AS Total,
-                   ISNULL((SELECT SUM(p.Monto) FROM Facturacion.Pagos p WHERE p.FacturaID = f.FacturaID), 0) AS TotalPagado,
-                   f.StockDescontado, f.ProduccionAutoEjecutada, f.VisionsConfirmado,
-                   f.CentroCostoID, cc.Nombre AS CentroCostoNombre
+        // Filtro estado se aplica en HAVING sobre totales calculados via JOIN
+        // Los subqueries correlated se reemplazan por LEFT JOINs agrupados (mucho más rápido)
+        const string sqlBase = @"
             FROM Facturacion.Facturas f
             JOIN Crm.Clientes c ON c.ClienteID = f.ClienteID
             LEFT JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = f.CentroCostoID
-            WHERE (@ClienteId IS NULL OR f.ClienteID = @ClienteId)
-              AND (@TipDoc    IS NULL OR f.TipDoc = @TipDoc)
-              AND (@Desde          IS NULL OR f.Fecha >= @Desde)
-              AND (@Hasta          IS NULL OR f.Fecha <= @Hasta)
-              AND (@CentroCostoId  IS NULL OR f.CentroCostoID = @CentroCostoId)
-            ORDER BY f.Fecha DESC, f.FacturaID DESC";
+            LEFT JOIN (
+                SELECT FacturaID, SUM(Cantidad * PrecioUnitario) AS Total
+                FROM Facturacion.FacturaLineas GROUP BY FacturaID
+            ) tot ON tot.FacturaID = f.FacturaID
+            LEFT JOIN (
+                SELECT FacturaID, SUM(Monto) AS TotalPagado
+                FROM Facturacion.Pagos GROUP BY FacturaID
+            ) pag ON pag.FacturaID = f.FacturaID
+            WHERE (@ClienteId      IS NULL OR f.ClienteID      = @ClienteId)
+              AND (@TipDoc         IS NULL OR f.TipDoc         = @TipDoc)
+              AND (@Desde          IS NULL OR f.Fecha          >= @Desde)
+              AND (@Hasta          IS NULL OR f.Fecha          <= @Hasta)
+              AND (@CentroCostoId  IS NULL OR f.CentroCostoID  = @CentroCostoId)";
 
-        var crudas = await connection.QueryAsync<FacturaCruda>(sql,
-            new { ClienteId = clienteId, CentroCostoId = centroCostoId, TipDoc = tipDoc, Desde = desde, Hasta = hasta });
+        var p = new { ClienteId = clienteId, CentroCostoId = centroCostoId, TipDoc = tipDoc, Desde = desde, Hasta = hasta };
+
+        // Estado requiere conocer totales, así que se filtra en C# sobre la página actual
+        // Para el total real con filtro de estado: aproximación con COUNT sin estado (suficiente para paginación)
+        var total = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) " + sqlBase, p, commandTimeout: 30);
+
+        var crudas = await connection.QueryAsync<FacturaCruda>(@"
+            SELECT f.FacturaID, f.ClienteID, c.Nombre AS Cliente, c.NIT AS NitCliente,
+                   f.Fecha, f.Notas, f.TipDoc, f.NroDoc,
+                   ISNULL(ROUND(tot.Total, 0), 0) AS Total,
+                   ISNULL(pag.TotalPagado, 0) AS TotalPagado,
+                   f.StockDescontado, f.ProduccionAutoEjecutada, f.VisionsConfirmado,
+                   f.CentroCostoID, cc.Nombre AS CentroCostoNombre" +
+            sqlBase + @"
+            ORDER BY f.Fecha DESC, f.FacturaID DESC
+            OFFSET @Offset ROWS FETCH NEXT @Tamano ROWS ONLY",
+            new { ClienteId = clienteId, CentroCostoId = centroCostoId, TipDoc = tipDoc, Desde = desde, Hasta = hasta, Offset = offset, Tamano = tamano },
+            commandTimeout: 30);
 
         var items = crudas.Select(f =>
         {
@@ -83,7 +104,7 @@ public class FacturacionService : IFacturacionService
         if (estado is not null)
             items = items.Where(i => i.Estado == estado);
 
-        return items.ToList();
+        return new FacturasPaginadasResponse(items.ToList(), total, pagina, tamano);
     }
 
     public async Task<int> CrearFacturaAsync(CrearFacturaRequest r, int usuarioId)

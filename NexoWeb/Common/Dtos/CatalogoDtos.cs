@@ -192,6 +192,8 @@ public record CrearProveedorRequest(string RazonSocial, string NIT, string? Cont
 public record ActualizarProveedorRequest(string RazonSocial, string NIT, string? Contacto, string? Telefono, string? Email, string? Direccion, bool Estado);
 
 public record TipoArticuloItem(int TipoArticuloID, string Codigo, string Nombre);
+
+public record ArticulosPaginadosResponse(List<ArticuloItem> Items, int Total, int Pagina, int Tamano);
 public record UnidadMedidaItem(int UnidadID, string Nombre, string Abreviatura, string Tipo);
 
 // ── Catalogo: Iva (calca de dbo.IVA de Visions) ────────────────────────

@@ -106,6 +106,8 @@ public record ActualizarImagenRequest(string Base64, string ContentType);
 
 // Catalogos base para selectores en formularios
 public record TipoArticuloItem(int TipoArticuloID, string Codigo, string Nombre);
+
+public record ArticulosPaginadosResponse(List<ArticuloItem> Items, int Total, int Pagina, int Tamano);
 public record UnidadMedidaItem(int UnidadID, string Nombre, string Abreviatura, string Tipo);
 
 // ---------- Catalogo: Iva (= dbo.IVA en Visions) ----------

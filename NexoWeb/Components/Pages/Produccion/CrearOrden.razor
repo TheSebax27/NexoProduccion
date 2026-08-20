@@ -1,4 +1,4 @@
-@page "/produccion/ordenes/crear"
+﻿@page "/produccion/ordenes/crear"
 @page "/produccion/ordenes/{OrdenProduccionId:int}/editar"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
@@ -478,7 +478,7 @@ else
     {
         var tareaTipos      = ApiClient.GetAsync<List<TipoProduccionItem>>("api/produccion/ordenes/tipos-produccion");
         var tareaClientes   = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
-        var tareaProductos  = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+        var tareaProductos  = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
         var tareaCentros    = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
         var tareaBodegas    = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
         var tareaCtrabajo   = ApiClient.GetAsync<List<CentroTrabajoItem>>("api/catalogo/centros-trabajo");

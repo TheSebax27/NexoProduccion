@@ -122,6 +122,8 @@ public class TareaSincronizarClientes
 
         foreach (var u in usuarios)
         {
+            if (ct.IsCancellationRequested) break;
+
             try
             {
                 var esJuridica = (u.TIPOTERCERO ?? "").Contains("JURIDICA", StringComparison.OrdinalIgnoreCase)
@@ -141,6 +143,10 @@ public class TareaSincronizarClientes
                     Departamento: u.DEPARTAMENTO,
                     Ciudad: u.CIUDAD
                 ), ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                break;
             }
             catch (Exception ex)
             {

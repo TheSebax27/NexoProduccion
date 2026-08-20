@@ -1,4 +1,4 @@
-@page "/produccion/recetas"
+﻿@page "/produccion/recetas"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -169,7 +169,7 @@ else
     {
         try
         {
-            _articulos = (await ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos") ?? new())
+            _articulos = (await ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos") ?? new())
                 .Where(a => a.TipoArticulo == "Producto Terminado")
                 .ToList();
             await CargarAsync();

@@ -1,4 +1,4 @@
-@page "/produccion/recetas/crear"
+﻿@page "/produccion/recetas/crear"
 @page "/produccion/recetas/{RecetaBaseId:int}/nueva-version"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
@@ -253,7 +253,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+        var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
         var tareaCentrosTrabajo = ApiClient.GetAsync<List<CentroTrabajoItem>>("api/catalogo/centros-trabajo");
         var tareaMaquinas = ApiClient.GetAsync<List<MaquinariaItem>>("api/produccion/maquinaria?estado=Activa");
 

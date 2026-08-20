@@ -1,4 +1,4 @@
-@page "/admin/integracion-visions"
+﻿@page "/admin/integracion-visions"
 @attribute [Authorize(Roles = "Administracion")]
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -636,6 +636,215 @@
         }
     </MudTabPanel>
 
+    <!-- ══════════════════════════════════════ TAB 5: PROGRESO DE SYNC -->
+    <MudTabPanel Text="Progreso de sync" Icon="@Icons.Material.Outlined.Sync">
+
+        @if (_cargandoProgreso)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+        }
+        else if (!_progreso.Any())
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4">No hay agentes registrados aún.</MudAlert>
+        }
+        else
+        {
+            @foreach (var p in _progreso)
+            {
+                var pctMapeados  = p.TotalArticulosNexo > 0 ? (double)p.TotalMapeados / p.TotalArticulosNexo * 100 : 0;
+                var totalVisions = p.TotalMapeados + p.TotalPendientesMapeo;
+                var pctResuelt   = totalVisions > 0 ? (double)p.TotalMapeados / totalVisions * 100 : 100;
+
+                <MudPaper Class="mb-4 pa-6" Elevation="0"
+                          Style="border: 1px solid var(--mud-palette-divider); border-radius: 16px;">
+
+                    <div class="d-flex justify-space-between align-center mb-4">
+                        <div class="d-flex align-center gap-2">
+                            <MudIcon Icon="@Icons.Material.Outlined.Store" Color="Color.Primary" />
+                            <MudText Typo="Typo.h6">@p.NombreCentroCosto</MudText>
+                        </div>
+                        @if (p.UltimoLatido.HasValue)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">
+                                Último latido: @p.UltimoLatido.Value.ToLocalTime().ToString("dd/MM HH:mm")
+                            </MudChip>
+                        }
+                    </div>
+
+                    <MudGrid Spacing="3">
+
+                        <!-- Artículos mapeados -->
+                        <MudItem xs="12" md="6">
+                            <MudText Typo="Typo.body2" Class="mb-1">
+                                <strong>Artículos de Visions mapeados en NEXO</strong>
+                                &nbsp;— @p.TotalMapeados de @totalVisions
+                            </MudText>
+                            <MudProgressLinear Value="@pctResuelt" Color="Color.Success" Rounded="true" Size="Size.Large" Class="mb-1" />
+                            @if (p.TotalPendientesMapeo > 0)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Warning">
+                                    @p.TotalPendientesMapeo artículo(s) aún sin mapear
+                                </MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Success">¡Todo mapeado!</MudText>
+                            }
+                        </MudItem>
+
+                        <!-- Artículos en catálogo NEXO -->
+                        <MudItem xs="12" md="6">
+                            <MudText Typo="Typo.body2" Class="mb-1">
+                                <strong>Artículos totales en catálogo NEXO</strong>
+                                &nbsp;— @p.TotalMapeados vinculados de @p.TotalArticulosNexo totales
+                            </MudText>
+                            <MudProgressLinear Value="@pctMapeados" Color="Color.Primary" Rounded="true" Size="Size.Large" Class="mb-1" />
+                            <MudText Typo="Typo.caption">@p.TotalArticulosNexo artículos en NEXO</MudText>
+                        </MudItem>
+
+                        <!-- Ventas procesadas -->
+                        <MudItem xs="12" md="6">
+                            <div class="d-flex align-center gap-2 mb-2">
+                                <MudIcon Icon="@Icons.Material.Outlined.ShoppingCart" Color="Color.Secondary" Size="Size.Small" />
+                                <MudText Typo="Typo.body2"><strong>Ventas de Visions procesadas</strong></MudText>
+                            </div>
+                            <MudText Typo="Typo.h4" Color="Color.Secondary">@p.TotalEventosProcesados.ToString("N0")</MudText>
+                            <MudText Typo="Typo.caption">movimientos de inventario aplicados</MudText>
+                        </MudItem>
+
+                        <!-- Facturas creadas -->
+                        <MudItem xs="12" md="6">
+                            <div class="d-flex align-center gap-2 mb-2">
+                                <MudIcon Icon="@Icons.Material.Outlined.Receipt" Color="Color.Tertiary" Size="Size.Small" />
+                                <MudText Typo="Typo.body2"><strong>Facturas de Visions en NEXO</strong></MudText>
+                            </div>
+                            <MudText Typo="Typo.h4" Color="Color.Tertiary">@p.TotalFacturasVisions.ToString("N0")</MudText>
+                            <MudText Typo="Typo.caption">visibles en Facturación → Historial</MudText>
+                        </MudItem>
+
+                    </MudGrid>
+                </MudPaper>
+            }
+
+            <div class="d-flex justify-end mt-2">
+                <MudButton StartIcon="@Icons.Material.Outlined.Refresh" Variant="Variant.Text"
+                           OnClick="@(async () => await CargarProgresoAsync())" Size="Size.Small">
+                    Actualizar
+                </MudButton>
+                <MudText Typo="Typo.caption" Class="align-self-center ml-2" Style="color:var(--mud-palette-text-disabled)">
+                    Se actualiza automáticamente cada 30 s
+                </MudText>
+            </div>
+        }
+
+    </MudTabPanel>
+
+    <!-- ══════════════════════════════════════ TAB 6: SALUD DEL CATÁLOGO -->
+    <MudTabPanel Text="Salud del catálogo" Icon="@Icons.Material.Outlined.HealthAndSafety">
+
+        <div class="d-flex align-center gap-3 mb-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Outlined.Refresh"
+                       OnClick="CargarSaludAsync" Disabled="_cargandoSalud">
+                @(_cargandoSalud ? "Consultando..." : "Actualizar estadísticas")
+            </MudButton>
+            @if (_salud is not null)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    Última consulta: @_saludFecha.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")
+                </MudText>
+            }
+        </div>
+
+        @if (_cargandoSalud)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+        }
+        else if (_salud is null)
+        {
+            <MudAlert Severity="Severity.Info">Haz clic en <strong>"Actualizar estadísticas"</strong> para consultar el estado del catálogo en tiempo real.</MudAlert>
+        }
+        else
+        {
+            <!-- ── Artículos ── -->
+            <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-2" Style="display:block; letter-spacing:.08em;">ARTÍCULOS</MudText>
+            <MudGrid Spacing="3" Class="mb-4">
+                <MudItem xs="12" sm="4">
+                    <MudPaper Class="pa-4" Elevation="0" Style="border:1px solid var(--mud-palette-divider); border-radius:12px; text-align:center;">
+                        <MudIcon Icon="@Icons.Material.Outlined.Inventory" Color="Color.Primary" Size="Size.Large" />
+                        <MudText Typo="Typo.h4" Style="font-weight:700; margin-top:4px;">@_salud.TotalArticulos.ToString("N0")</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Total en NEXO</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudPaper Class="pa-4" Elevation="0" Style="border:1px solid var(--mud-palette-divider); border-radius:12px; text-align:center;">
+                        <MudIcon Icon="@Icons.Material.Outlined.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                        <MudText Typo="Typo.h4" Style="font-weight:700; margin-top:4px; color:var(--mud-palette-success);">@_salud.ArticulosCompletos.ToString("N0")</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Con Marca e IVA completos</MudText>
+                        @if (_salud.TotalArticulos > 0)
+                        {
+                            var pct = (double)_salud.ArticulosCompletos / _salud.TotalArticulos * 100;
+                            <MudProgressLinear Value="@pct" Color="Color.Success" Rounded="true" Class="mt-2" />
+                            <MudText Typo="Typo.caption" Color="Color.Success">@pct.ToString("N1")%</MudText>
+                        }
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudPaper Class="pa-4" Elevation="0"
+                              Style="@($"border:1px solid var(--mud-palette-divider); border-radius:12px; text-align:center; {(_salud.ArticulosSinDatos > 0 ? "background:rgba(var(--mud-palette-error-rgb),.06);" : "")}")">
+                        <MudIcon Icon="@Icons.Material.Outlined.ErrorOutline"
+                                 Color="@(_salud.ArticulosSinDatos > 0 ? Color.Error : Color.Default)" Size="Size.Large" />
+                        <MudText Typo="Typo.h4" Style="@($"font-weight:700; margin-top:4px; color:{(_salud.ArticulosSinDatos > 0 ? "var(--mud-palette-error)" : "inherit")}")">
+                            @_salud.ArticulosSinDatos.ToString("N0")
+                        </MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Sin Marca o sin IVA</MudText>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+
+            <!-- ── Catálogos ── -->
+            <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-2" Style="display:block; letter-spacing:.08em;">TABLAS DE CATÁLOGO</MudText>
+            <MudGrid Spacing="3" Class="mb-4">
+                <MudItem xs="6" sm="3">
+                    <div style="padding:12px 16px; border-left:3px solid var(--mud-palette-primary); background:var(--mud-palette-background-grey); border-radius:0 10px 10px 0;">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Marcas</MudText>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@_salud.TotalMarcas</MudText>
+                    </div>
+                </MudItem>
+                <MudItem xs="6" sm="3">
+                    <div style="padding:12px 16px; border-left:3px solid var(--mud-palette-primary); background:var(--mud-palette-background-grey); border-radius:0 10px 10px 0;">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Grupos Mayor</MudText>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@_salud.TotalGruposMayor</MudText>
+                    </div>
+                </MudItem>
+                <MudItem xs="6" sm="3">
+                    <div style="padding:12px 16px; border-left:3px solid var(--mud-palette-primary); background:var(--mud-palette-background-grey); border-radius:0 10px 10px 0;">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Grupos Menor</MudText>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@_salud.TotalGruposMenor</MudText>
+                    </div>
+                </MudItem>
+                <MudItem xs="6" sm="3">
+                    <div style="padding:12px 16px; border-left:3px solid var(--mud-palette-primary); background:var(--mud-palette-background-grey); border-radius:0 10px 10px 0;">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Presentaciones</MudText>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@_salud.TotalPresentaciones</MudText>
+                    </div>
+                </MudItem>
+            </MudGrid>
+
+            <!-- ── Clientes ── -->
+            <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-2" Style="display:block; letter-spacing:.08em;">CLIENTES</MudText>
+            <MudGrid Spacing="3">
+                <MudItem xs="12" sm="4">
+                    <div style="padding:12px 16px; border-left:3px solid var(--mud-palette-info); background:var(--mud-palette-background-grey); border-radius:0 10px 10px 0;">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Clientes activos en NEXO</MudText>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:700; color:var(--mud-palette-info);">@_salud.TotalClientes</MudText>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        }
+
+    </MudTabPanel>
+
 </MudTabs>
 
 @code {
@@ -661,10 +870,19 @@
     private bool _guardando;
     private bool _descargando;
 
+    // ── Progreso de sincronización ───────────────────────────────────────
+    private bool _cargandoProgreso;
+    private List<ProgresoSyncResponse> _progreso = new();
+
     // ── Artículos pendientes de mapeo ────────────────────────────────────
     private bool _cargandoPendientes;
     private Dictionary<int, List<ArticuloPendienteMapeoItem>> _pendientesPorAgente = new();
     private int _totalPendientes => _pendientesPorAgente.Values.Sum(l => l.Count);
+
+    // ── Salud del catálogo ───────────────────────────────────────────────
+    private bool _cargandoSalud;
+    private SaludCatalogoResponse? _salud;
+    private DateTime _saludFecha;
 
     // ── Crear agente ─────────────────────────────────────────────────────
     private int? _nuevoCcId;
@@ -676,15 +894,35 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(CargarEstadoAsync(), CargarCatalogoAsync());
+        await Task.WhenAll(CargarEstadoAsync(), CargarCatalogoAsync(), CargarProgresoAsync());
         await CargarPendientesAsync();
         _timer = new System.Timers.Timer(30_000);
         _timer.Elapsed += async (_, _) =>
         {
-            await CargarEstadoAsync();
+            await Task.WhenAll(CargarEstadoAsync(), CargarProgresoAsync());
             await InvokeAsync(StateHasChanged);
         };
         _timer.Start();
+    }
+
+    private async Task CargarProgresoAsync()
+    {
+        _cargandoProgreso = true;
+        try { _progreso = await ApiClient.GetAsync<List<ProgresoSyncResponse>>("api/integracion/progreso-sync") ?? new(); }
+        catch { /* silencioso — no bloquea el resto de la UI */ }
+        finally { _cargandoProgreso = false; }
+    }
+
+    private async Task CargarSaludAsync()
+    {
+        _cargandoSalud = true;
+        try
+        {
+            _salud = await ApiClient.GetAsync<SaludCatalogoResponse>("api/integracion/salud-catalogo");
+            _saludFecha = DateTime.UtcNow;
+        }
+        catch (Exception ex) { Snackbar.Add($"Error al consultar salud: {ex.Message}", Severity.Error); }
+        finally { _cargandoSalud = false; }
     }
 
     private async Task CargarEstadoAsync()
@@ -727,7 +965,7 @@
         List<ArticuloItem> articulos;
         try
         {
-            articulos = await ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos") ?? new();
+            articulos = await ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos") ?? new();
         }
         catch { articulos = new(); }
 

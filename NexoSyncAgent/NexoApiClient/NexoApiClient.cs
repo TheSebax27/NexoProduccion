@@ -154,6 +154,12 @@ public class NexoApiClient : INexoApiClient
         r.EnsureSuccessStatusCode();
     }
 
+    public async Task InactivarArticuloDesdeVisionsAsync(string referencia, CancellationToken ct)
+    {
+        var r = await _http.PostAsync($"api/integracion/sync/articulo-inactivar?referencia={Uri.EscapeDataString(referencia)}", null, ct);
+        r.EnsureSuccessStatusCode();
+    }
+
     public async Task<List<ClienteParaSyncDto>> ListarClientesParaSyncAsync(DateTime? desde, CancellationToken ct)
     {
         var url = desde.HasValue

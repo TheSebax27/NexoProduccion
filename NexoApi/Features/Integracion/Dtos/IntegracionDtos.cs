@@ -16,8 +16,20 @@ public record EventoPendienteItem(
     decimal? StockMinimoArticulo,
     decimal? Fracciones,
     string? PresentacionCodigo,
-    string? MarcaCodigo
+    string? MarcaCodigo,
+    decimal? Iva2 = null,
+    string? IvaDescripcion2 = null,
+    string? GrupoMenorCodigo = null,
+    string? IvaSiNo = null,
+    decimal? IvaValor = null,
+    string? IvaDescripcion = null,
+    decimal? PBodega = null,
+    decimal? PCredito = null,
+    decimal? UPublico = null,
+    decimal? UBodega = null,
+    decimal? UCredito = null
 );
+
 
 // NombreArticuloVisions/CostoArticuloVisions/PrecioArticuloVisions: datos del
 // articulo tal como los tiene Visions en dbo.TARJETA al momento de la venta.
@@ -35,7 +47,9 @@ public record RegistrarEventoEntranteRequest(
     decimal? CostoArticuloVisions,
     decimal? PrecioArticuloVisions,
     string? ClienteNit,
-    string? ClienteNombre
+    string? ClienteNombre,
+    string? TipDoc = null,
+    string? NroDoc = null
 );
 
 // Configuracion que el Agente de Sincronizacion lee de NEXO y aplica en la
@@ -133,6 +147,19 @@ public record EstadoIntegracionResponse(
 // Tras 3 intentos fallidos el evento pasa a ERROR y deja de reintentarse.
 public record RegistrarFalloRequest(string MensajeError);
 
+// ---------- Progreso de sincronización (por agente) ----------
+
+public record ProgresoSyncResponse(
+    int AgenteSyncID,
+    string NombreCentroCosto,
+    int TotalArticulosNexo,          // Articulos en Catalogo.Tarjetas (global)
+    int TotalMapeados,               // Articulos de Visions con mapeo activo
+    int TotalPendientesMapeo,        // Articulos de Visions sin mapear aun
+    int TotalEventosProcesados,      // Ventas de Visions procesadas en NEXO
+    int TotalFacturasVisions,        // Facturas creadas en NEXO desde ventas Visions
+    DateTime? UltimoLatido
+);
+
 // ──────────── Actividad detallada del agente (panel de administración) ────────────
 
 public record EventoActividadItem(
@@ -205,7 +232,20 @@ public record SyncArticuloDesdeVisionsRequest(
     string? Nombre,
     decimal? Costo,
     decimal? PPublico,
-    DateTime FechaCambio
+    DateTime FechaCambio,
+    string? MarcaCodigo = null,
+    string? GrupoMenorCodigo = null,
+    string? PresentacionCodigo = null,
+    string? IvaSiNo = null,
+    decimal? IvaValor = null,
+    string? IvaDescripcion = null,
+    decimal? Iva2 = null,
+    string? IvaDescripcion2 = null,
+    decimal? PBodega = null,
+    decimal? PCredito = null,
+    decimal? UPublico = null,
+    decimal? UBodega = null,
+    decimal? UCredito = null
 );
 
 // ──────────── Clientes para sync NEXO → Visions ────────────
@@ -223,6 +263,18 @@ public record ClienteParaSyncDto(
     string? Departamento, string? Ciudad
 );
 
+// ──────────── Salud del catálogo sincronizado ────────────
+public record SaludCatalogoResponse(
+    int TotalArticulos,
+    int ArticulosCompletos,
+    int ArticulosSinDatos,
+    int TotalMarcas,
+    int TotalGruposMayor,
+    int TotalGruposMenor,
+    int TotalPresentaciones,
+    int TotalClientes
+);
+
 // ──────────── Actualización número de factura desde Visions ────────────
 // El agente llama este endpoint cuando Visions asigna el número real a
 // una factura que fue exportada con un placeholder NEXO-{FacturaID}.
@@ -238,3 +290,11 @@ public record SyncClienteDesdeVisionsRequest(
     string? Telefono, string? Email, string? Direccion,
     string? Departamento, string? Ciudad
 );
+// ──────────────────────── Ventas Visions (EventosEntrantes agrupados) ────────────────────────
+public record VentaVisionsItem(
+    int CentroCostoID, string TipDoc, string NroDoc, DateTime Fecha,
+    string? NitCliente, string? NombreCliente,
+    decimal TotalVenta, int Lineas
+);
+
+public record VentasVisionsPaginadasResponse(List<VentaVisionsItem> Items, int Total, int Pagina, int Tamano);

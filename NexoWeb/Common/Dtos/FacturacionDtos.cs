@@ -21,6 +21,8 @@ public record FacturaItem(
     int? CentroCostoID, string? CentroCostoNombre
 );
 
+public record FacturasPaginadasResponse(List<FacturaItem> Items, int Total, int Pagina, int Tamano);
+
 public record CentroCostoBasicoItem(int CentroCostoID, string Nombre, bool TieneVisions = false);
 
 public record LineaFacturaInput(

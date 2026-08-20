@@ -77,10 +77,21 @@ public class TareaAplicarEntradasInventario
                   FRACCIONES = COALESCE(@Fracciones, FRACCIONES),
                   PRESENTACION = COALESCE(@Presentacion, PRESENTACION),
                   EXISTENCIAS = @Existencias,
-                  MARCA = COALESCE(@Marca, MARCA)
+                  MARCA = COALESCE(@Marca, MARCA),
+                  VF4        = COALESCE(@Iva2, VF4),
+                  UBICA4     = COALESCE(@IvaDescripcion2, UBICA4),
+                  GRUPOMENOR  = COALESCE(@GrupoMenor, GRUPOMENOR),
+                  IVASINO     = COALESCE(@IvaSiNo, IVASINO),
+                  IVAVALOR    = COALESCE(@IvaValor, IVAVALOR),
+                  IVADESCRIPCION = COALESCE(@IvaDescripcion, IVADESCRIPCION),
+                  PBODEGA    = CASE WHEN @PBodega IS NOT NULL THEN @PBodega ELSE PBODEGA END,
+                  PCREDITO   = CASE WHEN @PCredito IS NOT NULL THEN @PCredito ELSE PCREDITO END,
+                  UPUBLICO   = CASE WHEN @UPublico IS NOT NULL THEN @UPublico ELSE UPUBLICO END,
+                  UBODEGA    = CASE WHEN @UBodega  IS NOT NULL THEN @UBodega  ELSE UBODEGA END,
+                  UCREDITO   = CASE WHEN @UCredito IS NOT NULL THEN @UCredito ELSE UCREDITO END
               WHEN NOT MATCHED THEN
-                  INSERT (CENTROCOSTO, REFERENCIA, DETALLE, COSTO, PPUBLICO, EXISTENCIASMINIMAS, FRACCIONES, PRESENTACION, EXISTENCIAS, MARCA)
-                  VALUES (@CentroCosto, @Referencia, @Detalle, @Costo, @PPublico, @ExistenciasMinimas, @Fracciones, @Presentacion, @Existencias, @Marca);",
+                  INSERT (CENTROCOSTO, REFERENCIA, DETALLE, COSTO, PPUBLICO, PBODEGA, PCREDITO, UPUBLICO, UBODEGA, UCREDITO, EXISTENCIASMINIMAS, FRACCIONES, CANTIDAD, PRESENTACION, EXISTENCIAS, MARCA, VF4, UBICA4, GRUPOMENOR, IVASINO, IVAVALOR, IVADESCRIPCION)
+                  VALUES (@CentroCosto, @Referencia, @Detalle, @Costo, @PPublico, @PBodega, @PCredito, @UPublico, @UBodega, @UCredito, @ExistenciasMinimas, ISNULL(@Fracciones, 0), 1, @Presentacion, @Existencias, @Marca, @Iva2, @IvaDescripcion2, @GrupoMenor, @IvaSiNo, @IvaValor, @IvaDescripcion);",
             new
             {
                 CentroCosto = evento.CentroCostoVisions,
@@ -88,11 +99,22 @@ public class TareaAplicarEntradasInventario
                 Detalle = evento.NombreArticulo,
                 Costo = evento.CostoUnitario,
                 PPublico = evento.PrecioVentaArticulo,
+                PBodega = evento.PBodega > 0 ? evento.PBodega : (decimal?)null,
+                PCredito = evento.PCredito > 0 ? evento.PCredito : (decimal?)null,
+                UPublico = evento.UPublico > 0 ? evento.UPublico : (decimal?)null,
+                UBodega  = evento.UBodega  > 0 ? evento.UBodega  : (decimal?)null,
+                UCredito = evento.UCredito > 0 ? evento.UCredito : (decimal?)null,
                 ExistenciasMinimas = evento.StockMinimoArticulo,
                 Fracciones = evento.Fracciones,
                 Presentacion = evento.PresentacionCodigo,
                 Existencias = evento.Cantidad,
-                Marca = evento.MarcaCodigo
+                Marca = evento.MarcaCodigo,
+                Iva2 = evento.Iva2,
+                IvaDescripcion2 = evento.IvaDescripcion2,
+                GrupoMenor = evento.GrupoMenorCodigo,
+                IvaSiNo = evento.IvaSiNo,
+                IvaValor = evento.IvaValor,
+                IvaDescripcion = evento.IvaDescripcion
             });
     }
 

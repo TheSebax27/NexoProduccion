@@ -146,6 +146,51 @@ public class TareaInicializarVisions
                     END
                 END");
 
+            // SP ACTUALIZARTARJETA: asegura que el WHERE use parámetros (@CENTROCOSTO, @REFERENCIA)
+            // y no columnas sin prefijo (bug original que sobreescribía TODA la tabla en cada sync).
+            await connection.ExecuteAsync(@"
+                CREATE OR ALTER PROCEDURE [dbo].ACTUALIZARTARJETA
+                (
+                    @CENTROCOSTO smallint, @REFERENCIA nchar(30), @DETALLE nchar(255), @MARCA nchar(10),
+                    @COSTO numeric(18,0), @GRUPOMENOR nchar(10), @BARRAS nchar(30),
+                    @IVASINO nchar(2), @IVAVALOR smallint,
+                    @EXISTENCIAS numeric(18,0), @EXISTENCIASMINIMAS numeric(18,0),
+                    @FRACCIONES numeric(18,0), @CANTIDAD numeric(18,0),
+                    @PRESENTACION nchar(10), @VALORIZADO numeric(18,0),
+                    @PPUBLICO numeric(18,0), @PBODEGA numeric(18,0), @PCREDITO numeric(18,0),
+                    @UPUBLICO numeric(18,2), @UBODEGA numeric(18,2), @UCREDITO numeric(18,2),
+                    @FRACCIONA nchar(1),
+                    @VF1 numeric(18,0), @VV1 numeric(18,0), @VF2 numeric(18,0), @VV2 numeric(18,0),
+                    @VF3 numeric(18,0), @VV3 numeric(18,0), @VF4 numeric(18,0), @VV4 numeric(18,0),
+                    @TIPOTARJETA nchar(12),
+                    @ROTA1 numeric(18,0), @ROTA2 numeric(18,0), @SUGERIDO numeric(18,0),
+                    @FISICOE numeric(18,0), @FISICOF numeric(18,0), @COMBO numeric(18,0),
+                    @FULTV date, @FULTC date, @REVISAR nchar(10), @NOTA ntext,
+                    @PESO numeric(18,2), @DFI date, @DFF date,
+                    @DPO smallint, @DVA numeric(18,0), @PESAR nchar(2)
+                )
+                AS
+                SET NOCOUNT OFF;
+                UPDATE [dbo].[TARJETA] SET
+                    [CENTROCOSTO]=@CENTROCOSTO, [DETALLE]=@DETALLE, [MARCA]=@MARCA,
+                    [COSTO]=@COSTO, [GRUPOMENOR]=@GRUPOMENOR, [BARRAS]=@BARRAS,
+                    [IVASINO]=@IVASINO, [IVAVALOR]=@IVAVALOR,
+                    [EXISTENCIAS]=@EXISTENCIAS, [EXISTENCIASMINIMAS]=@EXISTENCIASMINIMAS,
+                    [FRACCIONES]=@FRACCIONES, [CANTIDAD]=@CANTIDAD,
+                    [PRESENTACION]=@PRESENTACION, [VALORIZADO]=@VALORIZADO,
+                    [PPUBLICO]=@PPUBLICO, [PBODEGA]=@PBODEGA, [PCREDITO]=@PCREDITO,
+                    [UPUBLICO]=@UPUBLICO, [UBODEGA]=@UBODEGA, [UCREDITO]=@UCREDITO,
+                    [FRACCIONA]=@FRACCIONA,
+                    [VF1]=@VF1, [VV1]=@VV1, [VF2]=@VF2, [VV2]=@VV2,
+                    [VF3]=@VF3, [VV3]=@VV3, [VF4]=@VF4, [VV4]=@VV4,
+                    [TIPOTARJETA]=@TIPOTARJETA,
+                    [ROTA1]=@ROTA1, [ROTA2]=@ROTA2, [SUGERIDO]=@SUGERIDO,
+                    [FISICOE]=@FISICOE, [FISICOF]=@FISICOF, [COMBO]=@COMBO,
+                    [FULTV]=@FULTV, [FULTC]=@FULTC, [REVISAR]=@REVISAR,
+                    [NOTA]=@NOTA, [PESO]=@PESO, [DFI]=@DFI, [DFF]=@DFF,
+                    [DPO]=@DPO, [DVA]=@DVA, [PESAR]=@PESAR
+                WHERE [CENTROCOSTO] = @CENTROCOSTO AND [REFERENCIA] = @REFERENCIA");
+
             _logger.LogInformation("Tablas NEXO_* verificadas/creadas en Visions correctamente");
         }
         catch (Exception ex)

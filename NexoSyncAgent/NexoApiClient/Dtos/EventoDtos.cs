@@ -15,7 +15,18 @@ public record EventoPendienteItem(
     decimal? StockMinimoArticulo,
     decimal? Fracciones,
     string? PresentacionCodigo,
-    string? MarcaCodigo
+    string? MarcaCodigo,
+    decimal? Iva2 = null,
+    string? IvaDescripcion2 = null,
+    string? GrupoMenorCodigo = null,
+    string? IvaSiNo = null,
+    decimal? IvaValor = null,
+    string? IvaDescripcion = null,
+    decimal? PBodega = null,
+    decimal? PCredito = null,
+    decimal? UPublico = null,
+    decimal? UBodega = null,
+    decimal? UCredito = null
 );
 
 // NombreArticuloVisions/CostoArticuloVisions/PrecioArticuloVisions: lo que ya
@@ -32,7 +43,9 @@ public record RegistrarEventoEntranteRequest(
     decimal? CostoArticuloVisions,
     decimal? PrecioArticuloVisions,
     string? ClienteNit,
-    string? ClienteNombre
+    string? ClienteNombre,
+    string? TipDoc = null,
+    string? NroDoc = null
 );
 
 // Configuracion que el Administrador dejo en NEXO Web (Catalogo > Centros de
@@ -74,7 +87,20 @@ public record SyncArticuloDesdeVisionsRequest(
     string? Nombre,
     decimal? Costo,
     decimal? PPublico,
-    DateTime FechaCambio
+    DateTime FechaCambio,
+    string? MarcaCodigo = null,
+    string? GrupoMenorCodigo = null,
+    string? PresentacionCodigo = null,
+    string? IvaSiNo = null,
+    decimal? IvaValor = null,
+    string? IvaDescripcion = null,
+    decimal? Iva2 = null,
+    string? IvaDescripcion2 = null,
+    decimal? PBodega = null,
+    decimal? PCredito = null,
+    decimal? UPublico = null,
+    decimal? UBodega = null,
+    decimal? UCredito = null
 );
 
 // ──────────── Clientes para sync NEXO → Visions ────────────

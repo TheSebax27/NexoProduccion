@@ -131,6 +131,14 @@ public class IntegracionController : ControllerBase
         return Ok(await _service.ObtenerEstadoIntegracionAsync());
     }
 
+    /// <summary>Progreso de sincronización: articulos mapeados, ventas procesadas, facturas creadas.</summary>
+    [HttpGet("progreso-sync")]
+    [Authorize(Roles = "Administracion")]
+    public async Task<ActionResult<IEnumerable<ProgresoSyncResponse>>> ObtenerProgreso()
+    {
+        return Ok(await _service.ObtenerProgresoSyncAsync());
+    }
+
     /// <summary>Llamado por el Agente cuando no pudo aplicar un evento en Visions.
     /// Tras 3 intentos fallidos el evento pasa a ERROR y deja de reintentarse.</summary>
     [HttpPost("eventos-salientes/{id:long}/fallar")]
@@ -289,6 +297,15 @@ public class IntegracionController : ControllerBase
         return Ok(new { mensaje = "Sync procesado." });
     }
 
+    /// <summary>Llamado por el Agente cuando detecta que una referencia fue eliminada de dbo.TARJETA en Visions.</summary>
+    [HttpPost("sync/articulo-inactivar")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> InactivarArticuloDesdeVisions([FromQuery] string referencia)
+    {
+        await _service.InactivarArticuloDesdeVisionsAsync(referencia);
+        return Ok(new { mensaje = "Articulo inactivado." });
+    }
+
     /// <summary>Llamado por el Agente para obtener clientes activos de NEXO y sincronizarlos a NEXO_Clientes en Visions.</summary>
     [HttpGet("sync/clientes")]
     [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
@@ -326,6 +343,23 @@ public class IntegracionController : ControllerBase
         }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
     }
+
+    /// <summary>Totales en tiempo real del catálogo sincronizado: artículos completos/sin datos, clientes, etc.</summary>
+    [HttpGet("salud-catalogo")]
+    [Authorize(Roles = "Administracion")]
+    public async Task<ActionResult<SaludCatalogoResponse>> ObtenerSaludCatalogo()
+        => Ok(await _service.ObtenerSaludCatalogoAsync());
+
+    /// <summary>Ventas registradas desde Visions en EventosEntrantes, agrupadas por documento.</summary>
+    [HttpGet("ventas-visions")]
+    public async Task<ActionResult<VentasVisionsPaginadasResponse>> ListarVentasVisions(
+        [FromQuery] int? centroCostoId,
+        [FromQuery] string? tipDoc,
+        [FromQuery] DateTime? desde,
+        [FromQuery] DateTime? hasta,
+        [FromQuery] int pagina = 1,
+        [FromQuery] int tamano = 50)
+        => Ok(await _service.ListarVentasVisionsAsync(centroCostoId, tipDoc, desde, hasta, pagina, tamano));
 
     /// <summary>Genera solo el appsettings.json (para actualizar config en agentes ya instalados).</summary>
     [HttpGet("agentes/{id:int}/appsettings-json")]

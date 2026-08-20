@@ -120,7 +120,7 @@ else
             var tareaCotizaciones = ApiClient.GetAsync<List<CotizacionItem>>("api/crm/cotizaciones");
             var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
             var tareaOportunidades = ApiClient.GetAsync<List<OportunidadItem>>("api/crm/oportunidades");
-            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos");
+            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
 
             await Task.WhenAll(tareaCotizaciones, tareaClientes, tareaOportunidades, tareaArticulos);
 

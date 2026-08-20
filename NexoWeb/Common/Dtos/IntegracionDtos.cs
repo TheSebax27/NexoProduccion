@@ -87,3 +87,34 @@ public record ActividadAgenteResponse(
     int FacturasNexoVisionsHoy,
     int VentasVisionsNexoHoy
 );
+
+public record ProgresoSyncResponse(
+    int AgenteSyncID,
+    string NombreCentroCosto,
+    int TotalArticulosNexo,
+    int TotalMapeados,
+    int TotalPendientesMapeo,
+    int TotalEventosProcesados,
+    int TotalFacturasVisions,
+    DateTime? UltimoLatido
+);
+
+public record SaludCatalogoResponse(
+    int TotalArticulos,
+    int ArticulosCompletos,
+    int ArticulosSinDatos,
+    int TotalMarcas,
+    int TotalGruposMayor,
+    int TotalGruposMenor,
+    int TotalPresentaciones,
+    int TotalClientes
+);
+
+// ──────────────────────── Ventas Visions (EventosEntrantes agrupados) ────────────────────────
+public record VentaVisionsItem(
+    int CentroCostoID, string TipDoc, string NroDoc, DateTime Fecha,
+    string? NitCliente, string? NombreCliente,
+    decimal TotalVenta, int Lineas
+);
+
+public record VentasVisionsPaginadasResponse(List<VentaVisionsItem> Items, int Total, int Pagina, int Tamano);

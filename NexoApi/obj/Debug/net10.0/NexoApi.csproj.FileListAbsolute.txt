@@ -6,6 +6,8 @@ C:\Produccion\NexoApi\bin\Debug\net10.0\obj2\NexoApi.csproj.nuget.dgspec.json
 C:\Produccion\NexoApi\bin\Debug\net10.0\obj2\project.assets.json
 C:\Produccion\NexoApi\bin\Debug\net10.0\publish\Agent\appsettings.Development.json
 C:\Produccion\NexoApi\bin\Debug\net10.0\publish\Agent\appsettings.json
+C:\Produccion\NexoApi\bin\Debug\net10.0\publish\Agent\NexoSyncAgent.deps.json
+C:\Produccion\NexoApi\bin\Debug\net10.0\publish\Agent\NexoSyncAgent.runtimeconfig.json
 C:\Produccion\NexoApi\bin\Debug\net10.0\publish\appsettings.Development.json
 C:\Produccion\NexoApi\bin\Debug\net10.0\publish\appsettings.json
 C:\Produccion\NexoApi\bin\Debug\net10.0\publish\NexoApi.deps.json

@@ -28,6 +28,7 @@ builder.Services.AddHttpClient<INexoApiClient, NexoApiClient>((sp, client) =>
     var config = sp.GetRequiredService<IConfiguration>();
     client.BaseAddress = new Uri(config["NexoApi:BaseUrl"]!);
     client.DefaultRequestHeaders.Add("X-Api-Key", config["NexoApi:ApiKey"]);
+    client.Timeout = TimeSpan.FromMinutes(15);
 })
 .ConfigurePrimaryHttpMessageHandler((sp) =>
 {
