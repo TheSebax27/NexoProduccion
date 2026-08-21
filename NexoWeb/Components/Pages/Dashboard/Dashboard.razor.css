@@ -273,3 +273,82 @@
 .nexo-variacion-chart__legend-dot:first-child { margin-left: 0; }
 .nexo-variacion-chart__legend-dot--up   { background: #10B981; }
 .nexo-variacion-chart__legend-dot--down { background: #EF4444; }
+
+/* ── Variante rose (cartera) ───────────────────────────────── */
+.nexo-kpi--rose .nexo-kpi__icon  { background: rgba(244,63,94,0.10); color: #F43F5E; }
+.nexo-kpi--rose .nexo-kpi__value { color: #F43F5E; }
+
+/* ── Separador de sección ──────────────────────────────────── */
+.nexo-section {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1.75rem 0 0.85rem;
+}
+.nexo-section__dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #7C5CFF;
+  flex-shrink: 0;
+}
+.nexo-section__label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9B9BB4;
+}
+.nexo-section__line {
+  flex: 1;
+  height: 1px;
+  background: var(--mud-palette-lines-default, #EEEEF5);
+}
+
+/* ── Tabla de clientes fríos con paginación ─────────────────── */
+.nexo-frios-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: #9B9BB4;
+}
+
+/* ── Card de cartera ────────────────────────────────────────── */
+.nexo-cartera-total {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #F43F5E;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+}
+.nexo-cartera-total__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #9B9BB4;
+}
+
+/* ── Workspace BI tabs ─────────────────────────────────────── */
+.nexo-bi-tabs .mud-tabs-tabbar {
+  border-bottom: 2px solid var(--mud-palette-lines-default, #EEEEF5);
+  margin-bottom: 0;
+}
+.nexo-bi-tabs .mud-tab {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  min-width: 100px;
+}
+.nexo-bi-tabs .mud-tab-active {
+  color: #7C5CFF !important;
+}
+.nexo-bi-tabs .mud-tab-slider {
+  background: #7C5CFF !important;
+}
+
+/* ── KPI variante rojo ─────────────────────────────────────── */
+.nexo-kpi--red   .nexo-kpi__icon  { background: rgba(239,68,68,0.10); color: #EF4444; }
+.nexo-kpi--red   .nexo-kpi__value { color: #EF4444; }

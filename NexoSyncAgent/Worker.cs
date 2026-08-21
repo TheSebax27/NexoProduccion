@@ -112,11 +112,16 @@ public class Worker : BackgroundService
                     var tareaArticulosFaltantes = scope.ServiceProvider.GetRequiredService<TareaDetectarArticulosFaltantes>();
                     await tareaArticulosFaltantes.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
 
-                    // 8. Sincronizar clientes NEXO → Visions (upsert en NEXO_Clientes).
+                    // 8. Sincronizar clientes NEXO → Visions (upsert en USUARIOS CLIENTE=1).
                     //    Va antes de facturas: las facturas referencian NIT de cliente en Visions.
                     var tareaClientes = scope.ServiceProvider.GetRequiredService<TareaSincronizarClientes>();
                     await tareaClientes.EjecutarAsync(_ultimaSyncClientes, stoppingToken);
                     _ultimaSyncClientes = DateTime.UtcNow;
+
+                    // 8b. Sincronizar proveedores NEXO → Visions (upsert en USUARIOS PROVEEDOR=1).
+                    //     Un NIT puede ser CLIENTE=1 y PROVEEDOR=1 simultáneamente sin duplicados.
+                    var tareaProveedores = scope.ServiceProvider.GetRequiredService<TareaSincronizarProveedores>();
+                    await tareaProveedores.EjecutarAsync(stoppingToken);
 
                     // 9. Exportar facturas NEXO → Visions (las que tienen stock descontado y aun no estan en MOVDETALLES).
                     var tareaFacturasVisions = scope.ServiceProvider.GetRequiredService<TareaSincronizarFacturasNexoVisions>();

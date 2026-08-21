@@ -323,6 +323,23 @@ public class IntegracionController : ControllerBase
         return Ok(new { mensaje = "Cliente sincronizado." });
     }
 
+    /// <summary>Llamado por el Agente para obtener proveedores activos de NEXO y sincronizarlos a dbo.USUARIOS en Visions.</summary>
+    [HttpGet("sync/proveedores")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult<IEnumerable<ProveedorParaSyncDto>>> ListarProveedoresParaSync()
+    {
+        return Ok(await _service.ListarProveedoresParaSyncAsync(CentroCostoDelAgente));
+    }
+
+    /// <summary>Llamado por el Agente cuando detecta un proveedor nuevo o modificado en dbo.USUARIOS de Visions (PROVEEDOR=1).</summary>
+    [HttpPost("sync/proveedor-desde-visions")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> SyncProveedorDesdeVisions(SyncProveedorDesdeVisionsRequest request)
+    {
+        await _service.SyncProveedorDesdeVisionsAsync(request);
+        return Ok(new { mensaje = "Proveedor sincronizado." });
+    }
+
     [HttpGet("agentes/{id:int}/actividad")]
     [Authorize(Roles = "Administracion")]
     public async Task<ActionResult<ActividadAgenteResponse>> ObtenerActividad(int id)

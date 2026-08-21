@@ -22,6 +22,12 @@ public class FacturacionController : ControllerBase
     public ActionResult<IReadOnlyList<string>> ListarTiposDocumento()
         => Ok(Dtos.TiposDocumento.Todos);
 
+    // Devuelve el siguiente numero de documento segun la configuracion de la empresa.
+    // Retorna null si el modo es Manual o Visions no esta disponible.
+    [HttpGet("siguiente-nrodoc")]
+    public async Task<ActionResult<string?>> ObtenerSiguienteNroDoc([FromQuery] string tipDoc = "FACTURA")
+        => Ok(await _service.ObtenerSiguienteNroDocAsync(tipDoc));
+
     // ──────────── Facturas ────────────
     [HttpGet("facturas")]
     public async Task<ActionResult<FacturasPaginadasResponse>> ListarFacturas(
@@ -31,9 +37,11 @@ public class FacturacionController : ControllerBase
         [FromQuery] string? estado,
         [FromQuery] DateTime? desde,
         [FromQuery] DateTime? hasta,
+        [FromQuery] string? texto,
+        [FromQuery] bool soloNoPagadas = false,
         [FromQuery] int pagina = 1,
-        [FromQuery] int tamano = 50)
-        => Ok(await _service.ListarFacturasAsync(clienteId, centroCostoId, tipDoc, estado, desde, hasta, pagina, tamano));
+        [FromQuery] int tamano = 100)
+        => Ok(await _service.ListarFacturasAsync(clienteId, centroCostoId, tipDoc, estado, desde, hasta, texto, soloNoPagadas, pagina, tamano));
 
     [HttpPost("facturas")]
     public async Task<ActionResult> CrearFactura(CrearFacturaRequest request)

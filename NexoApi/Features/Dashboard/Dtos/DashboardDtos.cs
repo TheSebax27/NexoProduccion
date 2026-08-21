@@ -27,3 +27,15 @@ public record EmpleadosPorCentroCostoItem(string CentroCosto, int TotalEmpleados
 public record ResumenPlanificacionItem(decimal CumplimientoDemandaPromedio, decimal CumplimientoVentaPromedio);
 
 public record ResumenInventarioItem(decimal ValorTotalStock, int ArticulosConAlerta);
+
+// ---------- Analisis de Facturacion (BI workspace, agosto 2026) ----------
+
+public record ResumenFacturacionItem(
+    decimal TotalEmitido, decimal TotalCobrado, decimal SaldoPendiente, int DocumentosEmitidos
+);
+
+public record IngresoPorMesPunto(int Anio, int Mes, string NombreMes, decimal TotalFacturado, decimal TotalCobrado);
+
+public record TopClienteItem(int ClienteID, string Cliente, string? NIT, decimal TotalFacturado, int NumDocumentos);
+
+public record TopArticuloItem(int ArticuloID, string SKU, string Nombre, decimal CantidadVendida, decimal TotalFacturado);

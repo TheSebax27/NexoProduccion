@@ -89,10 +89,6 @@
     @if (Modulos.EsVisible("OPERACIONES"))
     {
         <MudNavGroup Title="Operaciones" Icon="@Icons.Material.Filled.SwapHoriz" Expanded="false">
-            @if (Modulos.EsVisible("OPERACIONES.COMPRAS"))
-            {
-                <MudNavLink Href="/compras/ordenes" Icon="@Icons.Material.Filled.ShoppingCart">Ordenes de Compra</MudNavLink>
-            }
             @if (Modulos.EsVisible("OPERACIONES.DESPACHOS"))
             {
                 <MudNavLink Href="/logistica/despachos" Icon="@Icons.Material.Filled.LocalShipping">Despachos</MudNavLink>

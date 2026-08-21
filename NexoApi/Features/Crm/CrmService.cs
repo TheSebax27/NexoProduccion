@@ -10,6 +10,7 @@ namespace NexoApi.Features.Crm;
 public interface ICrmService
 {
     Task<IEnumerable<ClienteItem>> ListarClientesAsync(int? responsableId, string? tipoCliente, string? fuenteContacto, bool? soloActivos);
+    Task<ClientesPaginadosResponse> ListarClientesPaginadosAsync(string? texto, int? responsableId, string? tipoCliente, string? fuenteContacto, int pagina, int tamano);
     Task<ClienteItem?> ObtenerClienteAsync(string externalId);
     Task<int> CrearClienteAsync(CrearClienteRequest request);
     Task ActualizarClienteAsync(int clienteId, ActualizarClienteRequest request);
@@ -54,6 +55,11 @@ public interface ICrmService
     Task ActualizarEstadoCotizacionAsync(int cotizacionId, ActualizarEstadoCotizacionRequest request);
     Task<int> ConvertirCotizacionAFacturaAsync(int cotizacionId, int usuarioId);
     Task<bool> EnviarEmailCotizacionAsync(int cotizacionId);
+
+    // Catálogo de referencia geográfica/tributaria
+    Task<IEnumerable<PaisItem>> ListarPaisesAsync();
+    Task<IEnumerable<MunicipioItem>> ListarMunicipiosAsync();
+    Task<IEnumerable<TipoIdentificacionItem>> ListarTiposIdentificacionAsync();
 }
 
 public class CrmService : ICrmService
@@ -82,7 +88,7 @@ public class CrmService : ICrmService
                    (SELECT COUNT(*) FROM Crm.Contactos ct WHERE ct.ClienteID = c.ClienteID AND ct.Estado = 1) AS TotalContactos,
                    (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion,
                    c.TipoPersona, c.PrimerNombre, c.SegundoNombre, c.PrimerApellido, c.SegundoApellido,
-                   c.Departamento, c.Ciudad
+                   c.Departamento, c.Ciudad, c.TipoIdentificacion, c.CodigoDept, c.CodigoMuni, c.DigitoVerificacion
             FROM Crm.Clientes c
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = c.ResponsableID
             WHERE (@ResponsableId IS NULL OR c.ResponsableID = @ResponsableId)
@@ -100,6 +106,41 @@ public class CrmService : ICrmService
         });
     }
 
+    public async Task<ClientesPaginadosResponse> ListarClientesPaginadosAsync(
+        string? texto, int? responsableId, string? tipoCliente, string? fuenteContacto, int pagina, int tamano)
+    {
+        using var connection = _db.CreateConnection();
+
+        var offset = (pagina - 1) * tamano;
+
+        const string sqlBase = @"
+            FROM Crm.Clientes c
+            LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = c.ResponsableID
+            WHERE c.Estado = 1
+              AND (@Texto IS NULL OR c.Nombre LIKE '%' + @Texto + '%' OR c.NIT LIKE '%' + @Texto + '%')
+              AND (@ResponsableId IS NULL OR c.ResponsableID = @ResponsableId)
+              AND (@TipoCliente IS NULL OR c.TipoCliente = @TipoCliente)
+              AND (@FuenteContacto IS NULL OR c.FuenteContacto = @FuenteContacto)";
+
+        var total = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) " + sqlBase,
+            new { Texto = string.IsNullOrWhiteSpace(texto) ? null : texto, ResponsableId = responsableId, TipoCliente = tipoCliente, FuenteContacto = fuenteContacto });
+
+        var items = await connection.QueryAsync<ClienteItem>(@"
+            SELECT c.ClienteID, c.ExternalId, c.Nombre, c.NIT, c.Contacto, c.Telefono, c.Email, c.Direccion, c.Estado,
+                   c.FuenteContacto, c.TipoCliente, c.ResponsableID,
+                   e.Nombres + ' ' + e.Apellidos AS Responsable, c.ProximoContacto,
+                   (SELECT COUNT(*) FROM Crm.Contactos ct WHERE ct.ClienteID = c.ClienteID AND ct.Estado = 1) AS TotalContactos,
+                   (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion,
+                   c.TipoPersona, c.PrimerNombre, c.SegundoNombre, c.PrimerApellido, c.SegundoApellido,
+                   c.Departamento, c.Ciudad, c.TipoIdentificacion, c.CodigoDept, c.CodigoMuni, c.DigitoVerificacion " + sqlBase + @"
+            ORDER BY c.Nombre
+            OFFSET @Offset ROWS FETCH NEXT @Tamano ROWS ONLY",
+            new { Texto = string.IsNullOrWhiteSpace(texto) ? null : texto, ResponsableId = responsableId, TipoCliente = tipoCliente, FuenteContacto = fuenteContacto, Offset = offset, Tamano = tamano });
+
+        return new ClientesPaginadosResponse(items.ToList(), total);
+    }
+
     // Usado por el workspace (/crm/clientes/{externalId}) -- busca por ExternalId
     // (string opaco, no expone el int primario) y devuelve el ClienteID interno
     // para que el workspace lo use en operaciones posteriores.
@@ -114,7 +155,7 @@ public class CrmService : ICrmService
                    (SELECT COUNT(*) FROM Crm.Contactos ct WHERE ct.ClienteID = c.ClienteID AND ct.Estado = 1) AS TotalContactos,
                    (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion,
                    c.TipoPersona, c.PrimerNombre, c.SegundoNombre, c.PrimerApellido, c.SegundoApellido,
-                   c.Departamento, c.Ciudad
+                   c.Departamento, c.Ciudad, c.TipoIdentificacion, c.CodigoDept, c.CodigoMuni, c.DigitoVerificacion
             FROM Crm.Clientes c
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = c.ResponsableID
             WHERE c.ExternalId = @ExternalId";
@@ -130,15 +171,18 @@ public class CrmService : ICrmService
 
         const string sql = @"
             INSERT INTO Crm.Clientes (Nombre, NIT, Telefono, Email, Direccion, FuenteContacto, TipoCliente, ResponsableID,
-                TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido, Departamento, Ciudad)
+                TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido, Departamento, Ciudad,
+                TipoIdentificacion, CodigoDept, CodigoMuni, DigitoVerificacion, FechaModificacion)
             OUTPUT INSERTED.ClienteID
             VALUES (@Nombre, @NIT, @Telefono, @Email, @Direccion, @FuenteContacto, @TipoCliente, @ResponsableID,
-                @TipoPersona, @PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido, @Departamento, @Ciudad)";
+                @TipoPersona, @PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido, @Departamento, @Ciudad,
+                @TipoIdentificacion, @CodigoDept, @CodigoMuni, @DigitoVerificacion, GETDATE())";
 
         var id = await connection.ExecuteScalarAsync<int>(sql, new
         {
             r.Nombre, r.NIT, r.Telefono, r.Email, r.Direccion, r.FuenteContacto, TipoCliente = tipoCliente, r.ResponsableID,
-            r.TipoPersona, r.PrimerNombre, r.SegundoNombre, r.PrimerApellido, r.SegundoApellido, r.Departamento, r.Ciudad
+            r.TipoPersona, r.PrimerNombre, r.SegundoNombre, r.PrimerApellido, r.SegundoApellido, r.Departamento, r.Ciudad,
+            r.TipoIdentificacion, r.CodigoDept, r.CodigoMuni, r.DigitoVerificacion
         });
 
         if (!string.IsNullOrWhiteSpace(r.Email))
@@ -167,6 +211,8 @@ public class CrmService : ICrmService
                 TipoPersona = @TipoPersona, PrimerNombre = @PrimerNombre, SegundoNombre = @SegundoNombre,
                 PrimerApellido = @PrimerApellido, SegundoApellido = @SegundoApellido,
                 Departamento = @Departamento, Ciudad = @Ciudad,
+                TipoIdentificacion = @TipoIdentificacion, CodigoDept = @CodigoDept, CodigoMuni = @CodigoMuni,
+                DigitoVerificacion = @DigitoVerificacion,
                 FechaModificacion = GETDATE()
             WHERE ClienteID = @ClienteId";
 
@@ -176,7 +222,7 @@ public class CrmService : ICrmService
             r.Nombre, r.NIT, r.Telefono, r.Email, r.Direccion, r.Estado,
             r.FuenteContacto, TipoCliente = tipoClienteAct, r.ResponsableID, r.ProximoContacto,
             r.TipoPersona, r.PrimerNombre, r.SegundoNombre, r.PrimerApellido, r.SegundoApellido,
-            r.Departamento, r.Ciudad
+            r.Departamento, r.Ciudad, r.TipoIdentificacion, r.CodigoDept, r.CodigoMuni, r.DigitoVerificacion
         });
 
         if (filas == 0)
@@ -832,5 +878,26 @@ public class CrmService : ICrmService
                 new { CotizacionId = cotizacionId });
 
         return enviado;
+    }
+
+    public async Task<IEnumerable<PaisItem>> ListarPaisesAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<PaisItem>(
+            "SELECT Codigo1, Codigo2, Codigo3, Nombre FROM Catalogo.Paises ORDER BY Nombre");
+    }
+
+    public async Task<IEnumerable<MunicipioItem>> ListarMunicipiosAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<MunicipioItem>(
+            "SELECT CodigoDept, NombreDept, CodigoMuni, NombreMuni FROM Catalogo.Municipios ORDER BY NombreDept, NombreMuni");
+    }
+
+    public async Task<IEnumerable<TipoIdentificacionItem>> ListarTiposIdentificacionAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<TipoIdentificacionItem>(
+            "SELECT Codigo, Detalle FROM Catalogo.TiposIdentificacion ORDER BY CAST(Codigo AS int)");
     }
 }

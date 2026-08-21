@@ -277,7 +277,14 @@
             </MudTabPanel>
 
             <MudTabPanel Text="Pagos">
-                @if (_facturaActual.SaldoPendiente > 0)
+                @if (CcTieneVisions)
+                {
+                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Store" Class="mb-3">
+                        Los pagos de este documento son administrados por <strong>Visions</strong>.
+                        No es posible registrar pagos desde NEXO.
+                    </MudAlert>
+                }
+                else if (_facturaActual.SaldoPendiente > 0)
                 {
                     <MudForm @ref="_formPago" Class="mb-3">
                         <div class="d-flex align-center flex-wrap" style="gap: 0.5rem;">
@@ -295,7 +302,7 @@
                         </div>
                     </MudForm>
                 }
-                else
+                else if (!CcTieneVisions)
                 {
                     <MudAlert Severity="Severity.Success" Class="mb-3">Esta factura ya está pagada por completo.</MudAlert>
                 }
@@ -334,6 +341,7 @@
 @code {
     [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public FacturaItem Factura { get; set; } = default!;
+    [Parameter] public bool CcTieneVisions { get; set; }
 
     private MudForm _formPago = default!;
     private List<FacturaLineaItem> _lineas = new();

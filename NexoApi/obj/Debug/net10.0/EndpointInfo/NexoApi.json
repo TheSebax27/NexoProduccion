@@ -2102,6 +2102,90 @@
         }
       }
     },
+    "/api/catalogo/verificar-dual-rol": {
+      "get": {
+        "tags": [
+          "ClientesYCentrosTrabajo"
+        ],
+        "parameters": [
+          {
+            "name": "nit",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DualRolInfo"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DualRolInfo"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DualRolInfo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/catalogo/proveedores/desde-cliente/{clienteId}": {
+      "post": {
+        "tags": [
+          "ClientesYCentrosTrabajo"
+        ],
+        "parameters": [
+          {
+            "name": "clienteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/proveedores/{proveedorId}/agregar-como-cliente": {
+      "post": {
+        "tags": [
+          "ClientesYCentrosTrabajo"
+        ],
+        "parameters": [
+          {
+            "name": "proveedorId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/marketing/combos": {
       "get": {
         "tags": [
@@ -2434,6 +2518,64 @@
         }
       }
     },
+    "/api/configuracion/empresa/nrodoc": {
+      "get": {
+        "tags": [
+          "Configuracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigNroDocResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigNroDocResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigNroDocResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Configuracion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarConfigNroDocRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarConfigNroDocRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarConfigNroDocRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/crm/clientes": {
       "get": {
         "tags": [
@@ -2532,6 +2674,84 @@
         }
       }
     },
+    "/api/crm/clientes/paginados": {
+      "get": {
+        "tags": [
+          "Crm"
+        ],
+        "parameters": [
+          {
+            "name": "texto",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "responsableId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "tipoCliente",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fuenteContacto",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "tamano",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientesPaginadosResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientesPaginadosResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientesPaginadosResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/crm/clientes/{externalId}": {
       "get": {
         "tags": [
@@ -2609,6 +2829,120 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/crm/paises": {
+      "get": {
+        "tags": [
+          "Crm"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaisItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaisItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaisItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/crm/municipios": {
+      "get": {
+        "tags": [
+          "Crm"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MunicipioItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MunicipioItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MunicipioItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/crm/tipos-identificacion": {
+      "get": {
+        "tags": [
+          "Crm"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TipoIdentificacionItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TipoIdentificacionItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TipoIdentificacionItem"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -4167,6 +4501,232 @@
         }
       }
     },
+    "/api/dashboard/resumen-facturacion": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "parameters": [
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumenFacturacionItem"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumenFacturacionItem"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumenFacturacionItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/ingresos-por-mes": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "parameters": [
+          {
+            "name": "meses",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 12
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IngresoPorMesPunto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IngresoPorMesPunto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IngresoPorMesPunto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/top-clientes": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "parameters": [
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "top",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TopClienteItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TopClienteItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TopClienteItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/top-articulos": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "parameters": [
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "top",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TopArticuloItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TopArticuloItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TopArticuloItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/dashboard/exportar/excel": {
       "get": {
         "tags": [
@@ -5100,6 +5660,45 @@
         }
       }
     },
+    "/api/facturacion/siguiente-nrodoc": {
+      "get": {
+        "tags": [
+          "Facturacion"
+        ],
+        "parameters": [
+          {
+            "name": "tipDoc",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "FACTURA"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/facturacion/facturas": {
       "get": {
         "tags": [
@@ -5153,6 +5752,21 @@
             }
           },
           {
+            "name": "texto",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "soloNoPagadas",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
             "name": "pagina",
             "in": "query",
             "schema": {
@@ -5167,7 +5781,7 @@
             "schema": {
               "type": "integer",
               "format": "int32",
-              "default": 50
+              "default": 100
             }
           }
         ],
@@ -6585,6 +7199,75 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/SyncClienteDesdeVisionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/sync/proveedores": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProveedorParaSyncDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProveedorParaSyncDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProveedorParaSyncDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integracion/sync/proveedor-desde-visions": {
+      "post": {
+        "tags": [
+          "Integracion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncProveedorDesdeVisionsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncProveedorDesdeVisionsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncProveedorDesdeVisionsRequest"
               }
             }
           }
@@ -12209,6 +12892,23 @@
           "ciudad": {
             "type": "string",
             "nullable": true
+          },
+          "tipoIdentificacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoMuni": {
+            "type": "string",
+            "nullable": true
+          },
+          "digitoVerificacion": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -12282,6 +12982,20 @@
           "modoLotes": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActualizarConfigNroDocRequest": {
+        "type": "object",
+        "properties": {
+          "modoNroDoc": {
+            "type": "string",
+            "nullable": true
+          },
+          "ultimoNroDocSecuencial": {
+            "type": "integer",
+            "format": "int64"
           }
         },
         "additionalProperties": false
@@ -12918,6 +13632,59 @@
           },
           "estado": {
             "type": "boolean"
+          },
+          "tipoPersona": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoIdentificacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "digitoVerificacion": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "departamento": {
+            "type": "string",
+            "nullable": true
+          },
+          "ciudad": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoMuni": {
+            "type": "string",
+            "nullable": true
+          },
+          "pais": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoPais": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -13900,6 +14667,23 @@
           "ciudad": {
             "type": "string",
             "nullable": true
+          },
+          "tipoIdentificacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoMuni": {
+            "type": "string",
+            "nullable": true
+          },
+          "digitoVerificacion": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -13962,6 +14746,48 @@
           "ciudad": {
             "type": "string",
             "nullable": true
+          },
+          "tipoIdentificacionDetalle": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreMuni": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoMuni": {
+            "type": "string",
+            "nullable": true
+          },
+          "digitoVerificacion": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClientesPaginadosResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClienteItem"
+            },
+            "nullable": true
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -14011,6 +14837,20 @@
         "properties": {
           "completada": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConfigNroDocResponse": {
+        "type": "object",
+        "properties": {
+          "modoNroDoc": {
+            "type": "string",
+            "nullable": true
+          },
+          "ultimoNroDocSecuencial": {
+            "type": "integer",
+            "format": "int64"
           }
         },
         "additionalProperties": false
@@ -14118,6 +14958,14 @@
           "modoLotes": {
             "type": "string",
             "nullable": true
+          },
+          "modoNroDoc": {
+            "type": "string",
+            "nullable": true
+          },
+          "ultimoNroDocSecuencial": {
+            "type": "integer",
+            "format": "int64"
           }
         },
         "additionalProperties": false
@@ -14707,6 +15555,23 @@
           },
           "ciudad": {
             "type": "string",
+            "nullable": true
+          },
+          "tipoIdentificacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoMuni": {
+            "type": "string",
+            "nullable": true
+          },
+          "digitoVerificacion": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           }
         },
@@ -15675,6 +16540,59 @@
           "direccion": {
             "type": "string",
             "nullable": true
+          },
+          "tipoPersona": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoIdentificacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "digitoVerificacion": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "departamento": {
+            "type": "string",
+            "nullable": true
+          },
+          "ciudad": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoMuni": {
+            "type": "string",
+            "nullable": true
+          },
+          "pais": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoPais": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -16172,6 +17090,28 @@
           "inversionTotal": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DualRolInfo": {
+        "type": "object",
+        "properties": {
+          "esCliente": {
+            "type": "boolean"
+          },
+          "clienteID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "esProveedor": {
+            "type": "boolean"
+          },
+          "proveedorID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -17329,6 +18269,32 @@
         },
         "additionalProperties": false
       },
+      "IngresoPorMesPunto": {
+        "type": "object",
+        "properties": {
+          "anio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nombreMes": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalFacturado": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalCobrado": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "InsumoVerificacionItem": {
         "type": "object",
         "properties": {
@@ -18015,6 +18981,28 @@
         },
         "additionalProperties": false
       },
+      "MunicipioItem": {
+        "type": "object",
+        "properties": {
+          "codigoDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoMuni": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreMuni": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "NotificacionItem": {
         "type": "object",
         "properties": {
@@ -18372,6 +19360,28 @@
         },
         "additionalProperties": false
       },
+      "PaisItem": {
+        "type": "object",
+        "properties": {
+          "codigo1": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigo2": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigo3": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "PerdidaPorMotivoItem": {
         "type": "object",
         "properties": {
@@ -18546,6 +19556,146 @@
           },
           "estado": {
             "type": "boolean"
+          },
+          "tipoPersona": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoIdentificacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "digitoVerificacion": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "departamento": {
+            "type": "string",
+            "nullable": true
+          },
+          "ciudad": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoMuni": {
+            "type": "string",
+            "nullable": true
+          },
+          "pais": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoPais": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProveedorParaSyncDto": {
+        "type": "object",
+        "properties": {
+          "proveedorID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "razonSocial": {
+            "type": "string",
+            "nullable": true
+          },
+          "contacto": {
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoPersona": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoIdentificacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "digitoVerificacion": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "departamento": {
+            "type": "string",
+            "nullable": true
+          },
+          "ciudad": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoMuni": {
+            "type": "string",
+            "nullable": true
+          },
+          "pais": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoPais": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -19115,6 +20265,28 @@
         },
         "additionalProperties": false
       },
+      "ResumenFacturacionItem": {
+        "type": "object",
+        "properties": {
+          "totalEmitido": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalCobrado": {
+            "type": "number",
+            "format": "double"
+          },
+          "saldoPendiente": {
+            "type": "number",
+            "format": "double"
+          },
+          "documentosEmitidos": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "ResumenInventarioItem": {
         "type": "object",
         "properties": {
@@ -19600,6 +20772,90 @@
           "ciudad": {
             "type": "string",
             "nullable": true
+          },
+          "codigoDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoMuni": {
+            "type": "string",
+            "nullable": true
+          },
+          "digitoVerificacion": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SyncProveedorDesdeVisionsRequest": {
+        "type": "object",
+        "properties": {
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "razonSocial": {
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoPersona": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoIdentificacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "digitoVerificacion": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "departamento": {
+            "type": "string",
+            "nullable": true
+          },
+          "ciudad": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoMuni": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -19680,6 +20936,20 @@
         },
         "additionalProperties": false
       },
+      "TipoIdentificacionItem": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "detalle": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "TipoProduccionItem": {
         "type": "object",
         "properties": {
@@ -19706,6 +20976,58 @@
             "nullable": true
           },
           "segundosRestantes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TopArticuloItem": {
+        "type": "object",
+        "properties": {
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidadVendida": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalFacturado": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TopClienteItem": {
+        "type": "object",
+        "properties": {
+          "clienteID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cliente": {
+            "type": "string",
+            "nullable": true
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalFacturado": {
+            "type": "number",
+            "format": "double"
+          },
+          "numDocumentos": {
             "type": "integer",
             "format": "int32"
           }

@@ -1,4 +1,5 @@
 @using NexoWeb.Common.Dtos
+@inject INexoApiClient ApiClient
 
 <MudDialog>
     <DialogContent>
@@ -36,20 +37,56 @@
                                   Variant="Variant.Outlined" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="_nit" Label="C.C. / NIT"
-                                  Variant="Variant.Outlined" FullWidth="true" />
+                    <MudSelect T="string?" @bind-Value="_tipoIdentificacion" Label="Tipo de Documento"
+                               Variant="Variant.Outlined" FullWidth="true" Clearable="true">
+                        @foreach (var t in _tiposId)
+                        {
+                            <MudSelectItem T="string?" Value="@t.Codigo">@t.Detalle</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <div class="d-flex align-center gap-2">
+                        <MudTextField T="string?" Value="_nit" ValueChanged="OnNitCambiado" Label="Número de Documento"
+                                      Variant="Variant.Outlined" FullWidth="true" />
+                        <div style="white-space:nowrap; padding:4px 10px; border:1px solid var(--mud-palette-lines-inputs); border-radius:4px; font-size:.85rem; color:var(--mud-palette-text-secondary); min-width:52px; text-align:center;">
+                            DV: <strong>@(_dv.HasValue ? _dv.ToString() : "-")</strong>
+                        </div>
+                    </div>
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudTextField @bind-Value="_telefono" Label="Teléfono"
                                   Variant="Variant.Outlined" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="_departamento" Label="Departamento"
-                                  Variant="Variant.Outlined" FullWidth="true" />
+                    <MudSelect T="string?" @bind-Value="_pais" Label="País"
+                               Variant="Variant.Outlined" FullWidth="true">
+                        @foreach (var p in _paises)
+                        {
+                            <MudSelectItem T="string?" Value="@p.Codigo1">@p.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="_ciudad" Label="Ciudad"
-                                  Variant="Variant.Outlined" FullWidth="true" />
+                    <MudAutocomplete T="DeptItem?" Label="Departamento"
+                                     Value="_deptSeleccionado" ValueChanged="OnDepartamentoChanged"
+                                     SearchFunc="BuscarDepartamento"
+                                     ToStringFunc="@(d => d?.Nombre ?? "")"
+                                     Variant="Variant.Outlined" FullWidth="true"
+                                     Clearable="true" ResetValueOnEmptyText="true"
+                                     MinCharacters="0" MaxItems="10"
+                                     Placeholder="Buscar departamento..." />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudAutocomplete T="MunicipioItem?" Label="Municipio / Ciudad"
+                                     @bind-Value="_muniSeleccionado"
+                                     SearchFunc="BuscarMunicipio"
+                                     ToStringFunc="@(m => m?.NombreMuni ?? "")"
+                                     Disabled="@(_deptSeleccionado == null)"
+                                     Variant="Variant.Outlined" FullWidth="true"
+                                     Clearable="true" ResetValueOnEmptyText="true"
+                                     MinCharacters="0" MaxItems="10"
+                                     Placeholder="@(_deptSeleccionado == null ? "Seleccione departamento primero" : "Buscar municipio...")" />
                 </MudItem>
                 <MudItem xs="12">
                     <MudTextField @bind-Value="_direccion" Label="Dirección"
@@ -65,20 +102,47 @@
         {
             <MudGrid Spacing="2">
                 <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="_nit" Label="NIT Empresa"
-                                  Variant="Variant.Outlined" FullWidth="true" />
+                    <div class="d-flex align-center gap-2">
+                        <MudTextField T="string?" Value="_nit" ValueChanged="OnNitCambiado" Label="NIT Empresa"
+                                      Variant="Variant.Outlined" FullWidth="true" />
+                        <div style="white-space:nowrap; padding:4px 10px; border:1px solid var(--mud-palette-lines-inputs); border-radius:4px; font-size:.85rem; color:var(--mud-palette-text-secondary); min-width:52px; text-align:center;">
+                            DV: <strong>@(_dv.HasValue ? _dv.ToString() : "-")</strong>
+                        </div>
+                    </div>
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudTextField @bind-Value="_nombre" Label="Nombre / Razón Social" Required="true"
                                   Variant="Variant.Outlined" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="_departamento" Label="Departamento"
-                                  Variant="Variant.Outlined" FullWidth="true" />
+                    <MudSelect T="string?" @bind-Value="_pais" Label="País"
+                               Variant="Variant.Outlined" FullWidth="true">
+                        @foreach (var p in _paises)
+                        {
+                            <MudSelectItem T="string?" Value="@p.Codigo1">@p.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="_ciudad" Label="Ciudad"
-                                  Variant="Variant.Outlined" FullWidth="true" />
+                    <MudAutocomplete T="DeptItem?" Label="Departamento"
+                                     Value="_deptSeleccionado" ValueChanged="OnDepartamentoChanged"
+                                     SearchFunc="BuscarDepartamento"
+                                     ToStringFunc="@(d => d?.Nombre ?? "")"
+                                     Variant="Variant.Outlined" FullWidth="true"
+                                     Clearable="true" ResetValueOnEmptyText="true"
+                                     MinCharacters="0" MaxItems="10"
+                                     Placeholder="Buscar departamento..." />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudAutocomplete T="MunicipioItem?" Label="Municipio / Ciudad"
+                                     @bind-Value="_muniSeleccionado"
+                                     SearchFunc="BuscarMunicipio"
+                                     ToStringFunc="@(m => m?.NombreMuni ?? "")"
+                                     Disabled="@(_deptSeleccionado == null)"
+                                     Variant="Variant.Outlined" FullWidth="true"
+                                     Clearable="true" ResetValueOnEmptyText="true"
+                                     MinCharacters="0" MaxItems="10"
+                                     Placeholder="@(_deptSeleccionado == null ? "Seleccione departamento primero" : "Buscar municipio...")" />
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudTextField @bind-Value="_telefono" Label="Teléfono"
@@ -125,6 +189,33 @@
             <MudDatePicker @bind-Date="_proximoContacto" Label="Próximo Contacto" Clearable="true" Class="mt-3" />
             <MudSwitch T="bool" @bind-Value="_estado" Label="Activo" Color="Color.Success" Class="mt-2" />
         }
+
+        <!-- Sección dual-rol: solo visible en modo edición -->
+        @if (Cliente is not null && !string.IsNullOrWhiteSpace(_nit))
+        {
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Roles en NEXO</MudText>
+            <div class="d-flex align-center gap-3 flex-wrap">
+                <MudChip T="string" Color="Color.Success" Size="Size.Small" Icon="@Icons.Material.Filled.Person">
+                    Cliente ✓
+                </MudChip>
+                @if (_dualRol is not null && _dualRol.EsProveedor)
+                {
+                    <MudChip T="string" Color="Color.Info" Size="Size.Small" Icon="@Icons.Material.Filled.Store">
+                        También es Proveedor ✓
+                    </MudChip>
+                }
+                else if (_dualRol is not null && !_dualRol.EsProveedor)
+                {
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.AddBusiness"
+                               Disabled="@_agregandoRol"
+                               OnClick="AgregarComoProveedorAsync">
+                        @(_agregandoRol ? "Agregando..." : "Agregar como Proveedor")
+                    </MudButton>
+                }
+            </div>
+        }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancelar">Cancelar</MudButton>
@@ -140,6 +231,7 @@
     [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public ClienteItem? Cliente { get; set; }
     [Parameter] public List<EmpleadoItem> Empleados { get; set; } = new();
+    [Parameter] public string? NitInicial { get; set; }
 
     private string _tipoPersona = "Natural";
     private string _nombre = "";
@@ -151,12 +243,30 @@
     private string? _telefono;
     private string? _email;
     private string? _direccion;
-    private string? _departamento;
-    private string? _ciudad;
     private string? _fuenteContacto;
     private int? _responsableId;
     private DateTime? _proximoContacto;
     private bool _estado = true;
+
+    // Nuevos campos
+    private string? _tipoIdentificacion;
+    private string? _pais = "CO";
+    private int? _dv;
+    private DeptItem? _deptSeleccionado;
+    private MunicipioItem? _muniSeleccionado;
+
+    // Dual-rol
+    private DualRolInfo? _dualRol;
+    private bool _agregandoRol;
+
+    // Catálogos
+    private List<PaisItem> _paises = new();
+    private List<MunicipioItem> _todosLosMunicipios = new();
+    private List<TipoIdentificacionItem> _tiposId = new();
+    private List<DeptItem> _departamentos = new();
+    private List<MunicipioItem> _municipiosFiltrados = new();
+
+    private record DeptItem(string Codigo, string? Nombre);
 
     private bool PuedeGuardar => _tipoPersona == "Natural"
         ? !string.IsNullOrWhiteSpace(_primerNombre) && !string.IsNullOrWhiteSpace(_primerApellido)
@@ -167,10 +277,124 @@
             .Where(s => !string.IsNullOrWhiteSpace(s)))
         : _nombre.Trim();
 
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var paisesTask  = ApiClient.GetAsync<List<PaisItem>>("api/crm/paises");
+            var muniTask    = ApiClient.GetAsync<List<MunicipioItem>>("api/crm/municipios");
+            var tiposIdTask = ApiClient.GetAsync<List<TipoIdentificacionItem>>("api/crm/tipos-identificacion");
+
+            await Task.WhenAll(paisesTask, muniTask, tiposIdTask);
+
+            _paises = await paisesTask ?? new();
+            _todosLosMunicipios = await muniTask ?? new();
+            _tiposId = await tiposIdTask ?? new();
+
+            _departamentos = _todosLosMunicipios
+                .GroupBy(m => m.CodigoDept)
+                .Select(g => new DeptItem(g.Key, g.First().NombreDept))
+                .OrderBy(d => d.Nombre)
+                .ToList();
+
+            // Si hay un cliente cargado, resolvemos los objetos seleccionados ahora que los catálogos están disponibles
+            if (Cliente is not null)
+                ResolverSelecciones(Cliente.CodigoDept, Cliente.CodigoMuni);
+        }
+        catch { /* catálogos opcionales, no bloquean el diálogo */ }
+
+        // Verificar dual-rol si estamos en modo edición
+        if (Cliente is not null && !string.IsNullOrWhiteSpace(Cliente.NIT))
+            await CargarDualRolAsync(Cliente.NIT);
+    }
+
+    private async Task CargarDualRolAsync(string nit)
+    {
+        try
+        {
+            _dualRol = await ApiClient.GetAsync<DualRolInfo>($"api/catalogo/verificar-dual-rol?nit={Uri.EscapeDataString(nit)}");
+        }
+        catch { _dualRol = null; }
+    }
+
+    private async Task AgregarComoProveedorAsync()
+    {
+        if (Cliente is null) return;
+        _agregandoRol = true;
+        try
+        {
+            await ApiClient.PostAsync<object?, object?>($"api/catalogo/proveedores/desde-cliente/{Cliente.ClienteID}", null);
+            await CargarDualRolAsync(_nit!);
+        }
+        catch { /* silencioso; la página padre puede recargar */ }
+        finally { _agregandoRol = false; }
+    }
+
+    private void ResolverSelecciones(string? codigoDept, string? codigoMuni)
+    {
+        if (codigoDept != null)
+        {
+            _deptSeleccionado = _departamentos.FirstOrDefault(d => d.Codigo == codigoDept);
+            _municipiosFiltrados = _todosLosMunicipios.Where(m => m.CodigoDept == codigoDept).ToList();
+        }
+        if (codigoMuni != null)
+            _muniSeleccionado = _municipiosFiltrados.FirstOrDefault(m => m.CodigoMuni == codigoMuni);
+    }
+
+    private Task<IEnumerable<DeptItem?>> BuscarDepartamento(string? texto, CancellationToken ct)
+    {
+        var resultado = string.IsNullOrWhiteSpace(texto)
+            ? _departamentos.Cast<DeptItem?>()
+            : _departamentos.Where(d => d.Nombre != null &&
+                d.Nombre.Contains(texto, StringComparison.OrdinalIgnoreCase)).Cast<DeptItem?>();
+        return Task.FromResult(resultado);
+    }
+
+    private Task<IEnumerable<MunicipioItem?>> BuscarMunicipio(string? texto, CancellationToken ct)
+    {
+        var resultado = string.IsNullOrWhiteSpace(texto)
+            ? _municipiosFiltrados.Cast<MunicipioItem?>()
+            : _municipiosFiltrados.Where(m => m.NombreMuni != null &&
+                m.NombreMuni.Contains(texto, StringComparison.OrdinalIgnoreCase)).Cast<MunicipioItem?>();
+        return Task.FromResult(resultado);
+    }
+
+    private void OnDepartamentoChanged(DeptItem? dept)
+    {
+        _deptSeleccionado = dept;
+        _muniSeleccionado = null;
+        _municipiosFiltrados = dept is null
+            ? new()
+            : _todosLosMunicipios.Where(m => m.CodigoDept == dept.Codigo).ToList();
+    }
+
+    private void OnNitCambiado(string? valor)
+    {
+        _nit = valor;
+        _dv = CalcularDV(valor);
+    }
+
+    private static int? CalcularDV(string? nit)
+    {
+        if (string.IsNullOrWhiteSpace(nit)) return null;
+        var digits = nit.Trim();
+        if (digits.Length == 0 || !digits.All(char.IsDigit)) return null;
+        int[] primos = { 0, 3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71 };
+        if (digits.Length >= primos.Length) return null;
+        int total = 0, n = digits.Length;
+        for (int i = 0; i < n; i++)
+            total += (digits[i] - '0') * primos[n - i];
+        int res = total % 11;
+        return res > 1 ? 11 - res : res;
+    }
+
     private void CambiarTipo(string tipo)
     {
         _tipoPersona = tipo;
-        // Si el campo Nombre ya tenía algo y cambia a Natural, no lo borramos
+        if (tipo == "Juridica" && (_tipoIdentificacion == null || _tipoIdentificacion == "13"))
+            _tipoIdentificacion = "31";
+        else if (tipo == "Natural" && (_tipoIdentificacion == null || _tipoIdentificacion == "31"))
+            _tipoIdentificacion = "13";
     }
 
     protected override void OnParametersSet()
@@ -187,12 +411,28 @@
             _telefono         = Cliente.Telefono;
             _email            = Cliente.Email;
             _direccion        = Cliente.Direccion;
-            _departamento     = Cliente.Departamento;
-            _ciudad           = Cliente.Ciudad;
             _fuenteContacto   = Cliente.FuenteContacto;
             _responsableId    = Cliente.ResponsableID;
             _proximoContacto  = Cliente.ProximoContacto;
             _estado           = Cliente.Estado;
+            _tipoIdentificacion = Cliente.TipoIdentificacion;
+            _pais             = "CO";
+            _dv               = Cliente.DigitoVerificacion ?? CalcularDV(Cliente.NIT);
+            // Las selecciones de dept/muni se resuelven en OnInitializedAsync cuando los catálogos ya cargaron
+        }
+        else
+        {
+            _tipoIdentificacion = "13";
+            _pais = "CO";
+            if (!string.IsNullOrWhiteSpace(NitInicial))
+            {
+                _nit = NitInicial;
+                _dv = CalcularDV(_nit);
+            }
+            else
+            {
+                _dv = null;
+            }
         }
     }
 
@@ -207,13 +447,17 @@
                 _fuenteContacto, tipoCliente, _responsableId,
                 _tipoPersona, _primerNombre?.Trim(), _segundoNombre?.Trim(),
                 _primerApellido?.Trim(), _segundoApellido?.Trim(),
-                _departamento?.Trim(), _ciudad?.Trim())
+                _deptSeleccionado?.Nombre, _muniSeleccionado?.NombreMuni,
+                _tipoIdentificacion, _deptSeleccionado?.Codigo, _muniSeleccionado?.CodigoMuni,
+                _dv)
             : new ActualizarClienteRequest(
                 nombreFinal, _nit?.Trim(), _telefono?.Trim(), _email?.Trim(), _direccion?.Trim(),
                 _estado, _fuenteContacto, tipoCliente, _responsableId, _proximoContacto,
                 _tipoPersona, _primerNombre?.Trim(), _segundoNombre?.Trim(),
                 _primerApellido?.Trim(), _segundoApellido?.Trim(),
-                _departamento?.Trim(), _ciudad?.Trim());
+                _deptSeleccionado?.Nombre, _muniSeleccionado?.NombreMuni,
+                _tipoIdentificacion, _deptSeleccionado?.Codigo, _muniSeleccionado?.CodigoMuni,
+                _dv);
 
         MudDialog.Close(DialogResult.Ok(resultado));
     }

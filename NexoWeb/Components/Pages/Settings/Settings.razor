@@ -429,6 +429,39 @@
                             @(_guardandoInventario ? "Guardando..." : "Guardar configuracion de inventario")
                         </MudButton>
                     </MudPaper>
+
+                    @* ── Numeracion de Documentos ── *@
+                    <MudPaper Class="pa-5 rounded-xl" Elevation="0" Style="border:1px solid var(--mud-palette-lines-default)">
+                        <div class="d-flex align-center gap-3 mb-4">
+                            <MudIcon Icon="@Icons.Material.Outlined.Tag" Color="Color.Primary" Size="Size.Medium" />
+                            <div>
+                                <MudText Typo="Typo.subtitle1" Style="font-weight:700">Numeración de Documentos</MudText>
+                                <MudText Typo="Typo.caption" Style="color:var(--n-text-3)">
+                                    Define cómo se genera el número de documento al crear facturas y remisiones.
+                                </MudText>
+                            </div>
+                        </div>
+
+                        <MudSelect T="string" @bind-Value="_modoNroDoc" Label="Modo de numeración"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3">
+                            <MudSelectItem Value=@("Manual")>Manual — el usuario escribe el número</MudSelectItem>
+                            <MudSelectItem Value=@("Secuencial")>Secuencial — contador propio de NEXO</MudSelectItem>
+                            <MudSelectItem Value=@("Aleatorio")>Aleatorio — 10 dígitos aleatorios</MudSelectItem>
+                        </MudSelect>
+
+                        @if (_modoNroDoc == "Secuencial")
+                        {
+                            <MudNumericField T="long" @bind-Value="_ultimoNroDocSecuencial"
+                                             Label="Último número usado (el siguiente será este + 1)"
+                                             Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3"
+                                             Min="0" />
+                        }
+
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
+                                   OnClick="GuardarConfigNroDocAsync" Disabled="_guardandoNroDoc">
+                            @(_guardandoNroDoc ? "Guardando..." : "Guardar configuracion de numeracion")
+                        </MudButton>
+                    </MudPaper>
                 </Authorized>
             </AuthorizeView>
         }
@@ -541,6 +574,23 @@
     private int _diasAlertaVencimiento = 7;
     private bool _guardandoInventario;
 
+    // ── Numeracion de Documentos (Administracion) ─────────────────────
+    private string _modoNroDoc = "Manual";
+    private long _ultimoNroDocSecuencial = 0;
+    private bool _guardandoNroDoc;
+
+    private async Task GuardarConfigNroDocAsync()
+    {
+        _guardandoNroDoc = true;
+        try
+        {
+            await ConfiguracionEmpresa.ActualizarConfigNroDocAsync(_modoNroDoc, _ultimoNroDocSecuencial);
+            Snackbar.Add("Configuracion de numeracion guardada.", Severity.Success);
+        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _guardandoNroDoc = false; }
+    }
+
     private async Task GuardarConfigInventarioAsync()
     {
         _guardandoInventario = true;
@@ -623,6 +673,8 @@
         _modoLotes = ConfiguracionEmpresa.ModoLotes;
         _manejarVencimientos = ConfiguracionEmpresa.ManejarVencimientos;
         _diasAlertaVencimiento = ConfiguracionEmpresa.DiasAlertaVencimiento;
+        _modoNroDoc = ConfiguracionEmpresa.ModoNroDoc;
+        _ultimoNroDocSecuencial = ConfiguracionEmpresa.UltimoNroDocSecuencial;
         _perfilNombres = AuthState.Nombres ?? "";
         _perfilApellidos = AuthState.Apellidos ?? "";
     }

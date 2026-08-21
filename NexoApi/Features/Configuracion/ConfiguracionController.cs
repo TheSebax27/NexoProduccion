@@ -68,4 +68,21 @@ public class ConfiguracionController : ControllerBase
         }
         catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
     }
+
+    [HttpGet("empresa/nrodoc")]
+    [Authorize(Roles = "Administracion")]
+    public async Task<ActionResult<ConfigNroDocResponse>> ObtenerConfigNroDoc()
+        => Ok(await _service.ObtenerConfigNroDocAsync());
+
+    [HttpPut("empresa/nrodoc")]
+    [Authorize(Roles = "Administracion")]
+    public async Task<ActionResult> ActualizarConfigNroDoc(ActualizarConfigNroDocRequest request)
+    {
+        try
+        {
+            await _service.ActualizarConfigNroDocAsync(request.ModoNroDoc, request.UltimoNroDocSecuencial);
+            return NoContent();
+        }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+    }
 }

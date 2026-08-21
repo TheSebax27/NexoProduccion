@@ -18,6 +18,12 @@ public interface IDashboardService
     Task<IEnumerable<EmpleadosPorCentroCostoItem>> ObtenerEmpleadosPorCentroCostoAsync();
     Task<ResumenPlanificacionItem> ObtenerResumenPlanificacionAsync();
     Task<ResumenInventarioItem> ObtenerResumenInventarioAsync();
+
+    // Tab Facturacion BI
+    Task<ResumenFacturacionItem> ObtenerResumenFacturacionAsync(DateTime desde, DateTime hasta);
+    Task<IEnumerable<IngresoPorMesPunto>> ObtenerIngresosPorMesAsync(int meses);
+    Task<IEnumerable<TopClienteItem>> ObtenerTopClientesAsync(DateTime desde, DateTime hasta, int top = 10);
+    Task<IEnumerable<TopArticuloItem>> ObtenerTopArticulosAsync(DateTime desde, DateTime hasta, int top = 10);
 }
 
 public class DashboardService : IDashboardService
@@ -172,5 +178,83 @@ public class DashboardService : IDashboardService
             FROM Inventario.vw_StockConsolidado";
 
         return await connection.QuerySingleAsync<ResumenInventarioItem>(sql);
+    }
+
+    public async Task<ResumenFacturacionItem> ObtenerResumenFacturacionAsync(DateTime desde, DateTime hasta)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT
+                ISNULL(SUM(ISNULL(tot.Total,0)), 0)                                       AS TotalEmitido,
+                ISNULL(SUM(ISNULL(pag.TotalPagado,0)), 0)                                 AS TotalCobrado,
+                ISNULL(SUM(ISNULL(tot.Total,0) - ISNULL(pag.TotalPagado,0)), 0)           AS SaldoPendiente,
+                COUNT(*)                                                                    AS DocumentosEmitidos
+            FROM Facturacion.Facturas f
+            LEFT JOIN (SELECT FacturaID, SUM(Cantidad * PrecioUnitario) AS Total
+                       FROM Facturacion.FacturaLineas GROUP BY FacturaID) tot ON tot.FacturaID = f.FacturaID
+            LEFT JOIN (SELECT FacturaID, SUM(Monto) AS TotalPagado
+                       FROM Facturacion.Pagos GROUP BY FacturaID) pag ON pag.FacturaID = f.FacturaID
+            WHERE f.Fecha >= @Desde AND f.Fecha <= @Hasta";
+        return await connection.QuerySingleAsync<ResumenFacturacionItem>(sql, new { Desde = desde.Date, Hasta = hasta.Date });
+    }
+
+    public async Task<IEnumerable<IngresoPorMesPunto>> ObtenerIngresosPorMesAsync(int meses)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT
+                YEAR(f.Fecha)            AS Anio,
+                MONTH(f.Fecha)           AS Mes,
+                DATENAME(MONTH, f.Fecha) AS NombreMes,
+                ISNULL(SUM(ISNULL(tot.Total,0)), 0)       AS TotalFacturado,
+                ISNULL(SUM(ISNULL(pag.TotalPagado,0)), 0) AS TotalCobrado
+            FROM Facturacion.Facturas f
+            LEFT JOIN (SELECT FacturaID, SUM(Cantidad * PrecioUnitario) AS Total
+                       FROM Facturacion.FacturaLineas GROUP BY FacturaID) tot ON tot.FacturaID = f.FacturaID
+            LEFT JOIN (SELECT FacturaID, SUM(Monto) AS TotalPagado
+                       FROM Facturacion.Pagos GROUP BY FacturaID) pag ON pag.FacturaID = f.FacturaID
+            WHERE f.Fecha >= DATEADD(MONTH, -@Meses, CAST(GETUTCDATE() AS DATE))
+            GROUP BY YEAR(f.Fecha), MONTH(f.Fecha), DATENAME(MONTH, f.Fecha)
+            ORDER BY Anio, Mes";
+        return await connection.QueryAsync<IngresoPorMesPunto>(sql, new { Meses = meses });
+    }
+
+    public async Task<IEnumerable<TopClienteItem>> ObtenerTopClientesAsync(DateTime desde, DateTime hasta, int top = 10)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT TOP (@Top)
+                c.ClienteID,
+                c.Nombre AS Cliente,
+                c.NIT,
+                ISNULL(SUM(ISNULL(tot.Total,0)), 0) AS TotalFacturado,
+                COUNT(f.FacturaID)                  AS NumDocumentos
+            FROM Facturacion.Facturas f
+            JOIN Crm.Clientes c ON c.ClienteID = f.ClienteID
+            LEFT JOIN (SELECT FacturaID, SUM(Cantidad * PrecioUnitario) AS Total
+                       FROM Facturacion.FacturaLineas GROUP BY FacturaID) tot ON tot.FacturaID = f.FacturaID
+            WHERE f.Fecha >= @Desde AND f.Fecha <= @Hasta
+            GROUP BY c.ClienteID, c.Nombre, c.NIT
+            ORDER BY TotalFacturado DESC";
+        return await connection.QueryAsync<TopClienteItem>(sql, new { Top = top, Desde = desde.Date, Hasta = hasta.Date });
+    }
+
+    public async Task<IEnumerable<TopArticuloItem>> ObtenerTopArticulosAsync(DateTime desde, DateTime hasta, int top = 10)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT TOP (@Top)
+                a.ArticuloID,
+                a.Referencia AS SKU,
+                a.Nombre,
+                ISNULL(SUM(ABS(fl.Cantidad)), 0)                     AS CantidadVendida,
+                ISNULL(SUM(ABS(fl.Cantidad) * fl.PrecioUnitario), 0) AS TotalFacturado
+            FROM Facturacion.FacturaLineas fl
+            JOIN Facturacion.Facturas f  ON f.FacturaID  = fl.FacturaID
+            JOIN Catalogo.Tarjetas a     ON a.ArticuloID = fl.ArticuloID
+            WHERE f.Fecha >= @Desde AND f.Fecha <= @Hasta
+            GROUP BY a.ArticuloID, a.Referencia, a.Nombre
+            ORDER BY TotalFacturado DESC";
+        return await connection.QueryAsync<TopArticuloItem>(sql, new { Top = top, Desde = desde.Date, Hasta = hasta.Date });
     }
 }

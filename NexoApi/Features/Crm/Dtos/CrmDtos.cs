@@ -13,7 +13,9 @@ public record ClienteItem(
     int TotalContactos, DateTime? UltimaInteraccion,
     string? TipoPersona,
     string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
-    string? Departamento, string? Ciudad
+    string? Departamento, string? Ciudad,
+    string? TipoIdentificacion, string? CodigoDept, string? CodigoMuni,
+    int? DigitoVerificacion = null
 );
 
 public record CrearClienteRequest(
@@ -21,7 +23,9 @@ public record CrearClienteRequest(
     string? FuenteContacto, string? TipoCliente, int? ResponsableID,
     string? TipoPersona,
     string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
-    string? Departamento, string? Ciudad
+    string? Departamento, string? Ciudad,
+    string? TipoIdentificacion = null, string? CodigoDept = null, string? CodigoMuni = null,
+    int? DigitoVerificacion = null
 );
 
 public record ActualizarClienteRequest(
@@ -29,8 +33,15 @@ public record ActualizarClienteRequest(
     string? FuenteContacto, string? TipoCliente, int? ResponsableID, DateTime? ProximoContacto,
     string? TipoPersona,
     string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
-    string? Departamento, string? Ciudad
+    string? Departamento, string? Ciudad,
+    string? TipoIdentificacion = null, string? CodigoDept = null, string? CodigoMuni = null,
+    int? DigitoVerificacion = null
 );
+
+// Catálogo de referencia
+public record PaisItem(string Codigo1, string? Codigo2, string? Codigo3, string Nombre);
+public record MunicipioItem(string CodigoDept, string? NombreDept, string CodigoMuni, string? NombreMuni);
+public record TipoIdentificacionItem(string Codigo, string? Detalle);
 
 // Bitacora de interacciones -- llamadas, correos, reuniones con un cliente.
 public record InteraccionItem(
@@ -43,6 +54,9 @@ public record CrearInteraccionRequest(int ClienteID, string Tipo, string Notas, 
 public record ContactoItem(int ContactoID, int ClienteID, string Nombres, string? Cargo, string? Telefono, string? Email, bool EsPrincipal, bool Estado);
 public record CrearContactoRequest(int ClienteID, string Nombres, string? Cargo, string? Telefono, string? Email, bool EsPrincipal);
 public record ActualizarContactoRequest(string Nombres, string? Cargo, string? Telefono, string? Email, bool EsPrincipal, bool Estado);
+
+// ---------- B2) Clientes paginados ----------
+public record ClientesPaginadosResponse(List<ClienteItem> Items, int Total);
 
 // ---------- C) Historial unificado ----------
 // TipoEvento: INTERACCION / PEDIDO / DESPACHO -- un timeline con todo lo que

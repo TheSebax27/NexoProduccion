@@ -12,6 +12,8 @@ public interface IConfiguracionService
     Task EliminarLogoEmpresaAsync();
     Task ActualizarUsaVisionsAsync(bool usaVisions);
     Task ActualizarConfigInventarioAsync(bool manejarVencimientos, int diasAlerta, string modoLotes);
+    Task<ConfigNroDocResponse> ObtenerConfigNroDocAsync();
+    Task ActualizarConfigNroDocAsync(string modoNroDoc, long ultimoSecuencial);
 }
 
 // Configuracion global de la empresa (nombre + logo del sidebar) -- a
@@ -34,16 +36,19 @@ public class ConfiguracionService : IConfiguracionService
         var fila = await connection.QuerySingleAsync<(
             string NombreEmpresa, string? NombrePropietario,
             byte[]? Logo, string? LogoContentType, bool UsaVisions,
-            bool ManejarVencimientos, int DiasAlertaVencimiento, string ModoLotes)>(
+            bool ManejarVencimientos, int DiasAlertaVencimiento, string ModoLotes,
+            string ModoNroDoc, long UltimoNroDocSecuencial)>(
             @"SELECT NombreEmpresa, NombrePropietario, Logo, LogoContentType, UsaVisions,
-                     ManejarVencimientos, DiasAlertaVencimiento, ModoLotes
+                     ManejarVencimientos, DiasAlertaVencimiento, ModoLotes,
+                     ModoNroDoc, UltimoNroDocSecuencial
               FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
 
         return new ConfiguracionEmpresaResponse(
             fila.NombreEmpresa, fila.NombrePropietario,
             fila.Logo is null ? null : Convert.ToBase64String(fila.Logo),
             fila.LogoContentType, fila.UsaVisions,
-            fila.ManejarVencimientos, fila.DiasAlertaVencimiento, fila.ModoLotes);
+            fila.ManejarVencimientos, fila.DiasAlertaVencimiento, fila.ModoLotes,
+            fila.ModoNroDoc, fila.UltimoNroDocSecuencial);
     }
 
     public async Task ActualizarNombreEmpresaAsync(string nombreEmpresa, string? nombrePropietario)
@@ -96,5 +101,26 @@ public class ConfiguracionService : IConfiguracionService
                   ModoLotes = @ModoLotes
               WHERE ConfiguracionID = 1",
             new { ManejarVencimientos = manejarVencimientos, DiasAlertaVencimiento = diasAlerta, ModoLotes = modoLotes });
+    }
+
+    public async Task<ConfigNroDocResponse> ObtenerConfigNroDocAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QuerySingleAsync<ConfigNroDocResponse>(
+            "SELECT ModoNroDoc, UltimoNroDocSecuencial FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
+    }
+
+    public async Task ActualizarConfigNroDocAsync(string modoNroDoc, long ultimoSecuencial)
+    {
+        var modosValidos = new[] { "Secuencial", "Aleatorio", "Manual" };
+        if (!modosValidos.Contains(modoNroDoc))
+            throw new ArgumentException("ModoNroDoc invalido.");
+
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            @"UPDATE Organizacion.ConfiguracionEmpresa
+              SET ModoNroDoc = @ModoNroDoc, UltimoNroDocSecuencial = @UltimoNroDocSecuencial
+              WHERE ConfiguracionID = 1",
+            new { ModoNroDoc = modoNroDoc, UltimoNroDocSecuencial = ultimoSecuencial });
     }
 }

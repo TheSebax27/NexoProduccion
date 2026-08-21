@@ -156,7 +156,35 @@ public record ActualizarCentroTrabajoRequest(
 
 public record ProveedorItem(
     int ProveedorID, string RazonSocial, string NIT, string? Contacto,
-    string? Telefono, string? Email, string? Direccion, bool Estado
+    string? Telefono, string? Email, string? Direccion, bool Estado,
+    string? TipoPersona = null,
+    string? PrimerNombre = null, string? SegundoNombre = null,
+    string? PrimerApellido = null, string? SegundoApellido = null,
+    string? TipoIdentificacion = null, int? DigitoVerificacion = null,
+    string? Departamento = null, string? Ciudad = null,
+    string? CodigoDept = null, string? CodigoMuni = null,
+    string? Pais = null, string? CodigoPais = null
 );
-public record CrearProveedorRequest(string RazonSocial, string NIT, string? Contacto, string? Telefono, string? Email, string? Direccion);
-public record ActualizarProveedorRequest(string RazonSocial, string NIT, string? Contacto, string? Telefono, string? Email, string? Direccion, bool Estado);
+public record CrearProveedorRequest(
+    string RazonSocial, string NIT, string? Contacto, string? Telefono, string? Email, string? Direccion,
+    string? TipoPersona = null,
+    string? PrimerNombre = null, string? SegundoNombre = null,
+    string? PrimerApellido = null, string? SegundoApellido = null,
+    string? TipoIdentificacion = null, int? DigitoVerificacion = null,
+    string? Departamento = null, string? Ciudad = null,
+    string? CodigoDept = null, string? CodigoMuni = null,
+    string? Pais = null, string? CodigoPais = null
+);
+public record ActualizarProveedorRequest(
+    string RazonSocial, string NIT, string? Contacto, string? Telefono, string? Email, string? Direccion, bool Estado,
+    string? TipoPersona = null,
+    string? PrimerNombre = null, string? SegundoNombre = null,
+    string? PrimerApellido = null, string? SegundoApellido = null,
+    string? TipoIdentificacion = null, int? DigitoVerificacion = null,
+    string? Departamento = null, string? Ciudad = null,
+    string? CodigoDept = null, string? CodigoMuni = null,
+    string? Pais = null, string? CodigoPais = null
+);
+
+// Informa si un NIT ya está registrado como cliente y/o proveedor en NEXO
+public record DualRolInfo(bool EsCliente, int? ClienteID, bool EsProveedor, int? ProveedorID);

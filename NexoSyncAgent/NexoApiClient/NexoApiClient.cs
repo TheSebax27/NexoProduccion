@@ -176,6 +176,19 @@ public class NexoApiClient : INexoApiClient
         r.EnsureSuccessStatusCode();
     }
 
+    public async Task<List<ProveedorParaSyncDto>> ListarProveedoresParaSyncAsync(CancellationToken ct)
+    {
+        var r = await _http.GetAsync("api/integracion/sync/proveedores", ct);
+        r.EnsureSuccessStatusCode();
+        return await r.Content.ReadFromJsonAsync<List<ProveedorParaSyncDto>>(cancellationToken: ct) ?? [];
+    }
+
+    public async Task SyncProveedorDesdeVisionsAsync(SyncProveedorDesdeVisionsRequest request, CancellationToken ct)
+    {
+        var r = await _http.PostAsJsonAsync("api/integracion/sync/proveedor-desde-visions", request, ct);
+        r.EnsureSuccessStatusCode();
+    }
+
     public async Task ActualizarNumeroVisionsAsync(int facturaId, ActualizarNumeroVisionsRequest request, CancellationToken ct)
     {
         var r = await _http.PutAsJsonAsync($"api/integracion/facturas/{facturaId}/numero-visions", request, ct);

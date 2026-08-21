@@ -260,7 +260,13 @@ public record ClienteParaSyncDto(
     DateTime FechaModificacion,
     string? TipoPersona,
     string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
-    string? Departamento, string? Ciudad
+    string? Departamento, string? Ciudad,
+    string? TipoIdentificacionDetalle,
+    string? NombreDept,
+    string? NombreMuni,
+    string? CodigoDept,
+    string? CodigoMuni,
+    int? DigitoVerificacion
 );
 
 // ──────────── Salud del catálogo sincronizado ────────────
@@ -288,8 +294,44 @@ public record SyncClienteDesdeVisionsRequest(
     string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
     string? NombreEmpresa,
     string? Telefono, string? Email, string? Direccion,
-    string? Departamento, string? Ciudad
+    string? Departamento, string? Ciudad,
+    string? CodigoDept = null,
+    string? CodigoMuni = null,
+    int? DigitoVerificacion = null
 );
+// ──────────── Proveedores para sync NEXO → Visions ────────────
+public record ProveedorParaSyncDto(
+    int ProveedorID,
+    string NIT,
+    string RazonSocial,
+    string? Contacto,
+    string? Telefono,
+    string? Email,
+    string? Direccion,
+    string? TipoPersona = null,
+    string? PrimerNombre = null, string? SegundoNombre = null,
+    string? PrimerApellido = null, string? SegundoApellido = null,
+    string? TipoIdentificacion = null, int? DigitoVerificacion = null,
+    string? Departamento = null, string? Ciudad = null,
+    string? CodigoDept = null, string? CodigoMuni = null,
+    string? Pais = null, string? CodigoPais = null
+);
+
+// ──────────── Proveedores desde Visions → NEXO ────────────
+public record SyncProveedorDesdeVisionsRequest(
+    string NIT,
+    string RazonSocial,
+    string? Telefono,
+    string? Email,
+    string? Direccion,
+    string? TipoPersona = null,
+    string? PrimerNombre = null, string? SegundoNombre = null,
+    string? PrimerApellido = null, string? SegundoApellido = null,
+    string? TipoIdentificacion = null, int? DigitoVerificacion = null,
+    string? Departamento = null, string? Ciudad = null,
+    string? CodigoDept = null, string? CodigoMuni = null
+);
+
 // ──────────────────────── Ventas Visions (EventosEntrantes agrupados) ────────────────────────
 public record VentaVisionsItem(
     int CentroCostoID, string TipDoc, string NroDoc, DateTime Fecha,

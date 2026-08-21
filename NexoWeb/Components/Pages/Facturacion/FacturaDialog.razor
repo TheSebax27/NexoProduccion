@@ -1,6 +1,9 @@
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Common.Helpers
+@using NexoWeb.Components.Pages.Crm
 @inject ISnackbar Snackbar
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
 
 <MudDialog>
     <TitleContent>
@@ -53,20 +56,38 @@
 
             @* ── Cliente ── *@
             <div class="d-flex align-center mb-2" style="gap:1rem">
-                <MudSwitch @bind-Value="_consumidorFinal" Color="Color.Primary" Label="Consumidor Final" />
+                <MudSwitch Value="_consumidorFinal" ValueChanged="OnConsumidorFinalCambiado"
+                           T="bool" Color="Color.Primary" Label="Consumidor Final" />
             </div>
             @if (!_consumidorFinal)
             {
-                <MudSelect T="int?" @bind-Value="_clienteId" Label="Cliente" Required="true"
-                           RequiredError="Selecciona un cliente" Class="mb-3"
-                           Variant="Variant.Outlined" Margin="Margin.Dense">
-                    @foreach (var c in Clientes)
+                <div class="mb-3">
+                    <MudTextField T="string?" Value="_nitBusqueda"
+                                  ValueChanged="OnNitBusquedaCambiado"
+                                  Label="NIT / Documento del cliente"
+                                  Placeholder="Escribe el NIT o cédula"
+                                  Adornment="Adornment.End"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  Immediate="true" DebounceInterval="400"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    @if (_clienteEncontrado is not null)
                     {
-                        <MudSelectItem T="int?" Value="@c.ClienteID">
-                            @c.Nombre @(c.NIT is not null ? $"— {c.NIT}" : "")
-                        </MudSelectItem>
+                        <MudAlert Severity="Severity.Success" Dense="true" Class="mt-1"
+                                  Icon="@Icons.Material.Outlined.CheckCircle">
+                            <strong>@_clienteEncontrado.Nombre</strong> — NIT @_clienteEncontrado.NIT
+                        </MudAlert>
                     }
-                </MudSelect>
+                    else if (_nitNoEncontrado)
+                    {
+                        <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-1">
+                            NIT <strong>@_nitBusqueda</strong> no está registrado.
+                            <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Text"
+                                       OnClick="AbrirCreacionClienteAsync" Class="ml-1">
+                                Crear cliente
+                            </MudButton>
+                        </MudAlert>
+                    }
+                </div>
             }
 
             <div style="display:grid; grid-template-columns:160px 1fr; gap:10px; margin-bottom:14px">
@@ -106,37 +127,37 @@
                     </HeaderContent>
                     <RowTemplate>
                         @{
-                            var art = context.TipoLinea == TipoLinea.Articulo
-                                ? Articulos.FirstOrDefault(a => a.ArticuloID == context.ArticuloID)
-                                : null;
+                            var art = context.TipoLinea == TipoLinea.Articulo ? context.Articulo : null;
                         }
                         <MudTd>
                             @if (context.TipoLinea == TipoLinea.Articulo)
                             {
-                                <MudSelect T="int?" Value="context.ArticuloID"
-                                           ValueChanged="@((int? v) => OnArticuloCambiado(context, v))"
-                                           Dense="true" Margin="Margin.Dense" Variant="Variant.Text"
-                                           Style="font-size:0.85rem">
-                                    @foreach (var a in Articulos)
-                                    {
-                                        <MudSelectItem T="int?" Value="@a.ArticuloID">@a.SKU - @a.Nombre</MudSelectItem>
-                                    }
-                                </MudSelect>
+                                <MudAutocomplete T="ArticuloItem?" Dense="true" Margin="Margin.Dense"
+                                                 Variant="Variant.Text" Style="font-size:0.85rem"
+                                                 Value="@context.Articulo"
+                                                 ValueChanged="@((ArticuloItem? a) => OnArticuloAutocompletado(context, a))"
+                                                 SearchFunc="@BuscarArticulo"
+                                                 ToStringFunc="@(a => a is null ? "" : $"{a.SKU} – {a.Nombre}")"
+                                                 Placeholder="Busca por nombre o SKU..."
+                                                 MinCharacters="0" MaxItems="12"
+                                                 ResetValueOnEmptyText="false"
+                                                 CoerceText="false" CoerceValue="false" />
                             }
                             else
                             {
                                 <div class="d-flex align-center" style="gap:4px">
                                     <MudChip T="string" Size="Size.Small" Color="Color.Secondary"
                                              Icon="@Icons.Material.Filled.LocalOffer" Class="ma-0">COMBO</MudChip>
-                                    <MudSelect T="int?" Value="context.ComboID"
-                                               ValueChanged="@((int? v) => OnComboCambiado(context, v))"
-                                               Dense="true" Margin="Margin.Dense" Variant="Variant.Text"
-                                               Style="font-size:0.85rem; flex:1">
-                                        @foreach (var c in _combosActivos)
-                                        {
-                                            <MudSelectItem T="int?" Value="@c.ComboID">@c.Nombre</MudSelectItem>
-                                        }
-                                    </MudSelect>
+                                    <MudAutocomplete T="ComboItem?" Dense="true" Margin="Margin.Dense"
+                                                     Variant="Variant.Text" Style="font-size:0.85rem; flex:1"
+                                                     Value="@(_combosActivos.FirstOrDefault(c => c.ComboID == context.ComboID))"
+                                                     ValueChanged="@((ComboItem? c) => OnComboAutocompletado(context, c))"
+                                                     SearchFunc="@BuscarCombo"
+                                                     ToStringFunc="@(c => c?.Nombre ?? "")"
+                                                     Placeholder="Busca combo..."
+                                                     MinCharacters="0" MaxItems="10"
+                                                     ResetValueOnEmptyText="false"
+                                                     CoerceText="false" CoerceValue="false" />
                                 </div>
                             }
                         </MudTd>
@@ -223,15 +244,16 @@
 
     private class LineaEditable
     {
-        public TipoLinea TipoLinea     { get; set; } = TipoLinea.Articulo;
-        public int?      ArticuloID    { get; set; }
-        public int?      ComboID       { get; set; }
-        public string?   NombreCombo   { get; set; }
-        public int       Cajas         { get; set; } = 1;
-        public int       Unidades      { get; set; } = 0;
-        public decimal   CantidadSimple { get; set; } = 1;
-        public decimal   PrecioUnitario { get; set; }
-        public bool      UsarPrecioCatalogo { get; set; } = true;
+        public TipoLinea   TipoLinea      { get; set; } = TipoLinea.Articulo;
+        public int?        ArticuloID     { get; set; }
+        public ArticuloItem? Articulo     { get; set; }
+        public int?        ComboID        { get; set; }
+        public string?     NombreCombo    { get; set; }
+        public int         Cajas          { get; set; } = 1;
+        public int         Unidades       { get; set; } = 0;
+        public decimal     CantidadSimple { get; set; } = 1;
+        public decimal     PrecioUnitario { get; set; }
+        public bool        UsarPrecioCatalogo { get; set; } = true;
     }
 
     private const int ClienteConsumidorFinalId = 11;
@@ -242,11 +264,83 @@
     private bool _consumidorFinal;
     private int? _clienteId;
     private int? _centroCostoId;
+
+    // Búsqueda de cliente por NIT
+    private string? _nitBusqueda;
+    private ClienteItem? _clienteEncontrado;
+    private bool _nitNoEncontrado;
+    private List<ClienteItem> _clientesDisponibles = new();
     private bool _ccTieneVisions;
     private DateTime? _fecha = DateTime.Today;
     private string? _notas;
     private List<LineaEditable> _lineas = new() { new LineaEditable() };
     private List<ComboItem> _combosActivos => CombosActivos;
+
+    protected override void OnParametersSet()
+    {
+        if (_clientesDisponibles.Count == 0)
+            _clientesDisponibles = new(Clientes);
+    }
+
+
+    private void OnConsumidorFinalCambiado(bool valor)
+    {
+        _consumidorFinal = valor;
+        _nitBusqueda = null;
+        _clienteEncontrado = null;
+        _nitNoEncontrado = false;
+        _clienteId = null;
+    }
+
+    private void OnNitBusquedaCambiado(string? nit)
+    {
+        _nitBusqueda = nit?.Trim();
+        _clienteEncontrado = null;
+        _nitNoEncontrado = false;
+        if (string.IsNullOrWhiteSpace(_nitBusqueda)) { _clienteId = null; return; }
+
+        var c = _clientesDisponibles.FirstOrDefault(x => x.NIT?.Trim() == _nitBusqueda);
+        if (c is not null)
+        {
+            _clienteEncontrado = c;
+            _clienteId = c.ClienteID;
+        }
+        else
+        {
+            _nitNoEncontrado = true;
+            _clienteId = null;
+        }
+    }
+
+    private async Task AbrirCreacionClienteAsync()
+    {
+        var parametros = new DialogParameters<ClienteDialog>
+        {
+            { x => x.Cliente, null },
+            { x => x.Empleados, new() },
+            { x => x.NitInicial, _nitBusqueda }
+        };
+        var dialogo = await DialogService.ShowAsync<ClienteDialog>("Nuevo Cliente", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled) return;
+
+        var req = (CrearClienteRequest)resultado.Data!;
+        try
+        {
+            await ApiClient.PostAsync<CrearClienteRequest, object?>("api/crm/clientes", req);
+            var actualizados = await ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
+            if (actualizados is not null)
+                _clientesDisponibles = actualizados.Where(c => c.Estado).ToList();
+            OnNitBusquedaCambiado(_nitBusqueda);
+            if (_clienteEncontrado is not null)
+                Snackbar.Add("Cliente creado y seleccionado.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al crear cliente: {ex.Message}", Severity.Error);
+        }
+    }
 
     private void OnCentroCostoCambiado(int? id)
     {
@@ -271,23 +365,52 @@
         if (linea.TipoLinea == TipoLinea.Combo)
             return linea.CantidadSimple;
 
-        var art = Articulos.FirstOrDefault(a => a.ArticuloID == linea.ArticuloID);
-        if (art?.EsUnidadCaja == true)
-            return StockHelper.CajasYUnidadesADecimal(linea.Cajas, linea.Unidades, art.UnidadesPorEmbalaje!.Value);
+        if (linea.Articulo?.EsUnidadCaja == true)
+            return StockHelper.CajasYUnidadesADecimal(linea.Cajas, linea.Unidades, linea.Articulo.UnidadesPorEmbalaje!.Value);
 
         return linea.CantidadSimple;
     }
 
-    private void OnArticuloCambiado(LineaEditable linea, int? articuloId)
+    private async Task<IEnumerable<ArticuloItem?>> BuscarArticulo(string? texto, CancellationToken ct)
     {
-        linea.ArticuloID = articuloId;
+        var q = string.IsNullOrWhiteSpace(texto)
+            ? "api/catalogo/articulos?estado=true&pagina=1&tamano=15"
+            : $"api/catalogo/articulos?texto={Uri.EscapeDataString(texto)}&estado=true&pagina=1&tamano=15";
+        var resp = await ApiClient.GetAsync<ArticulosPaginadosResponse>(q);
+        return resp?.Items?.Cast<ArticuloItem?>() ?? Enumerable.Empty<ArticuloItem?>();
+    }
+
+    private Task<IEnumerable<ComboItem?>> BuscarCombo(string? texto, CancellationToken ct)
+    {
+        IEnumerable<ComboItem?> resultado = string.IsNullOrWhiteSpace(texto)
+            ? _combosActivos.Take(10).Cast<ComboItem?>()
+            : _combosActivos.Where(c =>
+                c.Nombre.Contains(texto, StringComparison.OrdinalIgnoreCase))
+              .Take(10).Cast<ComboItem?>();
+        return Task.FromResult(resultado);
+    }
+
+    private void OnArticuloAutocompletado(LineaEditable linea, ArticuloItem? art)
+    {
+        linea.ArticuloID = art?.ArticuloID;
+        linea.Articulo = art;
         linea.Cajas = 1;
         linea.Unidades = 0;
         linea.CantidadSimple = 1;
-        var art = Articulos.FirstOrDefault(a => a.ArticuloID == articuloId);
         linea.PrecioUnitario = art?.PrecioVenta ?? 0;
         linea.UsarPrecioCatalogo = true;
     }
+
+    private void OnComboAutocompletado(LineaEditable linea, ComboItem? combo)
+    {
+        linea.ComboID = combo?.ComboID;
+        linea.NombreCombo = combo?.Nombre;
+        linea.PrecioUnitario = combo?.PrecioEfectivo ?? 0;
+        linea.CantidadSimple = 1;
+    }
+
+    // Mantenido por si algún caller externo lo necesita; la tabla de líneas usa OnArticuloAutocompletado.
+    private void OnArticuloCambiado(LineaEditable linea, int? articuloId) { }
 
     private void OnComboCambiado(LineaEditable linea, int? comboId)
     {
@@ -302,8 +425,13 @@
     {
         await _form.Validate();
         var clienteIdFinal = _consumidorFinal ? ClienteConsumidorFinalId : _clienteId;
-        if (!_form.IsValid || clienteIdFinal is null || _fecha is null)
+        if (!_form.IsValid || _fecha is null)
             return;
+        if (!_consumidorFinal && clienteIdFinal is null)
+        {
+            Snackbar.Add("Ingresa el NIT del cliente y verifica que exista antes de crear la factura.", Severity.Warning);
+            return;
+        }
 
         var lineasValidas = _lineas
             .Where(l => l.TipoLinea == TipoLinea.Articulo

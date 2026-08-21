@@ -8,7 +8,8 @@ namespace NexoApi.Features.Facturacion;
 
 public interface IFacturacionService
 {
-    Task<FacturasPaginadasResponse> ListarFacturasAsync(int? clienteId, int? centroCostoId, string? tipDoc, string? estado, DateTime? desde, DateTime? hasta, int pagina = 1, int tamano = 50);
+    Task<FacturasPaginadasResponse> ListarFacturasAsync(int? clienteId, int? centroCostoId, string? tipDoc, string? estado, DateTime? desde, DateTime? hasta, string? texto, bool soloNoPagadas, int pagina = 1, int tamano = 100);
+    Task<string?> ObtenerSiguienteNroDocAsync(string tipDoc);
     Task<int> CrearFacturaAsync(CrearFacturaRequest request, int usuarioId);
 
     Task<IEnumerable<FacturaLineaItem>> ListarLineasAsync(int facturaId);
@@ -43,16 +44,49 @@ public class FacturacionService : IFacturacionService
         int? CentroCostoID, string? CentroCostoNombre
     );
 
+    // Devuelve el siguiente NroDoc segun el modo configurado en ConfiguracionEmpresa:
+    // - Secuencial: incremento atomico del contador propio de NEXO
+    // - Aleatorio : 10 digitos aleatorios
+    // - Manual    : null (el usuario escribe el numero)
+    public async Task<string?> ObtenerSiguienteNroDocAsync(string tipDoc)
+    {
+        using var connection = _db.CreateConnection();
+
+        var modo = await connection.ExecuteScalarAsync<string>(
+            "SELECT ModoNroDoc FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
+
+        switch (modo)
+        {
+            case "Secuencial":
+            {
+                var siguiente = await connection.ExecuteScalarAsync<long>(@"
+                    UPDATE Organizacion.ConfiguracionEmpresa
+                    SET UltimoNroDocSecuencial = UltimoNroDocSecuencial + 1
+                    OUTPUT INSERTED.UltimoNroDocSecuencial
+                    WHERE ConfiguracionID = 1");
+                return siguiente.ToString();
+            }
+
+            case "Aleatorio":
+            {
+                var rng = new Random();
+                return rng.NextInt64(1_000_000_000L, 9_999_999_999L).ToString();
+            }
+
+            default: // Manual
+                return null;
+        }
+    }
+
     public async Task<FacturasPaginadasResponse> ListarFacturasAsync(
         int? clienteId, int? centroCostoId, string? tipDoc, string? estado, DateTime? desde, DateTime? hasta,
-        int pagina = 1, int tamano = 50)
+        string? texto, bool soloNoPagadas, int pagina = 1, int tamano = 100)
     {
         using var connection = _db.CreateConnection();
         var offset = (pagina - 1) * tamano;
+        var textoBusqueda = string.IsNullOrWhiteSpace(texto) ? null : $"%{texto.Trim()}%";
 
-        // Filtro estado se aplica en HAVING sobre totales calculados via JOIN
-        // Los subqueries correlated se reemplazan por LEFT JOINs agrupados (mucho más rápido)
-        const string sqlBase = @"
+        var sqlBase = @"
             FROM Facturacion.Facturas f
             JOIN Crm.Clientes c ON c.ClienteID = f.ClienteID
             LEFT JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = f.CentroCostoID
@@ -68,12 +102,14 @@ public class FacturacionService : IFacturacionService
               AND (@TipDoc         IS NULL OR f.TipDoc         = @TipDoc)
               AND (@Desde          IS NULL OR f.Fecha          >= @Desde)
               AND (@Hasta          IS NULL OR f.Fecha          <= @Hasta)
-              AND (@CentroCostoId  IS NULL OR f.CentroCostoID  = @CentroCostoId)";
+              AND (@CentroCostoId  IS NULL OR f.CentroCostoID  = @CentroCostoId)
+              AND (@Texto          IS NULL OR f.NroDoc LIKE @Texto OR c.NIT LIKE @Texto OR c.Nombre LIKE @Texto)"
+            + (soloNoPagadas
+                ? " AND (ISNULL(pag.TotalPagado,0) < ISNULL(tot.Total,0) OR ISNULL(tot.Total,0) = 0)"
+                : "");
 
-        var p = new { ClienteId = clienteId, CentroCostoId = centroCostoId, TipDoc = tipDoc, Desde = desde, Hasta = hasta };
+        var p = new { ClienteId = clienteId, CentroCostoId = centroCostoId, TipDoc = tipDoc, Desde = desde, Hasta = hasta, Texto = textoBusqueda };
 
-        // Estado requiere conocer totales, así que se filtra en C# sobre la página actual
-        // Para el total real con filtro de estado: aproximación con COUNT sin estado (suficiente para paginación)
         var total = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) " + sqlBase, p, commandTimeout: 30);
 
         var crudas = await connection.QueryAsync<FacturaCruda>(@"
@@ -86,7 +122,7 @@ public class FacturacionService : IFacturacionService
             sqlBase + @"
             ORDER BY f.Fecha DESC, f.FacturaID DESC
             OFFSET @Offset ROWS FETCH NEXT @Tamano ROWS ONLY",
-            new { ClienteId = clienteId, CentroCostoId = centroCostoId, TipDoc = tipDoc, Desde = desde, Hasta = hasta, Offset = offset, Tamano = tamano },
+            new { ClienteId = clienteId, CentroCostoId = centroCostoId, TipDoc = tipDoc, Desde = desde, Hasta = hasta, Texto = textoBusqueda, Offset = offset, Tamano = tamano },
             commandTimeout: 30);
 
         var items = crudas.Select(f =>
@@ -213,24 +249,21 @@ public class FacturacionService : IFacturacionService
     {
         using var connection = _db.CreateConnection();
 
-        // Gate Visions: si la empresa usa Visions, el documento debe estar
-        // confirmado desde Visions antes de poder descontar inventario.
-        var usaVisions = await connection.ExecuteScalarAsync<bool>(
-            "SELECT UsaVisions FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
+        // Gate Visions: solo si el CC de esta factura tiene Visions integrado
+        // se exige confirmación previa. CCs sin Visions descargan directo.
+        var info = await connection.QuerySingleOrDefaultAsync<(bool? VisionsConfirmado, bool CcTieneVisions)>(
+            @"SELECT f.VisionsConfirmado, ISNULL(cc.TieneVisions, 0) AS CcTieneVisions
+              FROM Facturacion.Facturas f
+              LEFT JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = f.CentroCostoID
+              WHERE f.FacturaID = @FacturaID",
+            new { FacturaID = facturaId });
 
-        if (usaVisions)
-        {
-            var confirmado = await connection.ExecuteScalarAsync<bool?>(
-                "SELECT VisionsConfirmado FROM Facturacion.Facturas WHERE FacturaID = @FacturaID",
-                new { FacturaID = facturaId });
+        if (info.Equals(default))
+            throw new KeyNotFoundException("Factura no encontrada.");
 
-            if (confirmado is null)
-                throw new KeyNotFoundException("Factura no encontrada.");
-
-            if (!confirmado.Value)
-                throw new InvalidOperationException(
-                    "Esta empresa usa Visions. El documento debe ser confirmado desde Visions antes de descontar el inventario.");
-        }
+        if (info.CcTieneVisions && !info.VisionsConfirmado.GetValueOrDefault())
+            throw new InvalidOperationException(
+                "El centro de costo usa Visions. El descuento de inventario se aplica automáticamente cuando Visions confirme el documento.");
 
         try
         {

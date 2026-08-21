@@ -26,6 +26,13 @@ public class CrmController : ControllerBase
         [FromQuery] string? fuenteContacto, [FromQuery] bool? soloActivos)
         => Ok(await _service.ListarClientesAsync(responsableId, tipoCliente, fuenteContacto, soloActivos));
 
+    [HttpGet("clientes/paginados")]
+    public async Task<ActionResult<ClientesPaginadosResponse>> ListarClientesPaginados(
+        [FromQuery] string? texto, [FromQuery] int? responsableId,
+        [FromQuery] string? tipoCliente, [FromQuery] string? fuenteContacto,
+        [FromQuery] int pagina = 1, [FromQuery] int tamano = 100)
+        => Ok(await _service.ListarClientesPaginadosAsync(texto, responsableId, tipoCliente, fuenteContacto, pagina, tamano));
+
     // Usa ExternalId (string opaco) para que la URL no exponga el int primario.
     // El workspace carga el cliente por aqui y luego usa ClienteID (int) internamente.
     [HttpGet("clientes/{externalId}")]
@@ -55,6 +62,18 @@ public class CrmController : ControllerBase
             return NotFound(new { error = ex.Message });
         }
     }
+
+    [HttpGet("paises")]
+    public async Task<ActionResult<IEnumerable<PaisItem>>> ListarPaises()
+        => Ok(await _service.ListarPaisesAsync());
+
+    [HttpGet("municipios")]
+    public async Task<ActionResult<IEnumerable<MunicipioItem>>> ListarMunicipios()
+        => Ok(await _service.ListarMunicipiosAsync());
+
+    [HttpGet("tipos-identificacion")]
+    public async Task<ActionResult<IEnumerable<TipoIdentificacionItem>>> ListarTiposIdentificacion()
+        => Ok(await _service.ListarTiposIdentificacionAsync());
 
     [HttpGet("clientes/{id:int}/interacciones")]
     public async Task<ActionResult<IEnumerable<InteraccionItem>>> ListarInteracciones(int id)

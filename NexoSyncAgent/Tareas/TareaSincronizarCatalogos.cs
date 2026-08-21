@@ -228,7 +228,7 @@ public class TareaSincronizarCatalogos
                       USING (SELECT @Codigo AS CODIGO) AS s ON d.CODIGO = s.CODIGO
                       WHEN MATCHED THEN UPDATE SET PRESENTACION = @Presentacion
                       WHEN NOT MATCHED THEN INSERT (CODIGO, PRESENTACION) VALUES (@Codigo, @Presentacion);",
-                    new { item.Codigo, item.Presentacion });
+                    new { item.Codigo, Presentacion = item.Presentacion ?? item.Codigo });
                 _logger.LogInformation("Presentacion {Codigo} creada en Visions", item.Codigo);
             }
             catch (Exception ex) { _logger.LogError(ex, "Error al crear Presentacion {Codigo} en Visions", item.Codigo); }

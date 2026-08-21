@@ -1,0 +1,177 @@
+================================================================================
+ GUIA: BOTON EN VISIONS PARA IMPORTAR FACTURAS PENDIENTES DESDE NEXO
+ Fecha de referencia: agosto 2026
+================================================================================
+
+RESUMEN
+-------
+NEXO genera facturas y las deja en una tabla de staging dentro de VISIONSDBL1.
+Un boton (o script) en Visions lee esa tabla, le asigna el numero de factura
+real de Visions, y confirma la operacion. El agente de sync detecta la
+confirmacion y actualiza el numero en NEXO.
+
+Sin este boton, las facturas de NEXO quedan "pendientes" indefinidamente.
+Visions siempre asigna el numero oficial; NEXO solo lo confirma despues.
+
+
+TABLAS DE STAGING (en VISIONSDBL1)
+------------------------------------
+
+  NEXO_FacturasPendientes
+  -----------------------
+  Columnas clave:
+    FacturaID       int             -- ID de la factura en NEXO (clave)
+    NIT             nvarchar        -- NIT del cliente
+    NombreCliente   nvarchar        -- Nombre del cliente
+    Fecha           date            -- Fecha de emision en NEXO
+    TipDoc          nvarchar        -- Tipo de documento NEXO (ej: FACTURA)
+    TotalNexo       decimal         -- Total calculado en NEXO
+    Estado          nvarchar        -- PENDIENTE | PROCESADA
+    FechaEnvio      datetime        -- Cuando el agente la escribio al staging
+    NroDocVisions   nvarchar        -- Lo llena Visions al confirmar
+    TipDocVisions   nvarchar        -- Lo llena Visions al confirmar
+    FechaConfirmada datetime        -- Cuando Visions la proceso
+
+  NEXO_FacturasPendientesLineas
+  ------------------------------
+  Columnas clave:
+    FacturaID       int             -- Referencia a NEXO_FacturasPendientes
+    Orden           int             -- Numero de linea
+    Referencia      nvarchar        -- Codigo/SKU del articulo (igual que en TARJETA.REFERENCIA)
+    Detalle         nvarchar        -- Nombre del articulo
+    Cantidad        decimal
+    PrecioUnitario  decimal
+    Total           decimal
+
+
+STORED PROCEDURES DISPONIBLES
+-------------------------------
+
+  NEXO_SP_FacturasPendientes
+  --------------------------
+  Sin parametros. Devuelve todas las facturas con Estado = 'PENDIENTE',
+  junto con sus lineas.
+
+  Resultado:
+    - Una fila por linea de factura
+    - Columnas del encabezado: FacturaID, NIT, NombreCliente, Fecha, TipDoc,
+      TotalNexo, FechaEnvio
+    - Columnas de la linea: Orden, Referencia, Detalle, Cantidad,
+      PrecioUnitario, Total
+
+  Uso: llamar desde el boton para listar lo que hay que facturar.
+
+
+  NEXO_SP_ConfirmarFactura  @FacturaID int, @NroDocVisions nvarchar(50),
+                             @TipDocVisions nvarchar(20)
+  -----------------------------------------------------------------------
+  Marca la factura como PROCESADA y guarda el numero que Visions asigno.
+  El agente de NEXO detectara este cambio en el siguiente ciclo y actualizara
+  el numero de factura dentro de NEXO automaticamente.
+
+  Parametros:
+    @FacturaID      -- FacturaID de NEXO_FacturasPendientes
+    @NroDocVisions  -- Numero de factura que Visions asigno (ej: '000125')
+    @TipDocVisions  -- Tipo de documento de Visions (ej: 'SETP', 'FACT', etc.)
+
+  Ejemplo de llamada:
+    EXEC NEXO_SP_ConfirmarFactura 42, '000125', 'SETP'
+
+
+FLUJO COMPLETO PASO A PASO
+----------------------------
+
+  1. Operador en Visions hace clic en el boton "Facturas NEXO pendientes".
+  2. El boton llama:  EXEC NEXO_SP_FacturasPendientes
+  3. Visions muestra la lista de facturas pendientes con sus articulos.
+  4. El operador selecciona una factura y la factura normalmente en Visions
+     usando los datos del cliente (NIT, nombre) y los articulos de la lista.
+  5. Al guardar en Visions, Visions asigna su numero de factura (ej: '000125')
+     y su tipo de documento (ej: 'SETP').
+  6. El boton llama:  EXEC NEXO_SP_ConfirmarFactura @FacturaID, @NroDoc, @TipDoc
+  7. La factura cambia de PENDIENTE a PROCESADA en el staging.
+  8. En el siguiente ciclo del agente (cada N minutos), el agente lee las
+     facturas PROCESADAS y llama la API de NEXO para guardar el numero
+     de Visions en la factura original de NEXO.
+  9. La factura en NEXO queda con NroDoc = '000125', TipDoc = 'SETP',
+     VisionsConfirmado = 1.
+
+
+QUE DEBE HACER EL PROGRAMADOR DE VISIONS
+------------------------------------------
+
+  Opcion A: Script / consulta rapida (lo mas simple)
+  ----------------------------------------------------
+  - Crear una pantalla o pestaña en Visions que al abrirse ejecute
+    NEXO_SP_FacturasPendientes y muestre los resultados en una grilla.
+  - Boton "Facturar" o "Confirmar" que, al recibir el NroDoc generado por
+    Visions, llame NEXO_SP_ConfirmarFactura con los parametros correctos.
+
+  Opcion B: Macro / script en Crystal Reports o similar
+  -------------------------------------------------------
+  - Generador de informe que llame NEXO_SP_FacturasPendientes.
+  - Al terminar de imprimir/guardar la factura en Visions, ejecutar
+    NEXO_SP_ConfirmarFactura desde un trigger o evento de Visions.
+
+  Opcion C: Proceso batch
+  ------------------------
+  - Un script SQL que corra periodicamente, lea NEXO_FacturasPendientes
+    (Estado=PENDIENTE), las ingrese automaticamente en las tablas de Visions
+    (CAJA, MOVIMIENTOS, etc.) usando el proceso normal de Visions, y luego
+    llame NEXO_SP_ConfirmarFactura por cada una.
+  - Requiere conocimiento de las tablas internas de Visions.
+
+
+CONSIDERACIONES IMPORTANTES
+-----------------------------
+
+  - El NIT del cliente YA debe existir en dbo.USUARIOS antes de facturar.
+    El agente sincroniza clientes de NEXO a Visions en cada ciclo (paso 8
+    del worker), asi que normalmente ya estaran. Si no, insertar manualmente.
+
+  - La Referencia de cada linea corresponde a TARJETA.REFERENCIA en Visions.
+    Si un articulo no existe en TARJETA, Visions lo rechazara. El agente
+    sincroniza el catalogo de articulos de NEXO a Visions tambien.
+
+  - Una factura NO confirmada (Estado=PENDIENTE) puede quedar ahi
+    indefinidamente sin afectar NEXO. Solo al llamar
+    NEXO_SP_ConfirmarFactura el agente actualiza NEXO.
+
+  - Si una factura se confirma dos veces con el mismo FacturaID, el SP hace
+    UPDATE (no INSERT duplicado). El agente solo procesa cada una una vez
+    (chequea FechaSyncBack en NEXO_FacturasSalientes).
+
+  - El campo TotalNexo es informativo. Visions calcula su propio total
+    segun sus precios; puede diferir del total de NEXO si los precios
+    o impuestos difieren entre sistemas.
+
+
+ESTADO ACTUAL (agosto 2026)
+----------------------------
+
+  Tablas creadas:       SI (NEXO_FacturasPendientes, NEXO_FacturasPendientesLineas,
+                            NEXO_FacturasSalientes)
+  SPs creados:          SI (NEXO_SP_FacturasPendientes, NEXO_SP_ConfirmarFactura)
+  Agente escribe:       SI (TareaSincronizarFacturasNexoVisions.cs)
+  Agente confirma:      SI (fase 2 del mismo task)
+  Boton en Visions:     PENDIENTE - debe implementar el programador de Visions
+  Prueba end-to-end:    PENDIENTE
+
+
+PROXIMOS PASOS
+---------------
+
+  1. Compartir este documento con el proveedor / programador de Visions.
+  2. Acordar el formato del NroDocVisions que Visions asignara.
+     (puede ser solo el numero, o incluir prefijo como 'SETP-000125').
+  3. Implementar el boton en Visions (ver opciones A, B o C arriba).
+  4. Hacer prueba con una factura real:
+       a. Crear factura en NEXO.
+       b. Esperar un ciclo del agente (~1 minuto).
+       c. Verificar que aparece en NEXO_FacturasPendientes con Estado=PENDIENTE.
+       d. Llamar NEXO_SP_FacturasPendientes y confirmar que retorna la factura.
+       e. Llamar NEXO_SP_ConfirmarFactura con un NroDoc de prueba.
+       f. Esperar otro ciclo del agente.
+       g. Verificar en NEXO que la factura tiene NroDoc y VisionsConfirmado=1.
+
+================================================================================

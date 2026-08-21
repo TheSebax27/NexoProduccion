@@ -73,6 +73,37 @@ public class DashboardController : ControllerBase
     public async Task<ActionResult<ResumenInventarioItem>> ResumenInventario()
         => Ok(await _service.ObtenerResumenInventarioAsync());
 
+    [HttpGet("resumen-facturacion")]
+    public async Task<ActionResult<ResumenFacturacionItem>> ResumenFacturacion(
+        [FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
+    {
+        var hastaFinal = hasta ?? DateTime.Today;
+        var desdeFinal = desde ?? hastaFinal.AddDays(-30);
+        return Ok(await _service.ObtenerResumenFacturacionAsync(desdeFinal, hastaFinal));
+    }
+
+    [HttpGet("ingresos-por-mes")]
+    public async Task<ActionResult<IEnumerable<IngresoPorMesPunto>>> IngresosPorMes([FromQuery] int meses = 12)
+        => Ok(await _service.ObtenerIngresosPorMesAsync(meses));
+
+    [HttpGet("top-clientes")]
+    public async Task<ActionResult<IEnumerable<TopClienteItem>>> TopClientes(
+        [FromQuery] DateTime? desde, [FromQuery] DateTime? hasta, [FromQuery] int top = 10)
+    {
+        var hastaFinal = hasta ?? DateTime.Today;
+        var desdeFinal = desde ?? hastaFinal.AddMonths(-3);
+        return Ok(await _service.ObtenerTopClientesAsync(desdeFinal, hastaFinal, top));
+    }
+
+    [HttpGet("top-articulos")]
+    public async Task<ActionResult<IEnumerable<TopArticuloItem>>> TopArticulos(
+        [FromQuery] DateTime? desde, [FromQuery] DateTime? hasta, [FromQuery] int top = 10)
+    {
+        var hastaFinal = hasta ?? DateTime.Today;
+        var desdeFinal = desde ?? hastaFinal.AddMonths(-3);
+        return Ok(await _service.ObtenerTopArticulosAsync(desdeFinal, hastaFinal, top));
+    }
+
     [HttpGet("exportar/excel")]
     public async Task<IActionResult> ExportarExcel([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
     {

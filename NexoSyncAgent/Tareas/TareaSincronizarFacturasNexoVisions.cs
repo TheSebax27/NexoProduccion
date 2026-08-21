@@ -5,12 +5,11 @@ using NexoSyncAgent.VisionsData;
 
 namespace NexoSyncAgent.Tareas;
 
-// NEXO → Visions: escribe en MOVDETALLES las facturas creadas en NEXO
-// que ya tienen stock descontado pero aun no fueron exportadas a Visions.
-// Usa 'NEXO-{FacturaID}' como placeholder de NRODOC para que Visions sepa
-// que el número real lo asignará su propio sistema. Un trigger en Visions
-// detecta cuando se actualiza el NRODOC y lo copia a NEXO_FacturasSalientes.
-// En la segunda fase, este task lee esa tabla y actualiza NEXO vía API.
+// NEXO → Visions: escribe facturas creadas en NEXO en la tabla de staging
+// NEXO_FacturasPendientes + NEXO_FacturasPendientesLineas en VISIONSDBL1.
+// Un boton/script en Visions lee esas facturas via NEXO_SP_FacturasPendientes,
+// las procesa y llama NEXO_SP_ConfirmarFactura para registrar el NRODOC asignado.
+// En la segunda fase, este task lee los confirmados y actualiza NEXO via API.
 public class TareaSincronizarFacturasNexoVisions
 {
     private readonly INexoApiClient _apiClient;
@@ -27,158 +26,108 @@ public class TareaSincronizarFacturasNexoVisions
 
     public async Task EjecutarAsync(int centroCostoVisions, CancellationToken ct)
     {
-        // Fase 1: exportar facturas nuevas de NEXO → Visions MOVDETALLES
-        await ExportarFacturasNuevasAsync(centroCostoVisions, ct);
-
-        // Fase 2: leer números asignados por Visions y actualizar NEXO
+        await ExportarFacturasNuevasAsync(ct);
         await SincronizarNumerosDesdeVisionsAsync(ct);
     }
 
-    private async Task ExportarFacturasNuevasAsync(int centroCostoVisions, CancellationToken ct)
+    // Fase 1: escribir facturas nuevas al staging de Visions
+    private async Task ExportarFacturasNuevasAsync(CancellationToken ct)
     {
         var facturas = await _apiClient.ListarFacturasParaVisionsAsync(ct);
-        if (facturas.Count == 0)
-            return;
+        if (facturas.Count == 0) return;
 
         _logger.LogInformation("Encontradas {Cantidad} facturas NEXO para exportar a Visions", facturas.Count);
 
+        using var connection = _visionsDb.CreateConnection();
+
         foreach (var factura in facturas)
         {
+            if (ct.IsCancellationRequested) break;
             try
             {
-                await ExportarFacturaAsync(factura, centroCostoVisions, ct);
+                await EscribirStagingAsync(factura, connection);
                 await _apiClient.MarcarFacturaExportadaVisionsAsync(factura.FacturaID, ct);
-                _logger.LogInformation("Factura NEXO {ID} exportada a Visions (placeholder NEXO-{ID})",
-                    factura.FacturaID, factura.FacturaID);
+                _logger.LogInformation("Factura NEXO {ID} registrada en staging Visions", factura.FacturaID);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al exportar factura NEXO {ID} a Visions", factura.FacturaID);
+                _logger.LogError(ex, "Error al exportar factura NEXO {ID} a staging Visions", factura.FacturaID);
             }
         }
     }
 
-    private async Task ExportarFacturaAsync(FacturaParaVisionsDto factura, int cc, CancellationToken ct)
+    private async Task EscribirStagingAsync(FacturaParaVisionsDto factura, System.Data.IDbConnection connection)
     {
-        // Si la factura ya tiene NroDoc propio (CC sin Visions), lo usamos directamente.
-        // Si no, usamos el placeholder NEXO-{FacturaID} para que Visions lo identifique.
-        var nroDocUsado = factura.NroDoc ?? $"NEXO-{factura.FacturaID}";
+        var totalLineas = factura.Lineas.Sum(l => l.Cantidad * l.PrecioUnitario);
 
-        using var connection = _visionsDb.CreateConnection();
-        connection.Open();
-        using var transaction = connection.BeginTransaction();
+        // Upsert del encabezado: si ya existe no duplicar
+        var existente = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(1) FROM dbo.NEXO_FacturasPendientes WHERE FacturaID=@FacturaID",
+            new { factura.FacturaID });
 
-        try
-        {
-            foreach (var linea in factura.Lineas)
+        if (existente > 0)
+            return; // ya fue enviado en ciclo anterior
+
+        await connection.ExecuteAsync(
+            @"INSERT INTO dbo.NEXO_FacturasPendientes
+                (FacturaID, NIT, NombreCliente, Fecha, TipDoc, TotalNexo, Estado, FechaEnvio)
+              VALUES
+                (@FacturaID, @NIT, @NombreCliente, @Fecha, @TipDoc, @TotalNexo, 'PENDIENTE', GETDATE())",
+            new
             {
-                if (linea.ReferenciaVisions is null)
-                    continue;
+                factura.FacturaID,
+                NIT           = factura.ClienteNit ?? "",
+                NombreCliente = factura.ClienteNombre ?? "",
+                factura.Fecha,
+                TipDoc        = factura.TipDoc ?? "FACTURA",
+                TotalNexo     = totalLineas
+            });
 
-                var tarjeta = await connection.QueryFirstOrDefaultAsync<TarjetaIvaInfo>(
-                    "SELECT TOP 1 ISNULL(IVASINO,'S') AS IvaSino, ISNULL(IVADESCRIPCION,'IVA 19%') AS IvaDescripcion, ISNULL(IVAVALOR,19) AS IvaValor FROM dbo.TARJETA WHERE CENTROCOSTO=@CC AND REFERENCIA=@Ref",
-                    new { CC = cc, Ref = linea.ReferenciaVisions }, transaction);
-
-                var ivaSino = tarjeta?.IvaSino ?? "S";
-                var ivaDesc = tarjeta?.IvaDescripcion ?? "IVA 19%";
-                var ivaValor = tarjeta?.IvaValor ?? 19;
-
-                var subtotal = linea.Cantidad * linea.PrecioUnitario;
-                var ivaImporte = ivaSino == "S" ? Math.Round(subtotal * ivaValor / 100m, 2) : 0m;
-                var total = subtotal + ivaImporte;
-
-                await connection.ExecuteAsync(
-                    @"INSERT INTO dbo.MOVDETALLES
-                        (CENTROCOSTO, NIT, TIPDOC, NRODOC, FECDOC, ORDEN, REFERENCIA, DETALLE,
-                         CANTIDAD, PRECIO, COSTO, IVASINO, IVADESCRIPCION, IVAVALOR,
-                         SUBTOTAL, TOTAL, MARCA, GRUPOMENOR, VENDEDOR, CLIENTE)
-                      VALUES
-                        (@CC, @Nit, @TipDoc, @NroDoc, @Fecha, @Orden, @Referencia, @Detalle,
-                         @Cantidad, @Precio, @Costo, @IvaSino, @IvaDesc, @IvaValor,
-                         @Subtotal, @Total, @Marca, @GrupoMenor, NULL, @Cliente)",
-                    new
-                    {
-                        CC = cc,
-                        Nit = factura.ClienteNit,
-                        factura.TipDoc,
-                        NroDoc = nroDocUsado,
-                        Fecha = factura.Fecha,
-                        linea.Orden,
-                        Referencia = linea.ReferenciaVisions,
-                        Detalle = linea.NombreArticulo,
-                        linea.Cantidad,
-                        Precio = linea.PrecioUnitario,
-                        linea.Costo,
-                        IvaSino = ivaSino,
-                        IvaDesc = ivaDesc,
-                        IvaValor = ivaValor,
-                        Subtotal = subtotal,
-                        Total = total,
-                        Marca = linea.MarcaCodigo,
-                        GrupoMenor = linea.GrupoMenorCodigo,
-                        Cliente = factura.ClienteNombre
-                    }, transaction);
-
-                await connection.ExecuteAsync(
-                    @"UPDATE dbo.TARJETA
-                      SET EXISTENCIAS = ISNULL(EXISTENCIAS, 0) - @Cantidad
-                      WHERE CENTROCOSTO = @CC AND REFERENCIA = @Referencia",
-                    new { CC = cc, Referencia = linea.ReferenciaVisions, linea.Cantidad }, transaction);
-
-                // Pre-marcar en NEXO_VentasExportadas usando el mismo nroDoc para que
-                // TareaExportarVentas no reimporte estas líneas en la próxima ronda.
-                await connection.ExecuteAsync(
-                    @"IF NOT EXISTS (SELECT 1 FROM dbo.NEXO_VentasExportadas
-                                    WHERE CENTROCOSTO=@CC AND TIPDOC=@TipDoc AND NRODOC=@NroDoc AND ORDEN=@Orden AND REFERENCIA=@Ref)
-                      INSERT INTO dbo.NEXO_VentasExportadas (CENTROCOSTO, TIPDOC, NRODOC, ORDEN, REFERENCIA, CANTIDAD)
-                      VALUES (@CC, @TipDoc, @NroDoc, @Orden, @Ref, @Cantidad)",
-                    new
-                    {
-                        CC = cc,
-                        factura.TipDoc,
-                        NroDoc = nroDocUsado,
-                        linea.Orden,
-                        Ref = linea.ReferenciaVisions,
-                        linea.Cantidad
-                    }, transaction);
-            }
-
-            // Registrar en NEXO_FacturasSalientes para que el trigger (y el agente)
-            // puedan hacer el seguimiento del número asignado por Visions.
-            if (factura.NroDoc is null)
-            {
-                await connection.ExecuteAsync(
-                    @"IF NOT EXISTS (SELECT 1 FROM dbo.NEXO_FacturasSalientes WHERE FacturaID=@FacturaId)
-                      INSERT INTO dbo.NEXO_FacturasSalientes (FacturaID, NexoNroDoc, FechaEnvio)
-                      VALUES (@FacturaId, @NexoNroDoc, GETDATE())",
-                    new { FacturaId = factura.FacturaID, NexoNroDoc = nroDocUsado }, transaction);
-            }
-
-            transaction.Commit();
-        }
-        catch
+        var orden = 0;
+        foreach (var linea in factura.Lineas)
         {
-            transaction.Rollback();
-            throw;
+            if (linea.ReferenciaVisions is null) continue;
+            orden++;
+            var subtotal = linea.Cantidad * linea.PrecioUnitario;
+
+            await connection.ExecuteAsync(
+                @"INSERT INTO dbo.NEXO_FacturasPendientesLineas
+                    (FacturaID, Orden, Referencia, Detalle, Cantidad, PrecioUnitario, Total)
+                  VALUES
+                    (@FacturaID, @Orden, @Referencia, @Detalle, @Cantidad, @PrecioUnitario, @Total)",
+                new
+                {
+                    factura.FacturaID,
+                    Orden        = orden,
+                    Referencia   = linea.ReferenciaVisions,
+                    Detalle      = linea.NombreArticulo ?? "",
+                    linea.Cantidad,
+                    linea.PrecioUnitario,
+                    Total        = subtotal
+                });
         }
     }
 
+    // Fase 2: leer confirmaciones de Visions y actualizar NEXO
     private async Task SincronizarNumerosDesdeVisionsAsync(CancellationToken ct)
     {
         using var connection = _visionsDb.CreateConnection();
 
-        var pendientes = (await connection.QueryAsync<FacturaSalienteNumerada>(
+        var confirmadas = (await connection.QueryAsync<FacturaConfirmada>(
             @"SELECT FacturaID, TipDocVisions, NroDocVisions
-              FROM dbo.NEXO_FacturasSalientes
-              WHERE NroDocVisions IS NOT NULL AND FechaSyncBack IS NULL")).ToList();
+              FROM dbo.NEXO_FacturasPendientes
+              WHERE Estado='PROCESADA' AND NroDocVisions IS NOT NULL
+                AND FacturaID NOT IN (
+                    SELECT FacturaID FROM dbo.NEXO_FacturasSalientes WHERE FechaSyncBack IS NOT NULL
+                )")).ToList();
 
-        if (pendientes.Count == 0)
-            return;
+        if (confirmadas.Count == 0) return;
 
-        _logger.LogInformation("Actualizando {N} facturas con número asignado por Visions", pendientes.Count);
+        _logger.LogInformation("Actualizando {N} facturas confirmadas por Visions en NEXO", confirmadas.Count);
 
-        foreach (var f in pendientes)
+        foreach (var f in confirmadas)
         {
+            if (ct.IsCancellationRequested) break;
             try
             {
                 await _apiClient.ActualizarNumeroVisionsAsync(
@@ -187,8 +136,12 @@ public class TareaSincronizarFacturasNexoVisions
                     ct);
 
                 await connection.ExecuteAsync(
-                    "UPDATE dbo.NEXO_FacturasSalientes SET FechaSyncBack=GETDATE() WHERE FacturaID=@FacturaId",
-                    new { FacturaId = f.FacturaID });
+                    @"IF NOT EXISTS (SELECT 1 FROM dbo.NEXO_FacturasSalientes WHERE FacturaID=@FacturaID)
+                        INSERT INTO dbo.NEXO_FacturasSalientes (FacturaID, NexoNroDoc, TipDocVisions, NroDocVisions, FechaEnvio, FechaSyncBack)
+                        VALUES (@FacturaID, 'NEXO-'+CAST(@FacturaID AS nvarchar), @TipDoc, @NroDoc, GETDATE(), GETDATE())
+                      ELSE
+                        UPDATE dbo.NEXO_FacturasSalientes SET FechaSyncBack=GETDATE() WHERE FacturaID=@FacturaID",
+                    new { f.FacturaID, TipDoc = f.TipDocVisions, NroDoc = f.NroDocVisions });
 
                 _logger.LogInformation("Factura NEXO {ID} actualizada con número Visions {NroDoc}",
                     f.FacturaID, f.NroDocVisions);
@@ -200,6 +153,5 @@ public class TareaSincronizarFacturasNexoVisions
         }
     }
 
-    private record TarjetaIvaInfo(string IvaSino, string IvaDescripcion, short IvaValor);
-    private record FacturaSalienteNumerada(int FacturaID, string? TipDocVisions, string? NroDocVisions);
+    private record FacturaConfirmada(int FacturaID, string? TipDocVisions, string? NroDocVisions);
 }

@@ -36,6 +36,11 @@ public interface INexoApiClient
     // Clientes Visions → NEXO
     Task SyncClienteDesdeVisionsAsync(SyncClienteDesdeVisionsRequest request, CancellationToken ct);
 
+    // Proveedores para sync NEXO → Visions
+    Task<List<ProveedorParaSyncDto>> ListarProveedoresParaSyncAsync(CancellationToken ct);
+    // Proveedores Visions → NEXO
+    Task SyncProveedorDesdeVisionsAsync(SyncProveedorDesdeVisionsRequest request, CancellationToken ct);
+
     // Número de factura asignado por Visions → actualizar NEXO
     Task ActualizarNumeroVisionsAsync(int facturaId, ActualizarNumeroVisionsRequest request, CancellationToken ct);
 }

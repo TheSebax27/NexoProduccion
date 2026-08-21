@@ -219,6 +219,29 @@ public class OrdenesProduccionService : IOrdenesProduccionService
         var resultado = await connection.QuerySingleAsync<CerrarResultado>(
             "Produccion.sp_CerrarOrdenProduccion", parametros, commandType: CommandType.StoredProcedure);
 
+        // Entrada del PT y salidas de insumos en Visions para los artículos que tengan mapeo activo.
+        await connection.ExecuteAsync(@"
+            INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
+            SELECT 'ENTRADA_PRODUCCION', ma.CentroCostoID, op.ProductoTerminadoID,
+                   @Cantidad, @CostoUnitario
+            FROM Produccion.OrdenesProduccion op
+            JOIN Integracion.MapeoArticulos ma ON ma.ArticuloID = op.ProductoTerminadoID AND ma.Estado = 1
+            JOIN Organizacion.CentrosCosto cc  ON cc.CentroCostoID = ma.CentroCostoID AND cc.TieneVisions = 1
+            WHERE op.OrdenProduccionID = @OrdenProduccionID",
+            new { OrdenProduccionID = ordenProduccionId, Cantidad = r.CantidadProducidaReal, CostoUnitario = resultado.CostoUnitarioReal });
+
+        await connection.ExecuteAsync(@"
+            INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
+            SELECT 'CONSUMO_INSUMO', ma.CentroCostoID, c.ArticuloID,
+                   -c.CantidadReal, ISNULL(a.CostoPromedio, 0)
+            FROM Produccion.OrdenesProduccionConsumo c
+            JOIN Catalogo.Tarjetas a           ON a.ArticuloID   = c.ArticuloID
+            JOIN Integracion.MapeoArticulos ma  ON ma.ArticuloID  = c.ArticuloID AND ma.Estado = 1
+            JOIN Organizacion.CentrosCosto cc   ON cc.CentroCostoID = ma.CentroCostoID AND cc.TieneVisions = 1
+            WHERE c.OrdenProduccionID = @OrdenProduccionID
+              AND ISNULL(c.CantidadReal, 0) > 0",
+            new { OrdenProduccionID = ordenProduccionId });
+
         // Notificar al cliente si la orden tiene ClienteID y email
         _ = Task.Run(async () =>
         {

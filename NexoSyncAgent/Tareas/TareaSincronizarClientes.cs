@@ -43,10 +43,16 @@ public class TareaSincronizarClientes
 
             var esJuridica = c.TipoPersona == "Juridica";
             var tipotercero = esJuridica ? "JURIDICA" : "NATURAL";
-            var tipoid = esJuridica ? "NIT" : "CEDULA DE CIUDADANIA";
+            // Usar el detalle de tipo de identificación desde NEXO; fallback al tipo de persona
+            var tipoid = !string.IsNullOrWhiteSpace(c.TipoIdentificacionDetalle)
+                ? c.TipoIdentificacionDetalle
+                : (esJuridica ? "NIT" : "CEDULA DE CIUDADANIA");
             var empresa = esJuridica ? c.Nombre : null;
             var telefono = c.Telefono;
             var direccion = c.Direccion;
+            // Usar nombres resueltos de Municipios; fallback a los textos libres de Departamento/Ciudad
+            var departamento = c.NombreDept ?? c.Departamento;
+            var ciudad = c.NombreMuni ?? c.Ciudad;
 
             try
             {
@@ -60,20 +66,41 @@ public class TareaSincronizarClientes
                     MERGE dbo.USUARIOS AS dest
                     USING (SELECT @NIT AS NIT) AS src ON dest.NIT = src.NIT
                     WHEN MATCHED THEN UPDATE SET
-                        NOMBRE1 = @Nombre1, NOMBRE2 = @Nombre2, APELLIDO1 = @Apellido1, APELLIDO2 = @Apellido2,
-                        EMPRESA = @Empresa, TIPOTERCERO = @Tipotercero, TIPOID = @Tipoid,
-                        EMAIL = @Email, CIUDAD = @Ciudad, DEPARTAMENTO = @Departamento,
-                        TELEFONOVIVE = @TelNatural, TELEFONOEMPRESA = @TelEmpresa,
-                        DIRECCIONVIVE = @DirNatural, DIRECCIONEMPRESA = @DirEmpresa,
+                        -- Solo sobreescribir si NEXO tiene un valor real; si esta vacio conservar lo que Visions ya tenia
+                        NOMBRE1    = CASE WHEN ISNULL(@Nombre1,'') <> ''    THEN @Nombre1    ELSE dest.NOMBRE1    END,
+                        NOMBRE2    = CASE WHEN ISNULL(@Nombre2,'') <> ''    THEN @Nombre2    ELSE dest.NOMBRE2    END,
+                        APELLIDO1  = CASE WHEN ISNULL(@Apellido1,'') <> ''  THEN @Apellido1  ELSE dest.APELLIDO1  END,
+                        APELLIDO2  = CASE WHEN ISNULL(@Apellido2,'') <> ''  THEN @Apellido2  ELSE dest.APELLIDO2  END,
+                        EMPRESA    = CASE WHEN ISNULL(@Empresa,'') <> ''    THEN @Empresa    ELSE dest.EMPRESA    END,
+                        TIPOTERCERO= CASE WHEN ISNULL(@Tipotercero,'') <> '' THEN @Tipotercero ELSE dest.TIPOTERCERO END,
+                        TIPOID     = CASE WHEN ISNULL(@Tipoid,'') <> ''     THEN @Tipoid     ELSE dest.TIPOID     END,
+                        NITVERIFICA= CASE WHEN ISNULL(@DigitoVerificacion,'') <> '' THEN @DigitoVerificacion ELSE dest.NITVERIFICA END,
+                        EMAIL      = CASE WHEN ISNULL(@Email,'') <> ''      THEN @Email      ELSE dest.EMAIL      END,
+                        CIUDAD     = CASE WHEN ISNULL(@Ciudad,'') <> ''     THEN @Ciudad     ELSE dest.CIUDAD     END,
+                        CIUDADCODIGO = CASE WHEN ISNULL(@CiudadCodigo,'') <> '' THEN @CiudadCodigo ELSE dest.CIUDADCODIGO END,
+                        DEPARTAMENTO = CASE WHEN ISNULL(@Departamento,'') <> '' THEN @Departamento ELSE dest.DEPARTAMENTO END,
+                        DEPARTAMENTOCODIGO = CASE WHEN ISNULL(@DeptCodigo,'') <> '' THEN @DeptCodigo ELSE dest.DEPARTAMENTOCODIGO END,
+                        PAIS = 'COLOMBIA', PAISCODIGO = 170,
+                        TELEFONOVIVE  = CASE WHEN ISNULL(@TelNatural,'') <> ''  THEN @TelNatural  ELSE dest.TELEFONOVIVE  END,
+                        TELEFONOEMPRESA = CASE WHEN ISNULL(@TelEmpresa,'') <> '' THEN @TelEmpresa ELSE dest.TELEFONOEMPRESA END,
+                        DIRECCIONVIVE   = CASE WHEN ISNULL(@DirNatural,'') <> '' THEN @DirNatural ELSE dest.DIRECCIONVIVE  END,
+                        DIRECCIONEMPRESA= CASE WHEN ISNULL(@DirEmpresa,'') <> '' THEN @DirEmpresa ELSE dest.DIRECCIONEMPRESA END,
                         CLIENTE = 1
                     WHEN NOT MATCHED THEN INSERT
                         (NIT, NOMBRE1, NOMBRE2, APELLIDO1, APELLIDO2, EMPRESA, TIPOTERCERO, TIPOID,
-                         EMAIL, TELEFONOVIVE, TELEFONOEMPRESA, DIRECCIONVIVE, DIRECCIONEMPRESA,
-                         CIUDAD, DEPARTAMENTO, CLIENTE)
+                         NITVERIFICA, EMAIL, TELEFONOVIVE, TELEFONOEMPRESA, DIRECCIONVIVE, DIRECCIONEMPRESA,
+                         CIUDAD, CIUDADCODIGO, DEPARTAMENTO, DEPARTAMENTOCODIGO, PAIS, PAISCODIGO, CLIENTE)
                     VALUES
-                        (@NIT, @Nombre1, @Nombre2, @Apellido1, @Apellido2, @Empresa, @Tipotercero, @Tipoid,
-                         @Email, @TelNatural, @TelEmpresa, @DirNatural, @DirEmpresa,
-                         @Ciudad, @Departamento, 1);",
+                        (@NIT,
+                         ISNULL(@Nombre1,''), ISNULL(@Nombre2,''),
+                         ISNULL(@Apellido1,''), ISNULL(@Apellido2,''),
+                         ISNULL(@Empresa,''), ISNULL(@Tipotercero,''), ISNULL(@Tipoid,''),
+                         ISNULL(@DigitoVerificacion,''),
+                         ISNULL(@Email,''), ISNULL(@TelNatural,''), ISNULL(@TelEmpresa,''),
+                         ISNULL(@DirNatural,''), ISNULL(@DirEmpresa,''),
+                         ISNULL(@Ciudad,''), ISNULL(@CiudadCodigo,''),
+                         ISNULL(@Departamento,''), ISNULL(@DeptCodigo,''),
+                         'COLOMBIA', 170, 1);",
                     new
                     {
                         NIT = c.NIT,
@@ -89,8 +116,13 @@ public class TareaSincronizarClientes
                         TelEmpresa = telEmpresa,
                         DirNatural = dirNatural,
                         DirEmpresa = dirEmpresa,
-                        Ciudad     = c.Ciudad,
-                        Departamento = c.Departamento
+                        Ciudad     = ciudad,
+                        CiudadCodigo = c.CodigoMuni,
+                        Departamento = departamento,
+                        DeptCodigo   = c.CodigoDept,
+                        DigitoVerificacion = c.DigitoVerificacion.HasValue
+                            ? c.DigitoVerificacion.Value.ToString()
+                            : null
                     });
 
                 _logger.LogDebug("Cliente NIT {NIT} sincronizado a USUARIOS en Visions", c.NIT);
@@ -104,15 +136,17 @@ public class TareaSincronizarClientes
         _logger.LogInformation("Clientes NEXO → Visions completado");
     }
 
+
     // dbo.USUARIOS → NEXO
     private async Task SincronizarVisionsANexoAsync(CancellationToken ct)
     {
         using var connection = _visionsDb.CreateConnection();
 
         var usuarios = (await connection.QueryAsync<UsuarioVisions>(
-            @"SELECT NIT, TIPOTERCERO, NOMBRE1, NOMBRE2, APELLIDO1, APELLIDO2,
-                     EMPRESA, TELEFONOVIVE, TELEFONOEMPRESA, EMAIL,
-                     DIRECCIONVIVE, DIRECCIONEMPRESA, CIUDAD, DEPARTAMENTO
+            @"SELECT NIT, TIPOTERCERO, TIPOID, NOMBRE1, NOMBRE2, APELLIDO1, APELLIDO2,
+                     EMPRESA, REPRESENTANTE, TELEFONOVIVE, TELEFONOEMPRESA, EMAIL,
+                     DIRECCIONVIVE, DIRECCIONEMPRESA, CIUDAD, DEPARTAMENTO,
+                     CIUDADCODIGO, DEPARTAMENTOCODIGO, NITVERIFICA, REGIMEN
               FROM dbo.USUARIOS
               WHERE CLIENTE = 1 AND NIT IS NOT NULL AND NIT <> ''")).ToList();
 
@@ -129,19 +163,39 @@ public class TareaSincronizarClientes
                 var esJuridica = (u.TIPOTERCERO ?? "").Contains("JURIDICA", StringComparison.OrdinalIgnoreCase)
                     || !string.IsNullOrWhiteSpace(u.EMPRESA);
 
+                // Cuando NOMBRE1/APELLIDO1/EMPRESA estan vacios en USUARIOS (ej: CONSUMIDOR FINAL,
+                // CUANTIAS MENORES), Visions guarda el nombre de pantalla en REPRESENTANTE.
+                // Se inyecta como PrimerNombre para que el API lo use directamente como Nombre
+                // sin tocar TipoPersona (que viene de TIPOTERCERO en Visions y determina el tipo
+                // de identificación que se asigna en NEXO).
+                var tieneNombrePersona = !string.IsNullOrWhiteSpace(u.NOMBRE1) || !string.IsNullOrWhiteSpace(u.APELLIDO1);
+                var tieneNombreEmpresa = !string.IsNullOrWhiteSpace(u.EMPRESA);
+                var usaRepresentante   = !tieneNombrePersona && !tieneNombreEmpresa && !string.IsNullOrWhiteSpace(u.REPRESENTANTE);
+
+                // Solo SegundoNombre (NOMBRE2) y SegundoApellido (APELLIDO2) pueden ir vacíos.
+                // Si no hay ningún campo de nombre válido, omitir este registro.
+                if (!tieneNombrePersona && !tieneNombreEmpresa && !usaRepresentante)
+                {
+                    _logger.LogDebug("Usuario NIT {NIT} sin nombre en Visions — omitido del sync a NEXO", u.NIT);
+                    continue;
+                }
+
                 await _apiClient.SyncClienteDesdeVisionsAsync(new SyncClienteDesdeVisionsRequest(
                     NIT: u.NIT,
                     TipoPersona: esJuridica ? "Juridica" : "Natural",
-                    PrimerNombre: u.NOMBRE1,
-                    SegundoNombre: u.NOMBRE2,
-                    PrimerApellido: u.APELLIDO1,
-                    SegundoApellido: u.APELLIDO2,
+                    PrimerNombre: usaRepresentante ? u.REPRESENTANTE : u.NOMBRE1,
+                    SegundoNombre: usaRepresentante ? null : u.NOMBRE2,
+                    PrimerApellido: usaRepresentante ? null : u.APELLIDO1,
+                    SegundoApellido: usaRepresentante ? null : u.APELLIDO2,
                     NombreEmpresa: u.EMPRESA,
                     Telefono: u.TELEFONOVIVE ?? u.TELEFONOEMPRESA,
                     Email: u.EMAIL,
                     Direccion: u.DIRECCIONVIVE ?? u.DIRECCIONEMPRESA,
                     Departamento: u.DEPARTAMENTO,
-                    Ciudad: u.CIUDAD
+                    Ciudad: u.CIUDAD,
+                    CodigoDept: u.DEPARTAMENTOCODIGO,
+                    CodigoMuni: u.CIUDADCODIGO,
+                    DigitoVerificacion: int.TryParse(u.NITVERIFICA, out var dv) ? dv : null
                 ), ct);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -158,9 +212,11 @@ public class TareaSincronizarClientes
     }
 
     private record UsuarioVisions(
-        string NIT, string? TIPOTERCERO,
-        string? NOMBRE1, string? NOMBRE2, string? APELLIDO1, string? APELLIDO2, string? EMPRESA,
+        string NIT, string? TIPOTERCERO, string? TIPOID,
+        string? NOMBRE1, string? NOMBRE2, string? APELLIDO1, string? APELLIDO2,
+        string? EMPRESA, string? REPRESENTANTE,
         string? TELEFONOVIVE, string? TELEFONOEMPRESA, string? EMAIL,
-        string? DIRECCIONVIVE, string? DIRECCIONEMPRESA, string? CIUDAD, string? DEPARTAMENTO
+        string? DIRECCIONVIVE, string? DIRECCIONEMPRESA, string? CIUDAD, string? DEPARTAMENTO,
+        string? CIUDADCODIGO, string? DEPARTAMENTOCODIGO, string? NITVERIFICA, string? REGIMEN
     );
 }

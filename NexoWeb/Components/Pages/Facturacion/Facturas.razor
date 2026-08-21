@@ -1,9 +1,10 @@
-﻿@page "/facturacion"
+@page "/facturacion"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @using NexoWeb.Common.Dtos
+@using NexoWeb.Components.Pages.Compras
 
 <PageTitle>Facturacion - NEXO</PageTitle>
 
@@ -24,132 +25,278 @@
     </div>
 </div>
 
-@* ── Filtros ── *@
-<MudPaper Elevation="0" Class="pa-3 mb-4" Style="border:1px solid var(--mud-palette-lines-default); border-radius:8px">
-    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(170px,1fr)); gap:10px; align-items:end">
-        <MudSelect T="string?" Value="_filtroTipDoc" ValueChanged="OnFiltroTipDocAsync"
-                   Label="Tipo de documento" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
-            @foreach (var td in TiposDocumento.Todos)
-            {
-                <MudSelectItem T="string?" Value="@td">@td</MudSelectItem>
-            }
-        </MudSelect>
-        <MudSelect T="int?" Value="_filtroClienteId" ValueChanged="OnFiltroClienteAsync"
-                   Label="Cliente" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
-            @foreach (var c in _clientes)
-            {
-                <MudSelectItem T="int?" Value="@c.ClienteID">@c.Nombre</MudSelectItem>
-            }
-        </MudSelect>
-        <MudSelect T="int?" Value="_filtroCentroCostoId" ValueChanged="OnFiltroCCAsync"
-                   Label="Centro de Costo" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
-            @foreach (var cc in _centrosCosto)
-            {
-                <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
-            }
-        </MudSelect>
-        <MudSelect T="string?" Value="_filtroEstado" ValueChanged="OnFiltroEstadoAsync"
-                   Label="Estado pago" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
-            <MudSelectItem T="string?" Value="@("PENDIENTE")">Pendiente</MudSelectItem>
-            <MudSelectItem T="string?" Value="@("PARCIAL")">Pago parcial</MudSelectItem>
-            <MudSelectItem T="string?" Value="@("PAGADA")">Pagada</MudSelectItem>
-        </MudSelect>
-        <MudDatePicker Date="_filtroDesde"
-                       DateChanged="@(async v => { _filtroDesde = v; await CargarFacturasAsync(); })"
-                       Label="Desde" DateFormat="dd/MM/yyyy"
-                       Variant="Variant.Outlined" Margin="Margin.Dense" />
-        <MudDatePicker Date="_filtroHasta"
-                       DateChanged="@(async v => { _filtroHasta = v; await CargarFacturasAsync(); })"
-                       Label="Hasta" DateFormat="dd/MM/yyyy"
-                       Variant="Variant.Outlined" Margin="Margin.Dense" />
-    </div>
-</MudPaper>
+@* ── Workspace tabs ── *@
+<MudTabs @bind-ActivePanelIndex="_tabActivo" Elevation="0" Rounded="true"
+         ApplyEffectsToContainer="true" Class="mb-2"
+         ActiveTabClass="nexo-tab-active">
+    @* ════ Tab 1: Pendientes ════ *@
+    <MudTabPanel Text="Pendientes" Icon="@Icons.Material.Filled.Schedule">
+        @if (_cargandoPend)
+        {
+            <MudProgressLinear Indeterminate="true" Class="mt-2" />
+        }
+        else if (_pendientes.Count == 0)
+        {
+            <MudAlert Severity="Severity.Success" Class="mt-2">
+                No hay documentos pendientes de pago.
+            </MudAlert>
+        }
+        else
+        {
+            <div style="display:flex; justify-content:space-between; align-items:center; margin:8px 0; font-size:0.85rem; opacity:.7">
+                <span>@_totalPend documentos pendientes · página @_paginaPend de @_totalPaginasPend</span>
+                <div style="display:flex; gap:4px">
+                    <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Size="Size.Small"
+                                   Disabled="@(_paginaPend <= 1)" OnClick="@(() => IrPendAsync(_paginaPend - 1))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small"
+                                   Disabled="@(_paginaPend >= _totalPaginasPend)" OnClick="@(() => IrPendAsync(_paginaPend + 1))" />
+                </div>
+            </div>
+            <MudTable Items="_pendientes" Hover="true" Dense="true" Striped="true" Style="overflow-x:auto">
+                <HeaderContent>
+                    <MudTh>Tipo Doc</MudTh>
+                    <MudTh>Nro. Doc</MudTh>
+                    <MudTh>Fecha</MudTh>
+                    <MudTh>Cliente / NIT</MudTh>
+                    <MudTh>Centro de Costo</MudTh>
+                    <MudTh Style="text-align:right">Total</MudTh>
+                    <MudTh Style="text-align:right">Saldo</MudTh>
+                    <MudTh>Estado</MudTh>
+                    <MudTh>Visions</MudTh>
+                    <MudTh>Accion</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Tipo Doc">
+                        <MudChip T="string" Size="Size.Small" Color="@ColorTipDoc(context.TipDoc)">@context.TipDoc</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Nro. Doc" Style="font-size:0.82rem">@(context.NroDoc ?? "-")</MudTd>
+                    <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yyyy")</MudTd>
+                    <MudTd DataLabel="Cliente">
+                        <div style="font-size:0.85rem; font-weight:500">@context.Cliente</div>
+                        @if (context.NitCliente is not null)
+                        { <div style="font-size:0.72rem; opacity:.6">NIT @context.NitCliente</div> }
+                    </MudTd>
+                    <MudTd DataLabel="CC" Style="font-size:0.82rem">@(context.CentroCostoNombre ?? "-")</MudTd>
+                    <MudTd DataLabel="Total" Style="text-align:right">@context.Total.ToString("C0")</MudTd>
+                    <MudTd DataLabel="Saldo" Style="text-align:right; color:var(--mud-palette-error)">
+                        @context.SaldoPendiente.ToString("C0")
+                    </MudTd>
+                    <MudTd DataLabel="Estado">
+                        <MudChip T="string" Size="Size.Small" Color="@ColorEstado(context.Estado)">@EtiquetaEstado(context.Estado)</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Visions">
+                        @if (context.VisionsConfirmado)
+                        { <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Success" Size="Size.Small" /> }
+                        else
+                        { <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Color="Color.Default" Size="Size.Small" /> }
+                    </MudTd>
+                    <MudTd DataLabel="Accion">
+                        <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudTabPanel>
 
-@if (_errorCarga is not null)
-{
-    <MudAlert Severity="Severity.Error" Class="mb-4">@_errorCarga</MudAlert>
-}
-@if (_cargando)
-{
-    <MudProgressCircular Indeterminate="true" Class="ma-4" />
-}
-else if (_facturas.Count == 0)
-{
-    <MudAlert Severity="Severity.Info">No hay documentos que coincidan con los filtros.</MudAlert>
-}
-else
-{
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:0.85rem; opacity:.7">
-        <span>@_total documentos · página @_pagina de @_totalPaginas</span>
-        <div style="display:flex; gap:4px">
-            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Size="Size.Small"
-                           Disabled="@(_pagina <= 1)" OnClick="@(() => IrPaginaAsync(_pagina - 1))" />
-            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small"
-                           Disabled="@(_pagina >= _totalPaginas)" OnClick="@(() => IrPaginaAsync(_pagina + 1))" />
+    @* ════ Tab 2: Ordenes de Compra ════ *@
+    <MudTabPanel Text="Ordenes de Compra" Icon="@Icons.Material.Filled.ShoppingCart">
+        <div class="d-flex align-center justify-space-between mt-2 mb-3">
+            <span style="font-size:0.85rem; opacity:.7">Pedidos a proveedores — recepción parcial por línea</span>
+            <MudButton Variant="Variant.Filled" Color="Color.Success"
+                       StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => AbrirCreacionOCAsync(null))">
+                Nueva Orden de Compra
+            </MudButton>
         </div>
-    </div>
-    <MudTable Items="_facturas" Hover="true" Dense="true" Striped="true"
-              Style="overflow-x:auto">
-        <HeaderContent>
-            <MudTh>Tipo Doc</MudTh>
-            <MudTh>Nro. Doc</MudTh>
-            <MudTh>Fecha</MudTh>
-            <MudTh>Cliente / NIT</MudTh>
-            <MudTh>Centro de Costo</MudTh>
-            <MudTh Style="text-align:right">Total</MudTh>
-            <MudTh Style="text-align:right">Pagado</MudTh>
-            <MudTh>Estado</MudTh>
-            <MudTh>Inventario</MudTh>
-            <MudTh>Visions</MudTh>
-            <MudTh>Accion</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Tipo Doc">
-                <MudChip T="string" Size="Size.Small" Color="@ColorTipDoc(context.TipDoc)">
-                    @context.TipDoc
-                </MudChip>
-            </MudTd>
-            <MudTd DataLabel="Nro. Doc" Style="font-size:0.82rem">@(context.NroDoc ?? "-")</MudTd>
-            <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yyyy")</MudTd>
-            <MudTd DataLabel="Cliente">
-                <div style="font-size:0.85rem; font-weight:500">@context.Cliente</div>
-                @if (context.NitCliente is not null)
-                {
-                    <div style="font-size:0.72rem; opacity:.6">NIT @context.NitCliente</div>
-                }
-            </MudTd>
-            <MudTd DataLabel="Centro de Costo" Style="font-size:0.82rem">@(context.CentroCostoNombre ?? "-")</MudTd>
-            <MudTd DataLabel="Total" Style="text-align:right">@context.Total.ToString("C0")</MudTd>
-            <MudTd DataLabel="Pagado" Style="text-align:right">@context.TotalPagado.ToString("C0")</MudTd>
-            <MudTd DataLabel="Estado">
-                <MudChip T="string" Size="Size.Small" Color="@ColorEstado(context.Estado)">@EtiquetaEstado(context.Estado)</MudChip>
-            </MudTd>
-            <MudTd DataLabel="Inventario">
-                @if (context.StockDescontado)
-                {
-                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Title="Stock descontado" />
-                }
-                else
-                {
-                    <MudIcon Icon="@Icons.Material.Filled.RadioButtonUnchecked" Color="Color.Default" Size="Size.Small" Title="Stock pendiente" />
-                }
-            </MudTd>
-            <MudTd DataLabel="Visions">
-                @if (context.VisionsConfirmado)
-                {
-                    <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Success" Size="Size.Small" Title="Confirmado en Visions" />
-                }
-                else
-                {
-                    <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Color="Color.Default" Size="Size.Small" Title="Pendiente / No aplica" />
-                }
-            </MudTd>
-            <MudTd DataLabel="Accion">
-                <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
-}
+
+        @if (_ocCargando)
+        { <MudProgressLinear Indeterminate="true" /> }
+        else if (_ocError is not null)
+        { <MudAlert Severity="Severity.Error">@_ocError</MudAlert> }
+        else if (_ordenes.Count == 0)
+        { <MudAlert Severity="Severity.Info">No hay ordenes de compra registradas.</MudAlert> }
+        else
+        {
+            <MudTable Items="_ordenes" Hover="true" Dense="true" Striped="true" Style="overflow-x:auto">
+                <HeaderContent>
+                    <MudTh>Código</MudTh>
+                    <MudTh>Proveedor</MudTh>
+                    <MudTh>Estado</MudTh>
+                    <MudTh>Emisión</MudTh>
+                    <MudTh>Recepción</MudTh>
+                    <MudTh Style="text-align:right">Total</MudTh>
+                    <MudTh>Detalle</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Código" Style="font-weight:500">@context.Codigo</MudTd>
+                    <MudTd DataLabel="Proveedor">@context.Proveedor</MudTd>
+                    <MudTd DataLabel="Estado">
+                        <MudChip T="string" Size="Size.Small"
+                                 Color="@(context.EstadoOC == "RECIBIDA" ? Color.Success : Color.Warning)">
+                            @context.EstadoOC
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Emisión">@context.FechaEmision.ToString("dd/MM/yyyy")</MudTd>
+                    <MudTd DataLabel="Recepción">@(context.FechaRecepcion?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
+                    <MudTd DataLabel="Total" Style="text-align:right">@context.Total.ToString("C0")</MudTd>
+                    <MudTd DataLabel="Detalle">
+                        <MudButton Size="Size.Small" OnClick="@(() => VerDetalleOCAsync(context.OrdenCompraID))">
+                            Ver / Recibir
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+
+        @if (_ocDetalleAbierto is not null)
+        {
+            <MudPaper Elevation="1" Class="pa-4 mt-4" Style="border-radius:8px">
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Detalle de la orden</MudText>
+                <MudTable Items="_ocDetalle" Dense="true" Hover="true">
+                    <HeaderContent>
+                        <MudTh>Artículo</MudTh>
+                        <MudTh Style="text-align:right">Solicitado</MudTh>
+                        <MudTh Style="text-align:right">Recibido</MudTh>
+                        <MudTh>Fecha Recibido</MudTh>
+                        <MudTh Style="text-align:right">Costo Unit.</MudTh>
+                        <MudTh>Acción</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Artículo">@context.Articulo</MudTd>
+                        <MudTd DataLabel="Solicitado" Style="text-align:right">@context.CantidadSolicitada.ToString("N2")</MudTd>
+                        <MudTd DataLabel="Recibido" Style="text-align:right">@context.CantidadRecibida.ToString("N2")</MudTd>
+                        <MudTd DataLabel="Fecha Recibido">@(context.FechaUltimaRecepcion?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
+                        <MudTd DataLabel="Costo Unit." Style="text-align:right">@context.CostoUnitario.ToString("C2")</MudTd>
+                        <MudTd DataLabel="Acción">
+                            @if (context.CantidadRecibida < context.CantidadSolicitada)
+                            {
+                                <MudButton Size="Size.Small" Color="Color.Primary"
+                                           OnClick="@(() => AbrirRecepcionOCAsync(context))">
+                                    Recibir
+                                </MudButton>
+                            }
+                            else
+                            {
+                                <MudChip T="string" Color="Color.Success" Size="Size.Small">Completo</MudChip>
+                            }
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        }
+    </MudTabPanel>
+
+    @* ════ Tab 3: Historial ════ *@
+    <MudTabPanel Text="Historial" Icon="@Icons.Material.Filled.History">
+        @* Filtros historial *@
+        <MudPaper Elevation="0" Class="pa-3 mt-2 mb-3"
+                  Style="border:1px solid var(--mud-palette-lines-default); border-radius:8px">
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:10px; align-items:end">
+                <MudTextField T="string?" Value="_filtroTexto" ValueChanged="OnFiltroTextoAsync"
+                              Label="Nro. doc / cliente" Placeholder="Busca..."
+                              Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search"
+                              Immediate="true" DebounceInterval="400"
+                              Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudSelect T="string?" Value="_filtroTipDoc" ValueChanged="OnFiltroTipDocAsync"
+                           Label="Tipo doc" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @foreach (var td in TiposDocumento.Todos)
+                    { <MudSelectItem T="string?" Value="@td">@td</MudSelectItem> }
+                </MudSelect>
+                <MudSelect T="int?" Value="_filtroClienteId" ValueChanged="OnFiltroClienteAsync"
+                           Label="Cliente" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @foreach (var c in _clientes)
+                    { <MudSelectItem T="int?" Value="@c.ClienteID">@c.Nombre</MudSelectItem> }
+                </MudSelect>
+                <MudSelect T="int?" Value="_filtroCentroCostoId" ValueChanged="OnFiltroCCAsync"
+                           Label="Centro de Costo" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @foreach (var cc in _centrosCosto)
+                    { <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem> }
+                </MudSelect>
+                <MudSelect T="string?" Value="_filtroEstado" ValueChanged="OnFiltroEstadoAsync"
+                           Label="Estado" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    <MudSelectItem T="string?" Value="@("PENDIENTE")">Pendiente</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("PARCIAL")">Pago parcial</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("PAGADA")">Pagada</MudSelectItem>
+                </MudSelect>
+                <MudDatePicker Date="_filtroDesde"
+                               DateChanged="@(async v => { _filtroDesde = v; _pagina = 1; await CargarHistorialAsync(); })"
+                               Label="Desde" DateFormat="dd/MM/yyyy"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudDatePicker Date="_filtroHasta"
+                               DateChanged="@(async v => { _filtroHasta = v; _pagina = 1; await CargarHistorialAsync(); })"
+                               Label="Hasta" DateFormat="dd/MM/yyyy"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </div>
+        </MudPaper>
+
+        @if (_errorCarga is not null)
+        { <MudAlert Severity="Severity.Error" Class="mb-3">@_errorCarga</MudAlert> }
+
+        @if (_cargando)
+        { <MudProgressLinear Indeterminate="true" Class="mb-2" /> }
+        else if (_facturas.Count == 0)
+        { <MudAlert Severity="Severity.Info">No hay documentos que coincidan con los filtros.</MudAlert> }
+        else
+        {
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:0.85rem; opacity:.7">
+                <span>@_total documentos · página @_pagina de @_totalPaginas</span>
+                <div style="display:flex; gap:4px">
+                    <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Size="Size.Small"
+                                   Disabled="@(_pagina <= 1)" OnClick="@(() => IrPaginaAsync(_pagina - 1))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small"
+                                   Disabled="@(_pagina >= _totalPaginas)" OnClick="@(() => IrPaginaAsync(_pagina + 1))" />
+                </div>
+            </div>
+            <MudTable Items="_facturas" Hover="true" Dense="true" Striped="true" Style="overflow-x:auto">
+                <HeaderContent>
+                    <MudTh>Tipo Doc</MudTh>
+                    <MudTh>Nro. Doc</MudTh>
+                    <MudTh>Fecha</MudTh>
+                    <MudTh>Cliente / NIT</MudTh>
+                    <MudTh>Centro de Costo</MudTh>
+                    <MudTh Style="text-align:right">Total</MudTh>
+                    <MudTh Style="text-align:right">Pagado</MudTh>
+                    <MudTh>Estado</MudTh>
+                    <MudTh>Inv.</MudTh>
+                    <MudTh>Visions</MudTh>
+                    <MudTh>Accion</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Tipo Doc">
+                        <MudChip T="string" Size="Size.Small" Color="@ColorTipDoc(context.TipDoc)">@context.TipDoc</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Nro. Doc" Style="font-size:0.82rem">@(context.NroDoc ?? "-")</MudTd>
+                    <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yyyy")</MudTd>
+                    <MudTd DataLabel="Cliente">
+                        <div style="font-size:0.85rem; font-weight:500">@context.Cliente</div>
+                        @if (context.NitCliente is not null)
+                        { <div style="font-size:0.72rem; opacity:.6">NIT @context.NitCliente</div> }
+                    </MudTd>
+                    <MudTd DataLabel="CC" Style="font-size:0.82rem">@(context.CentroCostoNombre ?? "-")</MudTd>
+                    <MudTd DataLabel="Total" Style="text-align:right">@context.Total.ToString("C0")</MudTd>
+                    <MudTd DataLabel="Pagado" Style="text-align:right">@context.TotalPagado.ToString("C0")</MudTd>
+                    <MudTd DataLabel="Estado">
+                        <MudChip T="string" Size="Size.Small" Color="@ColorEstado(context.Estado)">@EtiquetaEstado(context.Estado)</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Inv.">
+                        @if (context.StockDescontado)
+                        { <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" /> }
+                        else
+                        { <MudIcon Icon="@Icons.Material.Filled.RadioButtonUnchecked" Color="Color.Default" Size="Size.Small" /> }
+                    </MudTd>
+                    <MudTd DataLabel="Visions">
+                        @if (context.VisionsConfirmado)
+                        { <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Success" Size="Size.Small" /> }
+                        else
+                        { <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Color="Color.Default" Size="Size.Small" /> }
+                    </MudTd>
+                    <MudTd DataLabel="Accion">
+                        <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudTabPanel>
+</MudTabs>
 
 @* ── Ventas recibidas desde Visions ── *@
 <MudExpansionPanels Class="mt-4">
@@ -163,9 +310,7 @@ else
                            Label="Tipo documento" Clearable="true" Variant="Variant.Outlined"
                            Margin="Margin.Dense" Style="min-width:160px">
                     @foreach (var td in TiposDocumento.Todos)
-                    {
-                        <MudSelectItem T="string?" Value="@td">@td</MudSelectItem>
-                    }
+                    { <MudSelectItem T="string?" Value="@td">@td</MudSelectItem> }
                 </MudSelect>
                 <MudDatePicker Date="_vDesde"
                                DateChanged="@(async v => { _vDesde = v; _vPagina=1; await CargarVentasVisionsAsync(); })"
@@ -179,9 +324,7 @@ else
         </MudPaper>
 
         @if (_vCargando)
-        {
-            <MudProgressLinear Indeterminate="true" Class="mb-2" />
-        }
+        { <MudProgressLinear Indeterminate="true" Class="mb-2" /> }
         else if (_ventasVisions.Count == 0)
         {
             <MudAlert Severity="Severity.Info" Class="mb-2">
@@ -214,16 +357,14 @@ else
                     <MudTh Style="text-align:right">Líneas</MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="Tipo Doc">
-                        <MudChip T="string" Size="Size.Small" Color="@ColorTipDoc(context.TipDoc)">@context.TipDoc</MudChip>
-                    </MudTd>
-                    <MudTd DataLabel="Nro. Doc" Style="font-size:0.82rem">@context.NroDoc</MudTd>
-                    <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yyyy")</MudTd>
-                    <MudTd DataLabel="NIT" Style="font-size:0.82rem">@(context.NitCliente ?? "-")</MudTd>
-                    <MudTd DataLabel="Cliente" Style="font-size:0.82rem">@(context.NombreCliente ?? "-")</MudTd>
-                    <MudTd DataLabel="CC" Style="font-size:0.82rem">@context.CentroCostoID</MudTd>
-                    <MudTd DataLabel="Total" Style="text-align:right">@context.TotalVenta.ToString("C0")</MudTd>
-                    <MudTd DataLabel="Líneas" Style="text-align:right">@context.Lineas</MudTd>
+                    <MudTd><MudChip T="string" Size="Size.Small" Color="@ColorTipDoc(context.TipDoc)">@context.TipDoc</MudChip></MudTd>
+                    <MudTd Style="font-size:0.82rem">@context.NroDoc</MudTd>
+                    <MudTd>@context.Fecha.ToString("dd/MM/yyyy")</MudTd>
+                    <MudTd Style="font-size:0.82rem">@(context.NitCliente ?? "-")</MudTd>
+                    <MudTd Style="font-size:0.82rem">@(context.NombreCliente ?? "-")</MudTd>
+                    <MudTd Style="font-size:0.82rem">@context.CentroCostoID</MudTd>
+                    <MudTd Style="text-align:right">@context.TotalVenta.ToString("C0")</MudTd>
+                    <MudTd Style="text-align:right">@context.Lineas</MudTd>
                 </RowTemplate>
             </MudTable>
         }
@@ -231,29 +372,49 @@ else
 </MudExpansionPanels>
 
 @code {
-    private List<FacturaItem> _facturas = new();
+    // ── Estado general ──
     private List<ClienteItem> _clientes = new();
-    private List<ArticuloItem> _articulos = new();
     private List<ComboItem> _combosActivos = new();
     private List<CentroCostoBasicoItem> _centrosCosto = new();
-    private bool _cargando = true;
     private string? _errorCarga;
+    private int _tabActivo;
 
+    // ── Tab Ordenes de Compra ──
+    private List<OrdenCompraResumen> _ordenes = new();
+    private List<OrdenCompraDetalleItem> _ocDetalle = new();
+    private List<ProveedorItem> _proveedores = new();
+    private List<BodegaItem> _bodegas = new();
+    private List<ArticuloItem> _articulosOC = new();
+    private int? _ocDetalleAbierto;
+    private bool _ocCargando = true;
+    private string? _ocError;
+
+    // ── Tab Pendientes ──
+    private List<FacturaItem> _pendientes = new();
+    private bool   _cargandoPend = true;
+    private int    _paginaPend = 1;
+    private const int _tamanoPend = 100;
+    private int    _totalPend = 0;
+    private int    _totalPaginasPend => (int)Math.Ceiling((double)_totalPend / _tamanoPend);
+
+    // ── Tab Historial ──
+    private List<FacturaItem> _facturas = new();
+    private bool   _cargando = true;
+    private string? _filtroTexto;
     private string? _filtroTipDoc;
-    private int? _filtroClienteId;
-    private int? _filtroCentroCostoId;
+    private int?    _filtroClienteId;
+    private int?    _filtroCentroCostoId;
     private string? _filtroEstado;
     private DateTime? _filtroDesde = DateTime.Today.AddDays(-30);
     private DateTime? _filtroHasta;
-
     private int _pagina = 1;
-    private int _tamano = 50;
+    private const int _tamano = 100;
     private int _total  = 0;
     private int _totalPaginas => (int)Math.Ceiling((double)_total / _tamano);
 
-    // Ventas Visions
+    // ── Ventas Visions ──
     private List<VentaVisionsItem> _ventasVisions = new();
-    private bool   _vCargando = false;
+    private bool    _vCargando;
     private string? _vTipDoc;
     private DateTime? _vDesde = DateTime.Today.AddDays(-30);
     private DateTime? _vHasta;
@@ -262,6 +423,7 @@ else
     private int _totalVisions = 0;
     private int _vTotalPaginas => (int)Math.Ceiling((double)_totalVisions / _vTamano);
 
+    // ── Colores ──
     private Color ColorTipDoc(string tipDoc) => tipDoc switch
     {
         "FACTURA" or "REMISION" => Color.Primary,
@@ -271,61 +433,98 @@ else
         "EGRESO" or "PERDIDA INVENTARIO" => Color.Error,
         _ => Color.Default
     };
-
     private Color ColorEstado(string estado) => estado switch
     {
         "PAGADA" => Color.Success,
         "PARCIAL" => Color.Warning,
         _ => Color.Error
     };
-
     private static string EtiquetaEstado(string estado) => estado switch
     {
         "PAGADA" => "Pagada",
         "PARCIAL" => "Pago parcial",
         _ => "Pendiente"
     };
-
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
-            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
-            var tareaCombos   = ApiClient.GetAsync<List<ComboItem>>("api/marketing/combos");
-            var tareaCentros  = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
-            var tareaFacturas = CargarFacturasAsync();
+        var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
+        var tareaCombos   = ApiClient.GetAsync<List<ComboItem>>("api/marketing/combos");
+        var tareaCentros  = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
+        var tareaPend     = CargarPendientesAsync();
+        var tareaHist     = CargarHistorialAsync();
+        var tareaVisions  = CargarVentasVisionsAsync();
+        var tareaOC       = CargarOrdenesCompraAsync();
 
-            await Task.WhenAll(tareaClientes, tareaArticulos, tareaCombos, tareaCentros, tareaFacturas);
+        await Task.WhenAll(tareaClientes, tareaCombos, tareaCentros, tareaPend, tareaHist, tareaVisions, tareaOC);
 
-            _clientes = (await tareaClientes ?? new()).Where(c => c.Estado).ToList();
-            _articulos = (await tareaArticulos ?? new()).Where(a => a.Estado).ToList();
-            _combosActivos = (await tareaCombos ?? new()).Where(c => c.Estado != "Inactivo").ToList();
-            _centrosCosto = (await tareaCentros ?? new())
-                .Where(c => c.Estado)
-                .Select(c => new CentroCostoBasicoItem(c.CentroCostoID, c.Nombre, c.TieneVisions))
-                .ToList();
-        }
-        catch (Exception ex)
-        {
-            _errorCarga = ex.Message;
-        }
-        finally
-        {
-            _cargando = false;
-        }
+        _clientes = (await tareaClientes ?? new()).Where(c => c.Estado).ToList();
+        _combosActivos = (await tareaCombos ?? new()).Where(c => c.Estado != "Inactivo").ToList();
+        _centrosCosto = (await tareaCentros ?? new())
+            .Where(c => c.Estado)
+            .Select(c => new CentroCostoBasicoItem(c.CentroCostoID, c.Nombre, c.TieneVisions))
+            .ToList();
     }
 
-    private async Task CargarVentasVisionsAsync()
+    // ── Pendientes ──
+    private async Task CargarPendientesAsync()
     {
-        _vCargando = true;
-        StateHasChanged();
+        _cargandoPend = true;
+        try
+        {
+            var q = $"api/facturacion/facturas?soloNoPagadas=true&pagina={_paginaPend}&tamano={_tamanoPend}";
+            var resp = await ApiClient.GetAsync<FacturasPaginadasResponse>(q);
+            _pendientes = resp?.Items ?? new();
+            _totalPend  = resp?.Total ?? 0;
+        }
+        catch { _pendientes = new(); _totalPend = 0; }
+        finally { _cargandoPend = false; }
+    }
+    private async Task IrPendAsync(int p) { _paginaPend = p; await CargarPendientesAsync(); }
+
+    // ── Historial ──
+    private async Task CargarHistorialAsync()
+    {
+        _cargando = true;
         try
         {
             var q = new List<string>();
-            if (_vTipDoc  is not null) q.Add($"tipDoc={Uri.EscapeDataString(_vTipDoc)}");
-            if (_vDesde   is not null) q.Add($"desde={_vDesde.Value:yyyy-MM-dd}");
-            if (_vHasta   is not null) q.Add($"hasta={_vHasta.Value:yyyy-MM-dd}");
+            if (!string.IsNullOrWhiteSpace(_filtroTexto))  q.Add($"texto={Uri.EscapeDataString(_filtroTexto)}");
+            if (_filtroClienteId is not null)               q.Add($"clienteId={_filtroClienteId}");
+            if (_filtroCentroCostoId is not null)           q.Add($"centroCostoId={_filtroCentroCostoId}");
+            if (_filtroTipDoc is not null)                  q.Add($"tipDoc={Uri.EscapeDataString(_filtroTipDoc)}");
+            if (_filtroEstado is not null)                  q.Add($"estado={_filtroEstado}");
+            if (_filtroDesde is not null)                   q.Add($"desde={_filtroDesde.Value:yyyy-MM-dd}");
+            if (_filtroHasta is not null)                   q.Add($"hasta={_filtroHasta.Value:yyyy-MM-dd}");
+            q.Add($"pagina={_pagina}");
+            q.Add($"tamano={_tamano}");
+
+            var resp = await ApiClient.GetAsync<FacturasPaginadasResponse>(
+                "api/facturacion/facturas?" + string.Join("&", q));
+            _facturas   = resp?.Items ?? new();
+            _total      = resp?.Total ?? 0;
+            _errorCarga = null;
+        }
+        catch (Exception ex) { _errorCarga = ex.Message; }
+        finally { _cargando = false; }
+    }
+    private async Task IrPaginaAsync(int p) { _pagina = p; await CargarHistorialAsync(); }
+
+    private async Task OnFiltroTextoAsync(string? v)   { _filtroTexto = v;        _pagina = 1; await CargarHistorialAsync(); }
+    private async Task OnFiltroTipDocAsync(string? v)  { _filtroTipDoc = v;       _pagina = 1; await CargarHistorialAsync(); }
+    private async Task OnFiltroClienteAsync(int? v)    { _filtroClienteId = v;    _pagina = 1; await CargarHistorialAsync(); }
+    private async Task OnFiltroCCAsync(int? v)         { _filtroCentroCostoId = v; _pagina = 1; await CargarHistorialAsync(); }
+    private async Task OnFiltroEstadoAsync(string? v)  { _filtroEstado = v;       _pagina = 1; await CargarHistorialAsync(); }
+
+    // ── Ventas Visions ──
+    private async Task CargarVentasVisionsAsync()
+    {
+        _vCargando = true;
+        try
+        {
+            var q = new List<string>();
+            if (_vTipDoc is not null) q.Add($"tipDoc={Uri.EscapeDataString(_vTipDoc)}");
+            if (_vDesde  is not null) q.Add($"desde={_vDesde.Value:yyyy-MM-dd}");
+            if (_vHasta  is not null) q.Add($"hasta={_vHasta.Value:yyyy-MM-dd}");
             q.Add($"pagina={_vPagina}");
             q.Add($"tamano={_vTamano}");
             var resp = await ApiClient.GetAsync<VentasVisionsPaginadasResponse>(
@@ -337,79 +536,117 @@ else
         finally { _vCargando = false; }
     }
 
-    private async Task CargarFacturasAsync()
-    {
-        _cargando = true;
-        try
-        {
-            var query = new List<string>();
-            if (_filtroClienteId is not null)    query.Add($"clienteId={_filtroClienteId}");
-            if (_filtroCentroCostoId is not null) query.Add($"centroCostoId={_filtroCentroCostoId}");
-            if (_filtroTipDoc is not null)        query.Add($"tipDoc={Uri.EscapeDataString(_filtroTipDoc)}");
-            if (_filtroEstado is not null)        query.Add($"estado={_filtroEstado}");
-            if (_filtroDesde is not null)         query.Add($"desde={_filtroDesde.Value:yyyy-MM-dd}");
-            if (_filtroHasta is not null)         query.Add($"hasta={_filtroHasta.Value:yyyy-MM-dd}");
-            query.Add($"pagina={_pagina}");
-            query.Add($"tamano={_tamano}");
-
-            var ruta = "api/facturacion/facturas?" + string.Join("&", query);
-            var resp = await ApiClient.GetAsync<FacturasPaginadasResponse>(ruta);
-            _facturas = resp?.Items ?? new();
-            _total    = resp?.Total ?? 0;
-            _errorCarga = null;
-        }
-        catch (Exception ex)
-        {
-            _errorCarga = ex.Message;
-        }
-        finally
-        {
-            _cargando = false;
-        }
-    }
-
-    private async Task IrPaginaAsync(int p) { _pagina = p; await CargarFacturasAsync(); }
-
-    private async Task OnFiltroTipDocAsync(string? v)  { _filtroTipDoc = v;          _pagina = 1; await CargarFacturasAsync(); }
-    private async Task OnFiltroClienteAsync(int? v)    { _filtroClienteId = v;        _pagina = 1; await CargarFacturasAsync(); }
-    private async Task OnFiltroCCAsync(int? v)         { _filtroCentroCostoId = v;    _pagina = 1; await CargarFacturasAsync(); }
-    private async Task OnFiltroEstadoAsync(string? v)  { _filtroEstado = v;           _pagina = 1; await CargarFacturasAsync(); }
-
+    // ── Diálogos ──
     private async Task AbrirCreacionAsync()
     {
         var parametros = new DialogParameters<FacturaDialog>
         {
             { x => x.Clientes, _clientes },
-            { x => x.Articulos, _articulos },
             { x => x.CombosActivos, _combosActivos },
             { x => x.CentrosCosto, _centrosCosto }
         };
-
         var dialogo = await DialogService.ShowAsync<FacturaDialog>("Nueva Factura", parametros,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
         var resultado = await dialogo.Result;
-
         if (resultado is null || resultado.Canceled) return;
-
         try
         {
             var request = (CrearFacturaRequest)resultado.Data!;
             await ApiClient.PostAsync<CrearFacturaRequest, object?>("api/facturacion/facturas", request);
             Snackbar.Add("Documento creado correctamente.", Severity.Success);
-            await CargarFacturasAsync();
+            await Task.WhenAll(CargarPendientesAsync(), CargarHistorialAsync());
         }
-        catch (HttpRequestException ex)
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+    }
+
+    // ── Ordenes de Compra ──
+    private async Task CargarOrdenesCompraAsync()
+    {
+        _ocCargando = true;
+        _ocError = null;
+        try { _ordenes = await ApiClient.GetAsync<List<OrdenCompraResumen>>("api/compras/ordenes") ?? new(); }
+        catch (Exception ex) { _ocError = ex.Message; }
+        finally { _ocCargando = false; }
+    }
+
+    private async Task VerDetalleOCAsync(int ordenCompraId)
+    {
+        _ocDetalleAbierto = ordenCompraId;
+        _ocDetalle = await ApiClient.GetAsync<List<OrdenCompraDetalleItem>>($"api/compras/ordenes/{ordenCompraId}/detalle") ?? new();
+    }
+
+    private async Task AbrirCreacionOCAsync(int? articuloPreseleccionado = null)
+    {
+        if (_proveedores.Count == 0)
         {
-            Snackbar.Add(ex.Message, Severity.Error);
+            var tareaProvs  = ApiClient.GetAsync<List<ProveedorItem>>("api/catalogo/proveedores");
+            var tareaBods   = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
+            var tareaArts   = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
+            await Task.WhenAll(tareaProvs, tareaBods, tareaArts);
+            _proveedores = await tareaProvs ?? new();
+            _bodegas     = await tareaBods  ?? new();
+            _articulosOC = (await tareaArts ?? new())
+                .Where(a => a.TipoArticulo is "Materia Prima" or "Insumo" or "Servicio")
+                .ToList();
         }
+        var parametros = new DialogParameters<CrearOrdenCompraDialog>
+        {
+            { x => x._proveedores, _proveedores },
+            { x => x._bodegas, _bodegas },
+            { x => x._articulos, _articulosOC },
+            { x => x.ArticuloPreseleccionadoID, articuloPreseleccionado }
+        };
+        var dialogo = await DialogService.ShowAsync<CrearOrdenCompraDialog>("Nueva Orden de Compra", parametros);
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled) return;
+        try
+        {
+            var request = (CrearOrdenCompraRequest)resultado.Data!;
+            await ApiClient.PostAsync<CrearOrdenCompraRequest, object?>("api/compras/ordenes", request);
+            Snackbar.Add("Orden de compra creada.", Severity.Success);
+            await CargarOrdenesCompraAsync();
+        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+    }
+
+    private async Task AbrirRecepcionOCAsync(OrdenCompraDetalleItem linea)
+    {
+        var pendiente = linea.CantidadSolicitada - linea.CantidadRecibida;
+        var parametros = new DialogParameters<RecibirLineaDialog>
+        {
+            { x => x.Articulo, linea.Articulo },
+            { x => x.Pendiente, pendiente },
+            { x => x.Unidad, linea.Unidad },
+            { x => x.UnidadesPorEmbalaje, linea.UnidadesPorEmbalaje }
+        };
+        var dialogo = await DialogService.ShowAsync<RecibirLineaDialog>("Recibir Mercancía", parametros);
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled) return;
+        try
+        {
+            var request = (RecibirLineaOrdenCompraRequest)resultado.Data!;
+            await ApiClient.PostAsync<RecibirLineaOrdenCompraRequest, object?>(
+                $"api/compras/ordenes/detalle/{linea.OrdenCompraDetalleID}/recibir", request);
+            Snackbar.Add("Mercancía recibida.", Severity.Success);
+            await VerDetalleOCAsync(_ocDetalleAbierto!.Value);
+        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
     }
 
     private async Task AbrirGestionAsync(FacturaItem factura)
     {
-        var parametros = new DialogParameters<GestionFacturaDialog> { { x => x.Factura, factura } };
+        var ccTieneVisions = _centrosCosto
+            .FirstOrDefault(cc => cc.CentroCostoID == factura.CentroCostoID)
+            ?.TieneVisions ?? false;
+
+        var parametros = new DialogParameters<GestionFacturaDialog>
+        {
+            { x => x.Factura, factura },
+            { x => x.CcTieneVisions, ccTieneVisions }
+        };
         var dialogo = await DialogService.ShowAsync<GestionFacturaDialog>("Gestionar", parametros,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
         await dialogo.Result;
-        await CargarFacturasAsync();
+        await Task.WhenAll(CargarPendientesAsync(), CargarHistorialAsync());
     }
 }

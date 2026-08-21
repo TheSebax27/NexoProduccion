@@ -21,6 +21,8 @@ public class ConfiguracionEmpresaState
     public bool ManejarVencimientos { get; private set; } = false;
     public int DiasAlertaVencimiento { get; private set; } = 7;
     public string ModoLotes { get; private set; } = "FIFO";
+    public string ModoNroDoc { get; private set; } = "Manual";
+    public long UltimoNroDocSecuencial { get; private set; } = 0;
 
     // Null si no hay logo propio -- el sidebar usa la imagen por defecto (LogoV.png) en ese caso.
     public string? LogoDataUri => LogoBase64 is null ? null : $"data:{LogoContentType};base64,{LogoBase64}";
@@ -49,6 +51,8 @@ public class ConfiguracionEmpresaState
                 ManejarVencimientos = respuesta.ManejarVencimientos;
                 DiasAlertaVencimiento = respuesta.DiasAlertaVencimiento;
                 ModoLotes = respuesta.ModoLotes;
+                ModoNroDoc = respuesta.ModoNroDoc;
+                UltimoNroDocSecuencial = respuesta.UltimoNroDocSecuencial;
             }
         }
         catch
@@ -101,6 +105,16 @@ public class ConfiguracionEmpresaState
         ManejarVencimientos = manejarVencimientos;
         DiasAlertaVencimiento = diasAlerta;
         ModoLotes = modoLotes;
+        OnCambio?.Invoke();
+    }
+
+    public async Task ActualizarConfigNroDocAsync(string modoNroDoc, long ultimoSecuencial)
+    {
+        await _apiClient.PutAsync(
+            "api/configuracion/empresa/nrodoc",
+            new ActualizarConfigNroDocRequest(modoNroDoc, ultimoSecuencial));
+        ModoNroDoc = modoNroDoc;
+        UltimoNroDocSecuencial = ultimoSecuencial;
         OnCambio?.Invoke();
     }
 }

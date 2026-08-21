@@ -35,6 +35,9 @@ public interface ICatalogoService
     Task<IEnumerable<ProveedorItem>> ListarProveedoresAsync();
     Task<int> CrearProveedorAsync(CrearProveedorRequest request);
     Task ActualizarProveedorAsync(int proveedorId, ActualizarProveedorRequest request);
+    Task<DualRolInfo> VerificarDualRolAsync(string nit);
+    Task<int> AgregarComoProveedorDesdeClienteAsync(int clienteId);
+    Task<int> AgregarComoClienteDesdeProveedorAsync(int proveedorId);
 
     Task<IEnumerable<TipoArticuloItem>> ListarTiposArticuloAsync();
     Task<IEnumerable<UnidadMedidaItem>> ListarUnidadesMedidaAsync();
@@ -664,23 +667,32 @@ public class CatalogoService : ICatalogoService
             throw new KeyNotFoundException($"No existe el centro de trabajo {centroTrabajoId}.");
     }
 
-    // Agregar a ICatalogoService / CatalogoService
-   
-
     public async Task<IEnumerable<ProveedorItem>> ListarProveedoresAsync()
     {
         using var connection = _db.CreateConnection();
         return await connection.QueryAsync<ProveedorItem>(
-            "SELECT ProveedorID, RazonSocial, NIT, Contacto, Telefono, Email, Direccion, Estado FROM Catalogo.Proveedores ORDER BY RazonSocial");
+            @"SELECT ProveedorID, RazonSocial, NIT, Contacto, Telefono, Email, Direccion, Estado,
+                     TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
+                     TipoIdentificacion, DigitoVerificacion, Departamento, Ciudad,
+                     CodigoDept, CodigoMuni, Pais, CodigoPais
+              FROM Catalogo.Proveedores ORDER BY RazonSocial");
     }
 
     public async Task<int> CrearProveedorAsync(CrearProveedorRequest r)
     {
         using var connection = _db.CreateConnection();
         const string sql = @"
-            INSERT INTO Catalogo.Proveedores (RazonSocial, NIT, Contacto, Telefono, Email, Direccion)
+            INSERT INTO Catalogo.Proveedores
+                (RazonSocial, NIT, Contacto, Telefono, Email, Direccion,
+                 TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
+                 TipoIdentificacion, DigitoVerificacion, Departamento, Ciudad,
+                 CodigoDept, CodigoMuni, Pais, CodigoPais)
             OUTPUT INSERTED.ProveedorID
-            VALUES (@RazonSocial, @NIT, @Contacto, @Telefono, @Email, @Direccion)";
+            VALUES
+                (@RazonSocial, @NIT, @Contacto, @Telefono, @Email, @Direccion,
+                 @TipoPersona, @PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido,
+                 @TipoIdentificacion, @DigitoVerificacion, @Departamento, @Ciudad,
+                 @CodigoDept, @CodigoMuni, ISNULL(@Pais,'COLOMBIA'), ISNULL(@CodigoPais,'CO'))";
         return await connection.ExecuteScalarAsync<int>(sql, r);
     }
 
@@ -688,12 +700,131 @@ public class CatalogoService : ICatalogoService
     {
         using var connection = _db.CreateConnection();
         const string sql = @"
-            UPDATE Catalogo.Proveedores
-            SET RazonSocial = @RazonSocial, NIT = @NIT, Contacto = @Contacto, Telefono = @Telefono,
-                Email = @Email, Direccion = @Direccion, Estado = @Estado
+            UPDATE Catalogo.Proveedores SET
+                RazonSocial = @RazonSocial, NIT = @NIT, Contacto = @Contacto, Telefono = @Telefono,
+                Email = @Email, Direccion = @Direccion, Estado = @Estado,
+                TipoPersona = @TipoPersona, PrimerNombre = @PrimerNombre, SegundoNombre = @SegundoNombre,
+                PrimerApellido = @PrimerApellido, SegundoApellido = @SegundoApellido,
+                TipoIdentificacion = @TipoIdentificacion, DigitoVerificacion = @DigitoVerificacion,
+                Departamento = @Departamento, Ciudad = @Ciudad,
+                CodigoDept = @CodigoDept, CodigoMuni = @CodigoMuni,
+                Pais = ISNULL(@Pais,'COLOMBIA'), CodigoPais = ISNULL(@CodigoPais,'CO')
             WHERE ProveedorID = @ProveedorId";
-        var filas = await connection.ExecuteAsync(sql, new { ProveedorId = proveedorId, r.RazonSocial, r.NIT, r.Contacto, r.Telefono, r.Email, r.Direccion, r.Estado });
+        var filas = await connection.ExecuteAsync(sql, new
+        {
+            ProveedorId = proveedorId,
+            r.RazonSocial, r.NIT, r.Contacto, r.Telefono, r.Email, r.Direccion, r.Estado,
+            r.TipoPersona, r.PrimerNombre, r.SegundoNombre, r.PrimerApellido, r.SegundoApellido,
+            r.TipoIdentificacion, r.DigitoVerificacion, r.Departamento, r.Ciudad,
+            r.CodigoDept, r.CodigoMuni, r.Pais, r.CodigoPais
+        });
         if (filas == 0) throw new KeyNotFoundException($"No existe el proveedor {proveedorId}.");
+    }
+
+    public async Task<DualRolInfo> VerificarDualRolAsync(string nit)
+    {
+        using var connection = _db.CreateConnection();
+        var clienteId = await connection.ExecuteScalarAsync<int?>(
+            "SELECT TOP 1 ClienteID FROM Crm.Clientes WHERE NIT = @NIT", new { NIT = nit });
+        var proveedorId = await connection.ExecuteScalarAsync<int?>(
+            "SELECT TOP 1 ProveedorID FROM Catalogo.Proveedores WHERE NIT = @NIT", new { NIT = nit });
+        return new DualRolInfo(clienteId.HasValue, clienteId, proveedorId.HasValue, proveedorId);
+    }
+
+    public async Task<int> AgregarComoProveedorDesdeClienteAsync(int clienteId)
+    {
+        using var connection = _db.CreateConnection();
+
+        var c = await connection.QuerySingleOrDefaultAsync<dynamic>(
+            @"SELECT c.ClienteID, c.NIT, c.Nombre, c.Telefono, c.Email, c.Direccion,
+                     c.TipoPersona, c.PrimerNombre, c.SegundoNombre, c.PrimerApellido, c.SegundoApellido,
+                     c.TipoIdentificacion, c.DigitoVerificacion, c.Departamento, c.Ciudad,
+                     c.CodigoDept, c.CodigoMuni, c.Pais, c.CodigoPais
+              FROM Crm.Clientes c WHERE c.ClienteID = @ClienteID",
+            new { ClienteID = clienteId });
+
+        if (c == null) throw new KeyNotFoundException($"No existe el cliente {clienteId}.");
+
+        // Si ya existe como proveedor con ese NIT, solo retornar el ID existente
+        var existente = await connection.ExecuteScalarAsync<int?>(
+            "SELECT TOP 1 ProveedorID FROM Catalogo.Proveedores WHERE NIT = @NIT",
+            new { NIT = (string)c.NIT });
+        if (existente.HasValue) return existente.Value;
+
+        return await connection.ExecuteScalarAsync<int>(@"
+            INSERT INTO Catalogo.Proveedores
+                (RazonSocial, NIT, Telefono, Email, Direccion,
+                 TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
+                 TipoIdentificacion, DigitoVerificacion, Departamento, Ciudad,
+                 CodigoDept, CodigoMuni, Pais, CodigoPais, Estado)
+            OUTPUT INSERTED.ProveedorID
+            VALUES
+                (@Nombre, @NIT, @Telefono, @Email, @Direccion,
+                 @TipoPersona, @PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido,
+                 @TipoIdentificacion, @DigitoVerificacion, @Departamento, @Ciudad,
+                 @CodigoDept, @CodigoMuni, ISNULL(@Pais,'COLOMBIA'), ISNULL(@CodigoPais,'CO'), 1)",
+            new
+            {
+                Nombre = (string)c.Nombre, NIT = (string)c.NIT,
+                Telefono = (string?)c.Telefono, Email = (string?)c.Email, Direccion = (string?)c.Direccion,
+                TipoPersona = (string?)c.TipoPersona, PrimerNombre = (string?)c.PrimerNombre,
+                SegundoNombre = (string?)c.SegundoNombre, PrimerApellido = (string?)c.PrimerApellido,
+                SegundoApellido = (string?)c.SegundoApellido,
+                TipoIdentificacion = (string?)c.TipoIdentificacion, DigitoVerificacion = (int?)c.DigitoVerificacion,
+                Departamento = (string?)c.Departamento, Ciudad = (string?)c.Ciudad,
+                CodigoDept = (string?)c.CodigoDept, CodigoMuni = (string?)c.CodigoMuni,
+                Pais = (string?)c.Pais, CodigoPais = (string?)c.CodigoPais
+            });
+    }
+
+    public async Task<int> AgregarComoClienteDesdeProveedorAsync(int proveedorId)
+    {
+        using var connection = _db.CreateConnection();
+
+        var p = await connection.QuerySingleOrDefaultAsync<dynamic>(
+            @"SELECT ProveedorID, NIT, RazonSocial, Telefono, Email, Direccion,
+                     TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
+                     TipoIdentificacion, DigitoVerificacion, Departamento, Ciudad,
+                     CodigoDept, CodigoMuni, Pais, CodigoPais
+              FROM Catalogo.Proveedores WHERE ProveedorID = @ProveedorID",
+            new { ProveedorID = proveedorId });
+
+        if (p == null) throw new KeyNotFoundException($"No existe el proveedor {proveedorId}.");
+
+        // Si ya existe como cliente con ese NIT, solo retornar el ID existente
+        var existente = await connection.ExecuteScalarAsync<int?>(
+            "SELECT TOP 1 ClienteID FROM Crm.Clientes WHERE NIT = @NIT",
+            new { NIT = (string)p.NIT });
+        if (existente.HasValue) return existente.Value;
+
+        var tipoPersona = (string?)p.TipoPersona ?? "Juridica";
+        var tipoCliente  = tipoPersona == "Natural" ? "Persona Natural" : "Empresa";
+
+        return await connection.ExecuteScalarAsync<int>(@"
+            INSERT INTO Crm.Clientes
+                (Nombre, NIT, Telefono, Email, Direccion, TipoPersona, TipoCliente,
+                 PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
+                 TipoIdentificacion, DigitoVerificacion, Departamento, Ciudad,
+                 CodigoDept, CodigoMuni, Pais, CodigoPais, Estado, FechaCreacion, FechaModificacion)
+            OUTPUT INSERTED.ClienteID
+            VALUES
+                (@RazonSocial, @NIT, @Telefono, @Email, @Direccion, @TipoPersona, @TipoCliente,
+                 @PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido,
+                 @TipoIdentificacion, @DigitoVerificacion, @Departamento, @Ciudad,
+                 @CodigoDept, @CodigoMuni, ISNULL(@Pais,'COLOMBIA'), ISNULL(@CodigoPais,'CO'),
+                 1, GETDATE(), GETDATE())",
+            new
+            {
+                RazonSocial = (string)p.RazonSocial, NIT = (string)p.NIT,
+                Telefono = (string?)p.Telefono, Email = (string?)p.Email, Direccion = (string?)p.Direccion,
+                TipoPersona = tipoPersona, TipoCliente = tipoCliente,
+                PrimerNombre = (string?)p.PrimerNombre, SegundoNombre = (string?)p.SegundoNombre,
+                PrimerApellido = (string?)p.PrimerApellido, SegundoApellido = (string?)p.SegundoApellido,
+                TipoIdentificacion = (string?)p.TipoIdentificacion, DigitoVerificacion = (int?)p.DigitoVerificacion,
+                Departamento = (string?)p.Departamento, Ciudad = (string?)p.Ciudad,
+                CodigoDept = (string?)p.CodigoDept, CodigoMuni = (string?)p.CodigoMuni,
+                Pais = (string?)p.Pais, CodigoPais = (string?)p.CodigoPais
+            });
     }
 
     public async Task<IEnumerable<TipoArticuloItem>> ListarTiposArticuloAsync()

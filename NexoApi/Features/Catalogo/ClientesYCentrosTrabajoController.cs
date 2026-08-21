@@ -58,4 +58,30 @@ public class ClientesYCentrosTrabajoController : ControllerBase
         await _service.ActualizarProveedorAsync(id, request);
         return Ok();
     }
+
+    /// <summary>Consulta si un NIT está registrado como cliente y/o proveedor en NEXO.</summary>
+    [HttpGet("verificar-dual-rol")]
+    public async Task<ActionResult<DualRolInfo>> VerificarDualRol([FromQuery] string nit)
+    {
+        if (string.IsNullOrWhiteSpace(nit)) return BadRequest("NIT requerido.");
+        return Ok(await _service.VerificarDualRolAsync(nit.Trim()));
+    }
+
+    /// <summary>Crea un proveedor copiando los datos del cliente indicado. Si ya existe como proveedor, retorna el ID existente.</summary>
+    [HttpPost("proveedores/desde-cliente/{clienteId:int}")]
+    [Authorize]
+    public async Task<ActionResult> AgregarComoProveedorDesdeCliente(int clienteId)
+    {
+        var id = await _service.AgregarComoProveedorDesdeClienteAsync(clienteId);
+        return Ok(new { ProveedorID = id });
+    }
+
+    /// <summary>Crea un cliente copiando los datos del proveedor indicado. Si ya existe como cliente, retorna el ID existente.</summary>
+    [HttpPost("proveedores/{proveedorId:int}/agregar-como-cliente")]
+    [Authorize]
+    public async Task<ActionResult> AgregarComoClienteDesdeProveedor(int proveedorId)
+    {
+        var id = await _service.AgregarComoClienteDesdeProveedorAsync(proveedorId);
+        return Ok(new { ClienteID = id });
+    }
 }

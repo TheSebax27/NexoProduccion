@@ -8,7 +8,9 @@ public record ClienteItem(
     int TotalContactos, DateTime? UltimaInteraccion,
     string? TipoPersona,
     string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
-    string? Departamento, string? Ciudad
+    string? Departamento, string? Ciudad,
+    string? TipoIdentificacion, string? CodigoDept, string? CodigoMuni,
+    int? DigitoVerificacion = null
 );
 
 public record CrearClienteRequest(
@@ -16,7 +18,9 @@ public record CrearClienteRequest(
     string? FuenteContacto, string? TipoCliente, int? ResponsableID,
     string? TipoPersona,
     string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
-    string? Departamento, string? Ciudad
+    string? Departamento, string? Ciudad,
+    string? TipoIdentificacion = null, string? CodigoDept = null, string? CodigoMuni = null,
+    int? DigitoVerificacion = null
 );
 
 public record ActualizarClienteRequest(
@@ -24,8 +28,17 @@ public record ActualizarClienteRequest(
     string? FuenteContacto, string? TipoCliente, int? ResponsableID, DateTime? ProximoContacto,
     string? TipoPersona,
     string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
-    string? Departamento, string? Ciudad
+    string? Departamento, string? Ciudad,
+    string? TipoIdentificacion = null, string? CodigoDept = null, string? CodigoMuni = null,
+    int? DigitoVerificacion = null
 );
+
+// Catálogo de referencia geográfica/tributaria
+public record PaisItem(string Codigo1, string? Codigo2, string? Codigo3, string Nombre);
+public record MunicipioItem(string CodigoDept, string? NombreDept, string CodigoMuni, string? NombreMuni);
+public record TipoIdentificacionItem(string Codigo, string? Detalle);
+
+public record ClientesPaginadosResponse(List<ClienteItem> Items, int Total);
 
 public record InteraccionItem(long InteraccionID, int ClienteID, string Tipo, string Notas, DateTime Fecha, string? Usuario);
 public record CrearInteraccionRequest(int ClienteID, string Tipo, string Notas, DateTime? ProximoContacto);

@@ -61,6 +61,11 @@ public interface IIntegracionService
     // Clientes desde Visions → NEXO
     Task SyncClienteDesdeVisionsAsync(SyncClienteDesdeVisionsRequest request);
 
+    // Proveedores para sync NEXO → Visions
+    Task<IEnumerable<ProveedorParaSyncDto>> ListarProveedoresParaSyncAsync(int centroCostoId);
+    // Proveedores desde Visions → NEXO
+    Task SyncProveedorDesdeVisionsAsync(SyncProveedorDesdeVisionsRequest request);
+
     // Número de factura asignado por Visions → actualizar NEXO
     Task ActualizarNumeroVisionsAsync(int facturaId, ActualizarNumeroVisionsRequest request);
 
@@ -96,7 +101,11 @@ public class IntegracionService : IIntegracionService
         // (misma clave que TARJETA.REFERENCIA en Visions) sin necesidad de
         // pasar por MapeoArticulos -- el mapeo es ahora automatico.
         const string sql = @"
-            SELECT e.EventoID, e.TipoEvento, e.Cantidad, e.CostoUnitario, e.FechaCreacion,
+            SELECT e.EventoID, e.TipoEvento, e.Cantidad,
+                   -- Para SINCRONIZAR_ARTICULO usar el Costo configurado, no CostoPromedio (que es 0 en articulos nuevos)
+                   CASE WHEN e.TipoEvento = 'SINCRONIZAR_ARTICULO' THEN ISNULL(a.Costo, 0)
+                        ELSE e.CostoUnitario END AS CostoUnitario,
+                   e.FechaCreacion,
                    cc.IdentificadorClienteVisions AS CentroCostoVisions,
                    a.Referencia AS ReferenciaVisions,
                    a.Nombre AS NombreArticulo, a.PPublico AS PrecioVentaArticulo, a.StockMinimo AS StockMinimoArticulo,
@@ -1069,8 +1078,7 @@ public class IntegracionService : IIntegracionService
                    c.NIT AS ClienteNit, c.Nombre AS ClienteNombre
             FROM Facturacion.Facturas f
             JOIN Crm.Clientes c ON c.ClienteID = f.ClienteID
-            WHERE f.StockDescontado = 1
-              AND f.CentroCostoID = @CentroCostoId
+            WHERE f.CentroCostoID = @CentroCostoId
               AND NOT EXISTS (
                   SELECT 1 FROM Facturacion.FacturasExportadasVisions fev
                   WHERE fev.FacturaID = f.FacturaID AND fev.CentroCostoID = @CentroCostoId)";
@@ -1301,13 +1309,19 @@ public class IntegracionService : IIntegracionService
         using var connection = _db.CreateConnection();
 
         return await connection.QueryAsync<ClienteParaSyncDto>(
-            @"SELECT ClienteID, NIT, Nombre, Telefono, Email, Direccion, FechaModificacion,
-                     TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
-                     Departamento, Ciudad
-              FROM Crm.Clientes
-              WHERE Estado = 1
-                AND (@Desde IS NULL OR FechaModificacion > @Desde)
-              ORDER BY FechaModificacion",
+            @"SELECT c.ClienteID, c.NIT, c.Nombre, c.Telefono, c.Email, c.Direccion, c.FechaModificacion,
+                     c.TipoPersona, c.PrimerNombre, c.SegundoNombre, c.PrimerApellido, c.SegundoApellido,
+                     c.Departamento, c.Ciudad,
+                     ti.Detalle AS TipoIdentificacionDetalle,
+                     m.NombreDept, m.NombreMuni,
+                     c.CodigoDept, c.CodigoMuni,
+                     c.DigitoVerificacion
+              FROM Crm.Clientes c
+              LEFT JOIN Catalogo.TiposIdentificacion ti ON ti.Codigo = c.TipoIdentificacion
+              LEFT JOIN Catalogo.Municipios m ON m.CodigoDept = c.CodigoDept AND m.CodigoMuni = c.CodigoMuni
+              WHERE c.Estado = 1
+                AND (@Desde IS NULL OR c.FechaModificacion IS NULL OR c.FechaModificacion > @Desde)
+              ORDER BY c.FechaModificacion",
             new { Desde = desde });
     }
 
@@ -1333,13 +1347,37 @@ public class IntegracionService : IIntegracionService
             ? (string.IsNullOrWhiteSpace(r.NombreEmpresa) ? "Natural" : "Juridica")
             : r.TipoPersona;
 
+        // Para Juridica: usar EMPRESA primero, luego NOMBRE1 (cuando Visions pone el nombre ahi,
+        // como en CONSUMIDOR FINAL), luego NIT como ultimo recurso.
+        // Para Natural: concatenar los campos de nombre; si todos vacíos, usar NIT.
         var nombre = tipoPersona == "Juridica"
-            ? (r.NombreEmpresa ?? r.NIT)
+            ? (!string.IsNullOrWhiteSpace(r.NombreEmpresa) ? r.NombreEmpresa
+               : !string.IsNullOrWhiteSpace(r.PrimerNombre) ? r.PrimerNombre
+               : null) ?? r.NIT
             : string.Join(" ", new[] { r.PrimerNombre, r.SegundoNombre, r.PrimerApellido, r.SegundoApellido }
                 .Where(s => !string.IsNullOrWhiteSpace(s)));
         if (string.IsNullOrWhiteSpace(nombre)) nombre = r.NIT;
 
         var tipoCliente = tipoPersona == "Natural" ? "Persona Natural" : "Empresa";
+
+        // Reverse-lookup código de tipo ID desde el tipo de persona
+        var tipoIdCodigo = await connection.ExecuteScalarAsync<string?>(
+            "SELECT TOP 1 Codigo FROM Catalogo.TiposIdentificacion WHERE UPPER(Detalle) = UPPER(@Det)",
+            new { Det = tipoPersona == "Juridica" ? "NIT" : "CEDULA DE CIUDADANIA" });
+
+        // Si el agente ya envió los códigos (desde CIUDADCODIGO/DEPARTAMENTOCODIGO de Visions), los usamos directamente.
+        // Si no, hacemos reverse-lookup por texto como fallback.
+        string? codigoDept = r.CodigoDept;
+        string? codigoMuni = r.CodigoMuni;
+        if (string.IsNullOrWhiteSpace(codigoDept) && !string.IsNullOrWhiteSpace(r.Departamento))
+        {
+            var municipio = await connection.QuerySingleOrDefaultAsync<(string? CodigoDept, string? CodigoMuni)>(
+                @"SELECT TOP 1 CodigoDept, CodigoMuni FROM Catalogo.Municipios
+                  WHERE UPPER(NombreDept) = UPPER(@Dept) AND UPPER(NombreMuni) = UPPER(@Ciudad)",
+                new { Dept = r.Departamento, Ciudad = r.Ciudad });
+            codigoDept = municipio.CodigoDept;
+            codigoMuni = municipio.CodigoMuni;
+        }
 
         await connection.ExecuteAsync(@"
             MERGE Crm.Clientes AS dest
@@ -1350,32 +1388,141 @@ public class IntegracionService : IIntegracionService
                 PrimerNombre = @PrimerNombre, SegundoNombre = @SegundoNombre,
                 PrimerApellido = @PrimerApellido, SegundoApellido = @SegundoApellido,
                 Departamento = @Departamento, Ciudad = @Ciudad,
-                FechaModificacion = GETDATE()
+                Pais = 'COLOMBIA', CodigoPais = 'CO',
+                TipoIdentificacion = ISNULL(@TipoIdentificacion, TipoIdentificacion),
+                CodigoDept = ISNULL(@CodigoDept, CodigoDept),
+                CodigoMuni = ISNULL(@CodigoMuni, CodigoMuni),
+                DigitoVerificacion = ISNULL(@DigitoVerificacion, DigitoVerificacion)
+                -- NO se actualiza FechaModificacion: el cambio vino de Visions,
+                -- si la actualizáramos el próximo ciclo NEXO→Visions lo re-enviaría (ping-pong).
             WHEN NOT MATCHED THEN INSERT
                 (Nombre, NIT, Telefono, Email, Direccion, TipoPersona, TipoCliente,
                  PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
-                 Departamento, Ciudad, Estado, FechaCreacion, FechaModificacion)
+                 Departamento, Ciudad, Pais, CodigoPais, TipoIdentificacion, CodigoDept, CodigoMuni,
+                 DigitoVerificacion, Estado, FechaCreacion, FechaModificacion)
             VALUES
                 (@Nombre, @NIT, @Telefono, @Email, @Direccion, @TipoPersona, @TipoCliente,
                  @PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido,
-                 @Departamento, @Ciudad, 1, GETDATE(), GETDATE());",
+                 @Departamento, @Ciudad, 'COLOMBIA', 'CO', @TipoIdentificacion, @CodigoDept, @CodigoMuni,
+                 @DigitoVerificacion, 1, GETDATE(), GETDATE());",
             new
             {
                 r.NIT, Nombre = nombre, r.Telefono, r.Email, r.Direccion,
                 TipoPersona = tipoPersona, TipoCliente = tipoCliente,
                 r.PrimerNombre, r.SegundoNombre, r.PrimerApellido, r.SegundoApellido,
-                r.Departamento, r.Ciudad
+                r.Departamento, r.Ciudad,
+                TipoIdentificacion = tipoIdCodigo,
+                CodigoDept = codigoDept,
+                CodigoMuni = codigoMuni,
+                r.DigitoVerificacion
+            });
+    }
+
+    public async Task<IEnumerable<ProveedorParaSyncDto>> ListarProveedoresParaSyncAsync(int centroCostoId)
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<ProveedorParaSyncDto>(
+            @"SELECT ProveedorID, NIT, RazonSocial, Contacto, Telefono, Email, Direccion,
+                     TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
+                     TipoIdentificacion, DigitoVerificacion, Departamento, Ciudad,
+                     CodigoDept, CodigoMuni, Pais, CodigoPais
+              FROM Catalogo.Proveedores
+              WHERE Estado = 1
+              ORDER BY RazonSocial");
+    }
+
+    public async Task SyncProveedorDesdeVisionsAsync(SyncProveedorDesdeVisionsRequest r)
+    {
+        if (string.IsNullOrWhiteSpace(r.RazonSocial))
+            return;
+
+        using var connection = _db.CreateConnection();
+
+        var tipoPersona = string.IsNullOrWhiteSpace(r.TipoPersona)
+            ? (string.IsNullOrWhiteSpace(r.PrimerNombre) && string.IsNullOrWhiteSpace(r.PrimerApellido)
+               ? "Juridica" : "Natural")
+            : r.TipoPersona;
+
+        // Reverse-lookup código de tipo ID
+        var tipoIdCodigo = await connection.ExecuteScalarAsync<string?>(
+            "SELECT TOP 1 Codigo FROM Catalogo.TiposIdentificacion WHERE UPPER(Detalle) = UPPER(@Det)",
+            new { Det = tipoPersona == "Juridica" ? "NIT" : "CEDULA DE CIUDADANIA" });
+
+        string? codigoDept = r.CodigoDept;
+        string? codigoMuni = r.CodigoMuni;
+        if (string.IsNullOrWhiteSpace(codigoDept) && !string.IsNullOrWhiteSpace(r.Departamento))
+        {
+            var muni = await connection.QuerySingleOrDefaultAsync<(string? CodigoDept, string? CodigoMuni)>(
+                @"SELECT TOP 1 CodigoDept, CodigoMuni FROM Catalogo.Municipios
+                  WHERE UPPER(NombreDept) = UPPER(@Dept) AND UPPER(NombreMuni) = UPPER(@Ciudad)",
+                new { Dept = r.Departamento, Ciudad = r.Ciudad });
+            codigoDept = muni.CodigoDept;
+            codigoMuni = muni.CodigoMuni;
+        }
+
+        await connection.ExecuteAsync(@"
+            MERGE Catalogo.Proveedores AS dest
+            USING (SELECT @NIT AS NIT) AS src ON dest.NIT = src.NIT
+            WHEN MATCHED THEN UPDATE SET
+                RazonSocial        = @RazonSocial,
+                Telefono           = ISNULL(@Telefono, Telefono),
+                Email              = ISNULL(@Email, Email),
+                Direccion          = ISNULL(@Direccion, Direccion),
+                TipoPersona        = @TipoPersona,
+                PrimerNombre       = @PrimerNombre,
+                SegundoNombre      = @SegundoNombre,
+                PrimerApellido     = @PrimerApellido,
+                SegundoApellido    = @SegundoApellido,
+                TipoIdentificacion = ISNULL(@TipoIdentificacion, TipoIdentificacion),
+                DigitoVerificacion = @DigitoVerificacion,
+                Departamento       = ISNULL(@Departamento, Departamento),
+                Ciudad             = ISNULL(@Ciudad, Ciudad),
+                CodigoDept         = ISNULL(@CodigoDept, CodigoDept),
+                CodigoMuni         = ISNULL(@CodigoMuni, CodigoMuni),
+                Pais               = 'COLOMBIA', CodigoPais = 'CO',
+                Estado             = 1
+            WHEN NOT MATCHED THEN INSERT
+                (NIT, RazonSocial, Telefono, Email, Direccion,
+                 TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
+                 TipoIdentificacion, DigitoVerificacion, Departamento, Ciudad,
+                 CodigoDept, CodigoMuni, Pais, CodigoPais, Estado)
+            VALUES
+                (@NIT, @RazonSocial, @Telefono, @Email, @Direccion,
+                 @TipoPersona, @PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido,
+                 @TipoIdentificacion, @DigitoVerificacion, @Departamento, @Ciudad,
+                 @CodigoDept, @CodigoMuni, 'COLOMBIA', 'CO', 1);",
+            new
+            {
+                r.NIT, r.RazonSocial, r.Telefono, r.Email, r.Direccion,
+                TipoPersona        = tipoPersona,
+                r.PrimerNombre, r.SegundoNombre, r.PrimerApellido, r.SegundoApellido,
+                TipoIdentificacion = tipoIdCodigo,
+                r.DigitoVerificacion,
+                r.Departamento, r.Ciudad,
+                CodigoDept         = codigoDept,
+                CodigoMuni         = codigoMuni
             });
     }
 
     public async Task ActualizarNumeroVisionsAsync(int facturaId, ActualizarNumeroVisionsRequest request)
     {
         using var connection = _db.CreateConnection();
+
         await connection.ExecuteAsync(
             @"UPDATE Facturacion.Facturas
-              SET TipDoc = @TipDoc, NroDoc = @NroDoc
+              SET TipDoc = @TipDoc, NroDoc = @NroDoc, VisionsConfirmado = 1
               WHERE FacturaID = @FacturaId",
             new { FacturaId = facturaId, request.TipDoc, request.NroDoc });
+
+        // Descontar stock automáticamente ahora que Visions confirmó.
+        // Si ya fue descontado o la factura no tiene líneas, el SP lo ignora sin error.
+        try
+        {
+            await connection.ExecuteAsync(
+                "EXEC Facturacion.sp_DescontarStockFactura @FacturaID, @UsuarioID",
+                new { FacturaID = facturaId, UsuarioID = 0 });
+        }
+        catch { /* best-effort: si falla (ej. stock insuficiente) no bloquear la confirmación */ }
     }
 
     public async Task<SaludCatalogoResponse> ObtenerSaludCatalogoAsync()
