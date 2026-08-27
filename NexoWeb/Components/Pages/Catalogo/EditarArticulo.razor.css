@@ -1,62 +1,9 @@
-/* Mismos estilos base que CrearArticulo — ver CrearArticulo.razor.css */
+/* Layout, sección-card, encabezado y barra de acciones:
+   movidos a app.css §Sistema de Secciones de Formulario.
+   Clases disponibles globalmente: nexo-section, nexo-form-layout,
+   nexo-form-row-2, nexo-action-bar, nexo-page-header. */
 
-/* ── Encabezado de página ──────────────────────────────────────────── */
-.na-page-header {
-    margin-bottom: 2rem;
-}
-
-.na-breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    margin-bottom: 0.75rem;
-    font-size: 0.8rem;
-}
-
-.na-breadcrumb__link {
-    color: var(--n-purple);
-    text-decoration: none;
-    font-weight: 500;
-    transition: opacity .15s;
-}
-.na-breadcrumb__link:hover { opacity: .75; }
-
-.na-breadcrumb__sep {
-    color: var(--n-text-3);
-    font-size: 0.85rem;
-}
-
-.na-breadcrumb__current {
-    color: var(--n-text-2);
-    font-weight: 500;
-}
-
-.na-page-header__body {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-}
-
-.na-page-title {
-    font-size: 1.65rem;
-    font-weight: 800;
-    color: var(--n-text-1);
-    margin: 0 0 0.25rem;
-    line-height: 1.2;
-    letter-spacing: -0.01em;
-}
-
-.na-page-sub {
-    font-size: 0.875rem;
-    color: var(--n-text-3);
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    flex-wrap: wrap;
-}
-
+/* ── Badges exclusivos de Editar ─────────────────────────────── */
 .na-sku-badge {
     display: inline-flex;
     align-items: center;
@@ -85,70 +32,7 @@
     letter-spacing: 0.05em;
 }
 
-/* ── Layout principal ─────────────────────────────────────────────── */
-.na-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    padding-bottom: 5rem;
-}
-
-.na-row-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-}
-
-/* ── Cards de sección ─────────────────────────────────────────────── */
-.na-card {
-    background: var(--n-card);
-    border: 1px solid var(--n-border);
-    border-radius: var(--n-radius);
-    box-shadow: var(--n-shadow);
-    overflow: hidden;
-    transition: box-shadow .2s;
-}
-
-.na-card:hover {
-    box-shadow: var(--n-shadow-md);
-}
-
-.na-card__header {
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-    padding: 1.1rem 1.4rem;
-    border-bottom: 1px solid var(--n-border);
-}
-
-.na-card__icon {
-    width: 2.4rem;
-    height: 2.4rem;
-    border-radius: var(--n-radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.na-card__title {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--n-text-1);
-    line-height: 1.2;
-}
-
-.na-card__sub {
-    font-size: 0.78rem;
-    color: var(--n-text-3);
-    margin-top: 0.1rem;
-}
-
-.na-card__body {
-    padding: 1.4rem;
-}
-
-/* ── Campos ───────────────────────────────────────────────────────── */
+/* ── Campos ───────────────────────────────────────────────────── */
 .na-field-row {
     display: grid;
     gap: 1rem;
@@ -173,7 +57,7 @@
     margin: 0;
 }
 
-/* ── Precios grid ─────────────────────────────────────────────────── */
+/* ── Precios grid ─────────────────────────────────────────────── */
 .na-precios-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -206,7 +90,6 @@
     color: #10B981;
 }
 
-/* ── Costo con impuesto ───────────────────────────────────────────── */
 .na-costo-impuesto-badge {
     display: inline-flex;
     align-items: center;
@@ -219,7 +102,6 @@
     color: #0EA5E9;
 }
 
-/* ── Costo promedio (solo Editar) ────────────────────────────────── */
 .na-costo-promedio-badge {
     display: flex;
     align-items: center;
@@ -232,7 +114,6 @@
     color: #D97706;
 }
 
-/* ── IVA vacío ────────────────────────────────────────────────────── */
 .na-iva-empty {
     display: flex;
     align-items: flex-start;
@@ -245,7 +126,6 @@
     line-height: 1.5;
 }
 
-/* ── Embalaje ─────────────────────────────────────────────────────── */
 .na-embalaje-badge {
     display: flex;
     align-items: center;
@@ -258,7 +138,6 @@
     color: var(--n-text-2);
 }
 
-/* ── Stock badge (solo Editar) ───────────────────────────────────── */
 .na-stock-badge {
     display: flex;
     align-items: center;
@@ -271,7 +150,7 @@
     color: var(--n-purple);
 }
 
-/* ── Imagen ───────────────────────────────────────────────────────── */
+/* ── Imagen ───────────────────────────────────────────────────── */
 .na-imagen-body {
     display: flex;
     flex-direction: column;
@@ -370,36 +249,8 @@
     color: var(--n-purple);
 }
 
-/* ── Barra de acciones fija ───────────────────────────────────────── */
-.na-action-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(250,251,253,0.92);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-top: 1px solid var(--n-border);
-    z-index: 100;
-    box-shadow: 0 -2px 12px rgba(26,28,46,0.07);
-}
-
-.na-action-bar__inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0.85rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.75rem;
-}
-
-/* ── Responsive ───────────────────────────────────────────────────── */
+/* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 900px) {
-    .na-row-2 {
-        grid-template-columns: 1fr;
-    }
-
     .na-precios-grid {
         grid-template-columns: 1fr 1fr;
     }
@@ -413,10 +264,6 @@
 }
 
 @media (max-width: 600px) {
-    .na-page-title { font-size: 1.35rem; }
-    .na-card__body { padding: 1rem; }
-    .na-card__header { padding: 0.9rem 1rem; }
     .na-precios-grid { grid-template-columns: 1fr; }
     .na-field-row--2 { grid-template-columns: 1fr; }
-    .na-action-bar__inner { padding: 0.75rem 1rem; }
 }

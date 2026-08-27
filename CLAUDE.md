@@ -427,7 +427,95 @@ Definida en `NexoWeb/Components/NexoTheme.cs` y aplicada en ambos layouts con `<
 
 **Regla**: nunca sobreescribir el tema con CSS hardcodeado en los componentes. Usar siempre las variables de MudBlazor, las clases utilitarias en `wwwroot/app.css` (`.nexo-*`), o agregar propiedades en `NexoTheme.cs`.
 
-**Excepción documentada**: `Components/Pages/Auth/Login.razor` y `Login.razor.css` mantienen su estructura visual original (el usuario la diseñó y pidió no tocarla) — solo se le actualizaron las variables de color (`--nexo-primary`, `--nexo-bg`, etc.) para que coincidan con la paleta morada.
+**Excepción documentada**: `Components/Pages/Auth/Login.razor` y `Login.razor.css` mantienen su estructura visual completamente separada (login page tiene su propio AuthLayout).
+
+### Arquitectura CSS — cómo funciona el sistema de estilos
+
+**Tres capas en orden de carga:**
+1. `MudBlazor.min.css` — base framework, NO tocar
+2. `wwwroot/app.css` — estilos globales y overrides de tema. **Aplica sin rebuild** (solo recargar el navegador). Usa selectores con ID `#nexo-app-root` para ganar especificidad.
+3. `NexoWeb.styles.css` — bundle compilado de todos los `*.razor.css`. **Requiere F5 en VS** para regenerarse.
+
+**Regla de especificidad crítica:**
+- `#nexo-app-root.nexo-tema-oscuro .mud-appbar` → especificidad `1,2,0` → **SIEMPRE GANA**
+- `::deep .mud-appbar.nexo-topbar` (compilado de scoped CSS) → especificidad `0,2,0` → pierde
+
+**Dónde hacer cada tipo de cambio:**
+| Cambio | Archivo |
+|---|---|
+| Fondo de página (gradiente) | `app.css` §FONDO MODO OSCURO / §FONDO MODO CLARO |
+| Glass topbar / sidebar | `app.css` §Glass TopBar y Sidebar |
+| Colores de texto del topbar (modo claro) | `app.css` debajo del §Glass TopBar claro |
+| Padding, height, estructura del topbar | `MainLayout.razor.css` |
+| Nav links / estructura interna del sidebar | `MainLayout.razor.css` |
+| Estilos de una página específica | `<Pagina>.razor.css` (requiere rebuild) |
+| Variables de tema MudBlazor | `NexoTheme.cs` + variables en `app.css` §MODO OSCURO |
+
+**Truco para el efecto glass visible:**
+`backdrop-filter: blur()` solo es VISIBLE si hay algo colorido/diferente detrás del elemento. El gradiente de fondo **debe tener glows del lado izquierdo** para que el sidebar (que está a la izquierda) tenga algo que difuminar. Si el sidebar se ve "sólido" sin glass, revisar que los glows `at 0% 45%` y `at 18% 0%` estén en el gradiente de `app.css`.
+
+### Sistema de Secciones de Formulario — `nexo-section` (agosto 2026)
+
+Diseño unificado para todas las páginas completas de creación/edición. Definido globalmente en `app.css` §Sistema de Secciones de Formulario. Aplica sin rebuild (solo recargar navegador).
+
+**Páginas ya migradas:** `CrearArticulo.razor`, `EditarArticulo.razor`, `CrearOrden.razor`, `CrearReceta.razor`
+
+**Clases globales disponibles:**
+
+| Clase | Propósito |
+|---|---|
+| `nexo-page-header` | Contenedor del encabezado de página (breadcrumb + título) |
+| `nexo-page-header__breadcrumb` | Nav con links de migas de pan |
+| `nexo-page-header__crumb-link` | Link de miga (morado, hover con opacity) |
+| `nexo-page-header__crumb-sep` | Separador `›` entre migas |
+| `nexo-page-header__crumb-cur` | Texto de la miga actual (sin link) |
+| `nexo-page-header__body` | Flex row: título a la izquierda, acciones opcionales a la derecha |
+| `nexo-page-header__title` | H1 del encabezado (1.65rem, 800, `--n-text-1`) |
+| `nexo-page-header__sub` | Subtítulo descriptivo (0.875rem, `--n-text-3`) |
+| `nexo-form-layout` | Columna con `gap:1.25rem` y `padding-bottom:5rem` (espacio para action bar) |
+| `nexo-form-row-2` | Grid de 2 columnas (`1fr 1fr`, colapsa a 1 col bajo 900px) |
+| `nexo-section` | Card con borde, sombra y hover |
+| `nexo-section__header` | Header de la card (flex, acento morado izquierdo, `border-bottom`) |
+| `nexo-section__icon` | Icono 2.4rem × 2.4rem (redondeado, fondo con opacidad del color del tema) |
+| `nexo-section__title` | Título de la sección (0.95rem, 700) |
+| `nexo-section__sub` | Subtítulo de la sección (0.78rem, `--n-text-3`) |
+| `nexo-section__body` | Cuerpo de la card (`padding:1.4rem`) |
+| `nexo-action-bar` | Barra fija en el bottom con blur (z-index 100) |
+| `nexo-action-bar__inner` | Inner centrado (`max-width:1200px`), flex-end, gap |
+
+**Patrón mínimo de una sección:**
+```html
+<div class="nexo-section mb-4">
+    <div class="nexo-section__header">
+        <div class="nexo-section__icon" style="background:rgba(124,92,255,0.10);">
+            <MudIcon Icon="@Icons.Material.Filled.Info" Style="color:var(--n-purple); font-size:1.25rem;" />
+        </div>
+        <div>
+            <div class="nexo-section__title">Título de sección</div>
+            <div class="nexo-section__sub">Descripción opcional</div>
+        </div>
+    </div>
+    <div class="nexo-section__body">
+        <!-- contenido -->
+    </div>
+</div>
+```
+
+**Cuando la sección tiene un botón a la derecha del header**, agregar `style="justify-content:space-between;"` al `nexo-section__header` y envolver icono+texto en `<div class="d-flex align-center" style="gap:0.85rem;">`.
+
+**Barra de acción estándar:**
+```html
+<div class="nexo-action-bar">
+    <div class="nexo-action-bar__inner">
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" Href="...">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="...">Guardar</MudButton>
+    </div>
+</div>
+```
+
+**Dialogs**: NO usar `nexo-section` en dialogs (GestionFacturaDialog, etc.) — los dialogs tienen sus propias restricciones de layout (max-width, backdrop).
+
+**CSS de página específica** (`*.razor.css`): después de migrar, el scoped CSS solo debe contener clases exclusivas de esa página (badges únicos, grids especiales). Las clases de layout/card/action-bar YA NO van en el scoped CSS.
 
 ### Componentes compartidos de formulario (`Components/Shared/`)
 

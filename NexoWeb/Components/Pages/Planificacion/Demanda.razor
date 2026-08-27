@@ -1,4 +1,4 @@
-﻿@page "/planificacion/demanda"
+@page "/planificacion/demanda"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -19,9 +19,32 @@
     Nueva Proyeccion
 </MudButton>
 
+@if (!_cargando && _demanda.Count > 0)
+{
+    @* ── KPI resumen ── *@
+    <div class="dem-kpi-row mb-4">
+        <div class="dem-kpi-tile">
+            <span class="dem-kpi-tile__label">Proyecciones</span>
+            <span class="dem-kpi-tile__value">@_demanda.Count</span>
+        </div>
+        <div class="dem-kpi-tile @(_cumplimientoPromedio >= 100 ? "dem-kpi-tile--ok" : _cumplimientoPromedio >= 70 ? "dem-kpi-tile--warn" : "dem-kpi-tile--risk")">
+            <span class="dem-kpi-tile__label">Cumplimiento prom.</span>
+            <span class="dem-kpi-tile__value">@_cumplimientoPromedio.ToString("N0")%</span>
+        </div>
+        <div class="dem-kpi-tile @(_enRiesgo > 0 ? "dem-kpi-tile--risk" : "dem-kpi-tile--ok")">
+            <span class="dem-kpi-tile__label">En riesgo (&lt;70%)</span>
+            <span class="dem-kpi-tile__value">@_enRiesgo</span>
+        </div>
+        <div class="dem-kpi-tile @(_cumplidas > 0 ? "dem-kpi-tile--ok" : "")">
+            <span class="dem-kpi-tile__label">Cumplidas (≥100%)</span>
+            <span class="dem-kpi-tile__value">@_cumplidas</span>
+        </div>
+    </div>
+}
+
 @if (_historico.Count > 0)
 {
-    <MudPaper Class="pa-4 mb-4">
+    <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border:1px solid var(--mud-palette-lines-default);border-radius:8px">
         <MudText Typo="Typo.subtitle2" Class="mb-2">Comparativo histórico (últimos 12 meses)</MudText>
         <MudTable Items="_historico" Dense="true" Elevation="0">
             <HeaderContent>
@@ -31,8 +54,16 @@
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Mes">@context.Periodo.ToString("MMM yyyy")</MudTd>
-                <MudTd DataLabel="Cumplimiento Demanda" Style="text-align:right">@context.CumplimientoDemandaPromedio.ToString("N0")%</MudTd>
-                <MudTd DataLabel="Cumplimiento Venta" Style="text-align:right">@context.CumplimientoVentaPromedio.ToString("N0")%</MudTd>
+                <MudTd DataLabel="Cumplimiento Demanda" Style="text-align:right">
+                    <span style="color:@ColorPct(context.CumplimientoDemandaPromedio)">
+                        @context.CumplimientoDemandaPromedio.ToString("N0")%
+                    </span>
+                </MudTd>
+                <MudTd DataLabel="Cumplimiento Venta" Style="text-align:right">
+                    <span style="color:@ColorPct(context.CumplimientoVentaPromedio)">
+                        @context.CumplimientoVentaPromedio.ToString("N0")%
+                    </span>
+                </MudTd>
             </RowTemplate>
         </MudTable>
     </MudPaper>
@@ -52,31 +83,69 @@ else if (_demanda.Count == 0)
 }
 else
 {
-    <MudTable Items="_demanda" Hover="true" Dense="true" Striped="true">
+    <MudTable Items="_demandaOrdenada" Hover="true" Dense="true">
         <HeaderContent>
             <MudTh>Mes</MudTh>
-            <MudTh>Articulo</MudTh>
-            <MudTh>Centro de Costo</MudTh>
+            <MudTh>Artículo</MudTh>
+            <MudTh>Centro</MudTh>
             <MudTh Style="text-align:right">Proyectado</MudTh>
             <MudTh Style="text-align:right">Real</MudTh>
-            <MudTh Style="text-align:right">Cumplimiento</MudTh>
-            <MudTh>Accion</MudTh>
+            <MudTh Style="min-width:180px">Cumplimiento</MudTh>
+            <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Mes">@context.Periodo.ToString("MMM yyyy")</MudTd>
-            <MudTd DataLabel="Articulo">@context.SkuArticulo - @context.NombreArticulo</MudTd>
-            <MudTd DataLabel="Centro de Costo">@context.CentroCosto</MudTd>
-            <MudTd DataLabel="Proyectado" Style="text-align:right">@context.CantidadProyectada.ToString("N2")</MudTd>
-            <MudTd DataLabel="Real" Style="text-align:right">@context.CantidadReal.ToString("N2")</MudTd>
-            <MudTd DataLabel="Cumplimiento" Style="text-align:right">
-                @{
-                    var cumplimiento = context.CantidadProyectada > 0 ? context.CantidadReal / context.CantidadProyectada * 100 : 0;
+            @{
+                var pct = context.CantidadProyectada > 0
+                    ? (double)(context.CantidadReal / context.CantidadProyectada * 100)
+                    : 0;
+                var pctCap = Math.Min(pct, 100);
+                var colorPct = pct >= 100 ? Color.Success : pct >= 70 ? Color.Warning : Color.Error;
+                var esFuturo = context.Periodo > DateTime.Today;
+            }
+            <MudTd DataLabel="Mes">
+                <div style="font-weight:500">@context.Periodo.ToString("MMM yyyy")</div>
+                @if (esFuturo)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Class="mt-1" Style="height:18px;font-size:10px">Futuro</MudChip>
                 }
-                <MudChip T="string" Size="Size.Small" Color="@(cumplimiento >= 100 ? Color.Success : cumplimiento >= 70 ? Color.Warning : Color.Error)">
-                    @cumplimiento.ToString("N0")%
-                </MudChip>
             </MudTd>
-            <MudTd DataLabel="Accion">
+            <MudTd DataLabel="Artículo">
+                <div style="font-weight:500;font-size:.85rem">@context.NombreArticulo</div>
+                <div style="font-size:.75rem;color:var(--mud-palette-text-secondary)">@context.SkuArticulo</div>
+            </MudTd>
+            <MudTd DataLabel="Centro">@context.CentroCosto</MudTd>
+            <MudTd DataLabel="Proyectado" Style="text-align:right;font-variant-numeric:tabular-nums">
+                @context.CantidadProyectada.ToString("N2")
+            </MudTd>
+            <MudTd DataLabel="Real" Style="text-align:right;font-variant-numeric:tabular-nums">
+                @if (esFuturo)
+                {
+                    <span style="color:var(--mud-palette-text-secondary)">—</span>
+                }
+                else
+                {
+                    @context.CantidadReal.ToString("N2")
+                }
+            </MudTd>
+            <MudTd DataLabel="Cumplimiento">
+                @if (esFuturo)
+                {
+                    <span style="color:var(--mud-palette-text-secondary);font-size:.8rem">Pendiente</span>
+                }
+                else
+                {
+                    <div class="d-flex align-center" style="gap:6px">
+                        <div style="flex:1">
+                            <MudProgressLinear Value="@pctCap" Color="@colorPct"
+                                              Rounded="true" Size="Size.Small" />
+                        </div>
+                        <span style="font-size:.8rem;font-weight:600;min-width:38px;text-align:right;color:@(pct >= 100 ? "var(--mud-palette-success)" : pct >= 70 ? "var(--mud-palette-warning)" : "var(--mud-palette-error)")">
+                            @pct.ToString("N0")%
+                        </span>
+                    </div>
+                }
+            </MudTd>
+            <MudTd>
                 <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">Editar</MudButton>
             </MudTd>
         </RowTemplate>
@@ -91,44 +160,52 @@ else
     private bool _cargando = true;
     private string? _errorCarga;
 
+    private IEnumerable<DemandaProyectadaItem> _demandaOrdenada =>
+        _demanda.OrderByDescending(d => d.Periodo).ThenBy(d => d.NombreArticulo);
+
+    private double _cumplimientoPromedio => _demanda.Count == 0 ? 0 :
+        _demanda.Where(d => d.CantidadProyectada > 0 && d.Periodo <= DateTime.Today)
+                .Select(d => (double)(d.CantidadReal / d.CantidadProyectada * 100))
+                .DefaultIfEmpty(0).Average();
+
+    private int _enRiesgo => _demanda.Count(d =>
+        d.CantidadProyectada > 0 && d.Periodo <= DateTime.Today &&
+        d.CantidadReal / d.CantidadProyectada * 100 < 70);
+
+    private int _cumplidas => _demanda.Count(d =>
+        d.CantidadProyectada > 0 && d.Periodo <= DateTime.Today &&
+        d.CantidadReal >= d.CantidadProyectada);
+
+    private string ColorPct(decimal pct) =>
+        pct >= 100 ? "var(--mud-palette-success)" :
+        pct >= 70  ? "var(--mud-palette-warning)" :
+                     "var(--mud-palette-error)";
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
-            var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true");
-            var tareaDemanda = ApiClient.GetAsync<List<DemandaProyectadaItem>>("api/planificacion/demanda");
-            var tareaHistorico = ApiClient.GetAsync<List<HistoricoCumplimientoItem>>("api/planificacion/historico-cumplimiento?meses=12");
+            var tareaArticulos   = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
+            var tareaCentros     = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true");
+            var tareaDemanda     = ApiClient.GetAsync<List<DemandaProyectadaItem>>("api/planificacion/demanda");
+            var tareaHistorico   = ApiClient.GetAsync<List<HistoricoCumplimientoItem>>("api/planificacion/historico-cumplimiento?meses=12");
 
-            await Task.WhenAll(tareaArticulos, tareaCentrosCosto, tareaDemanda, tareaHistorico);
+            await Task.WhenAll(tareaArticulos, tareaCentros, tareaDemanda, tareaHistorico);
 
             _articulosProductoTerminado = (await tareaArticulos ?? new())
-                .Where(a => a.TipoArticulo == "Producto Terminado" && a.Estado)
-                .ToList();
-            _centrosCosto = await tareaCentrosCosto ?? new();
-            _demanda = await tareaDemanda ?? new();
-            _historico = await tareaHistorico ?? new();
+                .Where(a => a.TipoArticulo == "Producto Terminado" && a.Estado).ToList();
+            _centrosCosto = await tareaCentros  ?? new();
+            _demanda      = await tareaDemanda  ?? new();
+            _historico    = await tareaHistorico ?? new();
         }
-        catch (Exception ex)
-        {
-            _errorCarga = ex.Message;
-        }
-        finally
-        {
-            _cargando = false;
-        }
+        catch (Exception ex) { _errorCarga = ex.Message; }
+        finally { _cargando = false; }
     }
 
     private async Task CargarDemandaAsync()
     {
-        try
-        {
-            _demanda = await ApiClient.GetAsync<List<DemandaProyectadaItem>>("api/planificacion/demanda") ?? new();
-        }
-        catch (Exception ex)
-        {
-            _errorCarga = ex.Message;
-        }
+        try { _demanda = await ApiClient.GetAsync<List<DemandaProyectadaItem>>("api/planificacion/demanda") ?? new(); }
+        catch (Exception ex) { _errorCarga = ex.Message; }
     }
 
     private async Task AbrirCreacionAsync()
@@ -138,47 +215,31 @@ else
             { x => x.ArticulosDisponibles, _articulosProductoTerminado },
             { x => x.CentrosCosto, _centrosCosto }
         };
-
         var dialogo = await DialogService.ShowAsync<DemandaDialog>("Nueva Proyeccion de Demanda", parametros);
         var resultado = await dialogo.Result;
-
-        if (resultado is null || resultado.Canceled)
-            return;
-
+        if (resultado is null || resultado.Canceled) return;
         try
         {
-            var request = (CrearDemandaRequest)resultado.Data!;
-            await ApiClient.PostAsync<CrearDemandaRequest, object?>("api/planificacion/demanda", request);
+            await ApiClient.PostAsync<CrearDemandaRequest, object?>("api/planificacion/demanda", (CrearDemandaRequest)resultado.Data!);
             Snackbar.Add("Proyeccion creada correctamente.", Severity.Success);
             await CargarDemandaAsync();
         }
-        catch (HttpRequestException ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
     }
 
     private async Task AbrirEdicionAsync(DemandaProyectadaItem demanda)
     {
         var parametros = new DialogParameters<DemandaDialog> { { x => x.Demanda, demanda } };
-
         var dialogo = await DialogService.ShowAsync<DemandaDialog>("Editar Proyeccion", parametros);
         var resultado = await dialogo.Result;
-
-        if (resultado is null || resultado.Canceled)
-            return;
-
+        if (resultado is null || resultado.Canceled) return;
         try
         {
-            var request = (ActualizarDemandaRequest)resultado.Data!;
             await ApiClient.PutAsync<ActualizarDemandaRequest, object?>(
-                $"api/planificacion/demanda/{demanda.DemandaID}", request);
+                $"api/planificacion/demanda/{demanda.DemandaID}", (ActualizarDemandaRequest)resultado.Data!);
             Snackbar.Add("Proyeccion actualizada correctamente.", Severity.Success);
             await CargarDemandaAsync();
         }
-        catch (HttpRequestException ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
     }
 }

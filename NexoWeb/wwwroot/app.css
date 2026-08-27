@@ -1,8 +1,49 @@
 /* ================================================================
    NEXO ERP — Global Design System v3
    Paleta: Morado profundo (#7C5CFF / #5A3BFF) + Gris moderno
-   Fondo: #F4F5F9 | Cards: #FFFFFF | Sidebar: #13131F
    Fuente: Mango Dream › Plus Jakarta Sans › Inter
+   ================================================================
+
+   ARQUITECTURA CSS — leer antes de hacer cambios visuales
+   ─────────────────────────────────────────────────────────────────
+   Hay TRES capas de CSS, en orden de carga:
+
+   1. MudBlazor.min.css  — base del framework. No tocar.
+   2. app.css  ← ESTE ARCHIVO — estilos globales y overrides de tema.
+      Aplica SIN rebuild (cambios se ven con solo recargar el navegador).
+      Usa selectores con ID (#nexo-app-root) para ganar especificidad
+      sobre NexoWeb.styles.css, que carga después.
+   3. NexoWeb.styles.css — bundle de CSS scoped por componente (*.razor.css).
+      Se recompila con cada build de VS (F5). Los `::deep` del scoped CSS
+      compilan sin el hash de scope, pero aún tienen especificidad menor
+      que un selector con ID, así que app.css siempre gana.
+
+   REGLA DE ORO para especificidad:
+     ID (100)  >  clase (10)  >  elemento (1)
+     #nexo-app-root.nexo-tema-oscuro .mud-appbar  =  1,2,0
+     ::deep .mud-appbar.nexo-topbar               =  0,2,0  ← pierde
+
+   DÓNDE HACER CADA TIPO DE CAMBIO:
+   ┌─────────────────────────────────┬────────────────────────────────┐
+   │ Cambio                          │ Archivo                        │
+   ├─────────────────────────────────┼────────────────────────────────┤
+   │ Fondo de página (gradiente)     │ app.css §MODO OSCURO/CLARO     │
+   │ Glass topbar / sidebar          │ app.css §Glass TopBar/Sidebar  │
+   │ Colores de texto del topbar     │ app.css §Glass TopBar          │
+   │ Colores de nav links sidebar    │ app.css §Sidebar glass claro/  │
+   │                                 │   MainLayout.razor.css (dark)  │
+   │ Padding, height del topbar      │ MainLayout.razor.css           │
+   │ Estructura interna del sidebar  │ MainLayout.razor.css           │
+   │ Estilos por página específica   │ <Pagina>.razor.css             │
+   │ Variables de tema MudBlazor     │ NexoTheme.cs + §MODO OSCURO    │
+   └─────────────────────────────────┴────────────────────────────────┘
+
+   IMPORTANTE — por qué app.css tiene overrides de topbar/sidebar:
+   MainLayout.razor.css define el background con un solo valor (oscuro).
+   app.css lo sobreescribe con valores distintos para dark/light mode y
+   con opacidad específica para que el backdrop-filter sea visible sobre
+   el gradiente de fondo. Si cambias el background en MainLayout.razor.css
+   NO VERÁS EFECTO — cámbialo en app.css en las secciones señaladas.
    ================================================================ */
 
 /* ── Variables globales ─────────────────────────────────────── */
@@ -50,18 +91,21 @@
 
 html, body {
   font-family: var(--n-font) !important;
-  background-color: var(--n-bg) !important;
+  background: transparent !important;
   color: var(--n-text-1) !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Forzar background en MudBlazor layout wrappers */
+/* Forzar background en MudBlazor layout wrappers —
+   se usa transparent para que el gradiente de #nexo-app-root se vea.
+   Los modos oscuro/claro aplican sus propios colores via el bloque
+   #nexo-app-root.nexo-tema-oscuro y :not(.nexo-tema-oscuro) más abajo. */
 .mud-layout,
 .mud-layout-prevent-scroll-default,
 .mud-drawer-container,
 .mud-main-content {
-  background: var(--n-bg) !important;
+  background: transparent !important;
 }
 
 /* Fuente global en todo MudBlazor */
@@ -588,6 +632,18 @@ a, .btn-link { color: var(--n-purple); }
 .invalid { outline: 1.5px solid var(--n-error); }
 .validation-message { color: var(--n-error); font-size: 0.8rem; margin-top: 0.25rem; }
 
+/* ── Login — autofill override global (sin scope hash para que Chrome lo aplique) ── */
+/* Chrome no respeta pseudo-clase :-webkit-autofill combinada con atributo [b-hash] */
+.lf__input input:-webkit-autofill,
+.lf__input input:-webkit-autofill:hover,
+.lf__input input:-webkit-autofill:focus {
+  /* Color muy transparente: se ve igual que el input normal (rgba(255,255,255,0.09)) */
+  -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.07) inset !important;
+  -webkit-text-fill-color: #f4f5fb !important;
+  caret-color: #f4f5fb;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 /* ── Blazor error boundary ──────────────────────────────────── */
 .blazor-error-boundary {
   background: #FEE2E2;
@@ -618,32 +674,21 @@ a, .btn-link { color: var(--n-purple); }
 }
 
 /* ================================================================
-   MODO OSCURO — solo contenido de páginas (Settings, guardado por
-   usuario). NUNCA toca .nexo-topbar ni .nexo-sidebar -- esos ya son
-   oscuros de por si y quedan igual sin importar el tema.
-   Se activa envolviendo MudLayout + MudDialogProvider/MudPopoverProvider
-   en <div id="nexo-app-root" class="nexo-tema-oscuro"> desde MainLayout.razor.
+   MODO OSCURO — tema visual completo (fondo, barras, cards, texto).
+   Activado por <div id="nexo-app-root" class="nexo-tema-oscuro"> en
+   MainLayout.razor cuando Preferencias.TemaOscuro == true.
 
-   Fondo de pagina vs. tarjetas: deben ser dos tonos CLARAMENTE distintos
-   (el fondo mas oscuro que las tarjetas) para que las tarjetas "floten"
-   con profundidad -- si fueran el mismo color todo se ve plano.
+   Todos los selectores usan "#nexo-app-root.nexo-tema-oscuro ..." (ID)
+   para ganar especificidad sobre NexoWeb.styles.css que carga después.
 
-   Todos los selectores descendientes usan el prefijo de ID
-   "#nexo-app-root.nexo-tema-oscuro" (no solo la clase) a proposito: el
-   CSS scoped de cada pagina (*.razor.css) se compila con un atributo
-   [b-xxxx] agregado al ULTIMO selector, lo que le da la MISMA
-   especificidad que una regla de N clases en app.css, y ese CSS scoped
-   carga DESPUES de app.css (via NexoWeb.styles.css) -- en un empate de
-   especificidad gana el que carga al final. Un selector con ID le gana
-   a cualquier combinacion de clases/atributos sin importar el orden de
-   carga, así que el tema oscuro no se puede "perder" contra el CSS
-   scoped de una pagina nueva.
+   Fondo: gradiente atmosférico con glows en derecha e izquierda.
+   Glass topbar/sidebar: ver §Glass TopBar y Sidebar más abajo.
    ================================================================ */
 .nexo-tema-oscuro {
-  --n-bg:      #0D0D14 !important;
-  --n-card:    #1C1C2C !important;
-  --n-border:  rgba(255,255,255,0.09) !important;
-  --n-border-2:rgba(255,255,255,0.18) !important;
+  --n-bg:      #060E1F !important;
+  --n-card:    rgba(255,255,255,0.07) !important;
+  --n-border:  rgba(255,255,255,0.11) !important;
+  --n-border-2:rgba(255,255,255,0.20) !important;
   --n-text-1:  #F4F5F9 !important;
   --n-text-2:  #A9A9C0 !important;
   --n-text-3:  #7C7C96 !important;
@@ -664,20 +709,89 @@ a, .btn-link { color: var(--n-purple); }
 /* Fondo general -- incluye .mud-layout/.mud-drawer-container por si algun
    navegador deja ver un borde detras de .mud-main-content al hacer scroll
    elastico; el selector con ID le gana al hex fijo de MainLayout.razor.css. */
-#nexo-app-root.nexo-tema-oscuro,
+/* ── §FONDO MODO OSCURO — Crystal Dark atmosférico ──────────────────
+   Para cambiar el gradiente de fondo (oscuro): editar aquí.
+   Glows lado-derecho: topbar+sidebar del lado derecho de pantalla.
+   Glows lado-izquierdo: NECESARIOS para que el glass del sidebar sea
+   visible (sin ellos el blur es sobre negro → invisible).             */
+#nexo-app-root.nexo-tema-oscuro {
+  background:
+    /* glow azul eléctrico arriba-derecha (el más intenso) */
+    radial-gradient(ellipse 72% 75% at 100% 0%,   rgba(80,130,255,0.85)  0%, rgba(60,100,230,0.50) 28%, transparent 62%),
+    /* halo secundario azul-índigo centro-derecha */
+    radial-gradient(ellipse 45% 55% at 98% 42%,   rgba(110,90,240,0.40)  0%, transparent 55%),
+    /* glow rosa/lila cálido abajo-derecha */
+    radial-gradient(ellipse 55% 55% at 96% 96%,   rgba(190,90,155,0.65)  0%, rgba(150,70,130,0.35) 32%, transparent 60%),
+    /* toque cálido-morado centro-inferior */
+    radial-gradient(ellipse 35% 40% at 72% 88%,   rgba(120,60,140,0.22)  0%, transparent 55%),
+    /* glow morado izquierda — hace visible el glass del sidebar */
+    radial-gradient(ellipse 28% 75% at 0% 45%,    rgba(100,55,220,0.50)  0%, rgba(70,35,180,0.25) 45%, transparent 70%),
+    /* glow azul-índigo arriba-izquierda — hace visible el glass del topbar */
+    radial-gradient(ellipse 55% 28% at 18% 0%,    rgba(60,100,240,0.35)  0%, transparent 60%),
+    /* base: azul-marino casi negro */
+    linear-gradient(160deg, #04091A 0%, #060D20 55%, #050818 100%) fixed !important;
+  min-height: 100vh;
+}
 #nexo-app-root.nexo-tema-oscuro .mud-layout,
 #nexo-app-root.nexo-tema-oscuro .mud-drawer-container,
 #nexo-app-root.nexo-tema-oscuro .mud-main-content.nexo-main-content {
-  background: var(--n-bg) !important;
+  background: transparent !important;
 }
 
-/* Tablas -- las unicas reglas del sistema de diseño que usaban hex fijo
-   en vez de las variables (F8F8FC, F2EEFF, FAFAFD) */
-#nexo-app-root.nexo-tema-oscuro .mud-table-container,
+/* ── §FONDO MODO CLARO — Crystal Light atmosférico ──────────────────
+   Para cambiar el gradiente de fondo (claro): editar aquí.
+   Misma estructura que el oscuro: glows derecha + glows izquierda
+   (para hacer visible el glass del sidebar también en claro).         */
+#nexo-app-root:not(.nexo-tema-oscuro) {
+  background:
+    /* glow violeta intenso arriba-derecha (≈ azul eléctrico del oscuro) */
+    radial-gradient(ellipse 72% 75% at 100% 0%,    rgba(120,80,255,0.22)  0%, rgba(100,65,230,0.12) 30%, transparent 62%),
+    /* halo índigo centro-derecha */
+    radial-gradient(ellipse 45% 55% at 98% 42%,    rgba(110,90,240,0.12)  0%, transparent 55%),
+    /* glow rosa-lila cálido abajo-derecha (≈ glow rosa del oscuro) */
+    radial-gradient(ellipse 55% 55% at 96% 96%,    rgba(210,120,200,0.30) 0%, rgba(185,110,220,0.16) 32%, transparent 60%),
+    /* toque morado centro-inferior */
+    radial-gradient(ellipse 35% 40% at 72% 88%,    rgba(140,80,180,0.12)  0%, transparent 55%),
+    /* glow morado izquierda — hace visible el glass del sidebar en claro */
+    radial-gradient(ellipse 28% 75% at 0% 45%,     rgba(110,70,230,0.22)  0%, rgba(90,55,200,0.10) 50%, transparent 70%),
+    /* glow índigo arriba-izquierda — hace visible el glass del topbar en claro */
+    radial-gradient(ellipse 55% 25% at 18% 0%,     rgba(100,80,240,0.18)  0%, transparent 60%),
+    /* luz blanca central que da la sensación de "pantalla encendida" */
+    radial-gradient(ellipse 70% 55% at 48% 28%,    rgba(255,255,255,0.95) 0%, transparent 68%),
+    /* base blanca con tinte perlado-lavanda */
+    linear-gradient(145deg, #F5F3FF 0%, #FAFAFF 35%, #F8F6FF 60%, #F4F2FF 100%) fixed !important;
+  min-height: 100vh;
+  animation: lightBgDrift 28s ease-in-out infinite alternate;
+}
+
+@keyframes lightBgDrift {
+  0%   { background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%; }
+  50%  { background-position: 3% 2%, 2% 3%, 1% 2%, 2% 1%, 3% 2%, 2% 3%, 2% 3%, 0% 0%; }
+  100% { background-position: 1% 4%, 3% 1%, 2% 3%, 1% 3%, 2% 1%, 1% 2%, 1% 2%, 0% 0%; }
+}
+
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-layout,
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-drawer-container,
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-main-content.nexo-main-content {
+  background: transparent !important;
+}
+
+/* Tablas — glass en dark mode */
+#nexo-app-root.nexo-tema-oscuro .mud-table-container {
+  background: rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+}
 #nexo-app-root.nexo-tema-oscuro .mud-table-head .mud-table-row,
-#nexo-app-root.nexo-tema-oscuro .mud-table-head .mud-table-cell,
+#nexo-app-root.nexo-tema-oscuro .mud-table-head .mud-table-cell {
+  background: rgba(255,255,255,0.04) !important;
+}
 #nexo-app-root.nexo-tema-oscuro .mud-table-pagination {
-  background: var(--n-card) !important;
+  background: rgba(255,255,255,0.03) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .mud-table-toolbar {
+  background: rgba(255,255,255,0.04) !important;
 }
 #nexo-app-root.nexo-tema-oscuro .mud-table-body .mud-table-row:hover {
   background-color: rgba(124,92,255,0.16) !important;
@@ -689,13 +803,21 @@ a, .btn-link { color: var(--n-purple); }
   background: var(--n-card) !important;
 }
 
-/* Dialogs y pickers (portalados fuera de MudMainContent, pero dentro
-   del wrapper #nexo-app-root.nexo-tema-oscuro igual) */
+/* Dialogs y pickers — glass oscuro opaco */
 #nexo-app-root.nexo-tema-oscuro .mud-dialog,
-#nexo-app-root.nexo-tema-oscuro .mud-picker,
+#nexo-app-root.nexo-tema-oscuro .mud-picker {
+  background: rgba(10,20,52,0.93) !important;
+  backdrop-filter: blur(28px) !important;
+  -webkit-backdrop-filter: blur(28px) !important;
+  border: 1px solid rgba(255,255,255,0.11) !important;
+  color: var(--n-text-1) !important;
+}
 #nexo-app-root.nexo-tema-oscuro .mud-popover-paper,
 #nexo-app-root.nexo-tema-oscuro .mud-list {
-  background: var(--n-card) !important;
+  background: rgba(7,15,40,0.97) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
   color: var(--n-text-1) !important;
 }
 #nexo-app-root.nexo-tema-oscuro .mud-list-item-text,
@@ -715,6 +837,35 @@ a, .btn-link { color: var(--n-purple); }
 #nexo-app-root.nexo-tema-oscuro .nexo-topbar__notif-panel .mud-list-item-text,
 #nexo-app-root.nexo-tema-oscuro .nexo-topbar__notif-panel-title {
   color: inherit !important;
+}
+
+/* ── §Glass TopBar y Sidebar — DARK MODE ────────────────────────────
+   ESTE es el lugar canónico para cambiar background, blur y bordes
+   de las barras en modo OSCURO. Sobreescribe MainLayout.razor.css.
+   Aplica sin rebuild (solo recarga del navegador).
+   El blur es visible porque el gradiente tiene glows a la izquierda
+   (sidebar) y arriba-izquierda (topbar) en el §FONDO MODO OSCURO.    */
+
+#nexo-app-root.nexo-tema-oscuro .mud-appbar.nexo-topbar {
+  /* Menos opaco (0.42) para que el glow azul arriba-izquierda se vea a través */
+  background: rgba(6,10,24,0.42) !important;
+  backdrop-filter: blur(32px) saturate(170%) brightness(0.92) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(170%) brightness(0.92) !important;
+  border-bottom: 1px solid rgba(100,140,255,0.15) !important;
+  box-shadow:
+    0 1px 0 rgba(124,92,255,0.20),
+    inset 0 1px 0 rgba(255,255,255,0.08) !important;
+}
+
+#nexo-app-root.nexo-tema-oscuro .mud-drawer.nexo-sidebar {
+  /* Menos opaco (0.45) para que el glow morado izquierda se vea a través */
+  background: rgba(5,8,22,0.45) !important;
+  backdrop-filter: blur(40px) saturate(180%) brightness(0.88) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(0.88) !important;
+  border-right: 1px solid rgba(100,60,220,0.22) !important;
+  box-shadow:
+    2px 0 32px rgba(0,0,0,0.25),
+    inset -1px 0 0 rgba(124,92,255,0.18) !important;
 }
 
 /* KPIs, encabezados de grafico y estados vacios (Dashboard.razor.css y
@@ -934,3 +1085,977 @@ a, .btn-link { color: var(--n-purple); }
   gap: 0.3rem;
   margin-top: 0.4rem;
 }
+
+/* ================================================================
+   CRYSTAL DARK — Glassmorphism sobre las mud-paper cards
+   Se activa junto con nexo-tema-oscuro. Reemplaza el fondo sólido
+   #1C1C2C por un cristal translúcido con blur sobre el gradiente.
+   ================================================================ */
+#nexo-app-root.nexo-tema-oscuro .mud-paper:not(.mud-appbar):not(.mud-popover-cascading):not(.mud-dialog):not(.mud-snackbar-content):not(.mud-drawer) {
+  background: rgba(255,255,255,0.07) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255,255,255,0.11) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+/* KPI cards, item-cards y otros custom divs que usan --n-card */
+#nexo-app-root.nexo-tema-oscuro .nexo-kpi,
+#nexo-app-root.nexo-tema-oscuro .nexo-item-card {
+  background: rgba(255,255,255,0.07) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255,255,255,0.11) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+/* Hover en tabla — sutil glow morado en vez de color plano */
+#nexo-app-root.nexo-tema-oscuro .mud-table-body .mud-table-row:hover {
+  background-color: rgba(124,92,255,0.12) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .mud-table-striped .mud-table-body .mud-table-row:nth-child(odd) {
+  background-color: rgba(255,255,255,0.02) !important;
+}
+
+/* Snackbar — sigue siendo sólido para legibilidad */
+#nexo-app-root.nexo-tema-oscuro .mud-snackbar-content {
+  background: rgba(15,25,55,0.97) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255,255,255,0.13) !important;
+}
+
+/* ================================================================
+   CRYSTAL DARK — Fixes de contraste y visibilidad
+   Elementos que MudBlazor pinta con colores propios y no heredan
+   las variables --n-*. Se cubre una sola vez aquí para todos.
+   ================================================================ */
+
+/* Page hero — icono y subtítulo */
+#nexo-app-root.nexo-tema-oscuro .nexo-page-hero__icon {
+  color: var(--n-text-2) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .nexo-page-hero__sub {
+  color: var(--n-text-2) !important;
+}
+
+/* MudTabs — header de pestañas y panel de contenido */
+#nexo-app-root.nexo-tema-oscuro .mud-tabs-header {
+  background: rgba(255,255,255,0.04) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.09) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .mud-tab {
+  color: var(--n-text-2) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .mud-tab.mud-tab-active,
+#nexo-app-root.nexo-tema-oscuro .mud-tab:hover {
+  color: var(--n-text-1) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .mud-tab-slider {
+  background-color: #7C5CFF !important;
+}
+#nexo-app-root.nexo-tema-oscuro .mud-tabs-panels {
+  background: transparent !important;
+}
+
+/* MudText genérico — asegura legibilidad en cualquier componente */
+#nexo-app-root.nexo-tema-oscuro .mud-typography {
+  color: var(--n-text-1);
+}
+#nexo-app-root.nexo-tema-oscuro .mud-typography.mud-typography-subtitle1,
+#nexo-app-root.nexo-tema-oscuro .mud-typography.mud-typography-subtitle2,
+#nexo-app-root.nexo-tema-oscuro .mud-typography.mud-typography-body1,
+#nexo-app-root.nexo-tema-oscuro .mud-typography.mud-typography-body2 {
+  color: var(--n-text-1) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .mud-typography.mud-typography-caption {
+  color: var(--n-text-2) !important;
+}
+
+/* MudTh / MudTd — texto de tabla */
+#nexo-app-root.nexo-tema-oscuro .mud-table-cell {
+  color: var(--n-text-1) !important;
+  border-bottom-color: rgba(255,255,255,0.07) !important;
+}
+
+/* Chips y badges */
+#nexo-app-root.nexo-tema-oscuro .mud-chip {
+  background: rgba(255,255,255,0.09) !important;
+  color: var(--n-text-1) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+}
+
+/* MudDivider */
+#nexo-app-root.nexo-tema-oscuro hr,
+#nexo-app-root.nexo-tema-oscuro .mud-divider {
+  border-color: rgba(255,255,255,0.09) !important;
+}
+
+/* ── MudNavLink del sidebar — siempre oscuro.
+   En app.css (no scoped) para garantizar especificidad sobre MudBlazor. */
+.mud-nav-link.nexo-nav-item {
+  position: relative !important;
+  color: rgba(255,255,255,0.62) !important;
+  border-radius: 9px !important;
+  font-size: 0.845rem !important;
+  font-weight: 500 !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+.mud-nav-link.nexo-nav-item:hover {
+  background: rgba(255,255,255,0.07) !important;
+  color: rgba(255,255,255,0.90) !important;
+}
+.mud-nav-link.nexo-nav-item.active {
+  background: rgba(124,92,255,0.82) !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  box-shadow: 0 3px 12px rgba(124,92,255,0.35) !important;
+}
+.mud-nav-link.nexo-nav-item .mud-nav-link-icon-wrapper {
+  color: rgba(255,255,255,0.38) !important;
+  transition: color 0.15s ease !important;
+}
+.mud-nav-link.nexo-nav-item:hover .mud-nav-link-icon-wrapper {
+  color: rgba(255,255,255,0.70) !important;
+}
+.mud-nav-link.nexo-nav-item.active .mud-nav-link-icon-wrapper {
+  color: #FFFFFF !important;
+}
+/* Indicador ">>" en item activo */
+.mud-nav-link.nexo-nav-item.active::after {
+  content: '\00BB';
+  position: absolute;
+  right: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.70);
+  letter-spacing: -0.05em;
+}
+/* ── MudNavGroup — header colapsable del sidebar ────────────── */
+.nexo-nav-group .mud-nav-group-header .mud-nav-link {
+  color: rgba(255,255,255,0.50) !important;
+  font-size: 0.70rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  border-radius: 9px !important;
+  margin: 2px 8px !important;
+  padding: 0.58rem 0.85rem 0.58rem 0.75rem !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+.nexo-nav-group .mud-nav-group-header .mud-nav-link:hover {
+  background: rgba(255,255,255,0.06) !important;
+  color: rgba(255,255,255,0.82) !important;
+}
+.nexo-nav-group .mud-nav-group-toggle-icon {
+  font-size: 1rem !important;
+  color: rgba(255,255,255,0.28) !important;
+}
+.nexo-nav-group .mud-nav-group-header .mud-nav-link .mud-nav-link-icon-wrapper {
+  color: rgba(255,255,255,0.32) !important;
+}
+.nexo-nav-group .mud-nav-group-header .mud-nav-link:hover .mud-nav-link-icon-wrapper {
+  color: rgba(255,255,255,0.62) !important;
+}
+
+/* MudInputLabel y helper text */
+#nexo-app-root.nexo-tema-oscuro .mud-input-label,
+#nexo-app-root.nexo-tema-oscuro .mud-helper-text {
+  color: var(--n-text-2) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .mud-input-label.mud-input-label-inputcontrol {
+  color: var(--n-text-2) !important;
+}
+
+/* MudAlert */
+#nexo-app-root.nexo-tema-oscuro .mud-alert {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+}
+
+/* MudExpansionPanel */
+#nexo-app-root.nexo-tema-oscuro .mud-expand-panel {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .mud-expand-panel-header {
+  color: var(--n-text-1) !important;
+}
+
+/* Scrollbar — sutil en dark */
+#nexo-app-root.nexo-tema-oscuro ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+#nexo-app-root.nexo-tema-oscuro ::-webkit-scrollbar-track {
+  background: transparent;
+}
+#nexo-app-root.nexo-tema-oscuro ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 3px;
+}
+#nexo-app-root.nexo-tema-oscuro ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.28);
+}
+
+/* ================================================================
+   MARCO ANIMADO — borde conic-gradient giratorio sobre todo el shell
+   Técnica: padding+mask excluye el área interior, el relleno es el
+   borde visible. @property habilita la animación de --border-angle.
+   ================================================================ */
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes border-spin {
+  to { --border-angle: 360deg; }
+}
+
+#nexo-app-root::before {
+  content: '';
+  position: fixed;
+  inset: 14px;
+  border-radius: 18px;
+  padding: 1.5px;
+  background: conic-gradient(from var(--border-angle) at 50% 50%,
+    transparent       0deg,
+    transparent       44deg,
+    rgba(124,92,255,0.70)  58deg,
+    rgba(200,160,255,0.95) 72deg,
+    rgba(100,180,255,0.80) 86deg,
+    transparent       102deg,
+    transparent       360deg
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  /* z-index alto para quedar sobre sidebar/topbar (que son ~1200-1300 en MudBlazor).
+     pointer-events:none garantiza que no bloquea ningún click. */
+  z-index: 99999;
+  animation: border-spin 7s linear infinite;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 10% 100%, 0% 88%);
+}
+
+/* Borde más brillante en oscuro */
+#nexo-app-root.nexo-tema-oscuro::before {
+  background: conic-gradient(from var(--border-angle) at 50% 50%,
+    transparent       0deg,
+    transparent       44deg,
+    rgba(124,92,255,0.80)  58deg,
+    rgba(180,140,255,1.00) 72deg,
+    rgba(80,180,255,0.90)  86deg,
+    transparent       102deg,
+    transparent       360deg
+  );
+}
+
+/* Luz más suave en claro */
+#nexo-app-root:not(.nexo-tema-oscuro)::before {
+  background: conic-gradient(from var(--border-angle) at 50% 50%,
+    transparent       0deg,
+    transparent       44deg,
+    rgba(124,92,255,0.45)  58deg,
+    rgba(180,140,255,0.70) 72deg,
+    rgba(120,170,255,0.50) 86deg,
+    transparent       102deg,
+    transparent       360deg
+  );
+}
+
+/* Sub-rectángulo decorativo (esquina inferior-izquierda) */
+#nexo-app-root::after {
+  content: '';
+  position: fixed;
+  bottom: 14px;
+  left: 14px;
+  width: 140px;
+  height: 140px;
+  border-radius: 10px 4px 4px 16px;
+  pointer-events: none;
+  z-index: 99999;
+  border: 1px solid rgba(255,255,255,0.14);
+  clip-path: polygon(0% 0%, 82% 0%, 100% 20%, 100% 100%, 0% 100%);
+}
+#nexo-app-root.nexo-tema-oscuro::after {
+  border-color: rgba(140,170,255,0.22);
+}
+#nexo-app-root:not(.nexo-tema-oscuro)::after {
+  border-color: rgba(160,170,240,0.35);
+}
+
+/* ================================================================
+   NEXO-BI-TABS — overrides globales para alcanzar elementos de
+   MudTabs que no reciben el atributo de scoping de Dashboard.razor.
+   ================================================================ */
+.nexo-bi-tabs .mud-tabs-tabbar {
+  border-bottom: 2px solid rgba(124,92,255,0.22) !important;
+  margin-bottom: 0 !important;
+}
+.nexo-bi-tabs .mud-tab {
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
+  min-width: 100px !important;
+}
+.nexo-bi-tabs .mud-tab.mud-tab-active {
+  color: #7C5CFF !important;
+}
+.nexo-bi-tabs .mud-tab-slider {
+  background: #7C5CFF !important;
+}
+#nexo-app-root.nexo-tema-oscuro .nexo-bi-tabs .mud-tab {
+  color: rgba(255,255,255,0.55) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .nexo-bi-tabs .mud-tab.mud-tab-active {
+  color: #A78BFF !important;
+}
+#nexo-app-root.nexo-tema-oscuro .nexo-bi-tabs .mud-tab-slider {
+  background: #A78BFF !important;
+}
+
+/* ── MudTabs global — slider púrpura en ambos modos ──────────── */
+/* Modo claro */
+.mud-tab-slider {
+  background: #7C5CFF !important;
+}
+.mud-tab.mud-tab-active {
+  color: #7C5CFF !important;
+  font-weight: 600 !important;
+}
+.mud-tabs-header {
+  border-bottom: 2px solid rgba(124,92,255,0.18) !important;
+}
+.mud-tab {
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  min-width: 90px !important;
+  letter-spacing: 0.01em !important;
+}
+/* Modo oscuro refuerzo */
+#nexo-app-root.nexo-tema-oscuro .mud-tab {
+  color: rgba(255,255,255,0.50) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .mud-tab.mud-tab-active {
+  color: #A78BFF !important;
+}
+#nexo-app-root.nexo-tema-oscuro .mud-tab-slider {
+  background: #A78BFF !important;
+}
+#nexo-app-root.nexo-tema-oscuro .mud-tabs-header {
+  border-bottom-color: rgba(167,139,255,0.22) !important;
+}
+
+/* ── Glass panels en modo claro — fondo semi-transparente ────── */
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-paper:not(.mud-appbar):not(.mud-popover-cascading):not(.mud-dialog):not(.mud-snackbar-content):not(.mud-drawer) {
+  background: rgba(255,255,255,0.72) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+}
+
+/* ── Separador de sección — legible en ambos modos ────────────── */
+.nexo-section__label {
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: var(--n-text-3) !important;
+}
+.nexo-section__line {
+  background: var(--n-border) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .nexo-section__label {
+  color: rgba(255,255,255,0.38) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .nexo-section__line {
+  background: rgba(255,255,255,0.08) !important;
+}
+
+/* ================================================================
+   MODO CLARO — Glass sidebar y topbar + inversión de colores
+   El fondo lavanda del #nexo-app-root sangra a través del cristal.
+   Usamos blanco semitransparente puro para máximo contraste.
+   ================================================================ */
+
+/* ── §Glass TopBar y Sidebar — LIGHT MODE ───────────────────────
+   ESTE es el lugar canónico para cambiar background, blur y bordes
+   en modo CLARO. Sobreescribe MainLayout.razor.css. Sin rebuild.    */
+/* ── Topbar glass claro ──────────────────────────────────────── */
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-appbar.nexo-topbar {
+  /* 0.45 más transparente: el glow índigo arriba-izquierda se verá a través */
+  background: rgba(255,255,255,0.45) !important;
+  backdrop-filter: blur(32px) saturate(180%) brightness(1.04) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(1.04) !important;
+  border-bottom: 1px solid rgba(110,80,230,0.18) !important;
+  box-shadow: 0 1px 16px rgba(100,70,220,0.10), 0 1px 0 rgba(110,80,230,0.14) !important;
+  color: #1A1C2E !important;
+}
+
+/* Todos los textos/iconos del topbar que usan colores oscuros fijos */
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-topbar__title       { color: #1A1C2E !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-topbar__user-name   { color: #1A1C2E !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-topbar__user-role   { color: #6B6B8A !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-topbar__menu-btn    { color: #6B6B8A !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-topbar__notif-btn   { color: #6B6B8A !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-topbar__chevron     { color: #9B9BB4 !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-topbar__search {
+  background: rgba(255,255,255,0.70) !important;
+  border-color: rgba(130,110,220,0.22) !important;
+}
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-topbar__search:focus-within {
+  border-color: rgba(124,92,255,0.55) !important;
+  background: rgba(255,255,255,0.92) !important;
+  box-shadow: 0 0 0 3px rgba(124,92,255,0.14) !important;
+}
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-topbar__search-input         { color: #1A1C2E !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-topbar__search-input::placeholder { color: #9B9BB4 !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-topbar__search-icon          { color: #9B9BB4 !important; }
+
+/* ── Sidebar glass claro ─────────────────────────────────────── */
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-drawer.nexo-sidebar {
+  /* 0.40 más transparente: el glow morado izquierda se verá a través */
+  background: rgba(255,255,255,0.40) !important;
+  backdrop-filter: blur(40px) saturate(200%) brightness(1.05) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.05) !important;
+  border-right: 1px solid rgba(110,80,230,0.20) !important;
+  box-shadow: 2px 0 32px rgba(90,60,200,0.12), inset -1px 0 0 rgba(110,80,230,0.12) !important;
+}
+
+/* Logo en claro */
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-sidebar__logo-text  { color: #1A1C2E !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-sidebar__logo       { border-bottom-color: rgba(130,110,220,0.14) !important; }
+
+/* Nav items en claro */
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-nav-link.nexo-nav-item { color: rgba(26,28,46,0.70) !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-nav-link.nexo-nav-item:hover {
+  background: rgba(124,92,255,0.08) !important;
+  color: #7C5CFF !important;
+}
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-nav-link.nexo-nav-item.active {
+  background: linear-gradient(135deg, rgba(124,92,255,0.88), rgba(90,59,255,0.80)) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 3px 14px rgba(124,92,255,0.30) !important;
+}
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-nav-link.nexo-nav-item .mud-nav-link-icon-wrapper        { color: rgba(26,28,46,0.38) !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-nav-link.nexo-nav-item:hover .mud-nav-link-icon-wrapper  { color: #7C5CFF !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-nav-link.nexo-nav-item.active .mud-nav-link-icon-wrapper { color: #FFFFFF !important; }
+
+/* Cabeceras de grupo colapsable en claro */
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-nav-group .mud-nav-group-header .mud-nav-link {
+  color: rgba(26,28,46,0.48) !important;
+}
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-nav-group .mud-nav-group-header .mud-nav-link:hover {
+  background: rgba(124,92,255,0.06) !important;
+  color: rgba(26,28,46,0.80) !important;
+}
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-nav-group .mud-nav-group-header .mud-nav-link .mud-nav-link-icon-wrapper {
+  color: rgba(26,28,46,0.30) !important;
+}
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-nav-group .mud-nav-group-toggle-icon  { color: rgba(26,28,46,0.30) !important; }
+
+/* Footer del sidebar en claro */
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-sidebar__footer-divider { background: rgba(130,110,220,0.14) !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-sidebar__footer-item    { color: #6B6B8A !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-sidebar__footer-item:hover {
+  background: rgba(124,92,255,0.07) !important;
+  color: #7C5CFF !important;
+}
+#nexo-app-root:not(.nexo-tema-oscuro) .nexo-sidebar__footer-icon    { color: #9B9BB4 !important; }
+
+/* ── MudText general en modo claro ──────────────────────────── */
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-typography          { color: var(--n-text-1); }
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-typography-h5       { color: var(--n-text-1) !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-typography-subtitle1,
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-typography-subtitle2 { color: var(--n-text-1) !important; }
+
+/* ── MudTabs en modo claro ───────────────────────────────────── */
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-tab                  { color: var(--n-text-2) !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-tab.mud-tab-active   { color: #7C5CFF !important; font-weight: 600 !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-tab-slider           { background: #7C5CFF !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-tabs-header          { border-bottom-color: rgba(124,92,255,0.18) !important; }
+
+/* ── Inputs/selects en modo claro ─────────────────────────────── */
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-input-label          { color: var(--n-text-2) !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-input-input,
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-select-input         { color: var(--n-text-1) !important; }
+
+/* ── Table en modo claro ─────────────────────────────────────── */
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-table-head .mud-table-cell { color: var(--n-text-3) !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-table-body .mud-table-cell { color: var(--n-text-1) !important; }
+#nexo-app-root:not(.nexo-tema-oscuro) .mud-table-body .mud-table-row:hover {
+  background-color: rgba(124,92,255,0.06) !important;
+}
+
+/* ================================================================
+   BARRIDO LUMINOSO EN TAB BARS (tab-sweep)
+   NO usa overflow:hidden para no cortar el slider activo.
+   El pseudo-elemento usa clip-path para contenerse.
+   ================================================================ */
+@keyframes tab-sweep {
+  0%   { transform: translateX(-150%); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateX(250%);  opacity: 0; }
+}
+
+.mud-tabs-header {
+  position: relative !important;
+  /* SIN overflow:hidden — el slider de tab activa necesita fluir */
+}
+
+.mud-tabs-header::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 35%;
+  height: calc(100% - 2px); /* no toca la línea inferior */
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(124,92,255,0.07) 30%,
+    rgba(180,140,255,0.13) 50%,
+    rgba(124,92,255,0.07) 70%,
+    transparent 100%
+  );
+  pointer-events: none;
+  animation: tab-sweep 6s ease-in-out infinite;
+  animation-delay: 3s;
+  z-index: 0;
+}
+
+/* Barrido más visible en oscuro */
+#nexo-app-root.nexo-tema-oscuro .mud-tabs-header::after {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(124,92,255,0.12) 30%,
+    rgba(200,160,255,0.22) 50%,
+    rgba(124,92,255,0.12) 70%,
+    transparent 100%
+  );
+}
+
+/* Asegura que el slider y los tabs queden encima del barrido */
+.mud-tab-slider,
+.mud-tab {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* ================================================================
+   §Sistema de Secciones de Formulario — Diseño unificado v1
+   Aplica en todas las páginas de creación/edición del sistema.
+   Clases principales: nexo-section, nexo-form-layout,
+   nexo-form-row-2, nexo-action-bar, nexo-page-header.
+   No requiere rebuild — aplica con solo recargar el navegador.
+   ================================================================ */
+
+/* ── Encabezado de página (breadcrumb + título) ─────────────── */
+.nexo-page-header {
+  margin-bottom: 2rem;
+}
+.nexo-page-header__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+}
+.nexo-page-header__crumb-link {
+  color: var(--n-purple);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity .15s;
+}
+.nexo-page-header__crumb-link:hover { opacity: .75; }
+.nexo-page-header__crumb-sep { color: var(--n-text-3); font-size: 0.85rem; }
+.nexo-page-header__crumb-cur { color: var(--n-text-2); }
+.nexo-page-header__body {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.nexo-page-header__title {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--n-text-1);
+  margin: 0 0 0.25rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.nexo-page-header__sub {
+  font-size: 0.875rem;
+  color: var(--n-text-3);
+  margin: 0;
+}
+
+/* ── Layout de formulario ────────────────────────────────────── */
+.nexo-form-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-bottom: 5rem;
+}
+.nexo-form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+/* ── Sección-card ────────────────────────────────────────────── */
+.nexo-section {
+  background: var(--n-card);
+  border: 1px solid var(--n-border);
+  border-radius: var(--n-radius);
+  box-shadow: var(--n-shadow);
+  overflow: hidden;
+  transition: box-shadow .2s;
+}
+.nexo-section:hover {
+  box-shadow: var(--n-shadow-md);
+}
+.nexo-section__header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1.1rem 1.4rem;
+  border-bottom: 1px solid var(--n-border);
+  border-left: 3px solid var(--section-accent, var(--n-purple));
+}
+.nexo-section__icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: var(--n-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.nexo-section__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--n-text-1);
+  line-height: 1.2;
+}
+.nexo-section__sub {
+  font-size: 0.78rem;
+  color: var(--n-text-3);
+  margin-top: 0.1rem;
+}
+.nexo-section__body {
+  padding: 1.4rem;
+}
+
+/* ── Barra de acciones fija ──────────────────────────────────── */
+.nexo-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(250,251,253,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--n-border);
+  z-index: 100;
+  box-shadow: 0 -2px 12px rgba(26,28,46,0.07);
+}
+#nexo-app-root.nexo-tema-oscuro .nexo-action-bar {
+  background: rgba(6,14,31,0.88) !important;
+  border-top-color: rgba(255,255,255,0.09) !important;
+  box-shadow: 0 -1px 0 rgba(255,255,255,0.08), 0 -4px 20px rgba(0,0,0,0.35) !important;
+}
+.nexo-action-bar__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.85rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .nexo-form-row-2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .nexo-page-header__title { font-size: 1.35rem; }
+  .nexo-section__body       { padding: 1rem; }
+  .nexo-section__header     { padding: 0.9rem 1rem; }
+  .nexo-action-bar__inner   { padding: 0.75rem 1rem; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   §Estado Vacío — NexoEmptyState (componente compartido)
+   Usar cuando una lista/tabla no tiene ítems y no está cargando.
+   ══════════════════════════════════════════════════════════════ */
+
+.nexo-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5rem 1rem;
+    width: 100%;
+}
+
+.nexo-empty__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 380px;
+    gap: 0;
+}
+
+.nexo-empty__icon-wrap {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(124, 92, 255, 0.08);
+    border: 1.5px solid rgba(124, 92, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.nexo-empty__icon {
+    font-size: 2.2rem !important;
+    color: var(--n-purple) !important;
+    opacity: 0.75;
+}
+
+.nexo-empty__title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--n-text-1);
+    margin: 0 0 0.6rem;
+    line-height: 1.3;
+}
+
+.nexo-empty__desc {
+    font-size: 0.875rem;
+    color: var(--n-text-3);
+    line-height: 1.6;
+    margin: 0 0 2rem;
+}
+
+.nexo-empty__btn {
+    margin-top: 0.5rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   §Demanda Proyectada — KPI tiles
+───────────────────────────────────────────────────────────── */
+.dem-kpi-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.dem-kpi-tile {
+    flex: 1 1 140px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 10px;
+    background: var(--mud-palette-surface);
+}
+.dem-kpi-tile--ok   { border-color: var(--mud-palette-success); background: color-mix(in srgb, var(--mud-palette-success) 8%, transparent); }
+.dem-kpi-tile--warn { border-color: var(--mud-palette-warning); background: color-mix(in srgb, var(--mud-palette-warning) 8%, transparent); }
+.dem-kpi-tile--risk { border-color: var(--mud-palette-error);   background: color-mix(in srgb, var(--mud-palette-error)   8%, transparent); }
+.dem-kpi-tile__label { font-size: .75rem; color: var(--mud-palette-text-secondary); }
+.dem-kpi-tile__value { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+
+/* ─────────────────────────────────────────────────────────────
+   §Metas de Venta — cards y resumen
+───────────────────────────────────────────────────────────── */
+.mv-summary {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 10px;
+    background: var(--mud-palette-surface);
+}
+.mv-summary__kpi { display: flex; flex-direction: column; gap: 2px; }
+.mv-summary__kpi-label { font-size: .72rem; color: var(--mud-palette-text-secondary); text-transform: uppercase; letter-spacing: .04em; }
+.mv-summary__kpi-value { font-size: 1.35rem; font-weight: 700; }
+.mv-summary__kpi--ok   .mv-summary__kpi-value { color: var(--mud-palette-success); }
+.mv-summary__kpi--warn .mv-summary__kpi-value { color: var(--mud-palette-warning); }
+.mv-summary__kpi--risk .mv-summary__kpi-value { color: var(--mud-palette-error); }
+
+.mv-mes-header {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: .75rem;
+    padding-bottom: .5rem;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+.mv-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+.mv-card {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    padding: 1.1rem 1.2rem;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 12px;
+    background: var(--mud-palette-surface);
+}
+.mv-card__header { display: flex; align-items: flex-start; justify-content: space-between; }
+.mv-card__centro { font-weight: 600; font-size: .9rem; }
+.mv-card__pct-wrap { display: flex; align-items: baseline; gap: .4rem; }
+.mv-card__pct { font-size: 2.2rem; font-weight: 800; line-height: 1; }
+.mv-card__pct-label { font-size: .75rem; color: var(--mud-palette-text-secondary); }
+.mv-card__bar { margin: .25rem 0; }
+.mv-card__vals { display: flex; justify-content: space-between; }
+.mv-card__val-label { font-size: .7rem; color: var(--mud-palette-text-secondary); }
+.mv-card__val { font-size: .9rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.mv-card__ritmo {
+    display: flex; align-items: center; gap: 5px;
+    font-size: .75rem; padding: .35rem .6rem;
+    border-radius: 6px; margin-top: .15rem;
+}
+.mv-card__ritmo--ok   { background: color-mix(in srgb, var(--mud-palette-success) 12%, transparent); color: var(--mud-palette-success-darken); }
+.mv-card__ritmo--warn { background: color-mix(in srgb, var(--mud-palette-warning) 12%, transparent); color: var(--mud-palette-warning-darken); }
+.mv-card__ritmo--risk { background: color-mix(in srgb, var(--mud-palette-error)   12%, transparent); color: var(--mud-palette-error-darken); }
+.mv-card__actions { display: flex; gap: .5rem; margin-top: .25rem; }
+
+/* ─────────────────────────────────────────────────────────────
+   §Proyectos — barra de estado, salud, countdown
+───────────────────────────────────────────────────────────── */
+.py-kpi-bar {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+}
+.py-kpi-pill {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .35rem .8rem;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 999px;
+    background: var(--mud-palette-surface);
+    cursor: pointer; font-size: .82rem;
+    transition: background .15s, border-color .15s;
+}
+.py-kpi-pill:hover { border-color: var(--mud-palette-primary); }
+.py-kpi-pill--active { border-color: var(--mud-palette-primary); background: color-mix(in srgb, var(--mud-palette-primary) 10%, transparent); font-weight: 600; }
+.py-kpi-pill__badge {
+    background: var(--mud-palette-lines-default);
+    border-radius: 999px; padding: 1px 7px; font-size: .72rem; font-weight: 600;
+}
+.py-kpi-pill__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.py-kpi-pill__dot--en_curso    { background: var(--mud-palette-info); }
+.py-kpi-pill__dot--planificado { background: var(--mud-palette-default); }
+.py-kpi-pill__dot--finalizado  { background: var(--mud-palette-success); }
+.py-kpi-pill__dot--cancelado   { background: var(--mud-palette-error); }
+
+.py-card { position: relative; padding-top: 1rem !important; overflow: hidden; }
+.py-card__health-bar { position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+.py-card__health-bar--ok      { background: var(--mud-palette-success); }
+.py-card__health-bar--warn    { background: var(--mud-palette-warning); }
+.py-card__health-bar--risk    { background: var(--mud-palette-error); }
+.py-card__health-bar--neutral { background: var(--mud-palette-lines-default); }
+
+.py-card__prioridad {
+    font-size: .68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; margin-left: .5rem;
+}
+.py-card__prioridad--alta  { color: var(--mud-palette-error); }
+.py-card__prioridad--media { color: var(--mud-palette-warning); }
+.py-card__prioridad--baja  { color: var(--mud-palette-text-secondary); }
+
+.py-card__countdown {
+    display: flex; align-items: center; gap: 5px;
+    font-size: .75rem; color: var(--mud-palette-text-secondary);
+    margin-top: .25rem;
+}
+.py-card__countdown--soon { color: var(--mud-palette-warning); }
+.py-card__countdown--late { color: var(--mud-palette-error); }
+
+.py-card__health-chip {
+    display: inline-flex; align-items: center;
+    font-size: .68rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .05em; padding: 2px 8px;
+    border-radius: 999px; margin-top: .25rem; width: fit-content;
+}
+.py-card__health-chip--ok      { background: color-mix(in srgb, var(--mud-palette-success) 15%, transparent); color: var(--mud-palette-success-darken); }
+.py-card__health-chip--warn    { background: color-mix(in srgb, var(--mud-palette-warning) 15%, transparent); color: var(--mud-palette-warning-darken); }
+.py-card__health-chip--risk    { background: color-mix(in srgb, var(--mud-palette-error)   15%, transparent); color: var(--mud-palette-error-darken); }
+.py-card__health-chip--neutral { background: var(--mud-palette-lines-default); color: var(--mud-palette-text-secondary); }
+
+/* ─────────────────────────────────────────────────────────────
+   §Ausencias — paneles fuera hoy / próximas / pendientes
+───────────────────────────────────────────────────────────── */
+.aus-panel {
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--mud-palette-surface);
+}
+.aus-panel--pendiente { border-color: var(--mud-palette-warning); }
+.aus-panel__header {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .65rem 1rem;
+    background: color-mix(in srgb, var(--mud-palette-lines-default) 40%, transparent);
+    font-size: .82rem; font-weight: 600;
+}
+.aus-panel--pendiente .aus-panel__header {
+    background: color-mix(in srgb, var(--mud-palette-warning) 12%, transparent);
+    color: var(--mud-palette-warning-darken);
+}
+.aus-panel__body {
+    display: flex; flex-wrap: wrap; gap: .75rem;
+    padding: .9rem 1rem;
+}
+.aus-panel__body--proximas { flex-direction: column; gap: .5rem; }
+.aus-panel__empty {
+    display: flex; align-items: center; gap: .5rem;
+    color: var(--mud-palette-success);
+    font-size: .85rem;
+}
+
+.aus-chip {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .5rem .75rem;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 8px;
+    background: var(--mud-palette-background);
+}
+.aus-chip__avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .75rem; font-weight: 700; flex-shrink: 0;
+}
+.aus-chip__avatar--sm { width: 28px; height: 28px; font-size: .65rem; }
+.aus-chip__nombre { font-size: .82rem; font-weight: 600; }
+.aus-chip__tipo   { font-size: .72rem; color: var(--mud-palette-text-secondary); }
+
+.aus-prox-row {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .4rem 0;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+.aus-prox-row:last-child { border-bottom: none; }
+.aus-prox-row__info { display: flex; flex-direction: column; flex: 1; }
+.aus-prox-row__nombre { font-size: .82rem; font-weight: 600; }
+.aus-prox-row__tipo   { font-size: .72rem; color: var(--mud-palette-text-secondary); }
+.aus-prox-row__fechas { display: flex; flex-direction: column; align-items: flex-end; font-size: .75rem; }
+.aus-prox-row__dias   { color: var(--mud-palette-text-secondary); }
+

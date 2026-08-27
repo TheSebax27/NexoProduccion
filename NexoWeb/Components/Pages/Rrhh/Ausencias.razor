@@ -1,4 +1,4 @@
-﻿@page "/rrhh/ausencias"
+@page "/rrhh/ausencias"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -17,8 +17,8 @@
     <BotonFavorito Href="/rrhh/ausencias" Etiqueta="Ausencias y Vacaciones" />
 </div>
 
-<MudPaper Class="pa-4 mb-4" Elevation="0" Style="border:1px solid var(--mud-palette-lines-default); border-radius:8px">
-    <div style="display:flex; align-items:center; gap:8px">
+<MudPaper Class="pa-4 mb-4" Elevation="0" Style="border:1px solid var(--mud-palette-lines-default);border-radius:8px">
+    <div style="display:flex;align-items:center;gap:8px">
         <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Secondary" />
         <MudText Typo="Typo.body2" Color="Color.Secondary">
             Disponibilidad del personal: vacaciones, incapacidades y permisos. No calcula nomina. Se registran desde "Gestionar" en cada Empleado.
@@ -26,11 +26,121 @@
     </div>
 </MudPaper>
 
-<MudSelect T="string" Value="_filtroEstado" ValueChanged="OnFiltroCambiadoAsync" Label="Estado" Clearable="true" Style="max-width: 220px;" Class="mb-4">
-    <MudSelectItem Value="@("PENDIENTE")">Pendiente</MudSelectItem>
-    <MudSelectItem Value="@("APROBADA")">Aprobada</MudSelectItem>
-    <MudSelectItem Value="@("RECHAZADA")">Rechazada</MudSelectItem>
-</MudSelect>
+@* ── Panel "Fuera hoy" ── *@
+@if (!_cargando)
+{
+    var fueraHoy = _todasAprobadas
+        .Where(a => a.FechaInicio.Date <= _hoy && a.FechaFin.Date >= _hoy)
+        .ToList();
+
+    <div class="aus-panel mb-4">
+        <div class="aus-panel__header">
+            <MudIcon Icon="@Icons.Material.Filled.PersonOff" Size="Size.Small" />
+            <span>Fuera hoy — @_hoy.ToString("dd/MM/yyyy")</span>
+        </div>
+        <div class="aus-panel__body">
+            @if (fueraHoy.Count == 0)
+            {
+                <div class="aus-panel__empty">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Success" />
+                    <span>Todo el equipo disponible hoy</span>
+                </div>
+            }
+            else
+            {
+                @foreach (var a in fueraHoy)
+                {
+                    <div class="aus-chip">
+                        <span class="aus-chip__avatar">@Initials(a.Empleado)</span>
+                        <div>
+                            <div class="aus-chip__nombre">@a.Empleado</div>
+                            <div class="aus-chip__tipo">@a.Tipo · hasta @a.FechaFin.ToString("dd/MM")</div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    @* ── Próximas ausencias (30 días) ── *@
+    var proximas = _todasAprobadas
+        .Where(a => a.FechaInicio.Date > _hoy && a.FechaInicio.Date <= _hoy.AddDays(30))
+        .OrderBy(a => a.FechaInicio)
+        .ToList();
+
+    @if (proximas.Count > 0)
+    {
+        <div class="aus-panel mb-4">
+            <div class="aus-panel__header">
+                <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Small" />
+                <span>Próximas ausencias (30 días)</span>
+            </div>
+            <div class="aus-panel__body aus-panel__body--proximas">
+                @foreach (var a in proximas)
+                {
+                    var dias = (int)(a.FechaFin.Date - a.FechaInicio.Date).TotalDays + 1;
+                    <div class="aus-prox-row">
+                        <span class="aus-chip__avatar aus-chip__avatar--sm">@Initials(a.Empleado)</span>
+                        <div class="aus-prox-row__info">
+                            <span class="aus-prox-row__nombre">@a.Empleado</span>
+                            <span class="aus-prox-row__tipo">@a.Tipo</span>
+                        </div>
+                        <div class="aus-prox-row__fechas">
+                            <span>@a.FechaInicio.ToString("dd/MM") → @a.FechaFin.ToString("dd/MM")</span>
+                            <span class="aus-prox-row__dias">@dias día@(dias != 1 ? "s" : "")</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @* ── Pendientes de aprobación ── *@
+    var pendientes = _ausencias.Where(a => a.Estado == "PENDIENTE").ToList();
+    @if (pendientes.Count > 0)
+    {
+        <div class="aus-panel aus-panel--pendiente mb-4">
+            <div class="aus-panel__header">
+                <MudIcon Icon="@Icons.Material.Filled.Pending" Size="Size.Small" />
+                <span>Pendientes de aprobación (@pendientes.Count)</span>
+            </div>
+            <div class="aus-panel__body aus-panel__body--proximas">
+                @foreach (var a in pendientes)
+                {
+                    var dias = (int)(a.FechaFin.Date - a.FechaInicio.Date).TotalDays + 1;
+                    <div class="aus-prox-row">
+                        <span class="aus-chip__avatar aus-chip__avatar--sm">@Initials(a.Empleado)</span>
+                        <div class="aus-prox-row__info">
+                            <span class="aus-prox-row__nombre">@a.Empleado</span>
+                            <span class="aus-prox-row__tipo">@a.Tipo · @a.FechaInicio.ToString("dd/MM") → @a.FechaFin.ToString("dd/MM") (@dias d.)</span>
+                        </div>
+                        <div class="d-flex" style="gap:6px;margin-left:auto">
+                            <MudButton Size="Size.Small" Color="Color.Success" Variant="Variant.Filled"
+                                       OnClick="@(() => CambiarEstadoAsync(a, "APROBADA"))">
+                                Aprobar
+                            </MudButton>
+                            <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined"
+                                       OnClick="@(() => CambiarEstadoAsync(a, "RECHAZADA"))">
+                                Rechazar
+                            </MudButton>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+@* ── Tabla completa con filtro ── *@
+<div class="d-flex align-center mb-3" style="gap:1rem">
+    <MudText Typo="Typo.subtitle2">Todas las ausencias</MudText>
+    <MudSelect T="string" Value="_filtroEstado" ValueChanged="OnFiltroCambiadoAsync"
+               Label="Filtrar por estado" Clearable="true" Style="max-width:200px">
+        <MudSelectItem Value="@("PENDIENTE")">Pendiente</MudSelectItem>
+        <MudSelectItem Value="@("APROBADA")">Aprobada</MudSelectItem>
+        <MudSelectItem Value="@("RECHAZADA")">Rechazada</MudSelectItem>
+    </MudSelect>
+</div>
 
 @if (_errorCarga is not null)
 {
@@ -42,34 +152,43 @@
 }
 else if (_ausencias.Count == 0)
 {
-    <MudText>No hay ausencias registradas.</MudText>
+    <MudText Style="color:var(--mud-palette-text-secondary)">No hay ausencias con ese filtro.</MudText>
 }
 else
 {
-    <MudTable Items="_ausencias" Hover="true" Dense="true" Striped="true">
+    <MudTable Items="_ausencias" Hover="true" Dense="true">
         <HeaderContent>
             <MudTh>Empleado</MudTh>
             <MudTh>Tipo</MudTh>
             <MudTh>Inicio</MudTh>
             <MudTh>Fin</MudTh>
+            <MudTh>Días</MudTh>
             <MudTh>Motivo</MudTh>
             <MudTh>Estado</MudTh>
-            <MudTh>Accion</MudTh>
+            <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
+            @{
+                var duracion = (int)(context.FechaFin.Date - context.FechaInicio.Date).TotalDays + 1;
+            }
             <MudTd DataLabel="Empleado">@context.Empleado</MudTd>
             <MudTd DataLabel="Tipo">@context.Tipo</MudTd>
             <MudTd DataLabel="Inicio">@context.FechaInicio.ToString("dd/MM/yyyy")</MudTd>
             <MudTd DataLabel="Fin">@context.FechaFin.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="Días">@duracion</MudTd>
             <MudTd DataLabel="Motivo">@(context.Motivo ?? "-")</MudTd>
             <MudTd DataLabel="Estado">
                 <MudChip T="string" Size="Size.Small" Color="@ColorEstado(context.Estado)">@context.Estado</MudChip>
             </MudTd>
-            <MudTd DataLabel="Accion">
+            <MudTd>
                 @if (context.Estado == "PENDIENTE")
                 {
-                    <MudButton Size="Size.Small" Color="Color.Success" OnClick="@(() => CambiarEstadoAsync(context, "APROBADA"))">Aprobar</MudButton>
-                    <MudButton Size="Size.Small" Color="Color.Error" OnClick="@(() => CambiarEstadoAsync(context, "RECHAZADA"))">Rechazar</MudButton>
+                    <div class="d-flex" style="gap:4px">
+                        <MudButton Size="Size.Small" Color="Color.Success"
+                                   OnClick="@(() => CambiarEstadoAsync(context, "APROBADA"))">Aprobar</MudButton>
+                        <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text"
+                                   OnClick="@(() => CambiarEstadoAsync(context, "RECHAZADA"))">Rechazar</MudButton>
+                    </div>
                 }
             </MudTd>
         </RowTemplate>
@@ -78,15 +197,25 @@ else
 
 @code {
     private List<AusenciaItem> _ausencias = new();
+    private List<AusenciaItem> _todasAprobadas = new();
     private bool _cargando = true;
     private string? _errorCarga;
     private string? _filtroEstado;
+    private DateTime _hoy = DateTime.Today;
+
+    private static string Initials(string nombre)
+    {
+        var partes = nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return partes.Length >= 2
+            ? $"{partes[0][0]}{partes[1][0]}".ToUpper()
+            : nombre.Length >= 2 ? nombre[..2].ToUpper() : nombre.ToUpper();
+    }
 
     private Color ColorEstado(string estado) => estado switch
     {
-        "APROBADA" => Color.Success,
+        "APROBADA"  => Color.Success,
         "RECHAZADA" => Color.Error,
-        _ => Color.Default
+        _           => Color.Default
     };
 
     protected override async Task OnInitializedAsync() => await CargarAsync();
@@ -102,16 +231,14 @@ else
         try
         {
             var ruta = "api/rrhh/ausencias" + (_filtroEstado is not null ? $"?estado={_filtroEstado}" : "");
-            _ausencias = await ApiClient.GetAsync<List<AusenciaItem>>(ruta) ?? new();
+            var t1 = ApiClient.GetAsync<List<AusenciaItem>>(ruta);
+            var t2 = ApiClient.GetAsync<List<AusenciaItem>>("api/rrhh/ausencias?estado=APROBADA");
+            await Task.WhenAll(t1, t2);
+            _ausencias       = await t1 ?? new();
+            _todasAprobadas  = await t2 ?? new();
         }
-        catch (Exception ex)
-        {
-            _errorCarga = ex.Message;
-        }
-        finally
-        {
-            _cargando = false;
-        }
+        catch (Exception ex) { _errorCarga = ex.Message; }
+        finally { _cargando = false; }
     }
 
     private async Task CambiarEstadoAsync(AusenciaItem ausencia, string nuevoEstado)
@@ -119,13 +246,11 @@ else
         try
         {
             await ApiClient.PutAsync<ActualizarEstadoAusenciaRequest, object?>(
-                $"api/rrhh/ausencias/{ausencia.AusenciaID}/estado", new ActualizarEstadoAusenciaRequest(nuevoEstado));
+                $"api/rrhh/ausencias/{ausencia.AusenciaID}/estado",
+                new ActualizarEstadoAusenciaRequest(nuevoEstado));
             Snackbar.Add($"Ausencia {(nuevoEstado == "APROBADA" ? "aprobada" : "rechazada")}.", Severity.Success);
             await CargarAsync();
         }
-        catch (HttpRequestException ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
     }
 }

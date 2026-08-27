@@ -66,7 +66,7 @@ BEGIN
         (rd.CantidadRequerida * @FactorEscala) * (1 + rd.PorcentajeMermaEstandar / 100.0) AS CantidadNecesaria
     INTO #Requerido
     FROM Produccion.RecetaBOM_Detalle rd
-    JOIN Catalogo.Articulos a ON a.ArticuloID = rd.InsumoID
+    JOIN Catalogo.Tarjetas a ON a.ArticuloID = rd.InsumoID
     WHERE rd.RecetaID = @RecetaID;
 
     -- Disponible en la bodega de origen de materia prima
@@ -358,7 +358,7 @@ BEGIN
     DECLARE @CostoMateriales DECIMAL(18,4);
     SELECT @CostoMateriales = SUM(CantidadReal * ISNULL(k.CostoUnitario, a.CostoPromedio))
     FROM Produccion.OrdenesProduccionConsumo c
-    JOIN Catalogo.Articulos a ON a.ArticuloID = c.ArticuloID
+    JOIN Catalogo.Tarjetas a ON a.ArticuloID = c.ArticuloID
     OUTER APPLY (
         SELECT TOP 1 CostoUnitario FROM Kardex.KardexMovimientos
         WHERE OrdenProduccionID = @OrdenProduccionID AND ArticuloID = c.ArticuloID
@@ -405,7 +405,7 @@ BEGIN
          CONCAT('Ingreso de producto terminado OP #', @OrdenProduccionID), @UsuarioID);
 
     -- Actualizar costo promedio ponderado global del articulo terminado
-    UPDATE Catalogo.Articulos SET CostoPromedio = @CostoUnitarioReal WHERE ArticuloID = @ProductoTerminadoID;
+    UPDATE Catalogo.Tarjetas SET CostoPromedio = @CostoUnitarioReal WHERE ArticuloID = @ProductoTerminadoID;
 
     UPDATE Produccion.OrdenesProduccion
     SET EstadoOPID = (SELECT EstadoOPID FROM Produccion.EstadosOP WHERE Nombre = 'Finalizada'),
@@ -694,7 +694,7 @@ BEGIN
 
     -- Costo promedio ponderado ANTES de sumar la nueva entrada
     DECLARE @StockPrevio DECIMAL(18,4) = Catalogo.fn_StockTotalArticulo(@ArticuloID);
-    DECLARE @CostoPromedioPrevio DECIMAL(18,4) = (SELECT CostoPromedio FROM Catalogo.Articulos WHERE ArticuloID = @ArticuloID);
+    DECLARE @CostoPromedioPrevio DECIMAL(18,4) = (SELECT CostoPromedio FROM Catalogo.Tarjetas WHERE ArticuloID = @ArticuloID);
     DECLARE @NuevoCostoPromedio DECIMAL(18,4) =
         CASE WHEN (@StockPrevio + @CantidadRecibida) = 0 THEN @CostoUnitario
              ELSE ((@StockPrevio * @CostoPromedioPrevio) + (@CantidadRecibida * @CostoUnitario)) / (@StockPrevio + @CantidadRecibida)
@@ -720,7 +720,7 @@ BEGIN
         (@ArticuloID, @BodegaDestinoID, @LoteID, @TipoEntradaCompra, @OrdenCompraID, @CentroCostoID, @CantidadRecibida, @CostoUnitario, @NuevoSaldo, @NuevoCostoPromedio,
          CONCAT('Recepcion de compra OC #', @OrdenCompraID), @UsuarioID);
 
-    UPDATE Catalogo.Articulos SET CostoPromedio = @NuevoCostoPromedio WHERE ArticuloID = @ArticuloID;
+    UPDATE Catalogo.Tarjetas SET CostoPromedio = @NuevoCostoPromedio WHERE ArticuloID = @ArticuloID;
 
     -- Actualiza estado de la OC si ya se recibio todo
     IF NOT EXISTS (

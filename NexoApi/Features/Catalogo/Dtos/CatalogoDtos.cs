@@ -76,6 +76,8 @@ public record ActualizarArticuloRequest(
     short? Iva2 = null, string? IvaDescripcion2 = null
 );
 
+public record StockPorCC(int CentroCostoID, string NombreCC, decimal Stock);
+
 public record ArticuloItem(
     int ArticuloID, string Referencia, string Nombre, string? Descripcion, string TipoArticulo,
     decimal CostoPromedio, decimal StockMinimo, decimal PuntoReorden, bool Estado, decimal Existencias,
@@ -90,9 +92,34 @@ public record ArticuloItem(
     string? PresentacionCodigo, string? PresentacionNombre,
     decimal? Peso,
     string? IvaSiNo, short? IvaValor, string? IvaDescripcion,
-    short? Iva2, string? IvaDescripcion2
+    short? Iva2, string? IvaDescripcion2,
+    List<StockPorCC>? StockPorCentros = null
 )
 {
+    // Constructor secundario para Dapper: las 36 columnas SQL sin StockPorCentros
+    public ArticuloItem(
+        int ArticuloID, string Referencia, string Nombre, string? Descripcion,
+        string TipoArticulo, decimal CostoPromedio, decimal StockMinimo, decimal PuntoReorden,
+        bool Estado, decimal Existencias, int? DiasVidaUtil, decimal? Fracciones,
+        bool TieneImagen, string? Fracciona, decimal? PrecioVentaUnidad,
+        decimal? Costo,
+        decimal? PPublico, decimal? PBodega, decimal? PCredito,
+        decimal? UPublico, decimal? UBodega, decimal? UCredito,
+        string? MarcaCodigo, string? MarcaNombre,
+        string? GrupoMenorCodigo, string? GrupoMenorNombre,
+        string? GrupoMayorCodigo, string? GrupoMayorNombre,
+        string? PresentacionCodigo, string? PresentacionNombre,
+        decimal? Peso,
+        string? IvaSiNo, short? IvaValor, string? IvaDescripcion,
+        short? Iva2, string? IvaDescripcion2)
+        : this(ArticuloID, Referencia, Nombre, Descripcion, TipoArticulo, CostoPromedio,
+               StockMinimo, PuntoReorden, Estado, Existencias, DiasVidaUtil, Fracciones,
+               TieneImagen, Fracciona, PrecioVentaUnidad, Costo,
+               PPublico, PBodega, PCredito, UPublico, UBodega, UCredito,
+               MarcaCodigo, MarcaNombre, GrupoMenorCodigo, GrupoMenorNombre,
+               GrupoMayorCodigo, GrupoMayorNombre, PresentacionCodigo, PresentacionNombre,
+               Peso, IvaSiNo, IvaValor, IvaDescripcion, Iva2, IvaDescripcion2, null) { }
+
     // Helpers para uso en dialogs de despacho/factura
     public bool EsFraccionado => Fracciones is > 0;
     public bool SoloEnPaquete => EsFraccionado && Fracciona == "NO";

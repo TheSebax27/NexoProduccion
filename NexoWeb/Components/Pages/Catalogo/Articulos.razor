@@ -35,6 +35,15 @@
                   AdornmentIcon="@Icons.Material.Filled.Search" Immediate="false"
                   DebounceInterval="400" Variant="Variant.Outlined"
                   Style="flex:2; min-width:220px;" />
+    <MudSelect T="int?" Value="_filtroCentroCostoId" ValueChanged="OnFiltroCCCambiadoAsync"
+               Label="Centro de costo" Clearable="true" Variant="Variant.Outlined"
+               Style="flex:1; min-width:200px;"
+               AdornmentIcon="@Icons.Material.Filled.Store">
+        @foreach (var cc in _centrosCosto)
+        {
+            <MudSelectItem T="int?" Value="@((int?)cc.CentroCostoID)">@cc.Nombre</MudSelectItem>
+        }
+    </MudSelect>
     <MudSelect T="int?" Value="_filtroTipoId" ValueChanged="OnFiltroTipoCambiadoAsync"
                Label="Tipo de artículo" Clearable="true" Variant="Variant.Outlined"
                Style="flex:1; min-width:180px;">
@@ -185,6 +194,7 @@ else
                     <th>Presentación</th>
                     <th class="art-table__num">Costo prom.</th>
                     <th class="art-table__num">P. Público</th>
+                    <th class="art-table__num">@(_filtroCentroCostoId.HasValue ? "Stock CC" : "Stock total")</th>
                     <th class="art-table__num">Stock mín.</th>
                     <th>Estado</th>
                     <th></th>
@@ -242,6 +252,23 @@ else
                             @(a.PPublico is > 0 ? a.PPublico!.Value.ToString("C0") : "—")
                         </td>
                         <td class="art-table__num">
+                            @if (a.StockPorCentros?.Count > 1)
+                            {
+                                <div class="art-stock-cc">
+                                    @foreach (var s in a.StockPorCentros)
+                                    {
+                                        <span class="art-stock-cc__chip" title="@s.NombreCC">
+                                            @s.NombreCC.Split(' ')[0]: <strong>@s.Stock.ToString("N0")</strong>
+                                        </span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                @(a.Existencias > 0 ? a.Existencias.ToString("N0") : "—")
+                            }
+                        </td>
+                        <td class="art-table__num">
                             @(a.StockMinimo > 0 ? a.StockMinimo.ToString("N2") : "—")
                         </td>
                         <td>
@@ -278,7 +305,9 @@ else
 @code {
     private List<ArticuloItem>     _articulos    = new();
     private List<TipoArticuloItem> _tiposArticulo = new();
+    private List<CentroCostoItem>  _centrosCosto  = new();
     private int?    _filtroTipoId;
+    private int?    _filtroCentroCostoId;
     private bool?   _filtroEstado = true; // default: solo activos
     private bool    _cargando  = true;
     private string? _errorCarga;
@@ -314,7 +343,10 @@ else
     {
         try
         {
-            _tiposArticulo = await ApiClient.GetAsync<List<TipoArticuloItem>>("api/catalogo/articulos/tipos") ?? new();
+            var tiposTask = ApiClient.GetAsync<List<TipoArticuloItem>>("api/catalogo/articulos/tipos");
+            var ccTask    = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true");
+            _tiposArticulo = await tiposTask ?? new();
+            _centrosCosto  = (await ccTask ?? new()).Where(cc => cc.TieneVisions).ToList();
             await CargarAsync();
         }
         catch (Exception ex)
@@ -331,9 +363,10 @@ else
         try
         {
             var q = new List<string>();
-            if (_filtroTipoId.HasValue) q.Add($"tipoArticuloId={_filtroTipoId}");
+            if (_filtroTipoId.HasValue)        q.Add($"tipoArticuloId={_filtroTipoId}");
             if (!string.IsNullOrWhiteSpace(_filtroTexto)) q.Add($"texto={Uri.EscapeDataString(_filtroTexto)}");
-            if (_filtroEstado.HasValue) q.Add($"estado={_filtroEstado.Value}");
+            if (_filtroEstado.HasValue)        q.Add($"estado={_filtroEstado.Value}");
+            if (_filtroCentroCostoId.HasValue) q.Add($"centroCostoId={_filtroCentroCostoId.Value}");
             q.Add($"pagina={_pagina}");
             q.Add($"tamano={_tamano}");
 
@@ -352,8 +385,9 @@ else
         }
     }
 
-    private async Task OnFiltroTipoCambiadoAsync(int? v)  { _filtroTipoId = v; _pagina = 1; await CargarAsync(); }
-    private async Task OnFiltroTextoCambiadoAsync(string? v) { _filtroTexto = v; _pagina = 1; await CargarAsync(); }
+    private async Task OnFiltroTipoCambiadoAsync(int? v)   { _filtroTipoId = v; _pagina = 1; await CargarAsync(); }
+    private async Task OnFiltroTextoCambiadoAsync(string? v) { _filtroTexto  = v; _pagina = 1; await CargarAsync(); }
+    private async Task OnFiltroCCCambiadoAsync(int? v)     { _filtroCentroCostoId = v; _pagina = 1; await CargarAsync(); }
     private async Task ToggleInactivosAsync()
     {
         _filtroEstado = _filtroEstado == false ? true : false;
@@ -365,9 +399,10 @@ else
 
     private async Task LimpiarFiltrosAsync()
     {
-        _filtroTexto  = null;
-        _filtroTipoId = null;
-        _filtroEstado = null;
+        _filtroTexto         = null;
+        _filtroTipoId        = null;
+        _filtroEstado        = null;
+        _filtroCentroCostoId = null;
         await CargarAsync();
     }
 }

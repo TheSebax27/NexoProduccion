@@ -50,6 +50,14 @@
               "format": "int32",
               "default": 100
             }
+          },
+          {
+            "name": "centroCostoId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
           }
         ],
         "responses": {
@@ -204,6 +212,69 @@
             "in": "query",
             "schema": {
               "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ArticuloItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ArticuloItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ArticuloItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/catalogo/articulos/buscar": {
+      "get": {
+        "tags": [
+          "Articulos"
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "soloTerminados",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "max",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30
             }
           }
         ],
@@ -4719,6 +4790,109 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/TopArticuloItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/margen-articulos": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "parameters": [
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "top",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MargenArticuloItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MargenArticuloItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MargenArticuloItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/alertas-stock": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlertaStockItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlertaStockItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlertaStockItem"
                   }
                 }
               }
@@ -13026,6 +13200,11 @@
           "prefijosDocumentoVenta": {
             "type": "string",
             "nullable": true
+          },
+          "fechaInicioSyncVentas": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -13332,6 +13511,63 @@
             "nullable": true
           },
           "responsableID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoCliente": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoPersona": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoIdentificacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "departamento": {
+            "type": "string",
+            "nullable": true
+          },
+          "ciudad": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoMuni": {
+            "type": "string",
+            "nullable": true
+          },
+          "digitoVerificacion": {
             "type": "integer",
             "format": "int32",
             "nullable": true
@@ -13924,6 +14160,44 @@
         },
         "additionalProperties": false
       },
+      "AlertaStockItem": {
+        "type": "object",
+        "properties": {
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "articulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "centroCosto": {
+            "type": "string",
+            "nullable": true
+          },
+          "bodega": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidadActual": {
+            "type": "number",
+            "format": "double"
+          },
+          "stockMinimo": {
+            "type": "number",
+            "format": "double"
+          },
+          "deficit": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "AnularDespachoRequest": {
         "type": "object",
         "properties": {
@@ -14090,6 +14364,13 @@
           },
           "ivaDescripcion2": {
             "type": "string",
+            "nullable": true
+          },
+          "stockPorCentros": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockPorCC"
+            },
             "nullable": true
           },
           "esFraccionado": {
@@ -14771,6 +15052,9 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "estado": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -14900,6 +15184,11 @@
           "prefijosDocumentoVenta": {
             "type": "string",
             "nullable": true
+          },
+          "fechaInicioSyncVentas": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -14922,6 +15211,11 @@
           "intervalMinutes": {
             "type": "integer",
             "format": "int32"
+          },
+          "fechaInicioSyncVentas": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -16121,6 +16415,63 @@
             "nullable": true
           },
           "responsableID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoCliente": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoPersona": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoIdentificacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "departamento": {
+            "type": "string",
+            "nullable": true
+          },
+          "ciudad": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoMuni": {
+            "type": "string",
+            "nullable": true
+          },
+          "digitoVerificacion": {
             "type": "integer",
             "format": "int32",
             "nullable": true
@@ -17737,6 +18088,10 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "tipoProductoCodigo": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -18549,6 +18904,63 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoCliente": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoPersona": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoIdentificacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "primerApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "segundoApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "departamento": {
+            "type": "string",
+            "nullable": true
+          },
+          "ciudad": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoMuni": {
+            "type": "string",
+            "nullable": true
+          },
+          "digitoVerificacion": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -18822,6 +19234,44 @@
           "tipo": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MargenArticuloItem": {
+        "type": "object",
+        "properties": {
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidadVendida": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalFacturado": {
+            "type": "number",
+            "format": "double"
+          },
+          "costoEstimado": {
+            "type": "number",
+            "format": "double"
+          },
+          "margenBruto": {
+            "type": "number",
+            "format": "double"
+          },
+          "porcentajeMargen": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -19519,6 +19969,14 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "articulosMapeadosCompletos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "articulosMapeadosSinDatos": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -19696,6 +20154,9 @@
           "codigoPais": {
             "type": "string",
             "nullable": true
+          },
+          "estado": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -20027,6 +20488,127 @@
           },
           "nroDoc": {
             "type": "string",
+            "nullable": true
+          },
+          "clienteTipoPersona": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientePrimerNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "clienteSegundoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientePrimerApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "clienteSegundoApellido": {
+            "type": "string",
+            "nullable": true
+          },
+          "clienteEmpresa": {
+            "type": "string",
+            "nullable": true
+          },
+          "clienteTelefono": {
+            "type": "string",
+            "nullable": true
+          },
+          "clienteDireccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "clienteCiudad": {
+            "type": "string",
+            "nullable": true
+          },
+          "clienteDepartamento": {
+            "type": "string",
+            "nullable": true
+          },
+          "clienteCodigoMuni": {
+            "type": "string",
+            "nullable": true
+          },
+          "clienteCodigoDept": {
+            "type": "string",
+            "nullable": true
+          },
+          "marcaCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "ivaValor": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "ivaDescripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "ivaSiNo": {
+            "type": "string",
+            "nullable": true
+          },
+          "iva2": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "ivaDescripcion2": {
+            "type": "string",
+            "nullable": true
+          },
+          "grupoMenorCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "presentacionCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoProductoCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "pBodega": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pCredito": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uPublico": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uBodega": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uCredito": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "existenciasActuales": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "existenciasMinimas": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           }
         },
@@ -20533,6 +21115,24 @@
         },
         "additionalProperties": false
       },
+      "StockPorCC": {
+        "type": "object",
+        "properties": {
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nombreCC": {
+            "type": "string",
+            "nullable": true
+          },
+          "stock": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "SubirDocumentoEmpleadoRequest": {
         "type": "object",
         "properties": {
@@ -20715,6 +21315,20 @@
             "nullable": true
           },
           "uCredito": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "tipoProductoCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "existenciasActuales": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "existenciasMinimas": {
             "type": "number",
             "format": "double",
             "nullable": true

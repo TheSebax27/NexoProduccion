@@ -125,6 +125,35 @@ Sc("start", NombreServicio);
 Thread.Sleep(4000);
 Verde("[OK]");
 
+// ── 5.5. Insertar parametro NEXO en Visions PARAMETROS si no existe ──────────
+Paso("Configurando parametro NEXO en Visions...  ");
+try
+{
+    var connVisions = ExtraerConnectionStringVisions(appsettingsJson);
+    if (connVisions is not null)
+    {
+        var sqlArgs = ConstruirArgsSqlcmd(connVisions);
+        if (sqlArgs is not null)
+        {
+            const string sql =
+                "IF NOT EXISTS (SELECT 1 FROM PARAMETROS WHERE PARAMETRO = 'NEXO') " +
+                "INSERT INTO PARAMETROS (CONSECUTIVO, PARAMETRO, VALOR, DESCRIPCION, TIPOGRUPO) " +
+                "VALUES (1905, 'NEXO', 1, 'MANEJAN NEXO', 'HABILITAR')";
+            EjecutarSqlcmd(sqlArgs, sql);
+            Verde("[OK]");
+        }
+        else
+            Console.WriteLine("[OMITIDO] No se pudo parsear la conexion de Visions");
+
+    }
+    else
+        Console.WriteLine("[OMITIDO] No hay cadena VisionsDb en el appsettings.");
+}
+catch (Exception exSql)
+{
+    Console.WriteLine($"[ADVERTENCIA] No se inserto el parametro NEXO: {exSql.Message}");
+}
+
 // ── 6. Verificar resultado ───────────────────────────────────────────────────
 var estadoFinal = ObtenerEstadoServicio(NombreServicio);
 Console.WriteLine();
@@ -197,3 +226,77 @@ static void Verde(string msg) { Console.ForegroundColor = ConsoleColor.Green;  C
 static void Cian(string msg)  { Console.ForegroundColor = ConsoleColor.Cyan;   Console.WriteLine(msg); Console.ResetColor(); }
 static void Rojo(string msg)  { Console.ForegroundColor = ConsoleColor.Red;    Console.WriteLine(msg); Console.ResetColor(); }
 static void Fallo(string msg) { Rojo($"\n[ERROR] {msg}\n"); Console.ReadKey(); }
+
+// Extrae la connection string "VisionsDb" del JSON en memoria (appsettings).
+static string? ExtraerConnectionStringVisions(string json)
+{
+    try
+    {
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        if (doc.RootElement.TryGetProperty("ConnectionStrings", out var cs) &&
+            cs.TryGetProperty("VisionsDb", out var val))
+            return val.GetString();
+    }
+    catch { }
+    return null;
+}
+
+// Parsea la connection string y devuelve los argumentos para sqlcmd (sin el -Q).
+// Soporta Windows Auth (Trusted_Connection=True) y SQL Auth (User ID + Password).
+static string? ConstruirArgsSqlcmd(string connectionString)
+{
+    try
+    {
+        var partes = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries);
+        var kv = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var p in partes)
+        {
+            var idx = p.IndexOf('=');
+            if (idx < 0) continue;
+            kv[p[..idx].Trim()] = p[(idx + 1)..].Trim();
+        }
+        var server = kv.GetValueOrDefault("Server") ?? kv.GetValueOrDefault("Data Source");
+        var db     = kv.GetValueOrDefault("Database") ?? kv.GetValueOrDefault("Initial Catalog");
+        if (string.IsNullOrWhiteSpace(server) || string.IsNullOrWhiteSpace(db)) return null;
+
+        var trusted = kv.TryGetValue("Trusted_Connection", out var tc) && tc.Equals("True", StringComparison.OrdinalIgnoreCase)
+                   || kv.TryGetValue("Integrated Security", out var is_) && (is_.Equals("True", StringComparison.OrdinalIgnoreCase) || is_.Equals("SSPI", StringComparison.OrdinalIgnoreCase));
+
+        if (trusted)
+            return $"-S \"{server}\" -d \"{db}\" -E";
+
+        var user = kv.GetValueOrDefault("User ID") ?? kv.GetValueOrDefault("UID");
+        var pwd  = kv.GetValueOrDefault("Password") ?? kv.GetValueOrDefault("PWD");
+        if (string.IsNullOrWhiteSpace(user)) return null;
+        return $"-S \"{server}\" -d \"{db}\" -U \"{user}\" -P \"{pwd}\"";
+    }
+    catch { return null; }
+}
+
+// Ejecuta sqlcmd con los args dados y el SQL en un archivo temporal.
+static void EjecutarSqlcmd(string sqlcmdArgs, string sql)
+{
+    var tmp = Path.Combine(Path.GetTempPath(), $"nexo_setup_{Guid.NewGuid():N}.sql");
+    try
+    {
+        File.WriteAllText(tmp, sql, System.Text.Encoding.UTF8);
+        var psi = new ProcessStartInfo("sqlcmd.exe", $"{sqlcmdArgs} -i \"{tmp}\"")
+        {
+            UseShellExecute        = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError  = true,
+            CreateNoWindow         = true
+        };
+        using var p = Process.Start(psi) ?? throw new Exception("sqlcmd no encontrado en el PATH.");
+        p.WaitForExit(15_000);
+        if (p.ExitCode != 0)
+        {
+            var err = p.StandardError.ReadToEnd();
+            if (!string.IsNullOrWhiteSpace(err)) throw new Exception(err.Trim());
+        }
+    }
+    finally
+    {
+        try { File.Delete(tmp); } catch { }
+    }
+}

@@ -20,8 +20,9 @@ public interface ICatalogoService
 
     // Articulos / Tarjetas
     Task<int> CrearArticuloAsync(CrearArticuloRequest request);
-    Task<ArticulosPaginadosResponse> ListarArticulosAsync(int? tipoArticuloId, string? texto, bool? estado = null, int pagina = 1, int tamano = 100);
+    Task<ArticulosPaginadosResponse> ListarArticulosAsync(int? tipoArticuloId, string? texto, bool? estado = null, int pagina = 1, int tamano = 100, int? centroCostoId = null);
     Task<IEnumerable<ArticuloItem>> ListarTodosArticulosAsync(int? tipoArticuloId = null, bool? estado = null);
+    Task<IEnumerable<ArticuloItem>> BuscarArticulosAsync(string? q, bool? soloTerminados = null, int max = 30);
     Task<ArticuloItem?> ObtenerArticuloAsync(int articuloId);
     Task ActualizarArticuloAsync(int articuloId, ActualizarArticuloRequest request);
     Task<(byte[] Datos, string ContentType)?> ObtenerImagenArticuloAsync(int articuloId);
@@ -245,30 +246,45 @@ public class CatalogoService : ICatalogoService
         return articuloId;
     }
 
-    public async Task<ArticulosPaginadosResponse> ListarArticulosAsync(int? tipoArticuloId, string? texto, bool? estado = null, int pagina = 1, int tamano = 100)
+    public async Task<ArticulosPaginadosResponse> ListarArticulosAsync(int? tipoArticuloId, string? texto, bool? estado = null, int pagina = 1, int tamano = 100, int? centroCostoId = null)
     {
         using var connection = _db.CreateConnection();
         var offset = (pagina - 1) * tamano;
 
-        const string sqlBase = @"
+        // Cuando se filtra por CC: solo artículos mapeados a ese CC, stock de la bodega de ese CC.
+        // Cuando no: todos los artículos, stock total sumado de todas las bodegas.
+        var stkJoin = centroCostoId.HasValue
+            ? @"LEFT JOIN (
+                SELECT ist.ArticuloID, SUM(ist.CantidadActual) AS Existencias
+                FROM Inventario.InventarioStock ist
+                JOIN Inventario.Bodegas b ON b.BodegaID = ist.BodegaID
+                WHERE b.CentroCostoID = @CentroCostoId
+                GROUP BY ist.ArticuloID
+            ) stk ON stk.ArticuloID = a.ArticuloID"
+            : @"LEFT JOIN (
+                SELECT ArticuloID, SUM(CantidadActual) AS Existencias
+                FROM Inventario.InventarioStock
+                GROUP BY ArticuloID
+            ) stk ON stk.ArticuloID = a.ArticuloID";
+
+        var sqlBase = @"
             FROM Catalogo.Tarjetas a
             JOIN Catalogo.TiposArticulo ta ON ta.TipoArticuloID = a.TipoArticuloID
             LEFT JOIN Catalogo.Marca m ON m.Codigo = a.MarcaCodigo
             LEFT JOIN Catalogo.GrupoMenor gm ON gm.Codigo = a.GrupoMenorCodigo
             LEFT JOIN Catalogo.GrupoMayor gmay ON gmay.Codigo = gm.GrupoMayor
             LEFT JOIN Catalogo.Presentacion p ON p.Codigo = a.PresentacionCodigo
-            LEFT JOIN (
-                SELECT ArticuloID, SUM(CantidadActual) AS Existencias
-                FROM Inventario.InventarioStock
-                GROUP BY ArticuloID
-            ) stk ON stk.ArticuloID = a.ArticuloID
+            " + stkJoin + @"
             WHERE (@TipoArticuloId IS NULL OR a.TipoArticuloID = @TipoArticuloId)
               AND (@Texto IS NULL OR a.Nombre LIKE '%' + @Texto + '%' OR a.Referencia LIKE '%' + @Texto + '%')
-              AND (@Estado IS NULL OR a.Estado = @Estado)";
+              AND (@Estado IS NULL OR a.Estado = @Estado)
+              AND (@CentroCostoId IS NULL OR EXISTS (
+                  SELECT 1 FROM Integracion.MapeoArticulos ma
+                  WHERE ma.ArticuloID = a.ArticuloID AND ma.CentroCostoID = @CentroCostoId AND ma.Estado = 1))";
 
-        var total = await connection.ExecuteScalarAsync<int>(
-            "SELECT COUNT(*) " + sqlBase,
-            new { TipoArticuloId = tipoArticuloId, Texto = texto, Estado = estado });
+        var p = new { TipoArticuloId = tipoArticuloId, Texto = texto, Estado = estado, CentroCostoId = centroCostoId };
+
+        var total = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) " + sqlBase, p);
 
         var items = (await connection.QueryAsync<ArticuloItem>(@"
             SELECT a.ArticuloID, a.Referencia, a.Nombre, a.Descripcion, ta.Nombre AS TipoArticulo,
@@ -287,8 +303,30 @@ public class CatalogoService : ICatalogoService
                    a.Iva2, a.IvaDescripcion2 " + sqlBase + @"
             ORDER BY a.Nombre
             OFFSET @Offset ROWS FETCH NEXT @Tamano ROWS ONLY",
-            new { TipoArticuloId = tipoArticuloId, Texto = texto, Estado = estado, Offset = offset, Tamano = tamano },
+            new { TipoArticuloId = tipoArticuloId, Texto = texto, Estado = estado, CentroCostoId = centroCostoId, Offset = offset, Tamano = tamano },
             commandTimeout: 60)).ToList();
+
+        // Vista general (sin filtro CC): enriquecer con stock desglosado por CC.
+        // Solo cuando hay más de un CC con Visions activo para que los chips tengan sentido.
+        if (!centroCostoId.HasValue && items.Count > 0)
+        {
+            var ids = items.Select(i => i.ArticuloID).ToList();
+            var stockPorCC = (await connection.QueryAsync<(int ArticuloID, int CentroCostoID, string NombreCC, decimal Stock)>(@"
+                SELECT ist.ArticuloID, cc.CentroCostoID, cc.Nombre AS NombreCC,
+                       SUM(ist.CantidadActual) AS Stock
+                FROM Inventario.InventarioStock ist
+                JOIN Inventario.Bodegas b        ON b.BodegaID    = ist.BodegaID
+                JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = b.CentroCostoID
+                WHERE ist.ArticuloID IN @Ids AND cc.TieneVisions = 1
+                GROUP BY ist.ArticuloID, cc.CentroCostoID, cc.Nombre",
+                new { Ids = ids }))
+                .GroupBy(r => r.ArticuloID)
+                .ToDictionary(g => g.Key, g => g.Select(r => new StockPorCC(r.CentroCostoID, r.NombreCC, r.Stock)).ToList());
+
+            items = items.Select(a => stockPorCC.TryGetValue(a.ArticuloID, out var lista) && lista.Count > 1
+                ? a with { StockPorCentros = lista }
+                : a).ToList();
+        }
 
         return new ArticulosPaginadosResponse(items, total, pagina, tamano);
     }
@@ -330,6 +368,35 @@ public class CatalogoService : ICatalogoService
             ORDER BY a.Nombre",
             new { TipoArticuloId = tipoArticuloId, Estado = estado },
             commandTimeout: 60);
+    }
+
+    public async Task<IEnumerable<ArticuloItem>> BuscarArticulosAsync(string? q, bool? soloTerminados = null, int max = 30)
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<ArticuloItem>(@"
+            SELECT TOP (@Max)
+                   a.ArticuloID, a.Referencia, a.Nombre, NULL AS Descripcion, ta.Nombre AS TipoArticulo,
+                   0 AS CostoPromedio, a.StockMinimo, 0 AS PuntoReorden, a.Estado,
+                   0 AS Existencias, NULL AS DiasVidaUtil, p.Fracciones,
+                   CAST(0 AS BIT) AS TieneImagen, NULL AS Fracciona, NULL AS PrecioVentaUnidad,
+                   NULL AS Costo, a.PPublico, NULL AS PBodega, NULL AS PCredito,
+                   NULL AS UPublico, NULL AS UBodega, NULL AS UCredito,
+                   a.MarcaCodigo, NULL AS MarcaNombre,
+                   a.GrupoMenorCodigo, NULL AS GrupoMenorNombre,
+                   NULL AS GrupoMayorCodigo, NULL AS GrupoMayorNombre,
+                   a.PresentacionCodigo, p.Presentacion AS PresentacionNombre,
+                   NULL AS Peso, a.IvaSiNo, a.IvaValor, a.IvaDescripcion,
+                   a.Iva2, a.IvaDescripcion2
+            FROM Catalogo.Tarjetas a
+            JOIN Catalogo.TiposArticulo ta ON ta.TipoArticuloID = a.TipoArticuloID
+            LEFT JOIN Catalogo.Presentacion p ON p.Codigo = a.PresentacionCodigo
+            WHERE a.Estado = 1
+              AND (@Q IS NULL OR a.Nombre LIKE '%' + @Q + '%' OR a.Referencia LIKE '%' + @Q + '%')
+              AND (@SoloTerminados IS NULL
+                   OR (@SoloTerminados = 1 AND ta.Codigo = 'PT')
+                   OR (@SoloTerminados = 0 AND ta.Codigo <> 'PT'))
+            ORDER BY a.Nombre",
+            new { Max = max, Q = string.IsNullOrWhiteSpace(q) ? (string?)null : q, SoloTerminados = soloTerminados });
     }
 
     public async Task<ArticuloItem?> ObtenerArticuloAsync(int articuloId)
@@ -686,13 +753,13 @@ public class CatalogoService : ICatalogoService
                 (RazonSocial, NIT, Contacto, Telefono, Email, Direccion,
                  TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
                  TipoIdentificacion, DigitoVerificacion, Departamento, Ciudad,
-                 CodigoDept, CodigoMuni, Pais, CodigoPais)
+                 CodigoDept, CodigoMuni, Pais, CodigoPais, FechaModificacion)
             OUTPUT INSERTED.ProveedorID
             VALUES
                 (@RazonSocial, @NIT, @Contacto, @Telefono, @Email, @Direccion,
                  @TipoPersona, @PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido,
                  @TipoIdentificacion, @DigitoVerificacion, @Departamento, @Ciudad,
-                 @CodigoDept, @CodigoMuni, ISNULL(@Pais,'COLOMBIA'), ISNULL(@CodigoPais,'CO'))";
+                 @CodigoDept, @CodigoMuni, ISNULL(@Pais,'COLOMBIA'), ISNULL(@CodigoPais,'CO'), GETDATE())";
         return await connection.ExecuteScalarAsync<int>(sql, r);
     }
 
@@ -708,7 +775,8 @@ public class CatalogoService : ICatalogoService
                 TipoIdentificacion = @TipoIdentificacion, DigitoVerificacion = @DigitoVerificacion,
                 Departamento = @Departamento, Ciudad = @Ciudad,
                 CodigoDept = @CodigoDept, CodigoMuni = @CodigoMuni,
-                Pais = ISNULL(@Pais,'COLOMBIA'), CodigoPais = ISNULL(@CodigoPais,'CO')
+                Pais = ISNULL(@Pais,'COLOMBIA'), CodigoPais = ISNULL(@CodigoPais,'CO'),
+                FechaModificacion = GETDATE()
             WHERE ProveedorID = @ProveedorId";
         var filas = await connection.ExecuteAsync(sql, new
         {
@@ -756,13 +824,13 @@ public class CatalogoService : ICatalogoService
                 (RazonSocial, NIT, Telefono, Email, Direccion,
                  TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
                  TipoIdentificacion, DigitoVerificacion, Departamento, Ciudad,
-                 CodigoDept, CodigoMuni, Pais, CodigoPais, Estado)
+                 CodigoDept, CodigoMuni, Pais, CodigoPais, Estado, FechaModificacion)
             OUTPUT INSERTED.ProveedorID
             VALUES
                 (@Nombre, @NIT, @Telefono, @Email, @Direccion,
                  @TipoPersona, @PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido,
                  @TipoIdentificacion, @DigitoVerificacion, @Departamento, @Ciudad,
-                 @CodigoDept, @CodigoMuni, ISNULL(@Pais,'COLOMBIA'), ISNULL(@CodigoPais,'CO'), 1)",
+                 @CodigoDept, @CodigoMuni, ISNULL(@Pais,'COLOMBIA'), ISNULL(@CodigoPais,'CO'), 1, GETDATE())",
             new
             {
                 Nombre = (string)c.Nombre, NIT = (string)c.NIT,

@@ -53,6 +53,12 @@
             <span>Vista de listados</span>
         </div>
 
+        <div class="nexo-settings-nav-item @(_seccion == "menu" ? "ns-active" : "")"
+             @onclick='() => _seccion = "menu"'>
+            <MudIcon Icon="@Icons.Material.Outlined.ViewSidebar" Size="Size.Small" />
+            <span>Menú lateral</span>
+        </div>
+
         <div class="nexo-settings-nav-item @(_seccion == "ayuda" ? "ns-active" : "")"
              @onclick='() => _seccion = "ayuda"'>
             <MudIcon Icon="@Icons.Material.Outlined.HelpOutline" Size="Size.Small" />
@@ -266,6 +272,55 @@
                             Tarjetas
                         </MudButton>
                     </MudButtonGroup>
+                </div>
+            </MudPaper>
+        }
+
+        @* ── Menú lateral ── *@
+        else if (_seccion == "menu")
+        {
+            <MudPaper Class="pa-0" Style="overflow:hidden">
+                <div class="nexo-chart-header pa-5 pb-4" style="border-bottom:1px solid var(--mud-palette-lines-default)">
+                    <MudIcon Icon="@Icons.Material.Outlined.ViewSidebar" Size="Size.Small" Class="nexo-chart-header__icon" />
+                    <div>
+                        <div class="nexo-chart-header__title">Menú lateral</div>
+                        <div class="nexo-chart-header__sub">Arrastra o usa las flechas para reordenar los grupos de navegación</div>
+                    </div>
+                </div>
+                <div class="pa-5">
+                    @{ var ordenActual = _ordenNavLocal; }
+                    <div style="display:flex; flex-direction:column; gap:8px; max-width:420px">
+                        @for (int i = 0; i < ordenActual.Count; i++)
+                        {
+                            var idx = i;
+                            var key = ordenActual[idx];
+                            <div style="display:flex; align-items:center; gap:10px; background:var(--mud-palette-surface);
+                                        border:1px solid var(--mud-palette-lines-default); border-radius:10px;
+                                        padding:10px 14px">
+                                <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Style="color:var(--mud-palette-text-tertiary); cursor:grab" Size="Size.Small" />
+                                <span style="flex:1; font-size:0.875rem; font-weight:500">@NombreGrupo(key)</span>
+                                <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowUp"
+                                               Size="Size.Small"
+                                               Disabled="@(idx == 0)"
+                                               OnClick="@(() => MoverGrupoArriba(idx))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowDown"
+                                               Size="Size.Small"
+                                               Disabled="@(idx == ordenActual.Count - 1)"
+                                               OnClick="@(() => MoverGrupoAbajo(idx))" />
+                            </div>
+                        }
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:20px">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   OnClick="GuardarOrdenNavAsync"
+                                   Disabled="_guardandoOrdenNav">
+                            @(_guardandoOrdenNav ? "Guardando..." : "Guardar orden")
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                                   OnClick="RestablecerOrdenNavAsync">
+                            Restablecer
+                        </MudButton>
+                    </div>
                 </div>
             </MudPaper>
         }
@@ -518,6 +573,64 @@
 @code {
     private string _seccion = "apariencia";
 
+    // ── Orden del menú lateral ──────────────────────────────────────────
+    private static readonly List<string> _ordenNavDefault = new()
+    {
+        "ventas", "crm", "catalogo", "produccion", "inventario", "planificacion", "rrhh", "admin"
+    };
+    private static readonly Dictionary<string, string> _nombresGrupo = new()
+    {
+        ["ventas"]       = "Ventas",
+        ["crm"]          = "CRM",
+        ["catalogo"]     = "Catálogo",
+        ["produccion"]   = "Producción",
+        ["inventario"]   = "Inventario",
+        ["planificacion"]= "Planificación",
+        ["rrhh"]         = "Recursos Humanos",
+        ["admin"]        = "Administración",
+    };
+
+    private List<string> _ordenNavLocal = new();
+    private bool _guardandoOrdenNav;
+
+    private string NombreGrupo(string key) =>
+        _nombresGrupo.TryGetValue(key, out var n) ? n : key;
+
+    private void CargarOrdenNavLocal()
+    {
+        var guardado = Preferencias.OrdenGruposNav;
+        _ordenNavLocal = guardado.Count > 0
+            ? guardado.Concat(_ordenNavDefault.Except(guardado)).ToList()
+            : new List<string>(_ordenNavDefault);
+    }
+
+    private void MoverGrupoArriba(int idx)
+    {
+        if (idx <= 0) return;
+        (_ordenNavLocal[idx], _ordenNavLocal[idx - 1]) = (_ordenNavLocal[idx - 1], _ordenNavLocal[idx]);
+    }
+
+    private void MoverGrupoAbajo(int idx)
+    {
+        if (idx >= _ordenNavLocal.Count - 1) return;
+        (_ordenNavLocal[idx], _ordenNavLocal[idx + 1]) = (_ordenNavLocal[idx + 1], _ordenNavLocal[idx]);
+    }
+
+    private async Task GuardarOrdenNavAsync()
+    {
+        _guardandoOrdenNav = true;
+        await Preferencias.EstablecerOrdenGruposNavAsync(new List<string>(_ordenNavLocal));
+        _guardandoOrdenNav = false;
+        Snackbar.Add("Orden del menú guardado", Severity.Success);
+    }
+
+    private async Task RestablecerOrdenNavAsync()
+    {
+        _ordenNavLocal = new List<string>(_ordenNavDefault);
+        await Preferencias.EstablecerOrdenGruposNavAsync(new List<string>(_ordenNavDefault));
+        Snackbar.Add("Orden restablecido al predeterminado", Severity.Info);
+    }
+
     private async Task OnTemaOscuroCambiadoAsync(bool nuevoValor)
     {
         await Preferencias.EstablecerTemaOscuroAsync(nuevoValor);
@@ -668,6 +781,7 @@
 
     protected override void OnInitialized()
     {
+        CargarOrdenNavLocal();
         _nombreEmpresa = ConfiguracionEmpresa.NombreEmpresa;
         _nombrePropietario = ConfiguracionEmpresa.NombrePropietario;
         _modoLotes = ConfiguracionEmpresa.ModoLotes;

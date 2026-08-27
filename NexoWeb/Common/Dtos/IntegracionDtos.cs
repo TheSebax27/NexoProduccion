@@ -49,7 +49,8 @@ public record ConfiguracionAgenteCompletaResponse(
     int IntervalMinutes,
     int IntervalSeconds,
     string? AgentePath,
-    string? PrefijosDocumentoVenta
+    string? PrefijosDocumentoVenta,
+    DateTime? FechaInicioSyncVentas = null
 );
 
 public record ActualizarConfiguracionAgenteRequest(
@@ -58,7 +59,8 @@ public record ActualizarConfiguracionAgenteRequest(
     int IntervalMinutes,
     int IntervalSeconds,
     string? AgentePath,
-    string? PrefijosDocumentoVenta
+    string? PrefijosDocumentoVenta,
+    DateTime? FechaInicioSyncVentas = null
 );
 
 public record EventoActividadItem(
@@ -96,7 +98,9 @@ public record ProgresoSyncResponse(
     int TotalPendientesMapeo,
     int TotalEventosProcesados,
     int TotalFacturasVisions,
-    DateTime? UltimoLatido
+    DateTime? UltimoLatido,
+    int ArticulosMapeadosCompletos = 0,
+    int ArticulosMapeadosSinDatos  = 0
 );
 
 public record SaludCatalogoResponse(

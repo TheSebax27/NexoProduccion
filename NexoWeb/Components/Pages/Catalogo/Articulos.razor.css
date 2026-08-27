@@ -218,6 +218,26 @@
     white-space: nowrap;
 }
 
+/* ── Stock desglosado por CC (vista general multi-sucursal) ──────── */
+.art-stock-cc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    justify-content: flex-end;
+}
+
+.art-stock-cc__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    background: color-mix(in srgb, var(--mud-palette-primary) 12%, transparent);
+    color: var(--mud-palette-primary-darken);
+    white-space: nowrap;
+}
+
 .art-table__td-img { width: 48px; }
 
 .art-table__thumb {

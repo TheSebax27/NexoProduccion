@@ -24,6 +24,10 @@ public interface IDashboardService
     Task<IEnumerable<IngresoPorMesPunto>> ObtenerIngresosPorMesAsync(int meses);
     Task<IEnumerable<TopClienteItem>> ObtenerTopClientesAsync(DateTime desde, DateTime hasta, int top = 10);
     Task<IEnumerable<TopArticuloItem>> ObtenerTopArticulosAsync(DateTime desde, DateTime hasta, int top = 10);
+
+    // Tab Financiero BI
+    Task<IEnumerable<MargenArticuloItem>> ObtenerMargenPorArticuloAsync(DateTime desde, DateTime hasta, int top = 20);
+    Task<IEnumerable<AlertaStockItem>> ObtenerAlertasStockAsync();
 }
 
 public class DashboardService : IDashboardService
@@ -256,5 +260,47 @@ public class DashboardService : IDashboardService
             GROUP BY a.ArticuloID, a.Referencia, a.Nombre
             ORDER BY TotalFacturado DESC";
         return await connection.QueryAsync<TopArticuloItem>(sql, new { Top = top, Desde = desde.Date, Hasta = hasta.Date });
+    }
+
+    public async Task<IEnumerable<MargenArticuloItem>> ObtenerMargenPorArticuloAsync(DateTime desde, DateTime hasta, int top = 20)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT TOP (@Top)
+                a.ArticuloID,
+                a.Referencia                                             AS SKU,
+                a.Nombre,
+                ISNULL(SUM(ABS(fl.Cantidad)), 0)                         AS CantidadVendida,
+                ISNULL(SUM(ABS(fl.Cantidad) * fl.PrecioUnitario), 0)     AS TotalFacturado,
+                ISNULL(SUM(ABS(fl.Cantidad) * ISNULL(a.CostoPromedio,0)),0) AS CostoEstimado,
+                ISNULL(SUM(ABS(fl.Cantidad) * fl.PrecioUnitario), 0)
+                  - ISNULL(SUM(ABS(fl.Cantidad) * ISNULL(a.CostoPromedio,0)),0) AS MargenBruto,
+                CASE WHEN ISNULL(SUM(ABS(fl.Cantidad) * fl.PrecioUnitario), 0) > 0
+                     THEN (ISNULL(SUM(ABS(fl.Cantidad) * fl.PrecioUnitario), 0)
+                           - ISNULL(SUM(ABS(fl.Cantidad) * ISNULL(a.CostoPromedio,0)),0))
+                          / SUM(ABS(fl.Cantidad) * fl.PrecioUnitario) * 100
+                     ELSE 0 END AS PorcentajeMargen
+            FROM Facturacion.FacturaLineas fl
+            JOIN Facturacion.Facturas f ON f.FacturaID = fl.FacturaID
+            JOIN Catalogo.Tarjetas a    ON a.ArticuloID = fl.ArticuloID
+            WHERE f.Fecha >= @Desde AND f.Fecha <= @Hasta
+            GROUP BY a.ArticuloID, a.Referencia, a.Nombre
+            ORDER BY MargenBruto DESC";
+        return await connection.QueryAsync<MargenArticuloItem>(sql,
+            new { Top = top, Desde = desde.Date, Hasta = hasta.Date });
+    }
+
+    public async Task<IEnumerable<AlertaStockItem>> ObtenerAlertasStockAsync()
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT s.ArticuloID, s.SKU, s.Articulo, s.CentroCosto, s.Bodega,
+                   s.CantidadActual, ISNULL(a.StockMinimo, 0) AS StockMinimo,
+                   ISNULL(a.StockMinimo, 0) - s.CantidadActual AS Deficit
+            FROM Inventario.vw_StockConsolidado s
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = s.ArticuloID
+            WHERE s.RequierePedido = 1
+            ORDER BY Deficit DESC";
+        return await connection.QueryAsync<AlertaStockItem>(sql);
     }
 }

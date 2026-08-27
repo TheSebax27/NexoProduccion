@@ -145,39 +145,48 @@
                         </div>
                     </div>
 
-                    @{
-                        var hojas  = _modulosUsuario.Where(m => m.Codigo.Contains('.')).ToList();
-                        var grupos = _modulosUsuario.Where(m => !m.Codigo.Contains('.') && hojas.Any(h => h.Codigo.StartsWith(m.Codigo + "."))).OrderBy(m => m.Codigo).ToList();
-                        var raices = _modulosUsuario.Where(m => !m.Codigo.Contains('.') && !grupos.Contains(m)).ToList();
-                    }
-
-                    @* items sin grupo (ej. BI) *@
-                    @foreach (var raiz in raices)
+                    @* BI — único ítem raíz sin sección *@
+                    @{ var bi = _modulosUsuario.FirstOrDefault(m => m.Codigo == "BI"); }
+                    @if (bi is not null)
                     {
-                        <FilaOverride Item="raiz" Pending="_pendingUsuario"
+                        <FilaOverride Item="bi" Pending="_pendingUsuario"
                                       OnChange="@((kv) => { _pendingUsuario[kv.Key] = kv.Value; StateHasChanged(); })" />
                     }
 
-                    @* grupos con sus hijos *@
-                    @foreach (var grupo in grupos)
+                    @* Secciones en el mismo orden que el nav lateral *@
+                    @foreach (var seccion in _seccionesNav)
                     {
-                        var hijos = hojas.Where(h => h.Codigo.StartsWith(grupo.Codigo + ".")).OrderBy(h => h.Codigo).ToList();
+                        var modsSec  = _modulosUsuario.Where(m => seccion.Match(m.Codigo)).ToList();
+                        var hojasSec = modsSec.Where(m => m.Codigo.Contains('.')).OrderBy(m => m.Nombre).ToList();
+                        if (hojasSec.Count == 0) continue;
+
+                        var todasOn = hojasSec.All(m =>
+                            _pendingUsuario.TryGetValue(m.ModuloID, out var v) ? v : (m.Visible ?? true));
 
                         <div style="margin-bottom:16px">
-                            <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase;
-                                        color:var(--mud-palette-primary); margin-bottom:4px; letter-spacing:0.05em">
-                                @grupo.Nombre
+                            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px">
+                                <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase;
+                                            color:var(--mud-palette-primary); letter-spacing:0.05em">
+                                    @seccion.Label
+                                </span>
+                                <span style="font-size:0.70rem; opacity:0.45">(@hojasSec.Count)</span>
+                                @if (hojasSec.Count > 1)
+                                {
+                                    <MudSpacer />
+                                    <MudTooltip Text="@(todasOn ? "Desactivar todos" : "Activar todos")">
+                                        <MudSwitch T="bool"
+                                                   Value="@todasOn"
+                                                   ValueChanged="@(val => ToggleSeccionUsuario(modsSec, val))"
+                                                   Color="Color.Primary"
+                                                   Size="Size.Small" />
+                                    </MudTooltip>
+                                }
                             </div>
 
-                            <FilaOverride Item="grupo" Pending="_pendingUsuario" Hijos="hijos"
-                                          OnChange="@((kv) => { _pendingUsuario[kv.Key] = kv.Value; StateHasChanged(); })" />
-
-                            @foreach (var hoja in hijos)
+                            @foreach (var hoja in hojasSec)
                             {
-                                <div style="padding-left:16px">
-                                    <FilaOverride Item="hoja" Pending="_pendingUsuario"
-                                                  OnChange="@((kv) => { _pendingUsuario[kv.Key] = kv.Value; StateHasChanged(); })" />
-                                </div>
+                                <FilaOverride Item="hoja" Pending="_pendingUsuario"
+                                              OnChange="@((kv) => { _pendingUsuario[kv.Key] = kv.Value; StateHasChanged(); })" />
                             }
                         </div>
                     }
@@ -192,6 +201,47 @@
    se usa como componente inlinado con RenderFragment helper) *@
 
 @code {
+    // ── Secciones del nav — mismo orden y predicados que ConfigModulosRolDialog ──
+    private record SeccionNavU(string Label, Func<string, bool> Match);
+
+    private static readonly List<SeccionNavU> _seccionesNav =
+    [
+        new("Ventas", code =>
+            code == "OPERACIONES"            || code == "OPERACIONES.FACTURACION" ||
+            code == "OPERACIONES.DESPACHOS"  || code == "CRM.COTIZACIONES"        ||
+            code == "CRM.CLIENTES"),
+
+        new("CRM & Marketing", code =>
+            (code == "CRM" || code.StartsWith("CRM.")) &&
+            code != "CRM.COTIZACIONES" && code != "CRM.CLIENTES"),
+
+        new("Catálogo", code =>
+            code == "CATALOGO" || code.StartsWith("CATALOGO.")),
+
+        new("Producción", code =>
+            code == "PRODUCCION" || code.StartsWith("PRODUCCION.")),
+
+        new("Inventario", code =>
+            code == "INVENTARIO" || code.StartsWith("INVENTARIO.") ||
+            code == "OPERACIONES.MOVIMIENTOS"),
+
+        new("Planificación", code =>
+            code == "PLANIFICACION" || code.StartsWith("PLANIFICACION.")),
+
+        new("RRHH", code =>
+            (code == "RRHH" || code.StartsWith("RRHH.")) && code != "RRHH.USUARIOS"),
+
+        new("Administración", code =>
+            code == "RRHH.USUARIOS" || code.StartsWith("ADMIN.")),
+    ];
+
+    private void ToggleSeccionUsuario(List<ModuloVisibilidadItem> modulos, bool valor)
+    {
+        foreach (var m in modulos)
+            _pendingUsuario[m.ModuloID] = valor;
+        StateHasChanged();
+    }
+
     // ── Estado general ──────────────────────────────────────────────────────
     private List<RolDetalleItem> _roles = [];
     private bool _cargandoRoles = true;

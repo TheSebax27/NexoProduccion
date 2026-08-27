@@ -92,6 +92,8 @@ public record ActualizarBodegaRequest(
     bool Estado
 );
 
+public record StockPorCC(int CentroCostoID, string NombreCC, decimal Stock);
+
 // ArticuloItem: campos alineados con Visions v4 (Referencia, Fracciones, Fracciona).
 public record ArticuloItem(
     int ArticuloID,
@@ -119,7 +121,8 @@ public record ArticuloItem(
     string? PresentacionCodigo = null, string? PresentacionNombre = null,
     decimal? Peso = null,
     string? IvaSiNo = null, short? IvaValor = null, string? IvaDescripcion = null,
-    short? Iva2 = null, string? IvaDescripcion2 = null
+    short? Iva2 = null, string? IvaDescripcion2 = null,
+    List<StockPorCC>? StockPorCentros = null
 )
 {
     // Helpers para uso en dialogs de despacho/factura

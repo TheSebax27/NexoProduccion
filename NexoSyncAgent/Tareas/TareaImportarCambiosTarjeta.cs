@@ -45,6 +45,9 @@ public class TareaImportarCambiosTarjeta
                      ISNULL(tar.IVADESCRIPCION,'IVA 19%')                 AS IvaDescripcion,
                      CAST(tar.VF4 AS DECIMAL(18,4))                       AS Iva2,
                      tar.UBICA4                                            AS IvaDescripcion2,
+                     tp.Codigo                                             AS TipoProductoCodigo,
+                     tar.EXISTENCIAS                                       AS ExistenciasActuales,
+                     tar.EXISTENCIASMINIMAS                                AS ExistenciasMinimas,
                      CAST(CASE WHEN tar.REFERENCIA IS NULL THEN 1 ELSE 0 END AS BIT) AS EliminadoEnVisions
               FROM dbo.NEXO_TarjetasCambios t
               INNER JOIN (
@@ -53,7 +56,8 @@ public class TareaImportarCambiosTarjeta
                   WHERE Procesado = 0 AND CENTROCOSTO = @CC
                   GROUP BY CENTROCOSTO, REFERENCIA
               ) ult ON ult.UltimoId = t.Id
-              LEFT JOIN dbo.TARJETA tar ON tar.CENTROCOSTO = t.CENTROCOSTO AND tar.REFERENCIA = t.REFERENCIA",
+              LEFT JOIN dbo.TARJETA tar ON tar.CENTROCOSTO = t.CENTROCOSTO AND tar.REFERENCIA = t.REFERENCIA
+              LEFT JOIN dbo.TIPOPRODUCTO_TIPOS tp ON tp.TipoID = COALESCE(t.VV3, tar.VV3)",
             new { CC = centroCostoVisions })).ToList();
 
         if (cambios.Count == 0)
@@ -91,7 +95,10 @@ public class TareaImportarCambiosTarjeta
                         PCredito:           cambio.PCredito,
                         UPublico:           cambio.UPublico,
                         UBodega:            cambio.UBodega,
-                        UCredito:           cambio.UCredito), ct);
+                        UCredito:           cambio.UCredito,
+                        TipoProductoCodigo:  cambio.TipoProductoCodigo,
+                        ExistenciasActuales: cambio.ExistenciasActuales,
+                        ExistenciasMinimas:  cambio.ExistenciasMinimas), ct);
                     _logger.LogInformation("Cambio de TARJETA ({Ref}) sincronizado a NEXO", cambio.REFERENCIA);
                 }
 
@@ -115,5 +122,8 @@ public class TareaImportarCambiosTarjeta
         string? MarcaCodigo, string? GrupoMenorCodigo, string? PresentacionCodigo,
         string? IvaSiNo, decimal? IvaValor, string? IvaDescripcion,
         decimal? Iva2, string? IvaDescripcion2,
+        string? TipoProductoCodigo = null,
+        decimal? ExistenciasActuales = null,
+        decimal? ExistenciasMinimas = null,
         bool EliminadoEnVisions = false);
 }

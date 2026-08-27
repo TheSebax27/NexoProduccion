@@ -13,36 +13,49 @@
 </div>
 <InfoAyuda Texto="Un Lead es un prospecto que todavía no es cliente. Sigue su propio embudo (Nuevo → Contactado → Calificado → Convertido/Descartado). Al convertirlo se crea el Cliente automáticamente, con la misma información." />
 
-<div class="d-flex align-center flex-wrap mb-4" style="gap: 1rem;">
-    <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync" StartIcon="@Icons.Material.Filled.PersonAddAlt">
-        Nuevo Lead
-    </MudButton>
-    <MudSelect T="string" Value="_filtroEtapa" ValueChanged="OnFiltroEtapaCambiadoAsync" Label="Etapa" Clearable="true" Style="max-width: 200px;">
-        <MudSelectItem Value="@("NUEVO")">Nuevo</MudSelectItem>
-        <MudSelectItem Value="@("CONTACTADO")">Contactado</MudSelectItem>
-        <MudSelectItem Value="@("CALIFICADO")">Calificado</MudSelectItem>
-        <MudSelectItem Value="@("CONVERTIDO")">Convertido</MudSelectItem>
-        <MudSelectItem Value="@("DESCARTADO")">Descartado</MudSelectItem>
-    </MudSelect>
-</div>
+@if (!_cargando && _leads.Count == 0 && _filtroEtapa is null)
+{
+    @* Estado vacío: sin datos y sin filtro activo — mostrar solo el CTA grande *@
+    <NexoEmptyState
+        Icono="@Icons.Material.Outlined.PersonSearch"
+        Titulo="Crea tu primer lead"
+        Descripcion="Un lead es un prospecto que aún no es cliente. Registra su información, sigue su progreso en el embudo y conviértelo cuando esté listo."
+        BotonTexto="Nuevo lead"
+        BotonOnClick="AbrirCreacionAsync" />
+}
+else
+{
+    <div class="d-flex align-center flex-wrap mb-4" style="gap: 1rem;">
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync" StartIcon="@Icons.Material.Filled.PersonAddAlt">
+            Nuevo Lead
+        </MudButton>
+        <MudSelect T="string" Value="_filtroEtapa" ValueChanged="OnFiltroEtapaCambiadoAsync" Label="Etapa" Clearable="true" Style="max-width: 200px;">
+            <MudSelectItem Value="@("NUEVO")">Nuevo</MudSelectItem>
+            <MudSelectItem Value="@("CONTACTADO")">Contactado</MudSelectItem>
+            <MudSelectItem Value="@("CALIFICADO")">Calificado</MudSelectItem>
+            <MudSelectItem Value="@("CONVERTIDO")">Convertido</MudSelectItem>
+            <MudSelectItem Value="@("DESCARTADO")">Descartado</MudSelectItem>
+        </MudSelect>
+    </div>
 
-@if (_errorCarga is not null)
-{
-    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar los leads: @_errorCarga</MudAlert>
-}
-@if (_cargando)
-{
-    <MudProgressCircular Indeterminate="true" Class="ma-4" />
-}
-else if (_leads.Count == 0)
-{
-    <MudText>No hay leads registrados.</MudText>
-}
+    @if (_errorCarga is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar los leads: @_errorCarga</MudAlert>
+    }
+    @if (_cargando)
+    {
+        <MudProgressCircular Indeterminate="true" Class="ma-4" />
+    }
+    else if (_leads.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">No hay leads con ese filtro.</MudAlert>
+    }
 else
 {
     <MudTable Items="_leads" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
             <MudTh>Nombre</MudTh>
+            <MudTh>NIT</MudTh>
             <MudTh>Empresa</MudTh>
             <MudTh>Fuente</MudTh>
             <MudTh>Responsable</MudTh>
@@ -52,6 +65,7 @@ else
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+            <MudTd DataLabel="NIT">@(context.NIT ?? "-")</MudTd>
             <MudTd DataLabel="Empresa">@(context.Empresa ?? "-")</MudTd>
             <MudTd DataLabel="Fuente">@(context.FuenteContacto ?? "-")</MudTd>
             <MudTd DataLabel="Responsable">@(context.Responsable ?? "-")</MudTd>
@@ -114,6 +128,7 @@ else
             </MudTd>
         </RowTemplate>
     </MudTable>
+    }
 }
 
 @code {

@@ -105,8 +105,11 @@
                 <div class="d-flex" style="gap:.4rem">
                     <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add"
                                OnClick="AgregarLinea">Agregar artículo</MudButton>
-                    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.LocalOffer"
-                               Color="Color.Secondary" OnClick="AgregarCombo">Agregar combo</MudButton>
+                    @if (!UsaVisions)
+                    {
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.LocalOffer"
+                                   Color="Color.Secondary" OnClick="AgregarCombo">Agregar combo</MudButton>
+                    }
                 </div>
             </div>
 
@@ -142,6 +145,12 @@
                                                  MinCharacters="0" MaxItems="12"
                                                  ResetValueOnEmptyText="false"
                                                  CoerceText="false" CoerceValue="false" />
+                                @if (art is not null)
+                                {
+                                    <div style="font-size:0.68rem; color:var(--n-text-3); margin-top:1px; line-height:1.2">
+                                        Disp:&nbsp;<strong style="color:@(art.Existencias > 0 ? "var(--mud-palette-success-darken)" : "var(--mud-palette-error)")">@art.Existencias.ToString("N0")</strong>
+                                    </div>
+                                }
                             }
                             else
                             {
@@ -184,6 +193,12 @@
                                                  Dense="true" Margin="Margin.Dense" Variant="Variant.Text"
                                                  Min="0.01m" Format="N2" />
                             }
+                            @if (art is not null && CantidadFinal(context) > art.Existencias)
+                            {
+                                <div style="font-size:0.67rem; color:var(--mud-palette-error); margin-top:1px; white-space:nowrap">
+                                    ⚠ Supera stock (@art.Existencias.ToString("N0") disp.)
+                                </div>
+                            }
                         </MudTd>
                         <MudTd>
                             @if (context.UsarPrecioCatalogo && context.TipoLinea == TipoLinea.Articulo)
@@ -225,6 +240,23 @@
         </MudForm>
     </DialogContent>
     <DialogActions>
+        @{
+            var _lineasSinStock = _lineas.Where(l => l.TipoLinea == TipoLinea.Articulo
+                && l.Articulo is not null && CantidadFinal(l) > l.Articulo.Existencias).ToList();
+        }
+        @if (_lineasSinStock.Count > 0)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-1" Style="font-size:0.78rem">
+                @if (_lineasSinStock.Count == 1)
+                {
+                    @($"'{_lineasSinStock[0].Articulo!.Nombre}' supera el stock disponible ({_lineasSinStock[0].Articulo!.Existencias:N0} unid.). Se creará igualmente pero deberás reponer inventario.")
+                }
+                else
+                {
+                    @($"{_lineasSinStock.Count} artículos superan el stock disponible. Se crearán igualmente pero deberás reponer inventario.")
+                }
+            </MudAlert>
+        }
         <MudButton OnClick="Cancelar">Cancelar</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="GuardarAsync">
             Crear Factura
@@ -239,6 +271,7 @@
     [Parameter] public List<ArticuloItem> Articulos { get; set; } = new();
     [Parameter] public List<ComboItem> CombosActivos { get; set; } = new();
     [Parameter] public List<CentroCostoBasicoItem> CentrosCosto { get; set; } = new();
+    [Parameter] public bool UsaVisions { get; set; } = false;
 
     private enum TipoLinea { Articulo, Combo }
 

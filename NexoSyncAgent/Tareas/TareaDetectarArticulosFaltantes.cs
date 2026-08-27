@@ -47,8 +47,12 @@ public class TareaDetectarArticulosFaltantes
                 CAST(ISNULL(t.IVAVALOR, 19) AS DECIMAL(18,4)) AS IvaValor,
                 ISNULL(t.IVADESCRIPCION, 'IVA 19%')            AS IvaDescripcion,
                 CAST(t.VF4 AS DECIMAL(18,4))                   AS Iva2,
-                t.UBICA4                                        AS IvaDescripcion2
+                t.UBICA4                                        AS IvaDescripcion2,
+                tp.Codigo                                       AS TipoProductoCodigo,
+                t.EXISTENCIAS                                   AS ExistenciasActuales,
+                t.EXISTENCIASMINIMAS                            AS ExistenciasMinimas
             FROM dbo.TARJETA t
+            LEFT JOIN dbo.TIPOPRODUCTO_TIPOS tp ON tp.TipoID = t.VV3
             WHERE t.CENTROCOSTO = @CC
               AND t.REFERENCIA IS NOT NULL AND t.REFERENCIA <> ''
               AND NOT EXISTS (
@@ -88,7 +92,10 @@ public class TareaDetectarArticulosFaltantes
                     PCredito:             a.PCredito,
                     UPublico:             a.UPublico,
                     UBodega:              a.UBodega,
-                    UCredito:             a.UCredito), ct);
+                    UCredito:             a.UCredito,
+                    TipoProductoCodigo:   a.TipoProductoCodigo,
+                    ExistenciasActuales:  a.ExistenciasActuales,
+                    ExistenciasMinimas:   a.ExistenciasMinimas), ct);
 
                 // Marcar en NEXO_TarjetasCambios como procesado para no repetir.
                 await connection.ExecuteAsync(@"
@@ -114,5 +121,8 @@ public class TareaDetectarArticulosFaltantes
         decimal? UPublico, decimal? UBodega, decimal? UCredito,
         string? MarcaCodigo, string? GrupoMenorCodigo, string? PresentacionCodigo,
         string? IvaSiNo, decimal? IvaValor, string? IvaDescripcion,
-        decimal? Iva2, string? IvaDescripcion2);
+        decimal? Iva2, string? IvaDescripcion2,
+        string? TipoProductoCodigo = null,
+        decimal? ExistenciasActuales = null,
+        decimal? ExistenciasMinimas = null);
 }

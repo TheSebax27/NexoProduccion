@@ -56,10 +56,33 @@ public record LeadItem(
     int LeadID, string Nombre, string? Empresa, string? Telefono, string? Email,
     string? FuenteContacto, string Etapa, string? Notas,
     int? ResponsableID, string? Responsable, int? ClienteIDConvertido,
-    DateTime FechaCreacion, DateTime? FechaConversion
+    DateTime FechaCreacion, DateTime? FechaConversion,
+    string? NIT, string? Direccion, string? TipoCliente, string? TipoPersona,
+    string? TipoIdentificacion,
+    string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
+    string? Departamento, string? Ciudad,
+    string? CodigoDept, string? CodigoMuni, int? DigitoVerificacion
 );
-public record CrearLeadRequest(string Nombre, string? Empresa, string? Telefono, string? Email, string? FuenteContacto, string? Notas, int? ResponsableID);
-public record ActualizarLeadRequest(string Nombre, string? Empresa, string? Telefono, string? Email, string? FuenteContacto, string Etapa, string? Notas, int? ResponsableID);
+public record CrearLeadRequest(
+    string Nombre, string? Empresa, string? Telefono, string? Email,
+    string? FuenteContacto, string? Notas, int? ResponsableID,
+    string? NIT = null, string? Direccion = null, string? TipoCliente = null,
+    string? TipoPersona = null, string? TipoIdentificacion = null,
+    string? PrimerNombre = null, string? SegundoNombre = null,
+    string? PrimerApellido = null, string? SegundoApellido = null,
+    string? Departamento = null, string? Ciudad = null,
+    string? CodigoDept = null, string? CodigoMuni = null, int? DigitoVerificacion = null
+);
+public record ActualizarLeadRequest(
+    string Nombre, string? Empresa, string? Telefono, string? Email,
+    string? FuenteContacto, string Etapa, string? Notas, int? ResponsableID,
+    string? NIT = null, string? Direccion = null, string? TipoCliente = null,
+    string? TipoPersona = null, string? TipoIdentificacion = null,
+    string? PrimerNombre = null, string? SegundoNombre = null,
+    string? PrimerApellido = null, string? SegundoApellido = null,
+    string? Departamento = null, string? Ciudad = null,
+    string? CodigoDept = null, string? CodigoMuni = null, int? DigitoVerificacion = null
+);
 public record ConvertirLeadResponse(int ClienteId);
 
 public record ClienteFrioItem(int ClienteID, string ExternalId, string Nombre, string? Responsable, DateTime? UltimaInteraccion, DateTime? ProximoContacto);

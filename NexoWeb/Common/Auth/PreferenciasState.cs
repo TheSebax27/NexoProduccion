@@ -106,6 +106,21 @@ public class PreferenciasState
         await EstablecerAsync("MantenerSesionActiva", valor ? "true" : "false");
     }
 
+    public List<string> OrdenGruposNav
+    {
+        get
+        {
+            var json = ObtenerValor("OrdenGruposNav", "[]");
+            try { return System.Text.Json.JsonSerializer.Deserialize<List<string>>(json) ?? new(); }
+            catch { return new(); }
+        }
+    }
+
+    public async Task EstablecerOrdenGruposNavAsync(List<string> orden)
+    {
+        await EstablecerAsync("OrdenGruposNav", System.Text.Json.JsonSerializer.Serialize(orden));
+    }
+
     private async Task EstablecerAsync(string clave, string valor)
     {
         _valores[clave] = valor;

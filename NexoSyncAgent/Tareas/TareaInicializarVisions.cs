@@ -66,20 +66,32 @@ public class TareaInicializarVisions
                     DETALLE     NVARCHAR(200) NULL,
                     COSTO       DECIMAL(18,4) NULL,
                     PPUBLICO    DECIMAL(18,4) NULL,
+                    VV3         SMALLINT      NULL,
                     FechaCambio DATETIME      NOT NULL DEFAULT GETDATE(),
                     Procesado   BIT           NOT NULL DEFAULT 0
                 );");
 
-            // Trigger: captura cambios de precio/nombre en TARJETA y los encola en NEXO_TarjetasCambios.
+            // Agregar columna VV3 si la tabla ya existia sin ella (migracion).
+            await connection.ExecuteAsync(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+                               WHERE TABLE_NAME = 'NEXO_TarjetasCambios' AND COLUMN_NAME = 'VV3')
+                    ALTER TABLE dbo.NEXO_TarjetasCambios ADD VV3 SMALLINT NULL;");
+
+            // Trigger: captura cambios de precio/nombre en TARJETA originados en Visions POS.
+            // SESSION_CONTEXT 'nexo_agente'='1' marca las conexiones del agente para que el
+            // trigger las ignore y evitar el eco NEXO→Visions→NEXO_TarjetasCambios→NEXO.
             // MERGE upserta para que si hay un cambio sin procesar no acumule filas duplicadas.
             await connection.ExecuteAsync(@"
                 CREATE OR ALTER TRIGGER dbo.TR_TARJETA_NexoCambios ON dbo.TARJETA AFTER UPDATE
                 AS
                 BEGIN
                     SET NOCOUNT ON;
+                    -- Ignorar updates hechos por el agente NEXO (SESSION_CONTEXT marcado)
+                    IF CAST(SESSION_CONTEXT(N'nexo_agente') AS NVARCHAR(5)) = '1' RETURN;
                     MERGE dbo.NEXO_TarjetasCambios AS destino
                     USING (
-                        SELECT i.CENTROCOSTO, i.REFERENCIA, i.DETALLE, i.COSTO, i.PPUBLICO, GETDATE() AS FechaCambio
+                        SELECT i.CENTROCOSTO, i.REFERENCIA, i.DETALLE, i.COSTO, i.PPUBLICO,
+                               CAST(i.VV3 AS SMALLINT) AS VV3, GETDATE() AS FechaCambio
                         FROM inserted i
                     ) AS origen
                     ON destino.CENTROCOSTO = origen.CENTROCOSTO
@@ -87,11 +99,11 @@ public class TareaInicializarVisions
                        AND destino.Procesado = 0
                     WHEN MATCHED THEN UPDATE SET
                         DETALLE = origen.DETALLE, COSTO = origen.COSTO,
-                        PPUBLICO = origen.PPUBLICO, FechaCambio = origen.FechaCambio
+                        PPUBLICO = origen.PPUBLICO, VV3 = origen.VV3, FechaCambio = origen.FechaCambio
                     WHEN NOT MATCHED THEN
-                        INSERT (CENTROCOSTO, REFERENCIA, DETALLE, COSTO, PPUBLICO, FechaCambio, Procesado)
+                        INSERT (CENTROCOSTO, REFERENCIA, DETALLE, COSTO, PPUBLICO, VV3, FechaCambio, Procesado)
                         VALUES (origen.CENTROCOSTO, origen.REFERENCIA, origen.DETALLE, origen.COSTO,
-                                origen.PPUBLICO, origen.FechaCambio, 0);
+                                origen.PPUBLICO, origen.VV3, origen.FechaCambio, 0);
                 END");
 
             // Clientes de NEXO para que Visions los tenga disponibles como referencia de clientes.
@@ -106,9 +118,8 @@ public class TareaInicializarVisions
                     FechaSync DATETIME      NOT NULL DEFAULT GETDATE()
                 );");
 
-            // Rastreo de facturas NEXO exportadas a Visions.
-            // El trigger detecta cuando Visions asigna el número real y lo copia aquí
-            // para que el agente pueda actualizarlo de vuelta en NEXO vía API.
+            // Rastreo de facturas confirmadas por Visions que ya se sincronizaron de vuelta a NEXO.
+            // Se usa como dedup: si FechaSyncBack no es NULL, ya fue procesada y no se repite.
             await connection.ExecuteAsync(@"
                 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'NEXO_FacturasSalientes')
                 CREATE TABLE dbo.NEXO_FacturasSalientes (
@@ -121,30 +132,12 @@ public class TareaInicializarVisions
                     CONSTRAINT PK_NEXO_FacturasSalientes PRIMARY KEY (FacturaID)
                 );");
 
-            // Trigger: cuando Visions actualiza NRODOC de 'NEXO-{ID}' al número real,
-            // copia el nuevo número a NEXO_FacturasSalientes para que el agente lo
-            // sincronice de vuelta a NEXO en la próxima ronda.
+            // Eliminar el trigger obsoleto del flujo viejo (escribia en NEXO_FacturasSalientes
+            // cuando Visions cambiaba NRODOC de 'NEXO-{ID}' al número real). Ya no se usa:
+            // el nuevo flujo usa NEXO_SP_ConfirmarFactura que Visions llama explicitamente.
             await connection.ExecuteAsync(@"
-                CREATE OR ALTER TRIGGER dbo.trg_NEXO_ActualizarFacturaSaliente
-                ON dbo.MOVDETALLES AFTER UPDATE
-                AS
-                BEGIN
-                    SET NOCOUNT ON;
-                    IF UPDATE(NRODOC)
-                    BEGIN
-                        UPDATE nfs
-                        SET NroDocVisions = src.NewNroDoc,
-                            TipDocVisions = src.NewTipDoc
-                        FROM dbo.NEXO_FacturasSalientes nfs
-                        INNER JOIN (
-                            SELECT DISTINCT d.NRODOC AS OldNroDoc, i.NRODOC AS NewNroDoc, i.TIPDOC AS NewTipDoc
-                            FROM inserted i
-                            INNER JOIN deleted d ON i.NRODOC <> d.NRODOC
-                            WHERE d.NRODOC LIKE 'NEXO-%'
-                        ) AS src ON src.OldNroDoc = nfs.NexoNroDoc
-                        WHERE nfs.NroDocVisions IS NULL;
-                    END
-                END");
+                IF EXISTS (SELECT 1 FROM sys.triggers WHERE name = 'trg_NEXO_ActualizarFacturaSaliente')
+                    DROP TRIGGER dbo.trg_NEXO_ActualizarFacturaSaliente;");
 
             // SP ACTUALIZARTARJETA: asegura que el WHERE use parámetros (@CENTROCOSTO, @REFERENCIA)
             // y no columnas sin prefijo (bug original que sobreescribía TODA la tabla en cada sync).
@@ -190,6 +183,102 @@ public class TareaInicializarVisions
                     [NOTA]=@NOTA, [PESO]=@PESO, [DFI]=@DFI, [DFF]=@DFF,
                     [DPO]=@DPO, [DVA]=@DVA, [PESAR]=@PESAR
                 WHERE [CENTROCOSTO] = @CENTROCOSTO AND [REFERENCIA] = @REFERENCIA");
+
+            // Tabla de tipos de producto (igual que en NEXO). Se guarda TipoID en TARJETA.VV3.
+            await connection.ExecuteAsync(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'TIPOPRODUCTO_TIPOS')
+                BEGIN
+                    CREATE TABLE dbo.TIPOPRODUCTO_TIPOS (
+                        TipoID smallint      NOT NULL CONSTRAINT PK_TIPOPRODUCTO_TIPOS PRIMARY KEY,
+                        Codigo nvarchar(10)  NOT NULL,
+                        Nombre nvarchar(100) NOT NULL
+                    );
+                    INSERT INTO dbo.TIPOPRODUCTO_TIPOS VALUES (1, 'PT', 'Producto Terminado');
+                    INSERT INTO dbo.TIPOPRODUCTO_TIPOS VALUES (2, 'MP', 'Materia Prima');
+                    INSERT INTO dbo.TIPOPRODUCTO_TIPOS VALUES (3, 'IN', 'Insumo');
+                    INSERT INTO dbo.TIPOPRODUCTO_TIPOS VALUES (4, 'SV', 'Servicio');
+                END");
+
+            // Staging de facturas NEXO pendientes de ser procesadas en Visions.
+            await connection.ExecuteAsync(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'NEXO_FacturasPendientes')
+                CREATE TABLE dbo.NEXO_FacturasPendientes (
+                    FacturaID       INT           NOT NULL CONSTRAINT PK_NEXO_FacturasPendientes PRIMARY KEY,
+                    NIT             NVARCHAR(30)  NOT NULL,
+                    NombreCliente   NVARCHAR(200) NOT NULL,
+                    Fecha           DATE          NOT NULL,
+                    TipDoc          NVARCHAR(20)  NOT NULL,
+                    TotalNexo       DECIMAL(18,4) NOT NULL DEFAULT 0,
+                    Estado          NVARCHAR(20)  NOT NULL DEFAULT 'PENDIENTE',
+                    FechaEnvio      DATETIME      NOT NULL DEFAULT GETDATE(),
+                    NroDocVisions   NVARCHAR(50)  NULL,
+                    TipDocVisions   NVARCHAR(20)  NULL,
+                    FechaConfirmada DATETIME      NULL
+                );");
+
+            await connection.ExecuteAsync(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'NEXO_FacturasPendientesLineas')
+                CREATE TABLE dbo.NEXO_FacturasPendientesLineas (
+                    FacturaID      INT           NOT NULL,
+                    Orden          INT           NOT NULL,
+                    Referencia     NVARCHAR(30)  NOT NULL,
+                    Detalle        NVARCHAR(255) NULL,
+                    Cantidad       DECIMAL(18,4) NOT NULL DEFAULT 0,
+                    PrecioUnitario DECIMAL(18,4) NOT NULL DEFAULT 0,
+                    Total          DECIMAL(18,4) NOT NULL DEFAULT 0,
+                    CONSTRAINT PK_NEXO_FacturasPendientesLineas PRIMARY KEY (FacturaID, Orden)
+                );");
+
+            // SP: lista facturas PENDIENTE con dos resultsets (cabeceras + líneas).
+            await connection.ExecuteAsync(@"
+                CREATE OR ALTER PROCEDURE dbo.NEXO_SP_FacturasPendientes
+                AS
+                BEGIN
+                    SET NOCOUNT ON;
+                    SELECT FacturaID, NIT, NombreCliente, Fecha, TipDoc, TotalNexo, FechaEnvio
+                    FROM dbo.NEXO_FacturasPendientes
+                    WHERE Estado = 'PENDIENTE'
+                    ORDER BY Fecha, FacturaID;
+
+                    SELECT l.FacturaID, l.Orden, l.Referencia, l.Detalle, l.Cantidad, l.PrecioUnitario, l.Total
+                    FROM dbo.NEXO_FacturasPendientesLineas l
+                    INNER JOIN dbo.NEXO_FacturasPendientes f ON f.FacturaID = l.FacturaID
+                    WHERE f.Estado = 'PENDIENTE'
+                    ORDER BY l.FacturaID, l.Orden;
+                END");
+
+            // SP: Visions llama este SP al confirmar una factura con su número real.
+            await connection.ExecuteAsync(@"
+                CREATE OR ALTER PROCEDURE dbo.NEXO_SP_ConfirmarFactura
+                    @FacturaID     INT,
+                    @NroDocVisions NVARCHAR(50),
+                    @TipDocVisions NVARCHAR(20)
+                AS
+                BEGIN
+                    SET NOCOUNT ON;
+                    UPDATE dbo.NEXO_FacturasPendientes
+                    SET Estado          = 'PROCESADA',
+                        NroDocVisions   = @NroDocVisions,
+                        TipDocVisions   = @TipDocVisions,
+                        FechaConfirmada = GETDATE()
+                    WHERE FacturaID = @FacturaID;
+                END");
+
+            // Parámetros requeridos en Visions para la integración NEXO.
+            // 1518 (SINCANTSA): habilita búsqueda de cantidades al grabar salidas.
+            // 1905 (NEXO): activa el combo TipoProducto en FRMTARJETA y btn_nexo en FRMVENTAS.
+            await connection.ExecuteAsync(@"
+                IF NOT EXISTS (SELECT 1 FROM dbo.PARAMETROS WHERE CONSECUTIVO = 1518)
+                    INSERT INTO dbo.PARAMETROS (CONSECUTIVO, PARAMETRO, VALOR, DESCRIPCION, TIPOGRUPO)
+                    VALUES (1518, 'SINCANTSA', '1', 'BUSCAR CANTIDADES AL GRABAR SALIDAS', 'HABILITAR')
+                ELSE IF EXISTS (SELECT 1 FROM dbo.PARAMETROS WHERE CONSECUTIVO = 1518 AND VALOR = '0')
+                    UPDATE dbo.PARAMETROS SET VALOR = '1' WHERE CONSECUTIVO = 1518;
+
+                IF NOT EXISTS (SELECT 1 FROM dbo.PARAMETROS WHERE CONSECUTIVO = 1905)
+                    INSERT INTO dbo.PARAMETROS (CONSECUTIVO, PARAMETRO, VALOR, DESCRIPCION, TIPOGRUPO)
+                    VALUES (1905, 'NEXO', '1', 'MANEJAN NEXO', 'HABILITAR')
+                ELSE IF EXISTS (SELECT 1 FROM dbo.PARAMETROS WHERE CONSECUTIVO = 1905 AND VALOR = '0')
+                    UPDATE dbo.PARAMETROS SET VALOR = '1' WHERE CONSECUTIVO = 1905;");
 
             _logger.LogInformation("Tablas NEXO_* verificadas/creadas en Visions correctamente");
         }

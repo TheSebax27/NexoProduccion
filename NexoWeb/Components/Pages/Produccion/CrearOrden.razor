@@ -8,19 +8,18 @@
 
 <PageTitle>@(EsEdicion ? "Editar Orden de Produccion" : "Nueva Orden de Produccion") - NEXO</PageTitle>
 
-<div class="nexo-page-hero">
-    <div class="nexo-page-hero__left">
-        <div class="nexo-page-hero__accent"></div>
+<div class="nexo-page-header">
+    <nav class="nexo-page-header__breadcrumb">
+        <a class="nexo-page-header__crumb-link" href="/produccion/ordenes">Órdenes de Producción</a>
+        <span class="nexo-page-header__crumb-sep">›</span>
+        <span class="nexo-page-header__crumb-cur">@(EsEdicion ? $"Editar {_codigoOp}" : "Nueva orden")</span>
+    </nav>
+    <div class="nexo-page-header__body">
         <div>
-            <p class="nexo-page-hero__module">Produccion</p>
-            <h1 class="nexo-page-hero__title">@(EsEdicion ? $"Editar {_codigoOp}" : "Nueva Orden de Produccion")</h1>
+            <h1 class="nexo-page-header__title">@(EsEdicion ? $"Editar {_codigoOp}" : "Nueva Orden de Producción")</h1>
+            <p class="nexo-page-header__sub">@(EsEdicion ? "Modifica los parámetros de la orden mientras está en estado Planificada." : "Completa los campos para registrar una nueva orden de producción.")</p>
         </div>
     </div>
-    <a href="/produccion/ordenes" style="text-decoration:none">
-        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.ArrowBack" Size="Size.Small">
-            Volver
-        </MudButton>
-    </a>
 </div>
 
 @if (_cargandoCatalogos)
@@ -37,14 +36,17 @@ else
     }
 
     @* ── Información general ── *@
-    <MudPaper Class="pa-5 mb-4">
-        <div class="nexo-chart-header mb-4">
-            <MudIcon Icon="@Icons.Material.Outlined.Assignment" Size="Size.Small" Class="nexo-chart-header__icon" />
+    <div class="nexo-section mb-4">
+        <div class="nexo-section__header">
+            <div class="nexo-section__icon" style="background:rgba(124,92,255,0.10);">
+                <MudIcon Icon="@Icons.Material.Outlined.Assignment" Style="color:var(--n-purple); font-size:1.25rem;" />
+            </div>
             <div>
-                <div class="nexo-chart-header__title">Informacion general</div>
-                <div class="nexo-chart-header__sub">Completa la informacion para @(EsEdicion ? "actualizar" : "crear") la orden</div>
+                <div class="nexo-section__title">Informacion general</div>
+                <div class="nexo-section__sub">Completa la informacion para @(EsEdicion ? "actualizar" : "crear") la orden</div>
             </div>
         </div>
+        <div class="nexo-section__body">
 
         @{
             var mtoItem = _tiposProduccion.FirstOrDefault(t => t.Codigo == "MTO");
@@ -97,23 +99,22 @@ else
             @if (_esMto)
             {
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="int?" @bind-Value="_clienteId" Label="Cliente" Required="true" Variant="Variant.Outlined">
-                        @foreach (var cliente in _clientes)
-                        {
-                            <MudSelectItem T="int?" Value="@((int?)cliente.ClienteID)">@cliente.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <MudAutocomplete T="ClienteItem" Label="Cliente" Required="true" Variant="Variant.Outlined"
+                                     Value="_clienteSeleccionado" ValueChanged="OnClienteSeleccionadoChanged"
+                                     SearchFunc="BuscarClienteAsync"
+                                     ToStringFunc="@(c => c is null ? "" : (string.IsNullOrWhiteSpace(c.NIT) ? c.Nombre : $"{c.NIT} — {c.Nombre}"))"
+                                     MinCharacters="1" Clearable="true" NoItemsText="Sin resultados"
+                                     HelperText="Escribe nombre o NIT para buscar" />
                 </MudItem>
             }
 
             <MudItem xs="12" sm="6">
-                <MudSelect T="int?" Value="_productoTerminadoId" ValueChanged="OnProductoTerminadoCambiadoAsync"
-                           Label="Producto Terminado" Placeholder="Selecciona un producto" Required="true" Variant="Variant.Outlined">
-                    @foreach (var producto in _productosTerminados)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)producto.ArticuloID)">@producto.Referencia - @producto.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
+                <MudAutocomplete T="ArticuloItem" Label="Producto Terminado" Required="true" Variant="Variant.Outlined"
+                                 Value="_productoSeleccionado" ValueChanged="OnProductoTerminadoSeleccionadoAsync"
+                                 SearchFunc="BuscarProductoAsync"
+                                 ToStringFunc="@(a => a is null ? "" : $"{a.Referencia} — {a.Nombre}")"
+                                 MinCharacters="1" Clearable="true" NoItemsText="Sin resultados"
+                                 HelperText="Escribe referencia o nombre para buscar" />
             </MudItem>
 
             <MudItem xs="12" sm="6">
@@ -153,16 +154,21 @@ else
                                PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy" Variant="Variant.Outlined" />
             </MudItem>
         </MudGrid>
-    </MudPaper>
+        </div>
+    </div>
 
     @* ── Bodegas ── *@
-    <MudPaper Class="pa-5 mb-4">
-        <div class="nexo-chart-header mb-4">
-            <MudIcon Icon="@Icons.Material.Outlined.Warehouse" Size="Size.Small" Class="nexo-chart-header__icon" />
+    <div class="nexo-section mb-4">
+        <div class="nexo-section__header">
+            <div class="nexo-section__icon" style="background:rgba(245,158,11,0.10);">
+                <MudIcon Icon="@Icons.Material.Outlined.Warehouse" Style="color:#F59E0B; font-size:1.25rem;" />
+            </div>
             <div>
-                <div class="nexo-chart-header__title">Bodegas y centro de trabajo</div>
+                <div class="nexo-section__title">Bodegas y centro de trabajo</div>
+                <div class="nexo-section__sub">Define el origen de materia prima y destino del producto</div>
             </div>
         </div>
+        <div class="nexo-section__body">
 
         <div class="d-flex align-center mb-1" style="gap:12px">
             <MudSwitch T="bool" Value="_produccionLocal" ValueChanged="OnProduccionLocalCambiadaAsync"
@@ -225,19 +231,22 @@ else
                               Lines="2" Variant="Variant.Outlined" />
             </MudItem>
         </MudGrid>
-    </MudPaper>
+        </div>
+    </div>
 
     @* ── Maquinaria ── *@
-    <MudPaper Class="pa-5 mb-4">
-        <div class="d-flex align-center justify-space-between mb-1">
-            <div class="nexo-chart-header">
-                <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Size="Size.Small" Class="nexo-chart-header__icon" />
+    <div class="nexo-section mb-4">
+        <div class="nexo-section__header" style="justify-content:space-between;">
+            <div class="d-flex align-center" style="gap:0.85rem;">
+                <div class="nexo-section__icon" style="background:rgba(16,185,129,0.10);">
+                    <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Style="color:#10B981; font-size:1.25rem;" />
+                </div>
                 <div>
-                    <div class="nexo-chart-header__title">
+                    <div class="nexo-section__title">
                         Maquinaria utilizada
                         <MudChip T="string" Size="Size.Small" Class="ml-1">Opcional</MudChip>
                     </div>
-                    <div class="nexo-chart-header__sub">Se pre-carga desde la receta. Podes agregar, quitar o ajustar horas.</div>
+                    <div class="nexo-section__sub">Se pre-carga desde la receta. Podés agregar, quitar o ajustar horas.</div>
                 </div>
             </div>
             @if (_recetaId.HasValue && _maquinasDisponibles.Count > 0)
@@ -249,6 +258,7 @@ else
                 </MudButton>
             }
         </div>
+        <div class="nexo-section__body">
 
         @if (_maquinasOrden.Count > 0)
         {
@@ -257,7 +267,8 @@ else
                     <thead>
                         <tr style="background:var(--mud-palette-background-grey)">
                             <th style="padding:8px 10px; text-align:left">Maquinaria</th>
-                            <th style="padding:8px 10px; min-width:130px">Horas programadas</th>
+                            <th style="padding:8px 10px; min-width:80px">Horas</th>
+                            <th style="padding:8px 10px; min-width:80px">Minutos</th>
                             <th style="padding:8px 10px; min-width:160px">Notas</th>
                             <th style="padding:8px 10px; width:48px"></th>
                         </tr>
@@ -267,8 +278,8 @@ else
                         {
                             <tr style="border-bottom:1px solid var(--mud-palette-lines-default)">
                                 <td style="padding:4px 10px">
-                                    <MudSelect T="int?" Value="@((int?)fila.MaquinariaID)"
-                                               ValueChanged="@((int? v) => fila.MaquinariaID = v ?? 0)"
+                                    <MudSelect T="int?" Value="fila.MaquinariaID"
+                                               ValueChanged="@((int? v) => fila.MaquinariaID = v)"
                                                Placeholder="Selecciona maquina" Margin="Margin.Dense">
                                         @foreach (var m in _maquinasDisponibles)
                                         {
@@ -279,8 +290,10 @@ else
                                     </MudSelect>
                                 </td>
                                 <td style="padding:4px 10px">
-                                    <MudNumericField @bind-Value="fila.HorasReales" T="decimal?"
-                                                     Placeholder="—" Format="0.##" Min="0" Margin="Margin.Dense" />
+                                    <MudNumericField @bind-Value="fila.Horas" T="int?" Min="0" Placeholder="0" Margin="Margin.Dense" />
+                                </td>
+                                <td style="padding:4px 10px">
+                                    <MudNumericField @bind-Value="fila.Minutos" T="int?" Min="0" Max="59" Placeholder="0" Margin="Margin.Dense" />
                                 </td>
                                 <td style="padding:4px 10px">
                                     <MudTextField @bind-Value="fila.Notas" Placeholder="Opcional" Margin="Margin.Dense" />
@@ -309,19 +322,22 @@ else
                 Agregar maquina
             </MudButton>
         }
-    </MudPaper>
+        </div>
+    </div>
 
     @* ── Empleados ── *@
-    <MudPaper Class="pa-5 mb-4">
-        <div class="d-flex align-center justify-space-between mb-1">
-            <div class="nexo-chart-header">
-                <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Class="nexo-chart-header__icon" />
+    <div class="nexo-section mb-4">
+        <div class="nexo-section__header" style="justify-content:space-between;">
+            <div class="d-flex align-center" style="gap:0.85rem;">
+                <div class="nexo-section__icon" style="background:rgba(14,165,233,0.10);">
+                    <MudIcon Icon="@Icons.Material.Filled.People" Style="color:#0EA5E9; font-size:1.25rem;" />
+                </div>
                 <div>
-                    <div class="nexo-chart-header__title">
+                    <div class="nexo-section__title">
                         Empleados asignados
                         <MudChip T="string" Size="Size.Small" Class="ml-1">Opcional</MudChip>
                     </div>
-                    <div class="nexo-chart-header__sub">Se pre-carga desde la receta. Las horas se usan para calcular costo de mano de obra.</div>
+                    <div class="nexo-section__sub">Se pre-carga desde la receta. Las horas se usan para calcular costo de mano de obra.</div>
                 </div>
             </div>
             @if (_recetaId.HasValue && _empleadosDisponibles.Count > 0)
@@ -333,6 +349,7 @@ else
                 </MudButton>
             }
         </div>
+        <div class="nexo-section__body">
 
         @if (_empleadosOrden.Count > 0)
         {
@@ -341,7 +358,8 @@ else
                     <thead>
                         <tr style="background:var(--mud-palette-background-grey)">
                             <th style="padding:8px 10px; text-align:left">Empleado</th>
-                            <th style="padding:8px 10px; min-width:130px">Horas reales</th>
+                            <th style="padding:8px 10px; min-width:80px">Horas</th>
+                            <th style="padding:8px 10px; min-width:80px">Minutos</th>
                             <th style="padding:8px 10px; min-width:160px">Notas</th>
                             <th style="padding:8px 10px; width:48px"></th>
                         </tr>
@@ -351,8 +369,8 @@ else
                         {
                             <tr style="border-bottom:1px solid var(--mud-palette-lines-default)">
                                 <td style="padding:4px 10px">
-                                    <MudSelect T="int?" Value="@((int?)fila.EmpleadoID)"
-                                               ValueChanged="@((int? v) => fila.EmpleadoID = v ?? 0)"
+                                    <MudSelect T="int?" Value="fila.EmpleadoID"
+                                               ValueChanged="@((int? v) => fila.EmpleadoID = v)"
                                                Placeholder="Selecciona empleado" Margin="Margin.Dense">
                                         @foreach (var emp in _empleadosDisponibles)
                                         {
@@ -367,8 +385,10 @@ else
                                     </MudSelect>
                                 </td>
                                 <td style="padding:4px 10px">
-                                    <MudNumericField @bind-Value="fila.HorasReales" T="decimal?"
-                                                     Placeholder="—" Format="0.##" Min="0" Margin="Margin.Dense" />
+                                    <MudNumericField @bind-Value="fila.Horas" T="int?" Min="0" Placeholder="0" Margin="Margin.Dense" />
+                                </td>
+                                <td style="padding:4px 10px">
+                                    <MudNumericField @bind-Value="fila.Minutos" T="int?" Min="0" Max="59" Placeholder="0" Margin="Margin.Dense" />
                                 </td>
                                 <td style="padding:4px 10px">
                                     <MudTextField @bind-Value="fila.Notas" Placeholder="Opcional" Margin="Margin.Dense" />
@@ -397,15 +417,19 @@ else
                 Agregar empleado
             </MudButton>
         }
-    </MudPaper>
+        </div>
+    </div>
+}
 
-    @* ── Botonera ── *@
-    <div class="d-flex" style="gap:12px; max-width:800px; padding-bottom:2rem">
-        <MudButton Variant="Variant.Outlined" Color="Color.Default" Size="Size.Large"
+@* ── Barra de acciones fija ── *@
+<div class="nexo-action-bar">
+    <div class="nexo-action-bar__inner">
+        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                   Style="border-color:var(--n-border-2); color:var(--n-text-2);"
                    OnClick="@(() => Navegacion.NavigateTo("/produccion/ordenes"))">
             Cancelar
         </MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.Save"
                    OnClick="GuardarAsync"
                    Disabled="@(!FormularioValido || _guardando)"
@@ -413,7 +437,7 @@ else
             @(_guardando ? "Guardando..." : (EsEdicion ? "Guardar cambios" : "Crear orden"))
         </MudButton>
     </div>
-}
+</div>
 
 @code {
     [Parameter] public int? OrdenProduccionId { get; set; }
@@ -434,20 +458,29 @@ else
 
     private class FilaMaquinaOrden
     {
-        public int MaquinariaID { get; set; }
-        public decimal? HorasReales { get; set; }
+        public int? MaquinariaID { get; set; }
+        public int? Horas { get; set; }
+        public int? Minutos { get; set; }
         public string? Notas { get; set; }
+        public decimal? HorasDecimal => Horas.HasValue || Minutos.HasValue
+            ? (Horas ?? 0) + (Minutos ?? 0) / 60m : null;
     }
 
     private class FilaEmpleadoOrden
     {
-        public int EmpleadoID { get; set; }
-        public decimal? HorasReales { get; set; }
+        public int? EmpleadoID { get; set; }
+        public int? Horas { get; set; }
+        public int? Minutos { get; set; }
         public string? Notas { get; set; }
+        public decimal? HorasDecimal => Horas.HasValue || Minutos.HasValue
+            ? (Horas ?? 0) + (Minutos ?? 0) / 60m : null;
     }
 
     private List<FilaMaquinaOrden> _maquinasOrden = [];
     private List<FilaEmpleadoOrden> _empleadosOrden = [];
+
+    private ClienteItem? _clienteSeleccionado;
+    private ArticuloItem? _productoSeleccionado;
 
     private string _codigoOp = "";
     private int? _tipoProduccionId;
@@ -518,6 +551,9 @@ else
                 _fechaPlanificada    = detalle.FechaPlanificada;
                 _observaciones       = detalle.Observaciones;
 
+                _clienteSeleccionado = _clientes.FirstOrDefault(c => c.ClienteID == detalle.ClienteID);
+                _productoSeleccionado = _productosTerminados.FirstOrDefault(a => a.ArticuloID == detalle.ProductoTerminadoID);
+
                 _recetas = await ApiClient.GetAsync<List<RecetaResumen>>(
                     $"api/produccion/recetas?productoTerminadoId={detalle.ProductoTerminadoID}&soloActivas=false") ?? new();
                 _recetaId = detalle.RecetaID;
@@ -525,13 +561,13 @@ else
                 var maqOrden = await ApiClient.GetAsync<List<OrdenMaquinariaItem>>(
                     $"api/produccion/ordenes/{OrdenProduccionId}/maquinaria") ?? [];
                 _maquinasOrden = maqOrden
-                    .Select(m => new FilaMaquinaOrden { MaquinariaID = m.MaquinariaID, HorasReales = m.HorasReales, Notas = m.Notas })
+                    .Select(m => FilaMaquinaDesdeDecimal(m.MaquinariaID, m.HorasReales, m.Notas))
                     .ToList();
 
                 var empOrden = await ApiClient.GetAsync<List<EmpleadoOrdenItem>>(
                     $"api/produccion/ordenes/{OrdenProduccionId}/empleados") ?? [];
                 _empleadosOrden = empOrden
-                    .Select(e => new FilaEmpleadoOrden { EmpleadoID = e.EmpleadoID, HorasReales = e.HorasReales, Notas = e.Notas })
+                    .Select(e => FilaEmpleadoDesdeDecimal(e.EmpleadoID, e.HorasReales, e.Notas))
                     .ToList();
 
                 if (detalle.BodegaOrigenMPID == detalle.BodegaDestinoPTID)
@@ -573,6 +609,7 @@ else
         if (!esMto)
         {
             _clienteId = null;
+            _clienteSeleccionado = null;
             var tipoActual = _tiposProduccion.FirstOrDefault(t => t.TipoProduccionID == _tipoProduccionId);
             if (tipoActual?.Codigo == "MTO") _tipoProduccionId = null;
         }
@@ -582,6 +619,54 @@ else
             if (mto is not null) _tipoProduccionId = mto.TipoProduccionID;
         }
         return Task.CompletedTask;
+    }
+
+    private static FilaMaquinaOrden FilaMaquinaDesdeDecimal(int maquinariaId, decimal? horas, string? notas)
+    {
+        var h = horas.HasValue ? (int?)((int)Math.Truncate(horas.Value)) : null;
+        var m = horas.HasValue ? (int?)((int)Math.Round((horas.Value - Math.Truncate(horas.Value)) * 60)) : null;
+        return new FilaMaquinaOrden { MaquinariaID = maquinariaId, Horas = h, Minutos = m == 0 ? null : m, Notas = notas };
+    }
+
+    private static FilaEmpleadoOrden FilaEmpleadoDesdeDecimal(int empleadoId, decimal? horas, string? notas)
+    {
+        var h = horas.HasValue ? (int?)((int)Math.Truncate(horas.Value)) : null;
+        var m = horas.HasValue ? (int?)((int)Math.Round((horas.Value - Math.Truncate(horas.Value)) * 60)) : null;
+        return new FilaEmpleadoOrden { EmpleadoID = empleadoId, Horas = h, Minutos = m == 0 ? null : m, Notas = notas };
+    }
+
+    private Task<IEnumerable<ClienteItem>> BuscarClienteAsync(string texto, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+            return Task.FromResult(Enumerable.Empty<ClienteItem>());
+        return Task.FromResult(
+            _clientes.Where(c =>
+                c.Nombre.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
+                (c.NIT != null && c.NIT.Contains(texto, StringComparison.OrdinalIgnoreCase)))
+            .Take(15));
+    }
+
+    private Task<IEnumerable<ArticuloItem>> BuscarProductoAsync(string texto, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+            return Task.FromResult(Enumerable.Empty<ArticuloItem>());
+        return Task.FromResult(
+            _productosTerminados.Where(a =>
+                a.Nombre.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
+                a.Referencia.Contains(texto, StringComparison.OrdinalIgnoreCase))
+            .Take(15));
+    }
+
+    private void OnClienteSeleccionadoChanged(ClienteItem? cliente)
+    {
+        _clienteSeleccionado = cliente;
+        _clienteId = cliente?.ClienteID;
+    }
+
+    private async Task OnProductoTerminadoSeleccionadoAsync(ArticuloItem? articulo)
+    {
+        _productoSeleccionado = articulo;
+        await OnProductoTerminadoCambiadoAsync(articulo?.ArticuloID);
     }
 
     private Task OnTipoProduccionCambiadoAsync(int? nuevoTipoId)
@@ -613,13 +698,13 @@ else
             var maqReceta = await ApiClient.GetAsync<List<RecetaMaquinariaItem>>(
                 $"api/produccion/recetas/{recetaId}/maquinaria") ?? [];
             _maquinasOrden = maqReceta
-                .Select(m => new FilaMaquinaOrden { MaquinariaID = m.MaquinariaID, HorasReales = m.HorasEstimadasPorLote })
+                .Select(m => FilaMaquinaDesdeDecimal(m.MaquinariaID, m.HorasEstimadasPorLote, null))
                 .ToList();
 
             var empReceta = await ApiClient.GetAsync<List<EmpleadoRecetaItem>>(
                 $"api/produccion/recetas/{recetaId}/empleados") ?? [];
             _empleadosOrden = empReceta
-                .Select(e => new FilaEmpleadoOrden { EmpleadoID = e.EmpleadoID, HorasReales = e.HorasEstimadasPorLote, Notas = e.Notas })
+                .Select(e => FilaEmpleadoDesdeDecimal(e.EmpleadoID, e.HorasEstimadasPorLote, e.Notas))
                 .ToList();
         }
         else
@@ -635,7 +720,7 @@ else
         var maqReceta = await ApiClient.GetAsync<List<RecetaMaquinariaItem>>(
             $"api/produccion/recetas/{_recetaId}/maquinaria") ?? [];
         _maquinasOrden = maqReceta
-            .Select(m => new FilaMaquinaOrden { MaquinariaID = m.MaquinariaID, HorasReales = m.HorasEstimadasPorLote })
+            .Select(m => FilaMaquinaDesdeDecimal(m.MaquinariaID, m.HorasEstimadasPorLote, null))
             .ToList();
     }
 
@@ -645,7 +730,7 @@ else
         var empReceta = await ApiClient.GetAsync<List<EmpleadoRecetaItem>>(
             $"api/produccion/recetas/{_recetaId}/empleados") ?? [];
         _empleadosOrden = empReceta
-            .Select(e => new FilaEmpleadoOrden { EmpleadoID = e.EmpleadoID, HorasReales = e.HorasEstimadasPorLote, Notas = e.Notas })
+            .Select(e => FilaEmpleadoDesdeDecimal(e.EmpleadoID, e.HorasEstimadasPorLote, e.Notas))
             .ToList();
     }
 
@@ -660,13 +745,13 @@ else
             var tipoEfectivo = _esMto ? (mtoId ?? _tipoProduccionId!.Value) : _tipoProduccionId!.Value;
 
             var maquinas = _maquinasOrden
-                .Where(m => m.MaquinariaID > 0)
-                .Select(m => new MaquinariaOrdenInput(m.MaquinariaID, m.HorasReales, m.Notas))
+                .Where(m => m.MaquinariaID.HasValue)
+                .Select(m => new MaquinariaOrdenInput(m.MaquinariaID!.Value, m.HorasDecimal, m.Notas))
                 .ToList();
 
             var empleados = _empleadosOrden
-                .Where(e => e.EmpleadoID > 0)
-                .Select(e => new EmpleadoOrdenInput(e.EmpleadoID, e.HorasReales, e.Notas))
+                .Where(e => e.EmpleadoID.HasValue)
+                .Select(e => new EmpleadoOrdenInput(e.EmpleadoID!.Value, e.HorasDecimal, e.Notas))
                 .ToList();
 
             if (EsEdicion)

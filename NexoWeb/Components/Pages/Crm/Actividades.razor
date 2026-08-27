@@ -64,7 +64,17 @@ else
     }
     @if (!visibles.Any())
     {
-        <MudText Typo="Typo.body2" Style="color:var(--n-text-3);">Sin actividades para mostrar.</MudText>
+        @if (!_actividades.Any())
+        {
+            <NexoEmptyState
+                Icono="@Icons.Material.Outlined.EventNote"
+                Titulo="Crea tu primera actividad"
+                Descripcion="Registra llamadas, emails, reuniones y tareas de seguimiento. Vincula cada actividad a un cliente u oportunidad para mantener el historial completo." />
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--n-text-3);">Sin actividades para mostrar con ese filtro.</MudText>
+        }
     }
 }
 

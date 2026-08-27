@@ -471,6 +471,58 @@
                     }
                 </MudItem>
 
+                <!-- Inicio de sync de ventas -->
+                <MudItem xs="12">
+                    <MudDivider Class="my-1" />
+                    <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Inicio de sincronización de ventas</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:block;" Class="mb-2">
+                        Define desde qué fecha se importan ventas de Visions hacia NEXO. Útil al instalar en clientes con historial largo.
+                    </MudText>
+                    <div class="d-flex gap-2 flex-wrap align-center mb-2">
+                        <MudChip T="string" Color="@(_modoFechaVentas == 0 ? Color.Primary : Color.Default)"
+                                 Size="Size.Small"
+                                 OnClick="@(() => { _modoFechaVentas = 0; _editFechaInicioVentas = null; })">
+                            Traer todas
+                        </MudChip>
+                        <MudChip T="string" Color="@(_modoFechaVentas == 1 ? Color.Primary : Color.Default)"
+                                 Size="Size.Small"
+                                 OnClick="@(() => { _modoFechaVentas = 1; _editFechaInicioVentas = DateTime.Today; })">
+                            Desde hoy
+                        </MudChip>
+                        <MudChip T="string" Color="@(_modoFechaVentas == 2 ? Color.Primary : Color.Default)"
+                                 Size="Size.Small"
+                                 OnClick="@(() => _modoFechaVentas = 2)">
+                            Fecha específica
+                        </MudChip>
+                    </div>
+                    @if (_modoFechaVentas == 2)
+                    {
+                        <MudDatePicker @bind-Date="_editFechaInicioVentas"
+                                       Label="Importar ventas desde"
+                                       Variant="Variant.Outlined"
+                                       DateFormat="dd/MM/yyyy"
+                                       HelperText="Solo se importarán ventas con fecha igual o posterior a esta." />
+                    }
+                    @if (_modoFechaVentas == 0)
+                    {
+                        <MudAlert Severity="Severity.Warning" Dense="true">
+                            Se importarán <strong>todas las ventas históricas</strong> de Visions. En clientes con años de datos esto puede generar miles de registros en la primera sincronización.
+                        </MudAlert>
+                    }
+                    @if (_modoFechaVentas == 1)
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true">
+                            Solo se importarán ventas desde <strong>hoy (@DateTime.Today.ToString("dd/MM/yyyy"))</strong>. El historial anterior no se traerá a NEXO.
+                        </MudAlert>
+                    }
+                    @if (_modoFechaVentas == 2 && _editFechaInicioVentas.HasValue)
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-1">
+                            Solo se importarán ventas desde <strong>@_editFechaInicioVentas.Value.ToString("dd/MM/yyyy")</strong>.
+                        </MudAlert>
+                    }
+                </MudItem>
+
                 <!-- Botones -->
                 <MudItem xs="12">
                     <div class="d-flex gap-2 flex-wrap align-center">
@@ -651,84 +703,156 @@
         {
             @foreach (var p in _progreso)
             {
-                var pctMapeados  = p.TotalArticulosNexo > 0 ? (double)p.TotalMapeados / p.TotalArticulosNexo * 100 : 0;
                 var totalVisions = p.TotalMapeados + p.TotalPendientesMapeo;
-                var pctResuelt   = totalVisions > 0 ? (double)p.TotalMapeados / totalVisions * 100 : 100;
+                var pctMapeados  = totalVisions > 0 ? (double)p.TotalMapeados / totalVisions * 100 : 100;
+                var pctCompletos = p.TotalMapeados > 0 ? (double)p.ArticulosMapeadosCompletos / p.TotalMapeados * 100 : 0;
 
-                <MudPaper Class="mb-4 pa-6" Elevation="0"
-                          Style="border: 1px solid var(--mud-palette-divider); border-radius: 16px;">
+                <MudPaper Class="mb-4 pa-0" Elevation="0"
+                          Style="border: 1px solid var(--mud-palette-divider); border-radius: 16px; overflow:hidden;">
 
-                    <div class="d-flex justify-space-between align-center mb-4">
+                    <!-- Cabecera por CC -->
+                    <div style="background:var(--mud-palette-background-grey); padding:14px 20px;"
+                         class="d-flex justify-space-between align-center flex-wrap gap-2">
                         <div class="d-flex align-center gap-2">
                             <MudIcon Icon="@Icons.Material.Outlined.Store" Color="Color.Primary" />
-                            <MudText Typo="Typo.h6">@p.NombreCentroCosto</MudText>
+                            <MudText Typo="Typo.h6" Style="font-weight:600;">@p.NombreCentroCosto</MudText>
                         </div>
-                        @if (p.UltimoLatido.HasValue)
-                        {
-                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">
-                                Último latido: @p.UltimoLatido.Value.ToLocalTime().ToString("dd/MM HH:mm")
-                            </MudChip>
-                        }
-                    </div>
-
-                    <MudGrid Spacing="3">
-
-                        <!-- Artículos mapeados -->
-                        <MudItem xs="12" md="6">
-                            <MudText Typo="Typo.body2" Class="mb-1">
-                                <strong>Artículos de Visions mapeados en NEXO</strong>
-                                &nbsp;— @p.TotalMapeados de @totalVisions
-                            </MudText>
-                            <MudProgressLinear Value="@pctResuelt" Color="Color.Success" Rounded="true" Size="Size.Large" Class="mb-1" />
-                            @if (p.TotalPendientesMapeo > 0)
+                        <div class="d-flex align-center gap-2 flex-wrap">
+                            @if (p.UltimoLatido.HasValue)
                             {
-                                <MudText Typo="Typo.caption" Color="Color.Warning">
-                                    @p.TotalPendientesMapeo artículo(s) aún sin mapear
-                                </MudText>
+                                var hace = DateTime.UtcNow - p.UltimoLatido.Value;
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">
+                                    Latido hace @(hace.TotalMinutes < 1 ? "menos de 1 min" : $"{(int)hace.TotalMinutes} min")
+                                </MudChip>
                             }
                             else
                             {
-                                <MudText Typo="Typo.caption" Color="Color.Success">¡Todo mapeado!</MudText>
+                                <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined">Sin latido</MudChip>
                             }
-                        </MudItem>
+                        </div>
+                    </div>
 
-                        <!-- Artículos en catálogo NEXO -->
-                        <MudItem xs="12" md="6">
-                            <MudText Typo="Typo.body2" Class="mb-1">
-                                <strong>Artículos totales en catálogo NEXO</strong>
-                                &nbsp;— @p.TotalMapeados vinculados de @p.TotalArticulosNexo totales
-                            </MudText>
-                            <MudProgressLinear Value="@pctMapeados" Color="Color.Primary" Rounded="true" Size="Size.Large" Class="mb-1" />
-                            <MudText Typo="Typo.caption">@p.TotalArticulosNexo artículos en NEXO</MudText>
-                        </MudItem>
+                    <div class="pa-5">
+                        <MudGrid Spacing="4">
 
-                        <!-- Ventas procesadas -->
-                        <MudItem xs="12" md="6">
-                            <div class="d-flex align-center gap-2 mb-2">
-                                <MudIcon Icon="@Icons.Material.Outlined.ShoppingCart" Color="Color.Secondary" Size="Size.Small" />
-                                <MudText Typo="Typo.body2"><strong>Ventas de Visions procesadas</strong></MudText>
+                            <!-- Artículos Visions mapeados -->
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.overline" Color="Color.Secondary" Style="letter-spacing:.07em; display:block;" Class="mb-2">
+                                    ARTÍCULOS DE VISIONS EN NEXO
+                                </MudText>
+                                <div class="d-flex align-center gap-2 mb-1">
+                                    <MudText Typo="Typo.h5" Style="font-weight:700;">@p.TotalMapeados</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">mapeados de @totalVisions detectados</MudText>
+                                </div>
+                                <MudProgressLinear Value="@pctMapeados" Color="Color.Success" Rounded="true" Size="Size.Large" Class="mb-1" />
+                                @if (p.TotalPendientesMapeo > 0)
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Warning">
+                                        @p.TotalPendientesMapeo sin mapear — revisa la pestaña "Artículos pendientes"
+                                    </MudText>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Success">¡Todo mapeado!</MudText>
+                                }
+                            </MudItem>
+
+                            <!-- Calidad del catálogo (por CC) -->
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.overline" Color="Color.Secondary" Style="letter-spacing:.07em; display:block;" Class="mb-2">
+                                    CALIDAD DEL CATÁLOGO (@p.NombreCentroCosto)
+                                </MudText>
+                                <div class="d-flex align-center gap-2 mb-1">
+                                    <MudText Typo="Typo.h5" Style="font-weight:700; color:var(--mud-palette-success);">@p.ArticulosMapeadosCompletos</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">con Marca e IVA completos</MudText>
+                                </div>
+                                @if (p.TotalMapeados > 0)
+                                {
+                                    <MudProgressLinear Value="@pctCompletos" Color="Color.Success" Rounded="true" Size="Size.Large" Class="mb-1" />
+                                    <MudText Typo="Typo.caption" Color="@(p.ArticulosMapeadosSinDatos > 0 ? Color.Error : Color.Success)">
+                                        @if (p.ArticulosMapeadosSinDatos > 0)
+                                        {
+                                            @($"{p.ArticulosMapeadosSinDatos} artículo(s) sin Marca o sin IVA")
+                                        }
+                                        else
+                                        {
+                                            @("¡Catálogo completo!")
+                                        }
+                                    </MudText>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Sin artículos mapeados aún</MudText>
+                                }
+                            </MudItem>
+
+                            <!-- Ventas procesadas -->
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.overline" Color="Color.Secondary" Style="letter-spacing:.07em; display:block;" Class="mb-2">
+                                    VENTAS VISIONS → NEXO
+                                </MudText>
+                                <MudText Typo="Typo.h4" Color="Color.Secondary" Style="font-weight:700;">@p.TotalEventosProcesados.ToString("N0")</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">movimientos de inventario aplicados desde el POS</MudText>
+                            </MudItem>
+
+                            <!-- Facturas -->
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.overline" Color="Color.Secondary" Style="letter-spacing:.07em; display:block;" Class="mb-2">
+                                    FACTURAS NEXO → VISIONS
+                                </MudText>
+                                <MudText Typo="Typo.h4" Color="Color.Tertiary" Style="font-weight:700;">@p.TotalFacturasVisions.ToString("N0")</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">facturas de NEXO confirmadas en Visions</MudText>
+                            </MudItem>
+
+                        </MudGrid>
+                    </div>
+                </MudPaper>
+            }
+
+            <!-- Catálogo compartido NEXO (global, no por CC) -->
+            @if (_salud is not null)
+            {
+                <MudPaper Class="mt-2 pa-5" Elevation="0"
+                          Style="border: 1px dashed var(--mud-palette-divider); border-radius: 16px; opacity:.9;">
+                    <div class="d-flex align-center gap-2 mb-3">
+                        <MudIcon Icon="@Icons.Material.Outlined.LibraryBooks" Color="Color.Default" />
+                        <MudText Typo="Typo.subtitle2" Color="Color.Secondary">
+                            Catálogo compartido NEXO <span style="font-weight:400;">(global — aplica a todos los centros de costo)</span>
+                        </MudText>
+                    </div>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="6" sm="3">
+                            <div style="padding:10px 14px; border-left:2px solid var(--mud-palette-divider); border-radius:0 8px 8px 0; background:var(--mud-palette-background-grey);">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Total artículos NEXO</MudText>
+                                <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@_salud.TotalArticulos.ToString("N0")</MudText>
                             </div>
-                            <MudText Typo="Typo.h4" Color="Color.Secondary">@p.TotalEventosProcesados.ToString("N0")</MudText>
-                            <MudText Typo="Typo.caption">movimientos de inventario aplicados</MudText>
                         </MudItem>
-
-                        <!-- Facturas creadas -->
-                        <MudItem xs="12" md="6">
-                            <div class="d-flex align-center gap-2 mb-2">
-                                <MudIcon Icon="@Icons.Material.Outlined.Receipt" Color="Color.Tertiary" Size="Size.Small" />
-                                <MudText Typo="Typo.body2"><strong>Facturas de Visions en NEXO</strong></MudText>
+                        <MudItem xs="6" sm="3">
+                            <div style="padding:10px 14px; border-left:2px solid var(--mud-palette-divider); border-radius:0 8px 8px 0; background:var(--mud-palette-background-grey);">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Marcas</MudText>
+                                <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@_salud.TotalMarcas</MudText>
                             </div>
-                            <MudText Typo="Typo.h4" Color="Color.Tertiary">@p.TotalFacturasVisions.ToString("N0")</MudText>
-                            <MudText Typo="Typo.caption">visibles en Facturación → Historial</MudText>
                         </MudItem>
-
+                        <MudItem xs="6" sm="3">
+                            <div style="padding:10px 14px; border-left:2px solid var(--mud-palette-divider); border-radius:0 8px 8px 0; background:var(--mud-palette-background-grey);">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Grupos</MudText>
+                                <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@_salud.TotalGruposMayor / @_salud.TotalGruposMenor</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Mayor / Menor</MudText>
+                            </div>
+                        </MudItem>
+                        <MudItem xs="6" sm="3">
+                            <div style="padding:10px 14px; border-left:2px solid var(--mud-palette-divider); border-radius:0 8px 8px 0; background:var(--mud-palette-background-grey);">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Clientes activos</MudText>
+                                <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@_salud.TotalClientes.ToString("N0")</MudText>
+                            </div>
+                        </MudItem>
                     </MudGrid>
                 </MudPaper>
             }
 
-            <div class="d-flex justify-end mt-2">
+            <div class="d-flex justify-end mt-3">
                 <MudButton StartIcon="@Icons.Material.Outlined.Refresh" Variant="Variant.Text"
-                           OnClick="@(async () => await CargarProgresoAsync())" Size="Size.Small">
+                           OnClick="@(async () => { await CargarProgresoAsync(); await CargarSaludAsync(); })" Size="Size.Small">
                     Actualizar
                 </MudButton>
                 <MudText Typo="Typo.caption" Class="align-self-center ml-2" Style="color:var(--mud-palette-text-disabled)">
@@ -739,111 +863,6 @@
 
     </MudTabPanel>
 
-    <!-- ══════════════════════════════════════ TAB 6: SALUD DEL CATÁLOGO -->
-    <MudTabPanel Text="Salud del catálogo" Icon="@Icons.Material.Outlined.HealthAndSafety">
-
-        <div class="d-flex align-center gap-3 mb-4">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                       StartIcon="@Icons.Material.Outlined.Refresh"
-                       OnClick="CargarSaludAsync" Disabled="_cargandoSalud">
-                @(_cargandoSalud ? "Consultando..." : "Actualizar estadísticas")
-            </MudButton>
-            @if (_salud is not null)
-            {
-                <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    Última consulta: @_saludFecha.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")
-                </MudText>
-            }
-        </div>
-
-        @if (_cargandoSalud)
-        {
-            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
-        }
-        else if (_salud is null)
-        {
-            <MudAlert Severity="Severity.Info">Haz clic en <strong>"Actualizar estadísticas"</strong> para consultar el estado del catálogo en tiempo real.</MudAlert>
-        }
-        else
-        {
-            <!-- ── Artículos ── -->
-            <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-2" Style="display:block; letter-spacing:.08em;">ARTÍCULOS</MudText>
-            <MudGrid Spacing="3" Class="mb-4">
-                <MudItem xs="12" sm="4">
-                    <MudPaper Class="pa-4" Elevation="0" Style="border:1px solid var(--mud-palette-divider); border-radius:12px; text-align:center;">
-                        <MudIcon Icon="@Icons.Material.Outlined.Inventory" Color="Color.Primary" Size="Size.Large" />
-                        <MudText Typo="Typo.h4" Style="font-weight:700; margin-top:4px;">@_salud.TotalArticulos.ToString("N0")</MudText>
-                        <MudText Typo="Typo.body2" Color="Color.Secondary">Total en NEXO</MudText>
-                    </MudPaper>
-                </MudItem>
-                <MudItem xs="12" sm="4">
-                    <MudPaper Class="pa-4" Elevation="0" Style="border:1px solid var(--mud-palette-divider); border-radius:12px; text-align:center;">
-                        <MudIcon Icon="@Icons.Material.Outlined.CheckCircle" Color="Color.Success" Size="Size.Large" />
-                        <MudText Typo="Typo.h4" Style="font-weight:700; margin-top:4px; color:var(--mud-palette-success);">@_salud.ArticulosCompletos.ToString("N0")</MudText>
-                        <MudText Typo="Typo.body2" Color="Color.Secondary">Con Marca e IVA completos</MudText>
-                        @if (_salud.TotalArticulos > 0)
-                        {
-                            var pct = (double)_salud.ArticulosCompletos / _salud.TotalArticulos * 100;
-                            <MudProgressLinear Value="@pct" Color="Color.Success" Rounded="true" Class="mt-2" />
-                            <MudText Typo="Typo.caption" Color="Color.Success">@pct.ToString("N1")%</MudText>
-                        }
-                    </MudPaper>
-                </MudItem>
-                <MudItem xs="12" sm="4">
-                    <MudPaper Class="pa-4" Elevation="0"
-                              Style="@($"border:1px solid var(--mud-palette-divider); border-radius:12px; text-align:center; {(_salud.ArticulosSinDatos > 0 ? "background:rgba(var(--mud-palette-error-rgb),.06);" : "")}")">
-                        <MudIcon Icon="@Icons.Material.Outlined.ErrorOutline"
-                                 Color="@(_salud.ArticulosSinDatos > 0 ? Color.Error : Color.Default)" Size="Size.Large" />
-                        <MudText Typo="Typo.h4" Style="@($"font-weight:700; margin-top:4px; color:{(_salud.ArticulosSinDatos > 0 ? "var(--mud-palette-error)" : "inherit")}")">
-                            @_salud.ArticulosSinDatos.ToString("N0")
-                        </MudText>
-                        <MudText Typo="Typo.body2" Color="Color.Secondary">Sin Marca o sin IVA</MudText>
-                    </MudPaper>
-                </MudItem>
-            </MudGrid>
-
-            <!-- ── Catálogos ── -->
-            <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-2" Style="display:block; letter-spacing:.08em;">TABLAS DE CATÁLOGO</MudText>
-            <MudGrid Spacing="3" Class="mb-4">
-                <MudItem xs="6" sm="3">
-                    <div style="padding:12px 16px; border-left:3px solid var(--mud-palette-primary); background:var(--mud-palette-background-grey); border-radius:0 10px 10px 0;">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Marcas</MudText>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@_salud.TotalMarcas</MudText>
-                    </div>
-                </MudItem>
-                <MudItem xs="6" sm="3">
-                    <div style="padding:12px 16px; border-left:3px solid var(--mud-palette-primary); background:var(--mud-palette-background-grey); border-radius:0 10px 10px 0;">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Grupos Mayor</MudText>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@_salud.TotalGruposMayor</MudText>
-                    </div>
-                </MudItem>
-                <MudItem xs="6" sm="3">
-                    <div style="padding:12px 16px; border-left:3px solid var(--mud-palette-primary); background:var(--mud-palette-background-grey); border-radius:0 10px 10px 0;">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Grupos Menor</MudText>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@_salud.TotalGruposMenor</MudText>
-                    </div>
-                </MudItem>
-                <MudItem xs="6" sm="3">
-                    <div style="padding:12px 16px; border-left:3px solid var(--mud-palette-primary); background:var(--mud-palette-background-grey); border-radius:0 10px 10px 0;">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Presentaciones</MudText>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@_salud.TotalPresentaciones</MudText>
-                    </div>
-                </MudItem>
-            </MudGrid>
-
-            <!-- ── Clientes ── -->
-            <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-2" Style="display:block; letter-spacing:.08em;">CLIENTES</MudText>
-            <MudGrid Spacing="3">
-                <MudItem xs="12" sm="4">
-                    <div style="padding:12px 16px; border-left:3px solid var(--mud-palette-info); background:var(--mud-palette-background-grey); border-radius:0 10px 10px 0;">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Clientes activos en NEXO</MudText>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:700; color:var(--mud-palette-info);">@_salud.TotalClientes</MudText>
-                    </div>
-                </MudItem>
-            </MudGrid>
-        }
-
-    </MudTabPanel>
 
 </MudTabs>
 
@@ -869,6 +888,9 @@
     private bool _usarSegundos;
     private bool _guardando;
     private bool _descargando;
+    // 0 = traer todas, 1 = desde hoy, 2 = desde fecha específica
+    private int _modoFechaVentas;
+    private DateTime? _editFechaInicioVentas;
 
     // ── Progreso de sincronización ───────────────────────────────────────
     private bool _cargandoProgreso;
@@ -894,12 +916,12 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(CargarEstadoAsync(), CargarCatalogoAsync(), CargarProgresoAsync());
+        await Task.WhenAll(CargarEstadoAsync(), CargarCatalogoAsync(), CargarProgresoAsync(), CargarSaludAsync());
         await CargarPendientesAsync();
         _timer = new System.Timers.Timer(30_000);
         _timer.Elapsed += async (_, _) =>
         {
-            await Task.WhenAll(CargarEstadoAsync(), CargarProgresoAsync());
+            await Task.WhenAll(CargarEstadoAsync(), CargarProgresoAsync(), CargarSaludAsync());
             await InvokeAsync(StateHasChanged);
         };
         _timer.Start();
@@ -921,7 +943,7 @@
             _salud = await ApiClient.GetAsync<SaludCatalogoResponse>("api/integracion/salud-catalogo");
             _saludFecha = DateTime.UtcNow;
         }
-        catch (Exception ex) { Snackbar.Add($"Error al consultar salud: {ex.Message}", Severity.Error); }
+        catch { /* silencioso — no bloquea el resto de la UI */ }
         finally { _cargandoSalud = false; }
     }
 
@@ -1006,10 +1028,13 @@
 
             if (_configAgente is not null)
             {
-                _editVisionsServer    = ExtraerServidorSql(_configAgente.VisionsDbConexion);
-                _usarSegundos        = _configAgente.IntervalSeconds > 0;
-                _editIntervalMinutes = _configAgente.IntervalMinutes > 0 ? _configAgente.IntervalMinutes : 5;
-                _editIntervalSeconds = _configAgente.IntervalSeconds > 0 ? _configAgente.IntervalSeconds : 30;
+                _editVisionsServer     = ExtraerServidorSql(_configAgente.VisionsDbConexion);
+                _usarSegundos         = _configAgente.IntervalSeconds > 0;
+                _editIntervalMinutes  = _configAgente.IntervalMinutes > 0 ? _configAgente.IntervalMinutes : 5;
+                _editIntervalSeconds  = _configAgente.IntervalSeconds > 0 ? _configAgente.IntervalSeconds : 30;
+                _editFechaInicioVentas = _configAgente.FechaInicioSyncVentas;
+                _modoFechaVentas = _configAgente.FechaInicioSyncVentas is null ? 0
+                    : _configAgente.FechaInicioSyncVentas.Value.Date == DateTime.Today ? 1 : 2;
             }
         }
         catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
@@ -1046,16 +1071,18 @@
         {
             var minutos  = _usarSegundos ? 0 : _editIntervalMinutes;
             var segundos = _usarSegundos ? _editIntervalSeconds : 0;
+            var fechaVentas = _modoFechaVentas == 0 ? null : _editFechaInicioVentas;
             await ApiClient.PutAsync<ActualizarConfiguracionAgenteRequest, object>(
                 $"api/integracion/agentes/{_configAgente.AgenteSyncID}/config",
                 new ActualizarConfiguracionAgenteRequest(
-                    _editVisionsServer, null, minutos, segundos, null, null));
+                    _editVisionsServer, null, minutos, segundos, null, null, fechaVentas));
             Snackbar.Add("Configuración guardada.", Severity.Success);
             _configAgente = _configAgente with
             {
-                VisionsDbConexion = _editVisionsServer,
-                IntervalMinutes   = minutos,
-                IntervalSeconds   = segundos,
+                VisionsDbConexion     = _editVisionsServer,
+                IntervalMinutes       = minutos,
+                IntervalSeconds       = segundos,
+                FechaInicioSyncVentas = fechaVentas,
             };
         }
         catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }

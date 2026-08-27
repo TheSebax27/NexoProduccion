@@ -31,8 +31,8 @@ public class TareaSincronizarConfiguracion
     // Devuelve null si el Administrador todavia no configuro el codigo en NEXO
     // Web (Catalogo > Centros de Costo) -- en ese caso no hay nada seguro que
     // sincronizar todavia.
-    // Devuelve (CentroCostoVisions, IntervalMinutes) -- Worker.cs usa ambos.
-    public async Task<(int? CentroCosto, int IntervalMinutes)> EjecutarAsync(CancellationToken ct)
+    // Devuelve (CentroCostoVisions, IntervalMinutes, FechaInicioSyncVentas) -- Worker.cs usa los tres.
+    public async Task<(int? CentroCosto, int IntervalMinutes, DateTime? FechaInicioSyncVentas)> EjecutarAsync(CancellationToken ct)
     {
         var configuracion = await _apiClient.ObtenerConfiguracionAsync(ct);
 
@@ -40,7 +40,7 @@ public class TareaSincronizarConfiguracion
         {
             _logger.LogWarning(
                 "El Centro de Costo de este agente todavia no tiene configurado el codigo CENTROCOSTO de Visions en NEXO Web (Catalogo > Centros de Costo). No se sincroniza nada en esta ronda.");
-            return (null, configuracion.IntervalMinutes);
+            return (null, configuracion.IntervalMinutes, configuracion.FechaInicioSyncVentas);
         }
 
         using var connection = _visionsDb.CreateConnection();
@@ -67,6 +67,6 @@ public class TareaSincronizarConfiguracion
             configuracion.CentroCostoVisions, configuracion.Activo,
             configuracion.PrefijosDocumentoVenta ?? "(ninguno)", configuracion.IntervalMinutes);
 
-        return (configuracion.CentroCostoVisions, configuracion.IntervalMinutes);
+        return (configuracion.CentroCostoVisions, configuracion.IntervalMinutes, configuracion.FechaInicioSyncVentas);
     }
 }

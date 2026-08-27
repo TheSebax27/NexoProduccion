@@ -20,9 +20,10 @@ public class ArticulosController : ControllerBase
     public async Task<ActionResult<ArticulosPaginadosResponse>> Listar(
         [FromQuery] int? tipoArticuloId, [FromQuery] string? texto,
         [FromQuery] bool? estado,
-        [FromQuery] int pagina = 1, [FromQuery] int tamano = 100)
+        [FromQuery] int pagina = 1, [FromQuery] int tamano = 100,
+        [FromQuery] int? centroCostoId = null)
     {
-        return Ok(await _service.ListarArticulosAsync(tipoArticuloId, texto, estado, pagina, tamano));
+        return Ok(await _service.ListarArticulosAsync(tipoArticuloId, texto, estado, pagina, tamano, centroCostoId));
     }
 
     [HttpGet("{id:int}")]
@@ -62,6 +63,13 @@ public class ArticulosController : ControllerBase
         [FromQuery] int? tipoArticuloId, [FromQuery] bool? estado)
     {
         return Ok(await _service.ListarTodosArticulosAsync(tipoArticuloId, estado));
+    }
+
+    [HttpGet("buscar")]
+    public async Task<ActionResult<IEnumerable<ArticuloItem>>> Buscar(
+        [FromQuery] string? q, [FromQuery] bool? soloTerminados, [FromQuery] int max = 30)
+    {
+        return Ok(await _service.BuscarArticulosAsync(q, soloTerminados, max));
     }
 
     [HttpGet("tipos")]

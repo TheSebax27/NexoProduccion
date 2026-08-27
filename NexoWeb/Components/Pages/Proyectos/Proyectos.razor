@@ -1,4 +1,4 @@
-﻿@page "/proyectos"
+@page "/proyectos"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -10,11 +10,6 @@
 <MudText Typo="Typo.h5" Class="mb-4">Proyectos</MudText>
 <InfoAyuda Texto="Gestión básica de proyectos: tareas con responsable y fecha límite, y costos imputados (mano de obra, materiales u otros) comparados contra el presupuesto." />
 
-<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
-           StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
-    Nuevo Proyecto
-</MudButton>
-
 @if (_errorCarga is not null)
 {
     <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar los proyectos: @_errorCarga</MudAlert>
@@ -25,34 +20,122 @@
 }
 else if (_proyectos.Count == 0)
 {
-    <MudText>No hay proyectos registrados.</MudText>
+    <NexoEmptyState
+        Icono="@Icons.Material.Outlined.AccountTree"
+        Titulo="Crea tu primer proyecto"
+        Descripcion="Organiza tareas, asigna responsables, registra costos y compara contra el presupuesto. Todo en un solo lugar."
+        BotonTexto="Nuevo proyecto"
+        BotonOnClick="AbrirCreacionAsync" />
 }
 else
 {
-    <div class="nexo-card-grid">
-        @foreach (var p in _proyectos)
+    @* ── Barra de estado / filtro ── *@
+    <div class="py-kpi-bar mb-4">
+        @foreach (var (etiqueta, est, count) in _conteoEstados)
         {
-            <div class="nexo-item-card">
-                <div class="d-flex align-center justify-space-between">
+            <button class="py-kpi-pill @(_filtroEstado == est ? "py-kpi-pill--active" : "")"
+                    @onclick="@(() => ToggleFiltro(est))">
+                <span class="py-kpi-pill__dot py-kpi-pill__dot--@est.ToLower()"></span>
+                <span>@etiqueta</span>
+                <span class="py-kpi-pill__badge">@count</span>
+            </button>
+        }
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
+                   StartIcon="@Icons.Material.Filled.Add" Class="ml-auto" Size="Size.Small">
+            Nuevo Proyecto
+        </MudButton>
+    </div>
+
+    @* ── Grid de cards ── *@
+    <div class="nexo-card-grid">
+        @foreach (var p in _proyectosFiltrados)
+        {
+            @{
+                var tareasPct    = p.TotalTareas > 0 ? (double)p.TareasCompletadas / p.TotalTareas * 100 : 0;
+                var sobrepresup  = p.CostoTotal > p.Presupuesto;
+                var diasRestantes = p.FechaFin.HasValue ? (int)(p.FechaFin.Value.Date - DateTime.Today).TotalDays : (int?)null;
+                var salud        = Salud(p, diasRestantes);
+            }
+            <div class="nexo-item-card py-card">
+                @* Indicador de salud — borde top *@
+                <div class="py-card__health-bar py-card__health-bar--@salud.Color"></div>
+
+                <div class="d-flex align-center justify-space-between mb-1">
                     <div class="nexo-item-card__title">@p.Nombre</div>
-                    <div class="d-flex" style="gap: 0.3rem;">
-                        <MudChip T="string" Size="Size.Small" Color="@ColorPrioridad(p.Prioridad)">@p.Prioridad</MudChip>
-                        <MudChip T="string" Size="Size.Small" Color="@ColorEstado(p.Estado)">@p.Estado</MudChip>
-                    </div>
+                    <MudChip T="string" Size="Size.Small" Color="@ColorEstado(p.Estado)"
+                             Style="margin:0;height:22px;font-size:.72rem">@EstadoLabel(p.Estado)</MudChip>
                 </div>
-                <div class="nexo-item-card__sub">@(p.Cliente ?? "Sin cliente") @(p.CentroCosto is not null ? $"· {p.CentroCosto}" : "")</div>
-                <div class="nexo-item-card__row"><span>Tareas</span><strong>@p.TareasCompletadas / @p.TotalTareas</strong></div>
+
+                <div class="nexo-item-card__sub mb-2">
+                    @(p.Cliente ?? "Sin cliente")
+                    @if (p.CentroCosto is not null) { <span> · @p.CentroCosto</span> }
+                    <span class="py-card__prioridad py-card__prioridad--@p.Prioridad.ToLower()">@p.Prioridad</span>
+                </div>
+
+                @* Barra de tareas *@
+                <div class="mb-2">
+                    <div class="d-flex justify-space-between mb-1" style="font-size:.75rem;color:var(--mud-palette-text-secondary)">
+                        <span>Tareas</span>
+                        <span>@p.TareasCompletadas / @p.TotalTareas</span>
+                    </div>
+                    <MudProgressLinear Value="@tareasPct" Color="@(tareasPct >= 100 ? Color.Success : Color.Primary)"
+                                       Rounded="true" Size="Size.Small" />
+                </div>
+
                 @if (p.TotalHitos > 0)
                 {
-                    <div class="nexo-item-card__row"><span>Hitos</span><strong>@p.HitosCompletados / @p.TotalHitos</strong></div>
+                    <div class="nexo-item-card__row">
+                        <span>Hitos</span>
+                        <strong>@p.HitosCompletados / @p.TotalHitos</strong>
+                    </div>
                 }
-                <div class="nexo-item-card__row"><span>Presupuesto</span><strong>@p.Presupuesto.ToString("C0")</strong></div>
+
+                @* Presupuesto vs costo *@
                 <div class="nexo-item-card__row">
-                    <span>Costo Actual</span>
-                    <strong style="color: @(p.CostoTotal > p.Presupuesto ? "var(--n-error, #EF4444)" : "inherit")">
+                    <span>Presupuesto</span>
+                    <strong>@p.Presupuesto.ToString("C0")</strong>
+                </div>
+                <div class="nexo-item-card__row">
+                    <span>Costo actual</span>
+                    <strong style="color:@(sobrepresup ? "var(--mud-palette-error)" : "inherit")">
                         @p.CostoTotal.ToString("C0")
+                        @if (sobrepresup) { <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" /> }
                     </strong>
                 </div>
+
+                @* Fecha / countdown *@
+                @if (diasRestantes.HasValue && p.Estado == "EN_CURSO")
+                {
+                    <div class="py-card__countdown @(diasRestantes < 0 ? "py-card__countdown--late" : diasRestantes <= 7 ? "py-card__countdown--soon" : "")">
+                        @if (diasRestantes < 0)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" />
+                            <span>Vencido hace @Math.Abs(diasRestantes.Value) días</span>
+                        }
+                        else if (diasRestantes == 0)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.AccessTime" Size="Size.Small" />
+                            <span>Vence hoy</span>
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Outlined.CalendarToday" Size="Size.Small" />
+                            <span>Vence en @diasRestantes días</span>
+                        }
+                    </div>
+                }
+                else if (p.FechaFin.HasValue)
+                {
+                    <div style="font-size:.75rem;color:var(--mud-palette-text-secondary);margin-top:4px">
+                        @(p.Estado == "FINALIZADO" ? "Finalizó" : "Plazo:") @p.FechaFin.Value.ToString("dd/MM/yyyy")
+                    </div>
+                }
+
+                @* Chip de salud *@
+                <div class="py-card__health-chip py-card__health-chip--@salud.Color">
+                    @salud.Texto
+                </div>
+
                 <div class="nexo-item-card__actions">
                     <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(p))">Gestionar</MudButton>
                     <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(p))">Editar</MudButton>
@@ -60,143 +143,144 @@ else
             </div>
         }
     </div>
+
+    @if (!_proyectosFiltrados.Any())
+    {
+        <MudAlert Severity="Severity.Info">No hay proyectos con ese estado.</MudAlert>
+    }
 }
 
 @code {
-    private List<ProyectoItem> _proyectos = new();
-    private List<ClienteItem> _clientes = new();
+    private List<ProyectoItem> _proyectos  = new();
+    private List<ClienteItem>  _clientes   = new();
     private List<CentroCostoItem> _centrosCosto = new();
-    private List<EmpleadoItem> _empleados = new();
-    private List<ArticuloItem> _articulos = new();
+    private List<EmpleadoItem> _empleados  = new();
+    private List<ArticuloItem> _articulos  = new();
     private bool _cargando = true;
     private string? _errorCarga;
+    private string? _filtroEstado;
+
+    private IEnumerable<ProyectoItem> _proyectosFiltrados =>
+        _filtroEstado is null ? _proyectos : _proyectos.Where(p => p.Estado == _filtroEstado);
+
+    private IEnumerable<(string Etiqueta, string Est, int Count)> _conteoEstados =>
+        new[]
+        {
+            ("En curso",      "EN_CURSO",      _proyectos.Count(p => p.Estado == "EN_CURSO")),
+            ("Planificado",   "PLANIFICADO",   _proyectos.Count(p => p.Estado == "PLANIFICADO")),
+            ("Finalizado",    "FINALIZADO",    _proyectos.Count(p => p.Estado == "FINALIZADO")),
+            ("Cancelado",     "CANCELADO",     _proyectos.Count(p => p.Estado == "CANCELADO")),
+        }.Where(x => x.Item3 > 0);
+
+    private void ToggleFiltro(string est) =>
+        _filtroEstado = _filtroEstado == est ? null : est;
+
+    private record SaludInfo(string Color, string Texto);
+
+    private SaludInfo Salud(ProyectoItem p, int? diasRestantes)
+    {
+        if (p.Estado == "CANCELADO") return new("neutral", "Cancelado");
+        if (p.Estado == "FINALIZADO") return new("ok", "Finalizado");
+        if (diasRestantes.HasValue && diasRestantes < 0) return new("risk", "Vencido");
+        if (p.CostoTotal > p.Presupuesto) return new("risk", "Sobre presupuesto");
+        if (p.TotalTareas > 0 && p.TareasCompletadas == p.TotalTareas) return new("ok", "Tareas listas");
+        if (diasRestantes.HasValue && diasRestantes <= 7) return new("warn", "Vence pronto");
+        return new("ok", "En buen estado");
+    }
 
     private Color ColorEstado(string estado) => estado switch
     {
-        "FINALIZADO" => Color.Success,
-        "EN_CURSO" => Color.Info,
-        "CANCELADO" => Color.Error,
-        _ => Color.Default
+        "FINALIZADO"  => Color.Success,
+        "EN_CURSO"    => Color.Info,
+        "CANCELADO"   => Color.Error,
+        _             => Color.Default
     };
 
-    private Color ColorPrioridad(string prioridad) => prioridad switch
+    private string EstadoLabel(string estado) => estado switch
     {
-        "ALTA" => Color.Error,
-        "MEDIA" => Color.Warning,
-        _ => Color.Default
+        "EN_CURSO"    => "En curso",
+        "PLANIFICADO" => "Planificado",
+        "FINALIZADO"  => "Finalizado",
+        "CANCELADO"   => "Cancelado",
+        _             => estado
     };
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var tareaProyectos = ApiClient.GetAsync<List<ProyectoItem>>("api/proyectos");
-            var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
-            var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true");
-            var tareaEmpleados = ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados?soloActivos=true");
-            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
-
-            await Task.WhenAll(tareaProyectos, tareaClientes, tareaCentrosCosto, tareaEmpleados, tareaArticulos);
-
-            _proyectos = await tareaProyectos ?? new();
-            _clientes = (await tareaClientes ?? new()).Where(c => c.Estado).ToList();
-            _centrosCosto = await tareaCentrosCosto ?? new();
-            _empleados = await tareaEmpleados ?? new();
-            _articulos = await tareaArticulos ?? new();
+            var t1 = ApiClient.GetAsync<List<ProyectoItem>>("api/proyectos");
+            var t2 = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
+            var t3 = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true");
+            var t4 = ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados?soloActivos=true");
+            var t5 = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
+            await Task.WhenAll(t1, t2, t3, t4, t5);
+            _proyectos    = await t1 ?? new();
+            _clientes     = (await t2 ?? new()).Where(c => c.Estado).ToList();
+            _centrosCosto = await t3 ?? new();
+            _empleados    = await t4 ?? new();
+            _articulos    = await t5 ?? new();
         }
-        catch (Exception ex)
-        {
-            _errorCarga = ex.Message;
-        }
-        finally
-        {
-            _cargando = false;
-        }
+        catch (Exception ex) { _errorCarga = ex.Message; }
+        finally { _cargando = false; }
     }
 
     private async Task CargarProyectosAsync()
     {
-        try
-        {
-            _proyectos = await ApiClient.GetAsync<List<ProyectoItem>>("api/proyectos") ?? new();
-        }
-        catch (Exception ex)
-        {
-            _errorCarga = ex.Message;
-        }
+        try { _proyectos = await ApiClient.GetAsync<List<ProyectoItem>>("api/proyectos") ?? new(); }
+        catch (Exception ex) { _errorCarga = ex.Message; }
     }
 
     private async Task AbrirCreacionAsync()
     {
-        var parametros = new DialogParameters<ProyectoDialog>
+        var p = new DialogParameters<ProyectoDialog>
         {
             { x => x.Clientes, _clientes },
             { x => x.CentrosCosto, _centrosCosto }
         };
-
-        var dialogo = await DialogService.ShowAsync<ProyectoDialog>("Nuevo Proyecto", parametros);
-        var resultado = await dialogo.Result;
-
-        if (resultado is null || resultado.Canceled)
-            return;
-
+        var d = await DialogService.ShowAsync<ProyectoDialog>("Nuevo Proyecto", p);
+        var r = await d.Result;
+        if (r is null || r.Canceled) return;
         try
         {
-            var request = (CrearProyectoRequest)resultado.Data!;
-            await ApiClient.PostAsync<CrearProyectoRequest, object?>("api/proyectos", request);
+            await ApiClient.PostAsync<CrearProyectoRequest, object?>("api/proyectos", (CrearProyectoRequest)r.Data!);
             Snackbar.Add("Proyecto creado correctamente.", Severity.Success);
             await CargarProyectosAsync();
         }
-        catch (HttpRequestException ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
     }
 
     private async Task AbrirEdicionAsync(ProyectoItem proyecto)
     {
-        var parametros = new DialogParameters<ProyectoDialog>
+        var p = new DialogParameters<ProyectoDialog>
         {
             { x => x.Proyecto, proyecto },
             { x => x.Clientes, _clientes },
             { x => x.CentrosCosto, _centrosCosto }
         };
-
-        var dialogo = await DialogService.ShowAsync<ProyectoDialog>("Editar Proyecto", parametros);
-        var resultado = await dialogo.Result;
-
-        if (resultado is null || resultado.Canceled)
-            return;
-
+        var d = await DialogService.ShowAsync<ProyectoDialog>("Editar Proyecto", p);
+        var r = await d.Result;
+        if (r is null || r.Canceled) return;
         try
         {
-            var request = (ActualizarProyectoRequest)resultado.Data!;
-            await ApiClient.PutAsync<ActualizarProyectoRequest, object?>($"api/proyectos/{proyecto.ProyectoID}", request);
+            await ApiClient.PutAsync<ActualizarProyectoRequest, object?>($"api/proyectos/{proyecto.ProyectoID}", (ActualizarProyectoRequest)r.Data!);
             Snackbar.Add("Proyecto actualizado correctamente.", Severity.Success);
             await CargarProyectosAsync();
         }
-        catch (HttpRequestException ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
     }
 
     private async Task AbrirGestionAsync(ProyectoItem proyecto)
     {
-        var parametros = new DialogParameters<GestionProyectoDialog>
+        var p = new DialogParameters<GestionProyectoDialog>
         {
             { x => x.Proyecto, proyecto },
             { x => x.Empleados, _empleados },
             { x => x.Articulos, _articulos }
         };
-
-        // OJO: ShowAsync resuelve apenas el dialogo se ABRE, no cuando se
-        // CIERRA -- hay que esperar su .Result para refrescar la lista con
-        // los cambios reales (tareas/hitos/costos agregados adentro).
-        var dialogo = await DialogService.ShowAsync<GestionProyectoDialog>("Gestionar Proyecto", parametros,
+        var d = await DialogService.ShowAsync<GestionProyectoDialog>("Gestionar Proyecto", p,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
-        await dialogo.Result;
-
+        await d.Result;
         await CargarProyectosAsync();
     }
 }

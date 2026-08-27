@@ -55,9 +55,23 @@ DECLARE
     @TipoCompra    INT,
     @TipoBaja      INT;
 
--- Tipos de movimiento (referenciar desde la tabla, no hardcodear)
+-- Tipos de movimiento y usuario valido (no hardcodear IDs que pueden variar por instalacion)
 SET @TipoCompra = (SELECT TipoMovID FROM Kardex.TiposMovimientoKardex WHERE Codigo = 'ENTRADA_COMPRA');
 SET @TipoBaja   = (SELECT TipoMovID FROM Kardex.TiposMovimientoKardex WHERE Codigo = 'BAJA_MERMA');
+
+-- Obtener un UsuarioID valido del sistema (el primer admin o cualquier usuario activo)
+DECLARE @UsuarioSistema INT;
+SET @UsuarioSistema = (
+    SELECT TOP 1 UsuarioID FROM Seguridad.Usuarios
+    WHERE Estado = 1
+    ORDER BY UsuarioID
+);
+IF @UsuarioSistema IS NULL
+BEGIN
+    PRINT 'ERROR: No hay usuarios con Estado=1 en Seguridad.Usuarios. Crea al menos un usuario antes de correr este script.';
+    RETURN;
+END
+PRINT 'Usando UsuarioID=' + CAST(@UsuarioSistema AS NVARCHAR) + ' para los movimientos de Kardex.';
 
 -- =============================================================================
 -- BLOQUE 1 - ARTICULOS NUEVOS
@@ -199,7 +213,7 @@ BEGIN TRY
             ('Maria Elena Torres Rojas', '52847392', '3178456231', 'matorres@outlook.com',
              'Calle 45 # 12-67 Apt 301, Bogota', 1, 'DIRECTO', 'REFERIDO',
              'Natural', 'Maria Elena', NULL, 'Torres', 'Rojas',
-             'CC', NULL, 'CUNDINAMARCA', 'BOGOTA D.C.',
+             'CC', 7, 'CUNDINAMARCA', 'BOGOTA D.C.',
              '25', '001', 'COLOMBIA', 'CO', GETDATE());
         SET @IdCliente1 = SCOPE_IDENTITY();
         PRINT '  Cliente Maria Elena Torres creado. ID=' + CAST(@IdCliente1 AS NVARCHAR);
@@ -222,7 +236,7 @@ BEGIN TRY
             ('Distribuidora Central del Oriente SAS', '900847321', '6086421234', 'compras@distcentral.com',
              'Carrera 18 # 24-15, Tunja', 1, 'MAYORISTA', 'COMERCIAL',
              'Juridica', NULL, NULL, NULL, NULL,
-             'NIT', 8, 'BOYACA', 'TUNJA',
+             'NIT', 1, 'BOYACA', 'TUNJA',
              '15', '001', 'COLOMBIA', 'CO', GETDATE());
         SET @IdCliente2 = SCOPE_IDENTITY();
         PRINT '  Cliente Distribuidora Central creado. ID=' + CAST(@IdCliente2 AS NVARCHAR);
@@ -261,7 +275,7 @@ BEGIN TRY
         VALUES
             ('Molinos del Pacifico SAS', '860012547', 'Dpto. Ventas', '6014251400', 'ventas@molinospacifico.com',
              'Zona Industrial Montevideo Bodega 12, Bogota', 1,
-             'Juridica', '31', 7,
+             'Juridica', '31', 9,
              'CUNDINAMARCA', 'BOGOTA D.C.', '25', '001', 'COLOMBIA', 'CO');
         SET @IdProv1 = SCOPE_IDENTITY();
         PRINT '  Proveedor Molinos del Pacifico creado. ID=' + CAST(@IdProv1 AS NVARCHAR);
@@ -282,7 +296,7 @@ BEGIN TRY
         VALUES
             ('Luis Ernesto Parra Molina', '79345682', 'Luis Parra', '3125478923', 'leparra@hotmail.com',
              'Cra 7 # 80-25 Apto 502, Bogota', 1,
-             'Natural', '13', 3,
+             'Natural', '13', 1,
              'CUNDINAMARCA', 'BOGOTA D.C.', '25', '001', 'COLOMBIA', 'CO');
         SET @IdProv2 = SCOPE_IDENTITY();
         PRINT '  Proveedor Luis Parra creado. ID=' + CAST(@IdProv2 AS NVARCHAR);
@@ -334,13 +348,16 @@ BEGIN TRY
              Cantidad, CostoUnitario, CantidadSaldo, CostoPromedioSaldo, ObservacionDetallada, UsuarioID)
         VALUES (@IdHarina, 5, @LoteHarina, @TipoCompra, 7,
                 200.0000, 1850.0000, 200.0000, 1850.0000,
-                'Compra inicial TEST - Molinos del Pacifico SAS, Factura F-001', 1);
+                'Compra inicial TEST - Molinos del Pacifico SAS, Factura F-001', @UsuarioSistema);
 
         UPDATE Catalogo.Tarjetas SET CostoPromedio = 1850.0000 WHERE ArticuloID = @IdHarina;
         PRINT '  Stock Harina: 200 KG a $1.850 c/u en Bodega Harinas y Secos.';
     END
     ELSE
+    BEGIN
+        SET @LoteHarina = (SELECT LoteID FROM Inventario.Lotes WHERE NumeroLote = 'LOTE-HAR-2026-08-TEST' AND ArticuloID = @IdHarina);
         PRINT '  Lote Harina ya existe.';
+    END
 
     -- Lote Azucar
     IF NOT EXISTS (SELECT 1 FROM Inventario.Lotes WHERE NumeroLote = 'LOTE-AZU-2026-08-TEST' AND ArticuloID = @IdAzucar)
@@ -357,13 +374,16 @@ BEGIN TRY
              Cantidad, CostoUnitario, CantidadSaldo, CostoPromedioSaldo, ObservacionDetallada, UsuarioID)
         VALUES (@IdAzucar, 5, @LoteAzucar, @TipoCompra, 7,
                 100.0000, 1600.0000, 100.0000, 1600.0000,
-                'Compra inicial TEST - Incauca, Factura F-002', 1);
+                'Compra inicial TEST - Incauca, Factura F-002', @UsuarioSistema);
 
         UPDATE Catalogo.Tarjetas SET CostoPromedio = 1600.0000 WHERE ArticuloID = @IdAzucar;
         PRINT '  Stock Azucar: 100 KG a $1.600 c/u en Bodega Harinas y Secos.';
     END
     ELSE
+    BEGIN
+        SET @LoteAzucar = (SELECT LoteID FROM Inventario.Lotes WHERE NumeroLote = 'LOTE-AZU-2026-08-TEST' AND ArticuloID = @IdAzucar);
         PRINT '  Lote Azucar ya existe.';
+    END
 
     -- Lote Margarina (bodega 4 = Lacteos y Frios)
     IF NOT EXISTS (SELECT 1 FROM Inventario.Lotes WHERE NumeroLote = 'LOTE-MAR-2026-08-TEST' AND ArticuloID = @IdMargarina)
@@ -380,13 +400,16 @@ BEGIN TRY
              Cantidad, CostoUnitario, CantidadSaldo, CostoPromedioSaldo, ObservacionDetallada, UsuarioID)
         VALUES (@IdMargarina, 5, @LoteMargarina, @TipoCompra, 7,
                 30.0000, 4200.0000, 30.0000, 4200.0000,
-                'Compra inicial TEST - Dan Leb, Factura F-003', 1);
+                'Compra inicial TEST - Dan Leb, Factura F-003', @UsuarioSistema);
 
         UPDATE Catalogo.Tarjetas SET CostoPromedio = 4200.0000 WHERE ArticuloID = @IdMargarina;
         PRINT '  Stock Margarina: 30 KG a $4.200 c/u en Bodega Harinas y Secos.';
     END
     ELSE
+    BEGIN
+        SET @LoteMargarina = (SELECT LoteID FROM Inventario.Lotes WHERE NumeroLote = 'LOTE-MAR-2026-08-TEST' AND ArticuloID = @IdMargarina);
         PRINT '  Lote Margarina ya existe.';
+    END
 
     COMMIT TRANSACTION;
 END TRY
@@ -411,10 +434,7 @@ BEGIN TRY
     IF NOT EXISTS (SELECT 1 FROM Produccion.RecetaBOM WHERE ProductoTerminadoID = @IdPanTajado AND Version = 1)
     BEGIN
         INSERT INTO Produccion.RecetaBOM (ProductoTerminadoID, NombreReceta, Version, CantidadRendimientoBase)
-        OUTPUT INSERTED.RecetaID INTO @tmpReceta(RecetaID)
         VALUES (@IdPanTajado, 'Pan Tajado Molde 500g - Receta v1 TEST', 1, 10.0000);
-
-        -- Leer el RecetaID recien insertado (OUTPUT no puede asignarse directo a variable)
         SET @RecetaID = SCOPE_IDENTITY();
 
         -- Detalle: Harina de Trigo - 2 KG por 10 panes (3% merma)
@@ -473,7 +493,7 @@ BEGIN TRY
              4,        -- CentroCosto: Panaderia y Pasteleria
              5,        -- BodegaOrigenMP: Harinas y Secos
              9,        -- BodegaDestinoPT: Bodega Producto Terminado
-             DATEADD(DAY, 1, GETDATE()), 1, 0, 0, 0,
+             DATEADD(DAY, 1, GETDATE()), @UsuarioSistema, 0, 0, 0,
              'Orden de produccion de prueba - verificacion integral NEXO');
         SET @OpID = SCOPE_IDENTITY();
         PRINT '  Orden OP-TEST-20260821 creada en estado Planificada. ID=' + CAST(@OpID AS NVARCHAR);
@@ -508,7 +528,7 @@ SET @EstadoOP = (SELECT e.Nombre FROM Produccion.OrdenesProduccion op
 
 IF @EstadoOP = 'Planificada'
 BEGIN
-    EXEC Produccion.sp_LiberarOrdenProduccion @OrdenProduccionID = @OpID, @UsuarioID = 1;
+    EXEC Produccion.sp_LiberarOrdenProduccion @OrdenProduccionID = @OpID, @UsuarioID = @UsuarioSistema;
     PRINT '  Orden liberada. Stock suficiente confirmado por el SP.';
 END
 ELSE
@@ -529,7 +549,7 @@ SET @EstadoOP = (SELECT e.Nombre FROM Produccion.OrdenesProduccion op
 
 IF @EstadoOP = 'Liberada'
 BEGIN
-    EXEC Produccion.sp_IniciarOrdenProduccion @OrdenProduccionID = @OpID, @UsuarioID = 1;
+    EXEC Produccion.sp_IniciarOrdenProduccion @OrdenProduccionID = @OpID, @UsuarioID = @UsuarioSistema;
     PRINT '  Orden iniciada. Insumos descontados de inventario. Kardex SALIDA_WIP generado.';
 END
 ELSE
@@ -559,7 +579,7 @@ BEGIN
         @HorasCIF             = 0.0000,
         @NumeroLotePT         = 'PT-PAN-TEST-001',
         @FechaVencimientoPT   = '2026-08-28',
-        @UsuarioID            = 1;
+        @UsuarioID            = @UsuarioSistema;
     PRINT '  Orden finalizada. 19 panes entrados al stock. Costo real calculado.';
     PRINT '  Lote PT-PAN-TEST-001 creado. Kardex ENTRADA_PT generado.';
 END
@@ -582,7 +602,7 @@ EXEC Kardex.sp_AjustePositivoInventario
     @Cantidad     = 5.0000,
     @CostoUnitario = 1850.0000,
     @Motivo       = 'Diferencia de inventario en conteo fisico agosto 2026 - TEST',
-    @UsuarioID    = 1;
+    @UsuarioID    = @UsuarioSistema;
 
 PRINT '  Ajuste aplicado: +5 KG de harina en Bodega Harinas y Secos. Kardex AJU_INV generado.';
 
@@ -612,7 +632,7 @@ BEGIN
         @CantidadPerdida     = 2.0000,
         @MotivoID            = @MotivoMermaID,
         @ObservacionDetallada = 'Dano por humedad en bodega - saco perforado - TEST agosto 2026',
-        @UsuarioRegistraID   = 1;
+        @UsuarioRegistraID   = @UsuarioSistema;
     PRINT '  Baja aplicada: -2 KG de azucar. Kardex BAJA_MERMA generado.';
 END
 ELSE
@@ -783,7 +803,7 @@ ORDER BY e.EventoID DESC;
 PRINT '';
 PRINT '10H - LOTES CREADOS:';
 SELECT l.NumeroLote, a.Referencia AS SKU, l.FechaFabricacion, l.FechaVencimiento, l.Estado,
-       p.RazonSocial AS Proveedor
+       ISNULL(p.RazonSocial, '(Produccion interna)') AS Proveedor
 FROM Inventario.Lotes l
 JOIN Catalogo.Tarjetas a ON a.ArticuloID = l.ArticuloID
 LEFT JOIN Catalogo.Proveedores p ON p.ProveedorID = l.ProveedorID

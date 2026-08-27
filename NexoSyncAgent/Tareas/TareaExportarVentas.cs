@@ -11,10 +11,24 @@ public class TareaExportarVentas
     // esa REFERENCIA en dbo.TARJETA -- viajan como sugerencia por si NEXO no
     // tiene mapeo para este articulo todavia.
     // NIT/Cliente: datos del comprador para que NEXO cree el cliente si no existe.
+    // El orden de parámetros debe coincidir exactamente con el orden de columnas del SELECT.
+    // Dapper mapea records por posición, no por nombre.
     private record VentaPendiente(
         short CENTROCOSTO, string TIPDOC, string NRODOC, decimal ORDEN, string REFERENCIA, decimal CANTIDAD, DateTime FECDOC,
         string? DetalleTarjeta, decimal? CostoTarjeta, decimal? PPublicoTarjeta,
-        string? NIT, string? CLIENTE);
+        string? MarcaCodigo, string? IvaSiNo, decimal? IvaValor, string? IvaDescripcion,
+        decimal? Iva2, string? IvaDescripcion2,
+        string? GrupoMenorCodigo, string? PresentacionCodigo, string? TipoProductoCodigo,
+        decimal? PBodega, decimal? PCredito, decimal? UPublico, decimal? UBodega, decimal? UCredito,
+        decimal? ExistenciasActuales, decimal? ExistenciasMinimas,
+        string? NIT, string? CLIENTE,
+        string? ClienteTipoTercero,
+        string? ClienteNombre1, string? ClienteNombre2,
+        string? ClienteApellido1, string? ClienteApellido2,
+        string? ClienteEmpresa,
+        string? ClienteTelefono, string? ClienteDireccion,
+        string? ClienteCiudad, string? ClienteDepartamento,
+        string? ClienteCodigoMuni, string? ClienteCodigoDept);
 
     private readonly INexoApiClient _apiClient;
     private readonly IVisionsConnectionFactory _visionsDb;
@@ -33,13 +47,31 @@ public class TareaExportarVentas
     // base de Visions sea compartida entre varias sucursales -- asi cada agente
     // (cada API Key) solo procesa y reporta las ventas de SU propia sucursal, sin
     // cruzarse con las de otras que compartan la misma base de datos de Visions.
-    public async Task EjecutarAsync(int centroCostoVisions, CancellationToken ct)
+    public async Task EjecutarAsync(int centroCostoVisions, CancellationToken ct, DateTime? fechaInicioSyncVentas = null)
     {
         using var connection = _visionsDb.CreateConnection();
 
         const string sqlVentasNuevas = @"
             SELECT m.CENTROCOSTO, m.TIPDOC, m.NRODOC, m.ORDEN, m.REFERENCIA, m.CANTIDAD, m.FECDOC,
-                   t.DETALLE AS DetalleTarjeta, t.COSTO AS CostoTarjeta, t.PPUBLICO AS PPublicoTarjeta,
+                   t.DETALLE                                               AS DetalleTarjeta,
+                   t.COSTO                                                 AS CostoTarjeta,
+                   t.PPUBLICO                                              AS PPublicoTarjeta,
+                   t.MARCA                                                 AS MarcaCodigo,
+                   ISNULL(t.IVASINO, 'SI')                                AS IvaSiNo,
+                   CAST(ISNULL(t.IVAVALOR, 19) AS DECIMAL(18,4))         AS IvaValor,
+                   ISNULL(t.IVADESCRIPCION, 'IVA 19%')                   AS IvaDescripcion,
+                   CAST(t.VF4 AS DECIMAL(18,4))                           AS Iva2,
+                   t.UBICA4                                                AS IvaDescripcion2,
+                   t.GRUPOMENOR                                            AS GrupoMenorCodigo,
+                   t.PRESENTACION                                          AS PresentacionCodigo,
+                   tp.Codigo                                               AS TipoProductoCodigo,
+                   NULLIF(t.PBODEGA,  0)                                  AS PBodega,
+                   NULLIF(t.PCREDITO, 0)                                  AS PCredito,
+                   NULLIF(t.UPUBLICO, 0)                                  AS UPublico,
+                   NULLIF(t.UBODEGA,  0)                                  AS UBodega,
+                   NULLIF(t.UCREDITO, 0)                                  AS UCredito,
+                   t.EXISTENCIAS                                           AS ExistenciasActuales,
+                   t.EXISTENCIASMINIMAS                                    AS ExistenciasMinimas,
                    m.NIT,
                    CASE
                      WHEN NULLIF(LTRIM(RTRIM(ISNULL(u.NOMBRE1,'') + ' ' + ISNULL(u.APELLIDO1,''))), '') IS NOT NULL
@@ -50,20 +82,38 @@ public class TareaExportarVentas
                             ISNULL(u.APELLIDO2,'')
                           ))
                      ELSE ISNULL(NULLIF(m.CLIENTE,''), m.NIT)
-                   END AS CLIENTE
+                   END AS CLIENTE,
+                   u.TIPOTERCERO                                           AS ClienteTipoTercero,
+                   u.NOMBRE1                                               AS ClienteNombre1,
+                   u.NOMBRE2                                               AS ClienteNombre2,
+                   u.APELLIDO1                                             AS ClienteApellido1,
+                   u.APELLIDO2                                             AS ClienteApellido2,
+                   u.EMPRESA                                               AS ClienteEmpresa,
+                   ISNULL(NULLIF(u.TELEFONOVIVE,''), u.TELEFONOEMPRESA)   AS ClienteTelefono,
+                   ISNULL(NULLIF(u.DIRECCIONVIVE,''), u.DIRECCIONEMPRESA) AS ClienteDireccion,
+                   u.CIUDAD                                                AS ClienteCiudad,
+                   u.DEPARTAMENTO                                          AS ClienteDepartamento,
+                   u.CIUDADCODIGO                                          AS ClienteCodigoMuni,
+                   u.DEPARTAMENTOCODIGO                                    AS ClienteCodigoDept
             FROM dbo.MOVDETALLES m
             JOIN dbo.NEXO_ConfiguracionSync cfg ON cfg.CENTROCOSTO = m.CENTROCOSTO
             LEFT JOIN dbo.TARJETA t ON t.CENTROCOSTO = m.CENTROCOSTO AND t.REFERENCIA = m.REFERENCIA
+            LEFT JOIN dbo.TIPOPRODUCTO_TIPOS tp ON tp.TipoID = t.VV3
             LEFT JOIN dbo.USUARIOS u ON u.NIT = m.NIT
             WHERE cfg.Activo = 1
               AND m.CENTROCOSTO = @CentroCostoVisions
+              AND (@FechaInicio IS NULL OR m.FECDOC >= @FechaInicio)
               AND NOT EXISTS (
                   SELECT 1 FROM dbo.NEXO_VentasExportadas v
                   WHERE v.CENTROCOSTO = m.CENTROCOSTO AND v.TIPDOC = m.TIPDOC
                     AND v.NRODOC = m.NRODOC AND v.ORDEN = m.ORDEN AND v.REFERENCIA = m.REFERENCIA
               )";
 
-        var ventas = (await connection.QueryAsync<VentaPendiente>(sqlVentasNuevas, new { CentroCostoVisions = centroCostoVisions })).ToList();
+        var ventas = (await connection.QueryAsync<VentaPendiente>(sqlVentasNuevas, new
+        {
+            CentroCostoVisions = centroCostoVisions,
+            FechaInicio        = fechaInicioSyncVentas.HasValue ? (object)fechaInicioSyncVentas.Value.Date : DBNull.Value
+        })).ToList();
 
         if (ventas.Count == 0)
             return;
@@ -76,11 +126,43 @@ public class TareaExportarVentas
             {
                 var idEventoExterno = $"{venta.CENTROCOSTO}-{venta.TIPDOC}-{venta.NRODOC}-{venta.ORDEN}-{venta.REFERENCIA}";
 
+                var esJuridica = (venta.ClienteTipoTercero ?? "").Contains("JURIDICA", StringComparison.OrdinalIgnoreCase)
+                    || !string.IsNullOrWhiteSpace(venta.ClienteEmpresa);
+
                 await _apiClient.RegistrarEventoEntranteAsync(new RegistrarEventoEntranteRequest(
                     idEventoExterno, "VENTA", venta.REFERENCIA, venta.CANTIDAD, venta.FECDOC,
                     venta.DetalleTarjeta, venta.CostoTarjeta, venta.PPublicoTarjeta,
                     venta.NIT, venta.CLIENTE,
-                    TipDoc: venta.TIPDOC, NroDoc: venta.NRODOC), ct);
+                    TipDoc:                  venta.TIPDOC,
+                    NroDoc:                  venta.NRODOC,
+                    ClienteTipoPersona:      esJuridica ? "Juridica" : (venta.NIT != null ? "Natural" : null),
+                    ClientePrimerNombre:     esJuridica ? null : venta.ClienteNombre1,
+                    ClienteSegundoNombre:    esJuridica ? null : venta.ClienteNombre2,
+                    ClientePrimerApellido:   esJuridica ? null : venta.ClienteApellido1,
+                    ClienteSegundoApellido:  esJuridica ? null : venta.ClienteApellido2,
+                    ClienteEmpresa:          esJuridica ? venta.ClienteEmpresa : null,
+                    ClienteTelefono:         venta.ClienteTelefono,
+                    ClienteDireccion:        venta.ClienteDireccion,
+                    ClienteCiudad:           venta.ClienteCiudad,
+                    ClienteDepartamento:     venta.ClienteDepartamento,
+                    ClienteCodigoMuni:       venta.ClienteCodigoMuni,
+                    ClienteCodigoDept:       venta.ClienteCodigoDept,
+                    MarcaCodigo:             venta.MarcaCodigo,
+                    IvaValor:                venta.IvaValor,
+                    IvaDescripcion:          venta.IvaDescripcion,
+                    IvaSiNo:                 venta.IvaSiNo,
+                    Iva2:                    venta.Iva2,
+                    IvaDescripcion2:         venta.IvaDescripcion2,
+                    GrupoMenorCodigo:        venta.GrupoMenorCodigo,
+                    PresentacionCodigo:      venta.PresentacionCodigo,
+                    TipoProductoCodigo:      venta.TipoProductoCodigo,
+                    PBodega:                 venta.PBodega,
+                    PCredito:                venta.PCredito,
+                    UPublico:                venta.UPublico,
+                    UBodega:                 venta.UBodega,
+                    UCredito:                venta.UCredito,
+                    ExistenciasActuales:     venta.ExistenciasActuales,
+                    ExistenciasMinimas:      venta.ExistenciasMinimas), ct);
 
                 await connection.ExecuteAsync(
                     @"IF NOT EXISTS (SELECT 1 FROM dbo.NEXO_VentasExportadas

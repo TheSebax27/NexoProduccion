@@ -119,10 +119,12 @@ public class IntegracionService : IIntegracionService
                    a.PCredito,
                    a.UPublico,
                    a.UBodega,
-                   a.UCredito
+                   a.UCredito,
+                   ta.Codigo AS TipoProductoCodigo
             FROM Integracion.EventosSalientes e
             JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = e.CentroCostoID
             JOIN Catalogo.Tarjetas a ON a.ArticuloID = e.ArticuloID
+            LEFT JOIN Catalogo.TiposArticulo ta ON ta.TipoArticuloID = a.TipoArticuloID
             WHERE e.Estado = 'PENDIENTE' AND e.CentroCostoID = @CentroCostoId
               AND a.Referencia IS NOT NULL AND a.Referencia <> ''";
 
@@ -229,18 +231,64 @@ public class IntegracionService : IIntegracionService
                 return;
             }
 
+            // Auto-crear Marca y Presentacion si Visions las trae pero no existen en NEXO aún.
+            if (!string.IsNullOrWhiteSpace(r.MarcaCodigo))
+                await connection.ExecuteAsync(
+                    "IF NOT EXISTS (SELECT 1 FROM Catalogo.Marca WHERE Codigo = @Codigo) INSERT INTO Catalogo.Marca (Codigo, Marca) VALUES (@Codigo, @Codigo)",
+                    new { Codigo = r.MarcaCodigo });
+            if (!string.IsNullOrWhiteSpace(r.PresentacionCodigo))
+                await connection.ExecuteAsync(
+                    "IF NOT EXISTS (SELECT 1 FROM Catalogo.Presentacion WHERE Codigo = @Codigo) INSERT INTO Catalogo.Presentacion (Codigo, Presentacion) VALUES (@Codigo, @Codigo)",
+                    new { Codigo = r.PresentacionCodigo });
+
             var sinDatos = string.IsNullOrWhiteSpace(r.NombreArticuloVisions) || (r.PrecioArticuloVisions ?? 0m) == 0m;
+            // TipoArticuloID desde TipoProductoCodigo de Visions si viene, si no "Producto Terminado".
+            var tipoIdFinal = !string.IsNullOrWhiteSpace(r.TipoProductoCodigo)
+                ? (await connection.ExecuteScalarAsync<int?>(
+                    "SELECT TOP 1 TipoArticuloID FROM Catalogo.TiposArticulo WHERE Codigo = @Codigo",
+                    new { Codigo = r.TipoProductoCodigo }) ?? tipoId.Value)
+                : tipoId.Value;
+
             await connection.ExecuteAsync(@"
                 IF NOT EXISTS (SELECT 1 FROM Catalogo.Tarjetas WHERE Referencia = @Referencia)
-                INSERT INTO Catalogo.Tarjetas (Referencia, Nombre, TipoArticuloID, PPublico, StockMinimo, PuntoReorden, Fracciona, Estado)
-                VALUES (@Referencia, @Nombre, @TipoArticuloID, @PPublico, 0, 0, 0, @Estado)",
+                INSERT INTO Catalogo.Tarjetas
+                    (Referencia, Nombre, TipoArticuloID, PPublico, Costo,
+                     PBodega, PCredito, UPublico, UBodega, UCredito,
+                     StockMinimo, PuntoReorden, Fracciona, Estado,
+                     MarcaCodigo, GrupoMenorCodigo, PresentacionCodigo,
+                     IvaSiNo, IvaValor, IvaDescripcion,
+                     Iva2, IvaDescripcion2)
+                VALUES
+                    (@Referencia, @Nombre, @TipoArticuloID, @PPublico, @Costo,
+                     @PBodega, @PCredito, @UPublico, @UBodega, @UCredito,
+                     @StockMinimo, 0, 'N', @Estado,
+                     @MarcaCodigo,
+                     (SELECT Codigo FROM Catalogo.GrupoMenor WHERE Codigo = @GrupoMenorCodigo),
+                     @PresentacionCodigo,
+                     @IvaSiNo, @IvaValor, @IvaDescripcion,
+                     @Iva2, @IvaDescripcion2)",
                 new
                 {
-                    Referencia     = r.CodigoArticuloVisions,
-                    Nombre         = r.NombreArticuloVisions ?? r.CodigoArticuloVisions,
-                    TipoArticuloID = tipoId.Value,
-                    PPublico       = r.PrecioArticuloVisions ?? 0m,
-                    Estado         = sinDatos ? 0 : 1
+                    Referencia         = r.CodigoArticuloVisions,
+                    Nombre             = r.NombreArticuloVisions ?? r.CodigoArticuloVisions,
+                    TipoArticuloID     = tipoIdFinal,
+                    PPublico           = r.PrecioArticuloVisions ?? 0m,
+                    Costo              = r.CostoArticuloVisions ?? 0m,
+                    StockMinimo        = r.ExistenciasMinimas ?? 0m,
+                    PBodega            = (r.PBodega ?? 0m) > 0m ? r.PBodega : (decimal?)null,
+                    PCredito           = (r.PCredito ?? 0m) > 0m ? r.PCredito : (decimal?)null,
+                    UPublico           = (r.UPublico ?? 0m) > 0m ? r.UPublico : (decimal?)null,
+                    UBodega            = (r.UBodega  ?? 0m) > 0m ? r.UBodega  : (decimal?)null,
+                    UCredito           = (r.UCredito ?? 0m) > 0m ? r.UCredito : (decimal?)null,
+                    Estado             = sinDatos ? 0 : 1,
+                    MarcaCodigo        = string.IsNullOrWhiteSpace(r.MarcaCodigo)        ? null : r.MarcaCodigo,
+                    GrupoMenorCodigo   = string.IsNullOrWhiteSpace(r.GrupoMenorCodigo)   ? null : r.GrupoMenorCodigo,
+                    PresentacionCodigo = string.IsNullOrWhiteSpace(r.PresentacionCodigo) ? null : r.PresentacionCodigo,
+                    IvaSiNo            = r.IvaSiNo ?? "SI",
+                    IvaValor           = r.IvaValor.HasValue ? (short?)Math.Clamp((long)r.IvaValor.Value, short.MinValue, short.MaxValue) : (short?)null,
+                    IvaDescripcion     = r.IvaDescripcion,
+                    Iva2               = r.Iva2.HasValue ? (short?)Math.Clamp((long)r.Iva2.Value, short.MinValue, short.MaxValue) : (short?)null,
+                    IvaDescripcion2    = r.IvaDescripcion2
                 });
 
             _logger.LogInformation("Articulo {Codigo} auto-creado en NEXO desde Visions", r.CodigoArticuloVisions);
@@ -265,6 +313,23 @@ public class IntegracionService : IIntegracionService
                     SET Resuelto = 1, FechaResuelto = GETDATE()
                     WHERE CodigoArticuloVisions = @CodigoArticuloVisions AND CentroCostoID = @CentroCostoID AND Resuelto = 0",
                     new { CodigoArticuloVisions = r.CodigoArticuloVisions, CentroCostoID = centroCostoId });
+
+                // Inicializar stock con las existencias actuales de Visions (solo en auto-create).
+                if ((r.ExistenciasActuales ?? 0m) > 0m)
+                {
+                    var bodegaId = await connection.ExecuteScalarAsync<int?>(
+                        "SELECT BodegaVentaVisionsID FROM Organizacion.CentrosCosto WHERE CentroCostoID = @CcId",
+                        new { CcId = centroCostoId });
+                    if (bodegaId.HasValue)
+                        await connection.ExecuteAsync(@"
+                            IF NOT EXISTS (SELECT 1 FROM Inventario.InventarioStock
+                                           WHERE ArticuloID = @ArtId AND BodegaID = @BodId)
+                            INSERT INTO Inventario.InventarioStock
+                                (ArticuloID, BodegaID, CantidadActual, CostoUnitarioLote, FechaUltimaActualizacion)
+                            VALUES (@ArtId, @BodId, @Cantidad, @Costo, GETDATE())",
+                            new { ArtId = articuloId.Value, BodId = bodegaId.Value,
+                                  Cantidad = r.ExistenciasActuales!.Value, Costo = r.CostoArticuloVisions ?? 0m });
+                }
             }
 
             // Reintentar ahora que el articulo existe en Catalogo.Tarjetas.
@@ -274,14 +339,58 @@ public class IntegracionService : IIntegracionService
                 commandType: CommandType.StoredProcedure);
         }
 
-        // Si la venta vino con NIT de cliente, crearlo en CRM si no existe.
+        // Si la venta vino con NIT de cliente, crear o completar el registro en CRM.
+        // MERGE: si ya existe con datos completos, no los pisa (COALESCE);
+        // si existe vacío (auto-creado antes), lo completa; si no existe, inserta todo.
         if (!string.IsNullOrWhiteSpace(r.ClienteNit))
         {
-            await connection.ExecuteAsync(
-                @"IF NOT EXISTS (SELECT 1 FROM Crm.Clientes WHERE NIT = @Nit)
-                  INSERT INTO Crm.Clientes (Nombre, NIT, FuenteContacto, TipoCliente, FechaModificacion)
-                  VALUES (@Nombre, @Nit, 'VISIONS', 'CLIENTE', GETDATE())",
-                new { Nit = r.ClienteNit, Nombre = r.ClienteNombre ?? r.ClienteNit });
+            var nombreCompleto = string.Join(" ", new[] { r.ClientePrimerNombre, r.ClienteSegundoNombre,
+                r.ClientePrimerApellido, r.ClienteSegundoApellido }.Where(s => !string.IsNullOrWhiteSpace(s)));
+            var nombre = !string.IsNullOrWhiteSpace(r.ClienteEmpresa) ? r.ClienteEmpresa
+                       : !string.IsNullOrWhiteSpace(nombreCompleto)   ? nombreCompleto
+                       : r.ClienteNombre ?? r.ClienteNit;
+
+            await connection.ExecuteAsync(@"
+                MERGE Crm.Clientes AS dest
+                USING (SELECT @Nit AS NIT) AS src ON dest.NIT = src.NIT
+                WHEN MATCHED THEN UPDATE SET
+                    Nombre         = CASE WHEN ISNULL(dest.Nombre,'') IN ('',dest.NIT) AND ISNULL(@Nombre,'') <> '' THEN @Nombre ELSE dest.Nombre END,
+                    TipoPersona    = COALESCE(dest.TipoPersona,    @TipoPersona),
+                    PrimerNombre   = COALESCE(dest.PrimerNombre,   @PrimerNombre),
+                    SegundoNombre  = COALESCE(dest.SegundoNombre,  @SegundoNombre),
+                    PrimerApellido = COALESCE(dest.PrimerApellido, @PrimerApellido),
+                    SegundoApellido= COALESCE(dest.SegundoApellido,@SegundoApellido),
+                    Telefono       = COALESCE(dest.Telefono,       @Telefono),
+                    Direccion      = COALESCE(dest.Direccion,      @Direccion),
+                    Ciudad         = COALESCE(dest.Ciudad,         @Ciudad),
+                    Departamento   = COALESCE(dest.Departamento,   @Departamento),
+                    CodigoMuni     = COALESCE(dest.CodigoMuni,     @CodigoMuni),
+                    CodigoDept     = COALESCE(dest.CodigoDept,     @CodigoDept),
+                    FechaModificacion = GETDATE()
+                WHEN NOT MATCHED THEN INSERT
+                    (Nombre, NIT, TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
+                     Telefono, Direccion, Ciudad, Departamento, CodigoMuni, CodigoDept,
+                     FuenteContacto, TipoCliente, FechaModificacion)
+                VALUES
+                    (@Nombre, @Nit, @TipoPersona, @PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido,
+                     @Telefono, @Direccion, @Ciudad, @Departamento, @CodigoMuni, @CodigoDept,
+                     'VISIONS', 'CLIENTE', GETDATE());",
+                new
+                {
+                    Nit            = r.ClienteNit,
+                    Nombre         = nombre,
+                    TipoPersona    = r.ClienteTipoPersona,
+                    PrimerNombre   = r.ClientePrimerNombre,
+                    SegundoNombre  = r.ClienteSegundoNombre,
+                    PrimerApellido = r.ClientePrimerApellido,
+                    SegundoApellido= r.ClienteSegundoApellido,
+                    Telefono       = r.ClienteTelefono,
+                    Direccion      = r.ClienteDireccion,
+                    Ciudad         = r.ClienteCiudad,
+                    Departamento   = r.ClienteDepartamento,
+                    CodigoMuni     = r.ClienteCodigoMuni,
+                    CodigoDept     = r.ClienteCodigoDept
+                });
         }
 
         // Crear o complementar la Factura en NEXO que agrupa las lineas del mismo documento Visions.
@@ -299,11 +408,14 @@ public class IntegracionService : IIntegracionService
 
             if (articuloIdFactura.HasValue)
             {
-                var clienteIdFactura = await connection.ExecuteScalarAsync<int?>(
-                    "SELECT TOP 1 ClienteID FROM Crm.Clientes WHERE NIT = @Nit AND Estado = 1",
-                    new { Nit = r.ClienteNit ?? "CF-SYS" });
+                var clienteIdFactura = !string.IsNullOrWhiteSpace(r.ClienteNit)
+                    ? await connection.ExecuteScalarAsync<int?>(
+                        "SELECT TOP 1 ClienteID FROM Crm.Clientes WHERE NIT = @Nit AND Estado = 1",
+                        new { Nit = r.ClienteNit })
+                    : null;
+                // Si el NIT no existe en NEXO, usar CONSUMIDOR FINAL (CF-SYS), no el primer cliente
                 clienteIdFactura ??= await connection.ExecuteScalarAsync<int?>(
-                    "SELECT TOP 1 ClienteID FROM Crm.Clientes WHERE Estado = 1 ORDER BY ClienteID");
+                    "SELECT TOP 1 ClienteID FROM Crm.Clientes WHERE NIT = 'CF-SYS' AND Estado = 1");
 
                 var usuarioSistemaId = await connection.ExecuteScalarAsync<int?>(
                     "SELECT UsuarioID FROM Seguridad.Usuarios WHERE Username = 'sistema.sync'");
@@ -404,7 +516,8 @@ public class IntegracionService : IIntegracionService
             SELECT TRY_CAST(cc.IdentificadorClienteVisions AS INT) AS CentroCostoVisions,
                    cc.Estado AS Activo,
                    cc.PrefijosDocumentoVentaVisions AS PrefijosDocumentoVenta,
-                   ISNULL(a.IntervalMinutes, 5) AS IntervalMinutes
+                   ISNULL(a.IntervalMinutes, 5) AS IntervalMinutes,
+                   a.FechaInicioSyncVentas
             FROM Organizacion.CentrosCosto cc
             LEFT JOIN Integracion.AgentesSync a
                    ON a.CentroCostoID = cc.CentroCostoID AND a.Activo = 1
@@ -676,10 +789,27 @@ public class IntegracionService : IIntegracionService
                 "SELECT COUNT(*) FROM Facturacion.Facturas WHERE CentroCostoID = @CcId AND VisionsConfirmado = 1",
                 new { CcId = ag.CentroCostoID });
 
+            var articulosCompletos = await connection.ExecuteScalarAsync<int>(@"
+                SELECT COUNT(DISTINCT ma.ArticuloID)
+                FROM Integracion.MapeoArticulos ma
+                JOIN Catalogo.Tarjetas t ON t.ArticuloID = ma.ArticuloID
+                WHERE ma.CentroCostoID = @CcId AND ma.Estado = 1
+                  AND t.MarcaCodigo IS NOT NULL AND t.IvaValor IS NOT NULL",
+                new { CcId = ag.CentroCostoID });
+
+            var articulosSinDatos = await connection.ExecuteScalarAsync<int>(@"
+                SELECT COUNT(DISTINCT ma.ArticuloID)
+                FROM Integracion.MapeoArticulos ma
+                JOIN Catalogo.Tarjetas t ON t.ArticuloID = ma.ArticuloID
+                WHERE ma.CentroCostoID = @CcId AND ma.Estado = 1
+                  AND (t.MarcaCodigo IS NULL OR t.IvaValor IS NULL)",
+                new { CcId = ag.CentroCostoID });
+
             resultado.Add(new ProgresoSyncResponse(
                 ag.AgenteSyncID, ag.NombreCentroCosto,
                 totalArticulosNexo, mapeados, pendientes,
-                eventosProcesados, facturasVisions, ag.UltimoLatido));
+                eventosProcesados, facturasVisions, ag.UltimoLatido,
+                articulosCompletos, articulosSinDatos));
         }
 
         return resultado;
@@ -708,7 +838,8 @@ public class IntegracionService : IIntegracionService
         const string sql = @"
             SELECT a.AgenteSyncID, a.Descripcion, a.CentroCostoID, cc.Nombre AS NombreCentroCosto,
                    a.Activo, a.VisionsDbConexion, a.NexoApiBaseUrl, a.IntervalMinutes, a.IntervalSeconds, a.AgentePath,
-                   cc.PrefijosDocumentoVentaVisions AS PrefijosDocumentoVenta
+                   cc.PrefijosDocumentoVentaVisions AS PrefijosDocumentoVenta,
+                   a.FechaInicioSyncVentas
             FROM Integracion.AgentesSync a
             JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = a.CentroCostoID
             WHERE a.AgenteSyncID = @AgenteSyncId";
@@ -728,21 +859,25 @@ public class IntegracionService : IIntegracionService
 
         const string sqlAgente = @"
             UPDATE Integracion.AgentesSync
-            SET VisionsDbConexion = @VisionsDbConexion,
-                NexoApiBaseUrl    = @NexoApiBaseUrl,
-                IntervalMinutes   = @IntervalMinutes,
-                IntervalSeconds   = @IntervalSeconds,
-                AgentePath        = @AgentePath
+            SET VisionsDbConexion    = @VisionsDbConexion,
+                NexoApiBaseUrl       = @NexoApiBaseUrl,
+                IntervalMinutes      = @IntervalMinutes,
+                IntervalSeconds      = @IntervalSeconds,
+                AgentePath           = @AgentePath,
+                FechaInicioSyncVentas = @FechaInicioSyncVentas
             WHERE AgenteSyncID = @AgenteSyncId";
 
         var filas = await connection.ExecuteAsync(sqlAgente, new
         {
-            AgenteSyncId    = agenteSyncId,
+            AgenteSyncId          = agenteSyncId,
             r.VisionsDbConexion,
-            NexoApiBaseUrl  = nexoApiUrl,
+            NexoApiBaseUrl        = nexoApiUrl,
             r.IntervalMinutes,
             r.IntervalSeconds,
-            r.AgentePath
+            r.AgentePath,
+            FechaInicioSyncVentas = r.FechaInicioSyncVentas.HasValue
+                ? (object)r.FechaInicioSyncVentas.Value.Date
+                : DBNull.Value
         });
 
         if (filas == 0)
@@ -1166,7 +1301,12 @@ public class IntegracionService : IIntegracionService
         {
             // Articulo en Visions que aun no tiene representacion en NEXO.
             // Se auto-crea y se mapea para que la proxima sincronizacion lo actualice.
-            var tipoId = await connection.ExecuteScalarAsync<int?>(
+            var tipoId = !string.IsNullOrWhiteSpace(r.TipoProductoCodigo)
+                ? await connection.ExecuteScalarAsync<int?>(
+                    "SELECT TOP 1 TipoArticuloID FROM Catalogo.TiposArticulo WHERE Codigo = @Codigo",
+                    new { Codigo = r.TipoProductoCodigo })
+                : null;
+            tipoId ??= await connection.ExecuteScalarAsync<int?>(
                 "SELECT TOP 1 TipoArticuloID FROM Catalogo.TiposArticulo WHERE Nombre = 'Producto Terminado'");
             if (tipoId is null) return;
 
@@ -1199,7 +1339,7 @@ public class IntegracionService : IIntegracionService
                 VALUES
                     (@Referencia, @Nombre, @TipoArticuloID, @PPublico, @Costo,
                      @PBodega, @PCredito, @UPublico, @UBodega, @UCredito,
-                     0, 0, 0,
+                     @StockMinimo, 0, 'N',
                      @MarcaCodigo,
                      (SELECT Codigo FROM Catalogo.GrupoMenor WHERE Codigo = @GrupoMenorCodigo),
                      @PresentacionCodigo,
@@ -1211,6 +1351,7 @@ public class IntegracionService : IIntegracionService
                     TipoArticuloID     = tipoId.Value,
                     PPublico           = r.PPublico ?? 0m,
                     Costo              = r.Costo ?? 0m,
+                    StockMinimo        = r.ExistenciasMinimas ?? 0m,
                     PBodega            = r.PBodega > 0 ? r.PBodega : (decimal?)null,
                     PCredito           = r.PCredito > 0 ? r.PCredito : (decimal?)null,
                     UPublico           = r.UPublico > 0 ? r.UPublico : (decimal?)null,
@@ -1220,9 +1361,9 @@ public class IntegracionService : IIntegracionService
                     GrupoMenorCodigo   = string.IsNullOrWhiteSpace(r.GrupoMenorCodigo)   ? null : r.GrupoMenorCodigo,
                     PresentacionCodigo = string.IsNullOrWhiteSpace(r.PresentacionCodigo) ? null : r.PresentacionCodigo,
                     IvaSiNo            = r.IvaSiNo ?? "SI",
-                    IvaValor           = r.IvaValor ?? 19m,
+                    IvaValor           = (short)(r.IvaValor.HasValue ? Math.Clamp((long)r.IvaValor.Value, short.MinValue, short.MaxValue) : 19L),
                     IvaDescripcion     = r.IvaDescripcion ?? "IVA 19%",
-                    Iva2               = r.Iva2,
+                    Iva2               = r.Iva2.HasValue ? (short?)Math.Clamp((long)r.Iva2.Value, short.MinValue, short.MaxValue) : null,
                     IvaDescripcion2    = r.IvaDescripcion2
                 });
 
@@ -1244,6 +1385,24 @@ public class IntegracionService : IIntegracionService
                 SET Resuelto = 1, FechaResuelto = GETDATE()
                 WHERE CodigoArticuloVisions = @Codigo AND CentroCostoID = @CcId AND Resuelto = 0",
                 new { Codigo = r.ReferenciaVisions, CcId = ccId.Value });
+
+            // Inicializar stock en NEXO con las existencias actuales de Visions (solo en auto-create).
+            // Solo aplica si Visions reporta stock > 0 y el CentroCosto tiene bodega de venta configurada.
+            if ((r.ExistenciasActuales ?? 0m) > 0m)
+            {
+                var bodegaId = await connection.ExecuteScalarAsync<int?>(
+                    "SELECT BodegaVentaVisionsID FROM Organizacion.CentrosCosto WHERE CentroCostoID = @CcId",
+                    new { CcId = ccId.Value });
+                if (bodegaId.HasValue)
+                    await connection.ExecuteAsync(@"
+                        IF NOT EXISTS (SELECT 1 FROM Inventario.InventarioStock
+                                       WHERE ArticuloID = @ArtId AND BodegaID = @BodId)
+                        INSERT INTO Inventario.InventarioStock
+                            (ArticuloID, BodegaID, CantidadActual, CostoUnitarioLote, FechaUltimaActualizacion)
+                        VALUES (@ArtId, @BodId, @Cantidad, @Costo, GETDATE())",
+                        new { ArtId = articuloId.Value, BodId = bodegaId.Value,
+                              Cantidad = r.ExistenciasActuales!.Value, Costo = r.Costo ?? 0m });
+            }
 
             _logger.LogInformation("Articulo {Ref} auto-creado en NEXO desde SINCRONIZAR_ARTICULO", r.ReferenciaVisions);
             return;
@@ -1283,6 +1442,12 @@ public class IntegracionService : IIntegracionService
                   IvaDescripcion     = COALESCE(@IvaDescripcion,     IvaDescripcion),
                   Iva2               = COALESCE(@Iva2,               Iva2),
                   IvaDescripcion2    = COALESCE(@IvaDescripcion2,    IvaDescripcion2),
+                  TipoArticuloID     = CASE WHEN @TipoProductoCodigo IS NOT NULL
+                                            THEN COALESCE(
+                                                (SELECT TOP 1 TipoArticuloID FROM Catalogo.TiposArticulo WHERE Codigo = @TipoProductoCodigo),
+                                                TipoArticuloID)
+                                            ELSE TipoArticuloID END,
+                  StockMinimo        = COALESCE(@ExistenciasMinimas, StockMinimo),
                   FechaModificacion  = @FechaCambio
               WHERE ArticuloID = @ArticuloId
                 AND (FechaModificacion IS NULL OR MarcaCodigo IS NULL OR DATEADD(SECOND, 5, FechaModificacion) < @FechaCambio)",
@@ -1294,8 +1459,13 @@ public class IntegracionService : IIntegracionService
                 UBodega  = r.UBodega  > 0 ? r.UBodega  : (decimal?)null,
                 UCredito = r.UCredito > 0 ? r.UCredito : (decimal?)null,
                 r.MarcaCodigo, r.GrupoMenorCodigo, r.PresentacionCodigo,
-                r.IvaSiNo, r.IvaValor, r.IvaDescripcion,
-                r.Iva2, r.IvaDescripcion2,
+                r.IvaSiNo,
+                IvaValor = r.IvaValor.HasValue ? (short?)Math.Clamp((long)r.IvaValor.Value, short.MinValue, short.MaxValue) : null,
+                r.IvaDescripcion,
+                Iva2 = r.Iva2.HasValue ? (short?)Math.Clamp((long)r.Iva2.Value, short.MinValue, short.MaxValue) : null,
+                r.IvaDescripcion2,
+                r.TipoProductoCodigo,
+                ExistenciasMinimas = r.ExistenciasMinimas,
                 r.FechaCambio, ArticuloId = articuloId
             });
 
@@ -1315,13 +1485,17 @@ public class IntegracionService : IIntegracionService
                      ti.Detalle AS TipoIdentificacionDetalle,
                      m.NombreDept, m.NombreMuni,
                      c.CodigoDept, c.CodigoMuni,
-                     c.DigitoVerificacion
+                     c.DigitoVerificacion,
+                     CAST(c.Estado AS BIT) AS Estado
               FROM Crm.Clientes c
               LEFT JOIN Catalogo.TiposIdentificacion ti ON ti.Codigo = c.TipoIdentificacion
               LEFT JOIN Catalogo.Municipios m ON m.CodigoDept = c.CodigoDept AND m.CodigoMuni = c.CodigoMuni
-              WHERE c.Estado = 1
-                AND (@Desde IS NULL OR c.FechaModificacion IS NULL OR c.FechaModificacion > @Desde)
-              ORDER BY c.FechaModificacion",
+              WHERE
+                -- Sync inicial (desde=null): solo activos
+                -- Sync incremental (desde!=null): activos modificados + inactivos recientes (para propagar el de-rol)
+                ((c.Estado = 1 AND (@Desde IS NULL OR c.FechaModificacion IS NULL OR c.FechaModificacion > @Desde))
+                 OR (c.Estado = 0 AND @Desde IS NOT NULL AND c.FechaModificacion > @Desde))
+              ORDER BY c.Estado DESC, c.FechaModificacion",
             new { Desde = desde });
     }
 
@@ -1425,10 +1599,12 @@ public class IntegracionService : IIntegracionService
             @"SELECT ProveedorID, NIT, RazonSocial, Contacto, Telefono, Email, Direccion,
                      TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
                      TipoIdentificacion, DigitoVerificacion, Departamento, Ciudad,
-                     CodigoDept, CodigoMuni, Pais, CodigoPais
+                     CodigoDept, CodigoMuni, Pais, CodigoPais,
+                     CAST(Estado AS BIT) AS Estado
               FROM Catalogo.Proveedores
               WHERE Estado = 1
-              ORDER BY RazonSocial");
+                 OR (Estado = 0 AND FechaModificacion >= DATEADD(DAY, -7, GETDATE()))
+              ORDER BY Estado DESC, RazonSocial");
     }
 
     public async Task SyncProveedorDesdeVisionsAsync(SyncProveedorDesdeVisionsRequest r)
@@ -1480,17 +1656,18 @@ public class IntegracionService : IIntegracionService
                 CodigoDept         = ISNULL(@CodigoDept, CodigoDept),
                 CodigoMuni         = ISNULL(@CodigoMuni, CodigoMuni),
                 Pais               = 'COLOMBIA', CodigoPais = 'CO',
-                Estado             = 1
+                Estado             = 1,
+                FechaModificacion  = GETDATE()
             WHEN NOT MATCHED THEN INSERT
                 (NIT, RazonSocial, Telefono, Email, Direccion,
                  TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
                  TipoIdentificacion, DigitoVerificacion, Departamento, Ciudad,
-                 CodigoDept, CodigoMuni, Pais, CodigoPais, Estado)
+                 CodigoDept, CodigoMuni, Pais, CodigoPais, Estado, FechaModificacion)
             VALUES
                 (@NIT, @RazonSocial, @Telefono, @Email, @Direccion,
                  @TipoPersona, @PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido,
                  @TipoIdentificacion, @DigitoVerificacion, @Departamento, @Ciudad,
-                 @CodigoDept, @CodigoMuni, 'COLOMBIA', 'CO', 1);",
+                 @CodigoDept, @CodigoMuni, 'COLOMBIA', 'CO', 1, GETDATE());",
             new
             {
                 r.NIT, r.RazonSocial, r.Telefono, r.Email, r.Direccion,

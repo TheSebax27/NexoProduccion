@@ -62,7 +62,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.MapStaticAssets(); // fingerprinting + cache-busting automático para app.css / NexoWeb.styles.css
 app.UseAntiforgery();
 
 // ── Proxy de imágenes hacia NexoApi ──────────────────────────────────────────

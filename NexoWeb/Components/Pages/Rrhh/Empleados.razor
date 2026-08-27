@@ -18,10 +18,13 @@
     </div>
     <div class="d-flex align-center" style="gap:8px">
         <BotonFavorito Href="/rrhh/empleados" Etiqueta="Empleados" />
-        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                   StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="AbrirCreacionAsync">
-            Nuevo Empleado
-        </MudButton>
+        @if (!_cargando && _empleados.Count > 0)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="AbrirCreacionAsync">
+                Nuevo Empleado
+            </MudButton>
+        }
     </div>
 </div>
 
@@ -44,7 +47,12 @@
 }
 else if (_empleados.Count == 0)
 {
-    <MudText>No hay empleados registrados.</MudText>
+    <NexoEmptyState
+        Icono="@Icons.Material.Outlined.PeopleAlt"
+        Titulo="Agrega tu primer empleado"
+        Descripcion="Lleva el directorio de tu equipo: nombre, cargo, Centro de Costo y datos de contacto."
+        BotonTexto="Nuevo empleado"
+        BotonOnClick="AbrirCreacionAsync" />
 }
 else
 {

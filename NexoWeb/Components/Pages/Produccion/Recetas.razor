@@ -19,10 +19,13 @@
     </div>
     <div class="prod-header__actions">
         <BotonFavorito Href="/produccion/recetas" Etiqueta="Recetas (BOM)" />
-        <MudButton Variant="Variant.Filled" Color="Color.Success" Href="/produccion/recetas/crear"
-                   StartIcon="@Icons.Material.Filled.Add">
-            Nueva Receta
-        </MudButton>
+        @if (_cargando || _recetas.Count > 0 || _filtroProductoId is not null)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" Href="/produccion/recetas/crear"
+                       StartIcon="@Icons.Material.Filled.Add">
+                Nueva Receta
+            </MudButton>
+        }
     </div>
 </div>
 
@@ -55,14 +58,22 @@
 }
 else if (_recetas.Count == 0)
 {
-    <div class="prod-vacio">
-        <MudIcon Icon="@Icons.Material.Outlined.MenuBook" Style="font-size:3rem; color:var(--n-text-3); display:block; margin-bottom:.75rem;" />
-        <p>No hay recetas para el filtro seleccionado.</p>
-        <MudButton Variant="Variant.Filled" Color="Color.Success" Href="/produccion/recetas/crear"
-                   StartIcon="@Icons.Material.Filled.Add" Class="mt-2">
-            Crear primera receta
-        </MudButton>
-    </div>
+    @if (_filtroProductoId is null)
+    {
+        <NexoEmptyState
+            Icono="@Icons.Material.Outlined.MenuBook"
+            Titulo="Crea tu primera receta"
+            Descripcion="Una receta (BOM) define los insumos y cantidades necesarios por corrida de producción. Cada cambio genera una nueva versión."
+            BotonTexto="Nueva receta"
+            BotonHref="/produccion/recetas/crear" />
+    }
+    else
+    {
+        <div class="prod-vacio">
+            <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Style="font-size:3rem; color:var(--n-text-3); display:block; margin-bottom:.75rem;" />
+            <p>No hay recetas para ese producto.</p>
+        </div>
+    }
 }
 else if (Preferencias.VistaListado == "tarjetas")
 {

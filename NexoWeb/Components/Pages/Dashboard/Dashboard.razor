@@ -6,6 +6,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject NexoWeb.Common.Auth.ModulosVisiblesState Modulos
+@inject NexoWeb.Common.Auth.ConfiguracionEmpresaState ConfiguracionEmpresa
 @using NexoWeb.Common.Dtos
 @using System.Globalization
 @implements IDisposable
@@ -87,7 +88,7 @@ else
                 </div>
             </div>
 
-            @if (_combosActivos.Count > 0)
+            @if (!ConfiguracionEmpresa.UsaVisions && _combosActivos.Count > 0)
             {
                 <div class="nexo-section"><div class="nexo-section__dot"></div><span class="nexo-section__label">Marketing</span><div class="nexo-section__line"></div></div>
                 <div class="nexo-kpi-grid mb-6">
@@ -815,25 +816,157 @@ else
 
         @* ══════════════════════════════════════════════ TAB INVENTARIO ══ *@
         <MudTabPanel Text="Inventario" Icon="@Icons.Material.Outlined.Inventory2">
-            <div class="nexo-kpi-grid mb-4" style="grid-template-columns: repeat(2,1fr)">
-                <div class="nexo-kpi nexo-kpi--teal">
-                    <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.Inventory2" Size="Size.Small" /></div>
-                    <div class="nexo-kpi__value">@_resumenInventario.ValorTotalStock.ToString("C0")</div>
-                    <div class="nexo-kpi__label">Valor Total de Stock</div>
-                    <div class="nexo-kpi__sub">Valorización al costo</div>
+            @if (_tabInvCargando)
+            {
+                <div class="d-flex justify-center py-12"><MudProgressCircular Indeterminate="true" /></div>
+            }
+            else
+            {
+                <div class="nexo-kpi-grid mb-4" style="grid-template-columns: repeat(2,1fr)">
+                    <div class="nexo-kpi nexo-kpi--teal">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.Inventory2" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value">@_resumenInventario.ValorTotalStock.ToString("C0")</div>
+                        <div class="nexo-kpi__label">Valor Total de Stock</div>
+                        <div class="nexo-kpi__sub">Valorización al costo</div>
+                    </div>
+                    <div class="nexo-kpi nexo-kpi--@(_resumenInventario.ArticulosConAlerta > 0 ? "red" : "green")">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value">@_resumenInventario.ArticulosConAlerta</div>
+                        <div class="nexo-kpi__label">Artículos con Alerta</div>
+                        <div class="nexo-kpi__sub">@(_resumenInventario.ArticulosConAlerta == 0 ? "Sin artículos por debajo del mínimo" : "Requieren pedido urgente")</div>
+                    </div>
                 </div>
-                <div class="nexo-kpi nexo-kpi--@(_resumenInventario.ArticulosConAlerta > 0 ? "red" : "green")">
-                    <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" /></div>
-                    <div class="nexo-kpi__value">@_resumenInventario.ArticulosConAlerta</div>
-                    <div class="nexo-kpi__label">Artículos con Alerta</div>
-                    <div class="nexo-kpi__sub">@(_resumenInventario.ArticulosConAlerta == 0 ? "Sin artículos por debajo del mínimo" : "Requieren pedido urgente")</div>
+
+                @if (_alertasStock.Count > 0)
+                {
+                    <div class="nexo-section"><div class="nexo-section__dot" style="background:#EF4444"></div><span class="nexo-section__label">Artículos bajo el mínimo</span><div class="nexo-section__line"></div></div>
+                    <MudPaper Class="pa-4 mb-4">
+                        <MudTable Items="_alertasStock" Dense="true" Hover="true" Elevation="0">
+                            <HeaderContent>
+                                <MudTh>SKU</MudTh>
+                                <MudTh>Artículo</MudTh>
+                                <MudTh>Centro / Bodega</MudTh>
+                                <MudTh Style="text-align:right">Stock actual</MudTh>
+                                <MudTh Style="text-align:right">Mínimo</MudTh>
+                                <MudTh Style="text-align:right">Déficit</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd Style="font-size:0.78rem;color:#9B9BB4;font-weight:600">@context.SKU</MudTd>
+                                <MudTd Style="font-size:0.85rem;font-weight:500">@context.Articulo</MudTd>
+                                <MudTd Style="font-size:0.78rem">@context.CentroCosto · @context.Bodega</MudTd>
+                                <MudTd Style="text-align:right;color:#F59E0B;font-weight:600">@context.CantidadActual.ToString("N2")</MudTd>
+                                <MudTd Style="text-align:right">@context.StockMinimo.ToString("N2")</MudTd>
+                                <MudTd Style="text-align:right;color:#EF4444;font-weight:700">-@context.Deficit.ToString("N2")</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                        <div style="margin-top:8px;text-align:right">
+                            <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => Navigation.NavigateTo("/inventario/stock"))">Ver stock completo</MudButton>
+                        </div>
+                    </MudPaper>
+                }
+                else if (_resumenInventario.ArticulosConAlerta == 0)
+                {
+                    <div class="nexo-empty-state">
+                        <MudIcon Icon="@Icons.Material.Outlined.CheckCircle" Class="nexo-empty-state__icon nexo-empty-state__icon--success" />
+                        <p class="nexo-empty-state__text">Todos los artículos están sobre el stock mínimo.</p>
+                    </div>
+                }
+            }
+        </MudTabPanel>
+
+        @* ══════════════════════════════════════════════ TAB FINANCIERO ══ *@
+        <MudTabPanel Text="Financiero" Icon="@Icons.Material.Outlined.AccountBalance">
+            @if (_tabFinCargando)
+            {
+                <div class="d-flex justify-center py-12"><MudProgressCircular Indeterminate="true" /></div>
+            }
+            else
+            {
+                <div class="nexo-section" style="margin-top:0.25rem">
+                    <div class="nexo-section__dot" style="background:#7C5CFF"></div>
+                    <span class="nexo-section__label">Análisis de márgenes</span>
+                    <div class="nexo-section__line"></div>
+                    <MudDateRangePicker @bind-DateRange="_rangoFin" @bind-DateRange:after="OnRangoFinCambiadoAsync"
+                                        Label="Período" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                        PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy"
+                                        Style="max-width:280px;min-width:240px;" />
                 </div>
-            </div>
-            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-4">
-                Para el detalle completo de stock, alertas y movimientos de Kardex, ve a
-                <MudLink OnClick="@(() => Navigation.NavigateTo("/inventario/stock"))" Style="cursor:pointer;font-weight:600">Inventario → Stock</MudLink> o
-                <MudLink OnClick="@(() => Navigation.NavigateTo("/inventario/kardex"))" Style="cursor:pointer;font-weight:600">Inventario → Kardex</MudLink>.
-            </MudAlert>
+
+                @* KPIs financieros *@
+                <div class="nexo-kpi-grid mb-4">
+                    <div class="nexo-kpi nexo-kpi--green">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value">@FinTotalVentas.ToString("C0")</div>
+                        <div class="nexo-kpi__label">Ingresos (artículos)</div>
+                        <div class="nexo-kpi__sub">Total facturado en el período</div>
+                    </div>
+                    <div class="nexo-kpi nexo-kpi--rose">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value">@FinTotalCosto.ToString("C0")</div>
+                        <div class="nexo-kpi__label">Costo Estimado</div>
+                        <div class="nexo-kpi__sub">CostoPromedio × cantidad vendida</div>
+                    </div>
+                    <div class="nexo-kpi nexo-kpi--@(FinPctMargen >= 30 ? "green" : FinPctMargen >= 15 ? "amber" : "red")">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.Percent" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value">@FinPctMargen.ToString("N1")%</div>
+                        <div class="nexo-kpi__label">Margen Bruto Global</div>
+                        <div class="nexo-kpi__sub">@FinTotalMargen.ToString("C0") de utilidad estimada</div>
+                    </div>
+                    <div class="nexo-kpi nexo-kpi--indigo">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.Inventory2" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value">@_margenArticulos.Count</div>
+                        <div class="nexo-kpi__label">Artículos analizados</div>
+                        <div class="nexo-kpi__sub">Con ventas en el período</div>
+                    </div>
+                </div>
+
+                <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Outlined" Class="mb-4">
+                    El margen usa el <strong>CostoPromedio</strong> del catálogo. Para costos exactos por producción, revisa la tendencia de costo unitario en el tab Producción.
+                </MudAlert>
+
+                <div class="nexo-section"><div class="nexo-section__dot" style="background:#7C5CFF"></div><span class="nexo-section__label">Rentabilidad por artículo</span><div class="nexo-section__line"></div></div>
+                <MudPaper Class="pa-5 mb-4">
+                    @if (_margenArticulos.Count == 0)
+                    {
+                        <div class="nexo-empty-state">
+                            <MudIcon Icon="@Icons.Material.Outlined.Inbox" Class="nexo-empty-state__icon" />
+                            <p class="nexo-empty-state__text">Sin ventas registradas en este período.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <MudTable Items="_margenArticulos" Dense="true" Hover="true" Elevation="0">
+                            <HeaderContent>
+                                <MudTh>#</MudTh>
+                                <MudTh>Artículo</MudTh>
+                                <MudTh Style="text-align:right">Vendido</MudTh>
+                                <MudTh Style="text-align:right">Ingresos</MudTh>
+                                <MudTh Style="text-align:right">Costo</MudTh>
+                                <MudTh Style="text-align:right">Margen $</MudTh>
+                                <MudTh Style="text-align:right">Margen %</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                @{ var idx3 = _margenArticulos.IndexOf(context) + 1; }
+                                <MudTd Style="font-size:0.78rem;color:#9B9BB4;font-weight:700">@idx3</MudTd>
+                                <MudTd>
+                                    <div style="font-size:0.85rem;font-weight:500">@context.Nombre</div>
+                                    <div style="font-size:0.72rem;color:#9B9BB4">@context.SKU</div>
+                                </MudTd>
+                                <MudTd Style="text-align:right;font-size:0.82rem">@context.CantidadVendida.ToString("N0")</MudTd>
+                                <MudTd Style="text-align:right;font-weight:600;color:#10B981">@context.TotalFacturado.ToString("C0")</MudTd>
+                                <MudTd Style="text-align:right;font-size:0.82rem;color:#F43F5E">@context.CostoEstimado.ToString("C0")</MudTd>
+                                <MudTd Style="text-align:right"><span style="@($"font-weight:700;color:{(context.MargenBruto >= 0 ? "#10B981" : "#EF4444")}")">@context.MargenBruto.ToString("C0")</span></MudTd>
+                                <MudTd Style="text-align:right">
+                                    <MudChip T="string" Size="Size.Small"
+                                             Color="@(context.PorcentajeMargen >= 30 ? Color.Success : context.PorcentajeMargen >= 15 ? Color.Warning : Color.Error)">
+                                        @context.PorcentajeMargen.ToString("N1")%
+                                    </MudChip>
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                </MudPaper>
+            }
         </MudTabPanel>
 
     </MudTabs>
@@ -903,6 +1036,23 @@ else
     private List<TopArticuloItem> _topArticulos = new();
     private DateRange _rangoFact = new(DateTime.Today.AddMonths(-1), DateTime.Today);
     private int _mesesFact = 12;
+
+    // ── Tab Inventario (lazy) ────────────────────────────────────────
+    private bool _tabInvCargando;
+    private bool _tabInvCargado;
+    private List<AlertaStockItem> _alertasStock = new();
+
+    // ── Tab Financiero (lazy) ────────────────────────────────────────
+    private bool _tabFinCargando;
+    private bool _tabFinCargado;
+    private List<MargenArticuloItem> _margenArticulos = new();
+    private DateRange _rangoFin = new(DateTime.Today.AddMonths(-3), DateTime.Today);
+
+    // Propiedades computadas para KPIs financieros (evitan @{} inline en Razor)
+    private decimal FinTotalVentas  => _margenArticulos.Sum(m => m.TotalFacturado);
+    private decimal FinTotalCosto   => _margenArticulos.Sum(m => m.CostoEstimado);
+    private decimal FinTotalMargen  => _margenArticulos.Sum(m => m.MargenBruto);
+    private decimal FinPctMargen    => FinTotalVentas > 0 ? (FinTotalMargen / FinTotalVentas * 100) : 0;
 
     // ── Rutas alternativas cuando BI no es visible ───────────────────
     private static readonly (string Codigo, string Ruta)[] _rutasAlternativas =
@@ -1066,6 +1216,10 @@ else
     {
         if (index == 1 && !_tabFactCargado)
             await CargarTabFacturacionAsync();
+        else if (index == 4 && !_tabInvCargado)
+            await CargarTabInventarioAsync();
+        else if (index == 5 && !_tabFinCargado)
+            await CargarTabFinancieroAsync();
     }
 
     private async Task OnRangoFactCambiadoAsync()
@@ -1210,6 +1364,40 @@ else
             $"api/dashboard/tendencia-costo?articuloId={nuevoArticuloId}") ?? new();
         _labelsTendencia = _tendencia.Select(t => t.Fecha.ToString("dd/MM")).ToArray();
         _seriesTendencia = new List<ChartSeries> { new() { Name = "Costo Unitario", Data = _tendencia.Select(t => (double)t.CostoUnitarioReal).ToArray() } };
+    }
+
+    private async Task CargarTabInventarioAsync()
+    {
+        _tabInvCargando = true;
+        StateHasChanged();
+        try
+        {
+            _alertasStock = await ApiClient.GetAsync<List<AlertaStockItem>>("api/dashboard/alertas-stock") ?? new();
+            _tabInvCargado = true;
+        }
+        catch (Exception ex) { Snackbar.Add($"Error al cargar alertas: {ex.Message}", Severity.Warning); }
+        finally { _tabInvCargando = false; }
+    }
+
+    private async Task CargarTabFinancieroAsync()
+    {
+        _tabFinCargando = true;
+        StateHasChanged();
+        try
+        {
+            _margenArticulos = await ApiClient.GetAsync<List<MargenArticuloItem>>(
+                $"api/dashboard/margen-articulos?desde={_rangoFin.Start:yyyy-MM-dd}&hasta={_rangoFin.End:yyyy-MM-dd}&top=30") ?? new();
+            _tabFinCargado = true;
+        }
+        catch (Exception ex) { Snackbar.Add($"Error al cargar margen: {ex.Message}", Severity.Warning); }
+        finally { _tabFinCargando = false; }
+    }
+
+    private async Task OnRangoFinCambiadoAsync()
+    {
+        if (_rangoFin.Start is null || _rangoFin.End is null) return;
+        _tabFinCargado = false;
+        await CargarTabFinancieroAsync();
     }
 
     private bool _exportando;

@@ -104,6 +104,19 @@ public class DashboardController : ControllerBase
         return Ok(await _service.ObtenerTopArticulosAsync(desdeFinal, hastaFinal, top));
     }
 
+    [HttpGet("margen-articulos")]
+    public async Task<ActionResult<IEnumerable<MargenArticuloItem>>> MargenArticulos(
+        [FromQuery] DateTime? desde, [FromQuery] DateTime? hasta, [FromQuery] int top = 20)
+    {
+        var hastaFinal = hasta ?? DateTime.Today;
+        var desdeFinal = desde ?? hastaFinal.AddMonths(-3);
+        return Ok(await _service.ObtenerMargenPorArticuloAsync(desdeFinal, hastaFinal, top));
+    }
+
+    [HttpGet("alertas-stock")]
+    public async Task<ActionResult<IEnumerable<AlertaStockItem>>> AlertasStock()
+        => Ok(await _service.ObtenerAlertasStockAsync());
+
     [HttpGet("exportar/excel")]
     public async Task<IActionResult> ExportarExcel([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
     {

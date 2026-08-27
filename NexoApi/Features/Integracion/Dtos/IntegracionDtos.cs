@@ -27,7 +27,8 @@ public record EventoPendienteItem(
     decimal? PCredito = null,
     decimal? UPublico = null,
     decimal? UBodega = null,
-    decimal? UCredito = null
+    decimal? UCredito = null,
+    string? TipoProductoCodigo = null
 );
 
 
@@ -49,7 +50,37 @@ public record RegistrarEventoEntranteRequest(
     string? ClienteNit,
     string? ClienteNombre,
     string? TipDoc = null,
-    string? NroDoc = null
+    string? NroDoc = null,
+    string? ClienteTipoPersona = null,
+    string? ClientePrimerNombre = null,
+    string? ClienteSegundoNombre = null,
+    string? ClientePrimerApellido = null,
+    string? ClienteSegundoApellido = null,
+    string? ClienteEmpresa = null,
+    string? ClienteTelefono = null,
+    string? ClienteDireccion = null,
+    string? ClienteCiudad = null,
+    string? ClienteDepartamento = null,
+    string? ClienteCodigoMuni = null,
+    string? ClienteCodigoDept = null,
+    // Datos del catálogo de Visions (dbo.TARJETA) al momento de la venta.
+    // Si el artículo no existe en NEXO todavía, se usan para crearlo completo.
+    string? MarcaCodigo = null,
+    decimal? IvaValor = null,
+    string? IvaDescripcion = null,
+    string? IvaSiNo = null,
+    decimal? Iva2 = null,
+    string? IvaDescripcion2 = null,
+    string? GrupoMenorCodigo = null,
+    string? PresentacionCodigo = null,
+    string? TipoProductoCodigo = null,
+    decimal? PBodega = null,
+    decimal? PCredito = null,
+    decimal? UPublico = null,
+    decimal? UBodega = null,
+    decimal? UCredito = null,
+    decimal? ExistenciasActuales = null,
+    decimal? ExistenciasMinimas = null
 );
 
 // Configuracion que el Agente de Sincronizacion lee de NEXO y aplica en la
@@ -60,7 +91,7 @@ public record RegistrarEventoEntranteRequest(
 // Visions de este cliente -- NO el CentroCostoID interno de NEXO (son cosas
 // distintas: un mismo Visions puede compartir varias sucursales/CENTROCOSTO
 // en una sola base, cada una mapeada a su propio Centro de Costo en NEXO).
-public record ConfiguracionAgenteResponse(int? CentroCostoVisions, bool Activo, string? PrefijosDocumentoVenta, int IntervalMinutes);
+public record ConfiguracionAgenteResponse(int? CentroCostoVisions, bool Activo, string? PrefijosDocumentoVenta, int IntervalMinutes, DateTime? FechaInicioSyncVentas = null);
 
 // ---------- Configuracion completa del agente (solo Administracion, desde la web) ----------
 
@@ -75,7 +106,8 @@ public record ConfiguracionAgenteCompletaResponse(
     int IntervalMinutes,
     int IntervalSeconds,
     string? AgentePath,
-    string? PrefijosDocumentoVenta
+    string? PrefijosDocumentoVenta,
+    DateTime? FechaInicioSyncVentas = null
 );
 
 public record ActualizarConfiguracionAgenteRequest(
@@ -84,7 +116,8 @@ public record ActualizarConfiguracionAgenteRequest(
     int IntervalMinutes,
     int IntervalSeconds,
     string? AgentePath,
-    string? PrefijosDocumentoVenta
+    string? PrefijosDocumentoVenta,
+    DateTime? FechaInicioSyncVentas = null
 );
 
 public record GenerarApiKeyRequest(int CentroCostoID, string Descripcion);
@@ -152,12 +185,14 @@ public record RegistrarFalloRequest(string MensajeError);
 public record ProgresoSyncResponse(
     int AgenteSyncID,
     string NombreCentroCosto,
-    int TotalArticulosNexo,          // Articulos en Catalogo.Tarjetas (global)
-    int TotalMapeados,               // Articulos de Visions con mapeo activo
-    int TotalPendientesMapeo,        // Articulos de Visions sin mapear aun
-    int TotalEventosProcesados,      // Ventas de Visions procesadas en NEXO
-    int TotalFacturasVisions,        // Facturas creadas en NEXO desde ventas Visions
-    DateTime? UltimoLatido
+    int TotalArticulosNexo,              // Articulos en Catalogo.Tarjetas (global, igual en todos los agentes)
+    int TotalMapeados,                   // Articulos de Visions con mapeo activo (por CC)
+    int TotalPendientesMapeo,            // Articulos de Visions sin mapear aun (por CC)
+    int TotalEventosProcesados,          // Ventas de Visions procesadas en NEXO (por CC)
+    int TotalFacturasVisions,            // Facturas creadas en NEXO desde ventas Visions (por CC)
+    DateTime? UltimoLatido,
+    int ArticulosMapeadosCompletos = 0,  // Mapeados con Marca e IVA completos (por CC)
+    int ArticulosMapeadosSinDatos  = 0   // Mapeados sin Marca o sin IVA (por CC)
 );
 
 // ──────────── Actividad detallada del agente (panel de administración) ────────────
@@ -245,7 +280,10 @@ public record SyncArticuloDesdeVisionsRequest(
     decimal? PCredito = null,
     decimal? UPublico = null,
     decimal? UBodega = null,
-    decimal? UCredito = null
+    decimal? UCredito = null,
+    string? TipoProductoCodigo = null,
+    decimal? ExistenciasActuales = null,
+    decimal? ExistenciasMinimas = null
 );
 
 // ──────────── Clientes para sync NEXO → Visions ────────────
@@ -266,7 +304,8 @@ public record ClienteParaSyncDto(
     string? NombreMuni,
     string? CodigoDept,
     string? CodigoMuni,
-    int? DigitoVerificacion
+    int? DigitoVerificacion,
+    bool Estado = true  // false = inactivado en NEXO → el agente debe poner CLIENTE=0 en Visions
 );
 
 // ──────────── Salud del catálogo sincronizado ────────────
@@ -314,7 +353,8 @@ public record ProveedorParaSyncDto(
     string? TipoIdentificacion = null, int? DigitoVerificacion = null,
     string? Departamento = null, string? Ciudad = null,
     string? CodigoDept = null, string? CodigoMuni = null,
-    string? Pais = null, string? CodigoPais = null
+    string? Pais = null, string? CodigoPais = null,
+    bool Estado = true  // false = inactivado en NEXO → el agente debe poner PROVEEDOR=0 en Visions
 );
 
 // ──────────── Proveedores desde Visions → NEXO ────────────

@@ -26,3 +26,17 @@ public record ResumenFacturacionItem(decimal TotalEmitido, decimal TotalCobrado,
 public record IngresoPorMesPunto(int Anio, int Mes, string NombreMes, decimal TotalFacturado, decimal TotalCobrado);
 public record TopClienteItem(int ClienteID, string Cliente, string? NIT, decimal TotalFacturado, int NumDocumentos);
 public record TopArticuloItem(int ArticuloID, string SKU, string Nombre, decimal CantidadVendida, decimal TotalFacturado);
+
+// Tab Financiero BI
+public record MargenArticuloItem(
+    int ArticuloID, string SKU, string Nombre,
+    decimal CantidadVendida, decimal TotalFacturado,
+    decimal CostoEstimado, decimal MargenBruto, decimal PorcentajeMargen
+);
+
+public record AlertaStockItem(
+    int ArticuloID, string SKU, string Articulo,
+    string CentroCosto, string Bodega,
+    decimal CantidadActual, decimal StockMinimo,
+    decimal Deficit
+);

@@ -8,38 +8,40 @@
 
 <PageTitle>Campañas de Email</PageTitle>
 
-<MudStack Row AlignItems="AlignItems.Center" Class="mb-4">
-    <MudText Typo="Typo.h5">Campañas de Email</MudText>
-    <MudSpacer />
-    @if (_contador is not null)
-    {
-        var pct = (double)_contador.EmailsHoy / _contador.LimiteGmail * 100;
-        var col = pct >= 90 ? Color.Error : pct >= 70 ? Color.Warning : Color.Success;
-        <MudTooltip Text="@($"Emails enviados hoy: {_contador.EmailsHoy}/{_contador.LimiteGmail} (límite Gmail diario)")">
-            <MudChip T="string" Size="Size.Small" Color="@col" Variant="Variant.Outlined"
-                     Icon="@Icons.Material.Filled.Email">
-                @_contador.EmailsHoy / @_contador.LimiteGmail emails hoy
-            </MudChip>
-        </MudTooltip>
-    }
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
-               OnClick="@(() => Nav.NavigateTo("/crm/campanas/nueva"))">
-        Nueva campaña
-    </MudButton>
-</MudStack>
-
 @if (_cargando)
 {
     <MudProgressLinear Indeterminate Color="Color.Primary" Class="mb-4" />
 }
 else if (_campanas.Count == 0)
 {
-    <MudAlert Severity="Severity.Info">
-        Todavía no hay campañas. Crea una y empieza a llegar a tus clientes con emails profesionales.
-    </MudAlert>
+    <NexoEmptyState
+        Icono="@Icons.Material.Outlined.Campaign"
+        Titulo="Crea tu primera campaña"
+        Descripcion="Llega a tus clientes con emails profesionales. Diseña el contenido, elige los destinatarios y mide los resultados en un solo lugar."
+        BotonTexto="Nueva campaña"
+        BotonHref="/crm/campanas/nueva" />
 }
 else
 {
+    <MudStack Row AlignItems="AlignItems.Center" Class="mb-4">
+        <MudText Typo="Typo.h5">Campañas de Email</MudText>
+        <MudSpacer />
+        @if (_contador is not null)
+        {
+            var pct = (double)_contador.EmailsHoy / _contador.LimiteGmail * 100;
+            var col = pct >= 90 ? Color.Error : pct >= 70 ? Color.Warning : Color.Success;
+            <MudTooltip Text="@($"Emails enviados hoy: {_contador.EmailsHoy}/{_contador.LimiteGmail} (límite Gmail diario)")">
+                <MudChip T="string" Size="Size.Small" Color="@col" Variant="Variant.Outlined"
+                         Icon="@Icons.Material.Filled.Email">
+                    @_contador.EmailsHoy / @_contador.LimiteGmail emails hoy
+                </MudChip>
+            </MudTooltip>
+        }
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="@(() => Nav.NavigateTo("/crm/campanas/nueva"))">
+            Nueva campaña
+        </MudButton>
+    </MudStack>
     <MudGrid>
         @foreach (var c in _campanas)
         {

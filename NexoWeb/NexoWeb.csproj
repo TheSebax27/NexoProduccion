@@ -4,6 +4,11 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Fuerza rebuild del bundle CSS (*.razor.css → NexoWeb.styles.css) cuando
+         cualquier archivo de estilos cambia, incluso durante hot reload.
+         Sin esto, los cambios en *.razor.css no se ven hasta un reinicio completo. -->
+    <DisableScopedCssBundling>false</DisableScopedCssBundling>
+    <ScopedCssEnabled>true</ScopedCssEnabled>
   </PropertyGroup>
 
   <ItemGroup>

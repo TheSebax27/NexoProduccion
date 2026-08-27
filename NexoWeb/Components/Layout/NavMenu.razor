@@ -1,205 +1,307 @@
 <MudNavMenu>
-    @* Favoritos *@
+
+    @* Favoritos — siempre al inicio *@
     @if (Preferencias.Favoritos.Count > 0)
     {
-        <MudNavGroup Title="Favoritos" Icon="@Icons.Material.Filled.Bookmark" Expanded="false">
+        <MudNavGroup Title="Favoritos"
+                     Icon="@Icons.Material.Filled.Star"
+                     Class="nexo-nav-group">
             @foreach (var favorito in Preferencias.Favoritos)
             {
-                <MudNavLink Href="@favorito.Href">@favorito.Etiqueta</MudNavLink>
+                <MudNavLink Href="@favorito.Href" Class="nexo-nav-item">@favorito.Etiqueta</MudNavLink>
             }
         </MudNavGroup>
     }
 
-    @* Business Intelligence — raiz, sin grupo *@
+    @* BI — enlace raíz sin grupo *@
     @if (Modulos.EsVisible("BI"))
     {
-        <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Insights">
-            Business Intelligence
-        </MudNavLink>
+        <MudNavLink Href="/" Match="NavLinkMatch.All"
+                    Icon="@Icons.Material.Filled.Insights"
+                    Class="nexo-nav-item nexo-nav-item--root">Business Intelligence</MudNavLink>
     }
 
-    @* Catalogo *@
-    @if (Modulos.EsVisible("CATALOGO"))
+    @* Grupos colapsables en el orden del usuario *@
+    @foreach (var key in GruposOrdenados)
     {
-        <MudNavGroup Title="Catalogo" Icon="@Icons.Material.Filled.Category" Expanded="false">
-            @if (Modulos.EsVisible("CATALOGO.ARTICULOS"))
+        @if (key == "ventas")
+        {
+            @if (Modulos.EsVisible("OPERACIONES") || Modulos.EsVisible("CRM.CLIENTES") || Modulos.EsVisible("CRM.COTIZACIONES"))
             {
-                <MudNavLink Href="/catalogo/articulos" Icon="@Icons.Material.Filled.ViewInAr">Articulos</MudNavLink>
+                <MudNavGroup Title="Ventas"
+                             Icon="@Icons.Material.Filled.PointOfSale"
+                             Class="nexo-nav-group">
+                    @if (Modulos.EsVisible("OPERACIONES.FACTURACION"))
+                    {
+                        <MudNavLink Href="/facturacion"
+                                    Icon="@Icons.Material.Filled.Receipt"
+                                    Class="nexo-nav-item">Facturación</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("CRM.COTIZACIONES"))
+                    {
+                        <MudNavLink Href="/crm/cotizaciones"
+                                    Icon="@Icons.Material.Filled.RequestQuote"
+                                    Class="nexo-nav-item">Cotizaciones</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("OPERACIONES.DESPACHOS") && !ConfiguracionEmpresa.UsaVisions)
+                    {
+                        <MudNavLink Href="/logistica/despachos"
+                                    Icon="@Icons.Material.Filled.LocalShipping"
+                                    Class="nexo-nav-item">Despachos</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("CRM.CLIENTES"))
+                    {
+                        <MudNavLink Href="/crm/clientes"
+                                    Icon="@Icons.Material.Filled.People"
+                                    Class="nexo-nav-item">Clientes</MudNavLink>
+                    }
+                </MudNavGroup>
             }
-            <MudNavLink Href="/catalogo/maestros" Icon="@Icons.Material.Filled.LibraryBooks">Catalogos Maestros</MudNavLink>
-            <MudNavLink Href="/catalogo/centros" Icon="@Icons.Material.Filled.Business">Centros</MudNavLink>
-            @if (Modulos.EsVisible("CATALOGO.PROVEEDORES"))
+        }
+        else if (key == "crm")
+        {
+            @if (Modulos.EsVisible("CRM"))
             {
-                <MudNavLink Href="/catalogo/proveedores" Icon="@Icons.Material.Filled.Store">Proveedores</MudNavLink>
+                <MudNavGroup Title="CRM"
+                             Icon="@Icons.Material.Filled.Groups"
+                             Class="nexo-nav-group">
+                    @if (Modulos.EsVisible("CRM.LEADS"))
+                    {
+                        <MudNavLink Href="/crm/leads"
+                                    Icon="@Icons.Material.Filled.PersonSearch"
+                                    Class="nexo-nav-item">Leads</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("CRM.OPORTUNIDADES"))
+                    {
+                        <MudNavLink Href="/crm/oportunidades"
+                                    Icon="@Icons.Material.Filled.MonetizationOn"
+                                    Class="nexo-nav-item">Oportunidades</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("CRM.ACTIVIDADES"))
+                    {
+                        <MudNavLink Href="/crm/actividades"
+                                    Icon="@Icons.Material.Filled.EventNote"
+                                    Class="nexo-nav-item">Actividades</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("CRM.CAMPANAS"))
+                    {
+                        <MudNavLink Href="/crm/campanas"
+                                    Icon="@Icons.Material.Filled.Campaign"
+                                    Class="nexo-nav-item">Campañas</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("CRM.COMBOS") && !ConfiguracionEmpresa.UsaVisions)
+                    {
+                        <MudNavLink Href="/marketing/combos"
+                                    Icon="@Icons.Material.Filled.LocalOffer"
+                                    Class="nexo-nav-item">Combos / Ofertas</MudNavLink>
+                    }
+                </MudNavGroup>
             }
-        </MudNavGroup>
-    }
-
-    @* Produccion *@
-    @if (Modulos.EsVisible("PRODUCCION"))
-    {
-        <MudNavGroup Title="Produccion" Icon="@Icons.Material.Filled.Factory" Expanded="false">
-            @if (Modulos.EsVisible("PRODUCCION.ORDENES"))
+        }
+        else if (key == "catalogo")
+        {
+            @if (Modulos.EsVisible("CATALOGO"))
             {
-                <MudNavLink Href="/produccion/ordenes" Icon="@Icons.Material.Filled.Assignment">Ordenes de Produccion</MudNavLink>
+                <MudNavGroup Title="Catálogo"
+                             Icon="@Icons.Material.Filled.Category"
+                             Class="nexo-nav-group">
+                    @if (Modulos.EsVisible("CATALOGO.ARTICULOS"))
+                    {
+                        <MudNavLink Href="/catalogo/articulos"
+                                    Icon="@Icons.Material.Filled.ViewInAr"
+                                    Class="nexo-nav-item">Artículos</MudNavLink>
+                    }
+                    <MudNavLink Href="/catalogo/maestros"
+                                Icon="@Icons.Material.Filled.LibraryBooks"
+                                Class="nexo-nav-item">Catálogos Maestros</MudNavLink>
+                    @if (Modulos.EsVisible("CATALOGO.PROVEEDORES"))
+                    {
+                        <MudNavLink Href="/catalogo/proveedores"
+                                    Icon="@Icons.Material.Filled.Store"
+                                    Class="nexo-nav-item">Proveedores</MudNavLink>
+                    }
+                </MudNavGroup>
             }
-            @if (Modulos.EsVisible("PRODUCCION.RECETAS"))
+        }
+        else if (key == "produccion")
+        {
+            @if (Modulos.EsVisible("PRODUCCION"))
             {
-                <MudNavLink Href="/produccion/recetas" Icon="@Icons.Material.Filled.MenuBook">Recetas (BOM)</MudNavLink>
+                <MudNavGroup Title="Producción"
+                             Icon="@Icons.Material.Filled.PrecisionManufacturing"
+                             Class="nexo-nav-group">
+                    @if (Modulos.EsVisible("PRODUCCION.ORDENES"))
+                    {
+                        <MudNavLink Href="/produccion/ordenes"
+                                    Icon="@Icons.Material.Filled.Assignment"
+                                    Class="nexo-nav-item">Órdenes de Producción</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("PRODUCCION.RECETAS"))
+                    {
+                        <MudNavLink Href="/produccion/recetas"
+                                    Icon="@Icons.Material.Filled.MenuBook"
+                                    Class="nexo-nav-item">Recetas (BOM)</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("PRODUCCION.MAQUINARIA"))
+                    {
+                        <MudNavLink Href="/produccion/maquinaria"
+                                    Icon="@Icons.Material.Filled.PrecisionManufacturing"
+                                    Class="nexo-nav-item">Maquinaria</MudNavLink>
+                    }
+                    <MudNavLink Href="/catalogo/centros"
+                                Icon="@Icons.Material.Filled.Business"
+                                Class="nexo-nav-item">Centros</MudNavLink>
+                </MudNavGroup>
             }
-            @if (Modulos.EsVisible("PRODUCCION.MAQUINARIA"))
+        }
+        else if (key == "inventario")
+        {
+            @if (Modulos.EsVisible("INVENTARIO"))
             {
-                <MudNavLink Href="/produccion/maquinaria" Icon="@Icons.Material.Filled.PrecisionManufacturing">Maquinaria</MudNavLink>
+                <MudNavGroup Title="Inventario"
+                             Icon="@Icons.Material.Filled.Warehouse"
+                             Class="nexo-nav-group">
+                    @if (Modulos.EsVisible("INVENTARIO.STOCK"))
+                    {
+                        <MudNavLink Href="/inventario/stock"
+                                    Icon="@Icons.Material.Filled.Inventory"
+                                    Class="nexo-nav-item">Consulta de Stock</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("INVENTARIO.KARDEX"))
+                    {
+                        <MudNavLink Href="/inventario/kardex"
+                                    Icon="@Icons.Material.Filled.ReceiptLong"
+                                    Class="nexo-nav-item">Kardex de Artículos</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("OPERACIONES.MOVIMIENTOS"))
+                    {
+                        <MudNavLink Href="/operaciones/movimientos"
+                                    Icon="@Icons.Material.Filled.Timeline"
+                                    Class="nexo-nav-item">Movimientos</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("INVENTARIO.AJUSTES"))
+                    {
+                        <MudNavLink Href="/inventario/ajustes"
+                                    Icon="@Icons.Material.Filled.Tune"
+                                    Class="nexo-nav-item">Ajuste de Inventario</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("INVENTARIO.BAJAS"))
+                    {
+                        <MudNavLink Href="/inventario/bajas"
+                                    Icon="@Icons.Material.Filled.RemoveCircleOutline"
+                                    Class="nexo-nav-item">Registrar Baja</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("INVENTARIO.TRASPASOS"))
+                    {
+                        <MudNavLink Href="/inventario/traspasos"
+                                    Icon="@Icons.Material.Filled.MoveDown"
+                                    Class="nexo-nav-item">Traspasos</MudNavLink>
+                    }
+                </MudNavGroup>
             }
-        </MudNavGroup>
-    }
-
-    @* Inventario *@
-    @if (Modulos.EsVisible("INVENTARIO"))
-    {
-        <MudNavGroup Title="Inventario" Icon="@Icons.Material.Filled.Inventory2" Expanded="false">
-            @if (Modulos.EsVisible("INVENTARIO.STOCK"))
+        }
+        else if (key == "planificacion")
+        {
+            @if (Modulos.EsVisible("PLANIFICACION"))
             {
-                <MudNavLink Href="/inventario/stock" Icon="@Icons.Material.Filled.Inventory">Consulta de Stock</MudNavLink>
+                <MudNavGroup Title="Planificación"
+                             Icon="@Icons.Material.Filled.CalendarMonth"
+                             Class="nexo-nav-group">
+                    @if (Modulos.EsVisible("PLANIFICACION.DEMANDA"))
+                    {
+                        <MudNavLink Href="/planificacion/demanda"
+                                    Icon="@Icons.Material.Filled.TrendingUp"
+                                    Class="nexo-nav-item">Demanda Proyectada</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("PLANIFICACION.METAS"))
+                    {
+                        <MudNavLink Href="/planificacion/metas-venta"
+                                    Icon="@Icons.Material.Filled.Flag"
+                                    Class="nexo-nav-item">Metas de Venta</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("PLANIFICACION.CALENDARIO"))
+                    {
+                        <MudNavLink Href="/planificacion/calendario"
+                                    Icon="@Icons.Material.Filled.CalendarMonth"
+                                    Class="nexo-nav-item">Calendario</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("PLANIFICACION.PROYECTOS"))
+                    {
+                        <MudNavLink Href="/proyectos"
+                                    Icon="@Icons.Material.Filled.AccountTree"
+                                    Class="nexo-nav-item">Proyectos</MudNavLink>
+                    }
+                </MudNavGroup>
             }
-            @if (Modulos.EsVisible("INVENTARIO.KARDEX"))
+        }
+        else if (key == "rrhh")
+        {
+            @if (Modulos.EsVisible("RRHH"))
             {
-                <MudNavLink Href="/inventario/kardex" Icon="@Icons.Material.Filled.ReceiptLong">Kardex de Articulos</MudNavLink>
+                <MudNavGroup Title="Recursos Humanos"
+                             Icon="@Icons.Material.Filled.Badge"
+                             Class="nexo-nav-group">
+                    @if (Modulos.EsVisible("RRHH.EMPLEADOS"))
+                    {
+                        <MudNavLink Href="/rrhh/empleados"
+                                    Icon="@Icons.Material.Filled.Person"
+                                    Class="nexo-nav-item">Empleados</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("RRHH.CARGOS"))
+                    {
+                        <MudNavLink Href="/rrhh/cargos"
+                                    Icon="@Icons.Material.Filled.Work"
+                                    Class="nexo-nav-item">Cargos y Departamentos</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("RRHH.HORARIOS"))
+                    {
+                        <MudNavLink Href="/rrhh/horarios"
+                                    Icon="@Icons.Material.Filled.Schedule"
+                                    Class="nexo-nav-item">Horarios</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("RRHH.ASISTENCIA"))
+                    {
+                        <MudNavLink Href="/rrhh/asistencia"
+                                    Icon="@Icons.Material.Filled.FactCheck"
+                                    Class="nexo-nav-item">Asistencia</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("RRHH.AUSENCIAS"))
+                    {
+                        <MudNavLink Href="/rrhh/ausencias"
+                                    Icon="@Icons.Material.Filled.BeachAccess"
+                                    Class="nexo-nav-item">Ausencias y Vacaciones</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("RRHH.ORGANIGRAMA"))
+                    {
+                        <MudNavLink Href="/rrhh/organigrama"
+                                    Icon="@Icons.Material.Filled.AccountTree"
+                                    Class="nexo-nav-item">Organigrama</MudNavLink>
+                    }
+                </MudNavGroup>
             }
-            @if (Modulos.EsVisible("OPERACIONES.MOVIMIENTOS"))
-            {
-                <MudNavLink Href="/operaciones/movimientos" Icon="@Icons.Material.Filled.Timeline">Movimientos</MudNavLink>
-            }
-            @if (Modulos.EsVisible("INVENTARIO.AJUSTES"))
-            {
-                <MudNavLink Href="/inventario/ajustes" Icon="@Icons.Material.Filled.Tune">Ajuste de Inventario</MudNavLink>
-            }
-            @if (Modulos.EsVisible("INVENTARIO.BAJAS"))
-            {
-                <MudNavLink Href="/inventario/bajas" Icon="@Icons.Material.Filled.RemoveCircleOutline">Registrar Baja</MudNavLink>
-            }
-            @if (Modulos.EsVisible("INVENTARIO.TRASPASOS"))
-            {
-                <MudNavLink Href="/inventario/traspasos" Icon="@Icons.Material.Filled.MoveDown">Traspasos</MudNavLink>
-            }
-        </MudNavGroup>
-    }
-
-    @* Operaciones *@
-    @if (Modulos.EsVisible("OPERACIONES"))
-    {
-        <MudNavGroup Title="Operaciones" Icon="@Icons.Material.Filled.SwapHoriz" Expanded="false">
-            @if (Modulos.EsVisible("OPERACIONES.DESPACHOS"))
-            {
-                <MudNavLink Href="/logistica/despachos" Icon="@Icons.Material.Filled.LocalShipping">Despachos</MudNavLink>
-            }
-            @if (Modulos.EsVisible("OPERACIONES.FACTURACION"))
-            {
-                <MudNavLink Href="/facturacion" Icon="@Icons.Material.Filled.Receipt">Facturacion</MudNavLink>
-            }
-        </MudNavGroup>
-    }
-
-    @* Planificacion *@
-    @if (Modulos.EsVisible("PLANIFICACION"))
-    {
-        <MudNavGroup Title="Planificacion" Icon="@Icons.Material.Filled.Timeline" Expanded="false">
-            @if (Modulos.EsVisible("PLANIFICACION.DEMANDA"))
-            {
-                <MudNavLink Href="/planificacion/demanda" Icon="@Icons.Material.Filled.TrendingUp">Demanda Proyectada</MudNavLink>
-            }
-            @if (Modulos.EsVisible("PLANIFICACION.METAS"))
-            {
-                <MudNavLink Href="/planificacion/metas-venta" Icon="@Icons.Material.Filled.Flag">Metas de Venta</MudNavLink>
-            }
-            @if (Modulos.EsVisible("PLANIFICACION.CALENDARIO"))
-            {
-                <MudNavLink Href="/planificacion/calendario" Icon="@Icons.Material.Filled.CalendarMonth">Calendario</MudNavLink>
-            }
-            @if (Modulos.EsVisible("PLANIFICACION.PROYECTOS"))
-            {
-                <MudNavLink Href="/proyectos" Icon="@Icons.Material.Filled.AccountTree">Proyectos</MudNavLink>
-            }
-        </MudNavGroup>
-    }
-
-    @* CRM *@
-    @if (Modulos.EsVisible("CRM"))
-    {
-        <MudNavGroup Title="CRM" Icon="@Icons.Material.Filled.Handshake" Expanded="false">
-            @if (Modulos.EsVisible("CRM.CLIENTES"))
-            {
-                <MudNavLink Href="/crm/clientes" Icon="@Icons.Material.Filled.People">Clientes</MudNavLink>
-            }
-            @if (Modulos.EsVisible("CRM.LEADS"))
-            {
-                <MudNavLink Href="/crm/leads" Icon="@Icons.Material.Filled.PersonSearch">Leads</MudNavLink>
-            }
-            @if (Modulos.EsVisible("CRM.OPORTUNIDADES"))
-            {
-                <MudNavLink Href="/crm/oportunidades" Icon="@Icons.Material.Filled.MonetizationOn">Oportunidades</MudNavLink>
-            }
-            @if (Modulos.EsVisible("CRM.ACTIVIDADES"))
-            {
-                <MudNavLink Href="/crm/actividades" Icon="@Icons.Material.Filled.EventNote">Actividades</MudNavLink>
-            }
-            @if (Modulos.EsVisible("CRM.COTIZACIONES"))
-            {
-                <MudNavLink Href="/crm/cotizaciones" Icon="@Icons.Material.Filled.RequestQuote">Cotizaciones</MudNavLink>
-            }
-            @if (Modulos.EsVisible("CRM.CAMPANAS"))
-            {
-                <MudNavLink Href="/crm/campanas" Icon="@Icons.Material.Filled.Campaign">Campanas</MudNavLink>
-            }
-            @if (Modulos.EsVisible("CRM.COMBOS"))
-            {
-                <MudNavLink Href="/marketing/combos" Icon="@Icons.Material.Filled.LocalOffer">Combos / Ofertas</MudNavLink>
-            }
-        </MudNavGroup>
-    }
-
-    @* Recursos Humanos *@
-    @if (Modulos.EsVisible("RRHH"))
-    {
-        <MudNavGroup Title="Recursos Humanos" Icon="@Icons.Material.Filled.Badge" Expanded="false">
-            @if (Modulos.EsVisible("RRHH.EMPLEADOS"))
-            {
-                <MudNavLink Href="/rrhh/empleados" Icon="@Icons.Material.Filled.Person">Empleados</MudNavLink>
-            }
-            @if (Modulos.EsVisible("RRHH.CARGOS"))
-            {
-                <MudNavLink Href="/rrhh/cargos" Icon="@Icons.Material.Filled.Work">Cargos y Departamentos</MudNavLink>
-            }
-            @if (Modulos.EsVisible("RRHH.HORARIOS"))
-            {
-                <MudNavLink Href="/rrhh/horarios" Icon="@Icons.Material.Filled.Schedule">Horarios</MudNavLink>
-            }
-            @if (Modulos.EsVisible("RRHH.ASISTENCIA"))
-            {
-                <MudNavLink Href="/rrhh/asistencia" Icon="@Icons.Material.Filled.FactCheck">Asistencia</MudNavLink>
-            }
-            @if (Modulos.EsVisible("RRHH.AUSENCIAS"))
-            {
-                <MudNavLink Href="/rrhh/ausencias" Icon="@Icons.Material.Filled.BeachAccess">Ausencias y Vacaciones</MudNavLink>
-            }
-            @if (Modulos.EsVisible("RRHH.ORGANIGRAMA"))
-            {
-                <MudNavLink Href="/rrhh/organigrama" Icon="@Icons.Material.Filled.AccountTree">Organigrama</MudNavLink>
-            }
-            @* Usuarios del sistema y Roles — exclusivo Admin *@
+        }
+        else if (key == "admin")
+        {
             <AuthorizeView Roles="Administracion">
                 <Authorized>
-                    @if (Modulos.EsVisible("RRHH.USUARIOS"))
-                    {
-                        <MudNavLink Href="/admin/usuarios" Icon="@Icons.Material.Filled.ManageAccounts">Usuarios del Sistema</MudNavLink>
-                    }
-                    <MudNavLink Href="/admin/roles" Icon="@Icons.Material.Filled.AdminPanelSettings">
-                        Roles y Modulos
-                    </MudNavLink>
+                    <MudNavGroup Title="Administración"
+                                 Icon="@Icons.Material.Filled.AdminPanelSettings"
+                                 Class="nexo-nav-group">
+                        @if (Modulos.EsVisible("RRHH.USUARIOS"))
+                        {
+                            <MudNavLink Href="/admin/usuarios"
+                                        Icon="@Icons.Material.Filled.ManageAccounts"
+                                        Class="nexo-nav-item">Usuarios del Sistema</MudNavLink>
+                        }
+                        <MudNavLink Href="/admin/roles"
+                                    Icon="@Icons.Material.Filled.AdminPanelSettings"
+                                    Class="nexo-nav-item">Roles y Módulos</MudNavLink>
+                    </MudNavGroup>
                 </Authorized>
             </AuthorizeView>
-        </MudNavGroup>
+        }
     }
+
 </MudNavMenu>
 
 @code {
@@ -208,10 +310,28 @@
     [Inject] private NexoWeb.Common.Auth.ModulosVisiblesState Modulos { get; set; } = default!;
     [Inject] private NexoWeb.Common.Auth.AuthStateService Auth { get; set; } = default!;
 
+    private static readonly List<string> _ordenDefault = new()
+    {
+        "ventas", "crm", "catalogo", "produccion", "inventario", "planificacion", "rrhh", "admin"
+    };
+
+    private IEnumerable<string> GruposOrdenados
+    {
+        get
+        {
+            var preferido = Preferencias.OrdenGruposNav;
+            if (preferido == null || preferido.Count == 0)
+                return _ordenDefault;
+            var restantes = _ordenDefault.Except(preferido);
+            return preferido.Concat(restantes);
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         ConfiguracionEmpresa.OnCambio += StateHasChanged;
         Modulos.OnCambio += StateHasChanged;
+        Preferencias.OnCambio += StateHasChanged;
         Auth.OnChange += RecargarModulos;
 
         await Modulos.CargarAsync(Auth.Rol, Auth.UsuarioId);

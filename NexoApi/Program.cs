@@ -116,6 +116,7 @@ builder.Services.AddScoped<IMaquinariaService, MaquinariaService>();
 builder.Services.AddScoped<IEmpleadoProduccionService, EmpleadoProduccionService>();
 builder.Services.AddScoped<IComboService, ComboService>();
 builder.Services.AddScoped<ISeguridadService, SeguridadService>();
+builder.Services.AddScoped<NexoApi.Features.Finanzas.IFinanzasService, NexoApi.Features.Finanzas.FinanzasService>();
 
 // ----------------------------------------------------------------------------
 // AUTENTICACIÓN Y AUTORIZACIÓN (AQUÍ ESTÁ EL CAMBIO)

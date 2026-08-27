@@ -455,7 +455,10 @@ public class CrmService : ICrmService
         const string sql = @"
             SELECT l.LeadID, l.Nombre, l.Empresa, l.Telefono, l.Email, l.FuenteContacto, l.Etapa, l.Notas,
                    l.ResponsableID, e.Nombres + ' ' + e.Apellidos AS Responsable,
-                   l.ClienteIDConvertido, l.FechaCreacion, l.FechaConversion
+                   l.ClienteIDConvertido, l.FechaCreacion, l.FechaConversion,
+                   l.NIT, l.Direccion, l.TipoCliente, l.TipoPersona, l.TipoIdentificacion,
+                   l.PrimerNombre, l.SegundoNombre, l.PrimerApellido, l.SegundoApellido,
+                   l.Departamento, l.Ciudad, l.CodigoDept, l.CodigoMuni, l.DigitoVerificacion
             FROM Crm.Leads l
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = l.ResponsableID
             WHERE (@Etapa IS NULL OR l.Etapa = @Etapa)
@@ -469,9 +472,17 @@ public class CrmService : ICrmService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            INSERT INTO Crm.Leads (Nombre, Empresa, Telefono, Email, FuenteContacto, Notas, ResponsableID)
+            INSERT INTO Crm.Leads (
+                Nombre, Empresa, Telefono, Email, FuenteContacto, Notas, ResponsableID,
+                NIT, Direccion, TipoCliente, TipoPersona, TipoIdentificacion,
+                PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
+                Departamento, Ciudad, CodigoDept, CodigoMuni, DigitoVerificacion)
             OUTPUT INSERTED.LeadID
-            VALUES (@Nombre, @Empresa, @Telefono, @Email, @FuenteContacto, @Notas, @ResponsableID)";
+            VALUES (
+                @Nombre, @Empresa, @Telefono, @Email, @FuenteContacto, @Notas, @ResponsableID,
+                @NIT, @Direccion, @TipoCliente, @TipoPersona, @TipoIdentificacion,
+                @PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido,
+                @Departamento, @Ciudad, @CodigoDept, @CodigoMuni, @DigitoVerificacion)";
 
         return await connection.ExecuteScalarAsync<int>(sql, r);
     }
@@ -487,23 +498,33 @@ public class CrmService : ICrmService
             throw new KeyNotFoundException($"No existe el lead {leadId}.");
 
         if (etapaActual == "CONVERTIDO")
-            throw new InvalidOperationException("Este lead ya fue convertido a cliente, no se puede editar -- edita el cliente directamente.");
+            throw new InvalidOperationException("Este lead ya fue convertido a cliente, no se puede editar — edita el cliente directamente.");
 
         const string sql = @"
             UPDATE Crm.Leads
             SET Nombre = @Nombre, Empresa = @Empresa, Telefono = @Telefono, Email = @Email,
-                FuenteContacto = @FuenteContacto, Etapa = @Etapa, Notas = @Notas, ResponsableID = @ResponsableID
+                FuenteContacto = @FuenteContacto, Etapa = @Etapa, Notas = @Notas, ResponsableID = @ResponsableID,
+                NIT = @NIT, Direccion = @Direccion, TipoCliente = @TipoCliente,
+                TipoPersona = @TipoPersona, TipoIdentificacion = @TipoIdentificacion,
+                PrimerNombre = @PrimerNombre, SegundoNombre = @SegundoNombre,
+                PrimerApellido = @PrimerApellido, SegundoApellido = @SegundoApellido,
+                Departamento = @Departamento, Ciudad = @Ciudad,
+                CodigoDept = @CodigoDept, CodigoMuni = @CodigoMuni, DigitoVerificacion = @DigitoVerificacion
             WHERE LeadID = @LeadId";
 
         await connection.ExecuteAsync(sql, new
         {
-            LeadId = leadId, r.Nombre, r.Empresa, r.Telefono, r.Email, r.FuenteContacto, r.Etapa, r.Notas, r.ResponsableID
+            LeadId = leadId,
+            r.Nombre, r.Empresa, r.Telefono, r.Email, r.FuenteContacto, r.Etapa, r.Notas, r.ResponsableID,
+            r.NIT, r.Direccion, r.TipoCliente, r.TipoPersona, r.TipoIdentificacion,
+            r.PrimerNombre, r.SegundoNombre, r.PrimerApellido, r.SegundoApellido,
+            r.Departamento, r.Ciudad, r.CodigoDept, r.CodigoMuni, r.DigitoVerificacion
         });
     }
 
-    // Convertir un lead crea el Cliente con los mismos datos y marca el lead
-    // como CONVERTIDO -- de ahi en adelante el lead queda solo como registro
-    // historico de por donde entro este cliente, ya no se vuelve a tocar.
+    // Convertir un lead crea el Cliente con los datos completos y marca el lead
+    // como CONVERTIDO. El cliente resultante sera sincronizado a Visions en el
+    // siguiente ciclo del agente (ListarClientesParaSyncAsync lo detecta).
     public async Task<int> ConvertirLeadAsync(int leadId)
     {
         using var connection = _db.CreateConnection();
@@ -512,8 +533,12 @@ public class CrmService : ICrmService
 
         try
         {
-            var lead = await connection.QuerySingleOrDefaultAsync<LeadParaConvertir>(
-                "SELECT Nombre, Empresa, Telefono, Email, FuenteContacto, ResponsableID, Etapa FROM Crm.Leads WHERE LeadID = @LeadId",
+            var lead = await connection.QuerySingleOrDefaultAsync<LeadParaConvertir>(@"
+                SELECT Nombre, Empresa, Telefono, Email, FuenteContacto, ResponsableID, Etapa,
+                       NIT, Direccion, TipoCliente, TipoPersona, TipoIdentificacion,
+                       PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
+                       Departamento, Ciudad, CodigoDept, CodigoMuni, DigitoVerificacion
+                FROM Crm.Leads WHERE LeadID = @LeadId",
                 new { LeadId = leadId }, transaction);
 
             if (lead is null)
@@ -522,21 +547,33 @@ public class CrmService : ICrmService
             if (lead.Etapa == "CONVERTIDO")
                 throw new InvalidOperationException("Este lead ya fue convertido a cliente antes.");
 
-            // Si el lead tenía empresa: Nombre = persona, Contacto = empresa.
-            // Si no tenía empresa: Nombre = persona, Contacto = null.
-            var nombreCliente  = lead.Nombre;
-            var contactoCliente = lead.Empresa; // null cuando no hay empresa
+            // Nombre compuesto para persona natural; Empresa o Nombre para jurídica.
+            var nombreCliente = lead.TipoPersona == "Natural" && !string.IsNullOrWhiteSpace(lead.PrimerNombre)
+                ? string.Join(" ", new[] { lead.PrimerNombre, lead.SegundoNombre, lead.PrimerApellido, lead.SegundoApellido }
+                    .Where(s => !string.IsNullOrWhiteSpace(s)))
+                : lead.Nombre;
 
             const string sqlCrearCliente = @"
-                INSERT INTO Crm.Clientes (Nombre, Contacto, Telefono, Email, FuenteContacto, ResponsableID)
+                INSERT INTO Crm.Clientes (
+                    Nombre, Contacto, Telefono, Email, FuenteContacto, ResponsableID,
+                    NIT, Direccion, TipoCliente, TipoPersona, TipoIdentificacion,
+                    PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
+                    Departamento, Ciudad, CodigoDept, CodigoMuni, DigitoVerificacion)
                 OUTPUT INSERTED.ClienteID
-                VALUES (@Nombre, @Contacto, @Telefono, @Email, @FuenteContacto, @ResponsableID)";
+                VALUES (
+                    @Nombre, @Contacto, @Telefono, @Email, @FuenteContacto, @ResponsableID,
+                    @NIT, @Direccion, @TipoCliente, @TipoPersona, @TipoIdentificacion,
+                    @PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido,
+                    @Departamento, @Ciudad, @CodigoDept, @CodigoMuni, @DigitoVerificacion)";
 
             var clienteId = await connection.ExecuteScalarAsync<int>(sqlCrearCliente, new
             {
                 Nombre   = nombreCliente,
-                Contacto = contactoCliente,
-                lead.Telefono, lead.Email, lead.FuenteContacto, lead.ResponsableID
+                Contacto = lead.Empresa,
+                lead.Telefono, lead.Email, lead.FuenteContacto, lead.ResponsableID,
+                lead.NIT, lead.Direccion, lead.TipoCliente, lead.TipoPersona, lead.TipoIdentificacion,
+                lead.PrimerNombre, lead.SegundoNombre, lead.PrimerApellido, lead.SegundoApellido,
+                lead.Departamento, lead.Ciudad, lead.CodigoDept, lead.CodigoMuni, lead.DigitoVerificacion
             }, transaction);
 
             await connection.ExecuteAsync(
@@ -569,7 +606,14 @@ public class CrmService : ICrmService
             throw new InvalidOperationException("No se puede cambiar la etapa de este lead (ya fue convertido o no existe).");
     }
 
-    private record LeadParaConvertir(string Nombre, string? Empresa, string? Telefono, string? Email, string? FuenteContacto, int? ResponsableID, string Etapa);
+    private record LeadParaConvertir(
+        string Nombre, string? Empresa, string? Telefono, string? Email,
+        string? FuenteContacto, int? ResponsableID, string Etapa,
+        string? NIT, string? Direccion, string? TipoCliente, string? TipoPersona,
+        string? TipoIdentificacion,
+        string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
+        string? Departamento, string? Ciudad, string? CodigoDept, string? CodigoMuni,
+        int? DigitoVerificacion);
 
     // D) Clientes activos sin interaccion reciente (o con proximo contacto
     // vencido) -- no envia nada, solo los detecta para que alguien actue.
@@ -898,6 +942,6 @@ public class CrmService : ICrmService
     {
         using var connection = _db.CreateConnection();
         return await connection.QueryAsync<TipoIdentificacionItem>(
-            "SELECT Codigo, Detalle FROM Catalogo.TiposIdentificacion ORDER BY CAST(Codigo AS int)");
+            "SELECT Codigo, Detalle FROM Catalogo.TiposIdentificacion ORDER BY TRY_CAST(Codigo AS int), Codigo");
     }
 }

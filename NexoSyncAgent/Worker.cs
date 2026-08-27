@@ -17,6 +17,10 @@ public class Worker : BackgroundService
     private readonly string _version;
     // Timestamp de la ultima sync de clientes exitosa (persiste durante la vida del servicio).
     private DateTime? _ultimaSyncClientes;
+    // Timestamps para el sync completo Visions → NEXO (full scan, se limita a 1 vez por hora).
+    private DateTime _ultimaSyncVisionsANexoClientes   = DateTime.MinValue;
+    private DateTime _ultimaSyncVisionsANexoProveedores = DateTime.MinValue;
+    private static readonly TimeSpan IntervaloSyncVisionsANexo = TimeSpan.FromHours(1);
 
     public Worker(IServiceProvider serviceProvider, ILogger<Worker> logger, IConfiguration configuration)
     {
@@ -81,49 +85,71 @@ public class Worker : BackgroundService
                 // 2. Sincronizar configuracion (prefijos de venta, activo/inactivo).
                 //    Si el admin cambio el intervalo desde la web, se aplica aqui.
                 var tareaConfiguracion = scope.ServiceProvider.GetRequiredService<TareaSincronizarConfiguracion>();
-                var (centroCostoVisions, intervalApi) = await tareaConfiguracion.EjecutarAsync(stoppingToken);
+                var (centroCostoVisions, intervalApi, fechaInicioSyncVentas) = await tareaConfiguracion.EjecutarAsync(stoppingToken);
                 if (_overrideSegundos is null && intervalApi > 0)
                     _intervalo = TimeSpan.FromMinutes(intervalApi);
 
                 // 3. Solo si el Admin ya configuro el codigo CENTROCOSTO de Visions.
                 if (centroCostoVisions is not null)
                 {
-                    // 3. Sincronizar catalogos bidireccional (Marcas → GrupoMayor → GrupoMenor → IVA → Presentaciones).
-                    //    Va PRIMERO: antes de cualquier sync de articulos en cualquier direccion, para que
-                    //    los codigos de Marca/GrupoMayor/GrupoMenor/Presentacion ya existan en NEXO y en
-                    //    Visions cuando se sincronicen articulos (evita FK violations y codigos huerfanos).
+                    // 3. Catalogos bidireccional (Marcas → GrupoMayor → GrupoMenor → IVA → Presentaciones).
+                    //    SIEMPRE PRIMERO: los codigos de catalogo deben existir en ambos sistemas
+                    //    antes de que cualquier articulo los referencie. Evita FK violations y
+                    //    codigos huerfanos en MARCA/GRUPOMENOR/PRESENTACION.
                     var tareaCatalogos = scope.ServiceProvider.GetRequiredService<TareaSincronizarCatalogos>();
                     await tareaCatalogos.EjecutarAsync(stoppingToken);
 
-                    // 4. Aplicar entradas de inventario y sync de articulos (NEXO → Visions).
-                    //    Va despues de catalogos para que GRUPOMENOR/MARCA/PRESENTACION ya existan en Visions.
-                    var tareaEntradas = scope.ServiceProvider.GetRequiredService<TareaAplicarEntradasInventario>();
-                    await tareaEntradas.EjecutarAsync(stoppingToken);
-
-                    // 5. Exportar ventas (Visions → NEXO: lo que se vendio en el POS).
-                    var tareaVentas = scope.ServiceProvider.GetRequiredService<TareaExportarVentas>();
-                    await tareaVentas.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
-
-                    // 6. Importar cambios de TARJETA desde Visions → NEXO (precio/nombre/marca modificados en el POS).
-                    var tareaImportarTarjeta = scope.ServiceProvider.GetRequiredService<TareaImportarCambiosTarjeta>();
-                    await tareaImportarTarjeta.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
-
-                    // 7. Detectar articulos de Visions que aun no existen en NEXO y crearlos (en lotes, con datos completos).
+                    // 4. Articulos Visions → NEXO: crear los que aun no existen en NEXO con
+                    //    todos sus datos (nombre, precios, IVA, marca, grupo, presentacion,
+                    //    existencias, existencias minimas). Lotes de 500 por ciclo.
+                    //    Va ANTES de cambios y ventas: el articulo debe existir en NEXO antes
+                    //    de procesar modificaciones o transacciones que lo referencien.
                     var tareaArticulosFaltantes = scope.ServiceProvider.GetRequiredService<TareaDetectarArticulosFaltantes>();
                     await tareaArticulosFaltantes.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
 
-                    // 8. Sincronizar clientes NEXO → Visions (upsert en USUARIOS CLIENTE=1).
-                    //    Va antes de facturas: las facturas referencian NIT de cliente en Visions.
+                    // 5. Cambios de TARJETA Visions → NEXO (trigger TR_TARJETA_NexoCambios):
+                    //    precio, nombre, marca, grupo, IVA modificados en el POS.
+                    //    Va despues de crear faltantes: solo actualiza articulos que ya existen.
+                    var tareaImportarTarjeta = scope.ServiceProvider.GetRequiredService<TareaImportarCambiosTarjeta>();
+                    await tareaImportarTarjeta.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
+
+                    // 6. Clientes Visions → NEXO y NEXO → Visions.
+                    //    Va ANTES de ventas: cuando se exporta una venta, el cliente ya existe
+                    //    en NEXO con todos sus datos (nombre, telefono, municipio, departamento).
+                    //    El full-scan Visions→NEXO se limita a 1 vez/hora (no tiene timestamps en Visions).
+                    var ahora = DateTime.UtcNow;
+                    var syncVisionsClientes   = ahora - _ultimaSyncVisionsANexoClientes   >= IntervaloSyncVisionsANexo;
+                    var syncVisionsProveedores = ahora - _ultimaSyncVisionsANexoProveedores >= IntervaloSyncVisionsANexo;
+
                     var tareaClientes = scope.ServiceProvider.GetRequiredService<TareaSincronizarClientes>();
-                    await tareaClientes.EjecutarAsync(_ultimaSyncClientes, stoppingToken);
-                    _ultimaSyncClientes = DateTime.UtcNow;
+                    await tareaClientes.EjecutarAsync(_ultimaSyncClientes, stoppingToken, incluirVisionsANexo: syncVisionsClientes);
+                    _ultimaSyncClientes = DateTime.Now; // GETDATE() en SQL es hora local; UtcNow causaba comparacion incorrecta
+                    if (syncVisionsClientes) _ultimaSyncVisionsANexoClientes = DateTime.UtcNow;
 
-                    // 8b. Sincronizar proveedores NEXO → Visions (upsert en USUARIOS PROVEEDOR=1).
+                    // 6b. Proveedores Visions → NEXO y NEXO → Visions.
                     //     Un NIT puede ser CLIENTE=1 y PROVEEDOR=1 simultáneamente sin duplicados.
+                    //     Va junto a clientes, antes de ventas y facturas.
                     var tareaProveedores = scope.ServiceProvider.GetRequiredService<TareaSincronizarProveedores>();
-                    await tareaProveedores.EjecutarAsync(stoppingToken);
+                    await tareaProveedores.EjecutarAsync(stoppingToken, incluirVisionsANexo: syncVisionsProveedores);
+                    if (syncVisionsProveedores) _ultimaSyncVisionsANexoProveedores = DateTime.UtcNow;
 
-                    // 9. Exportar facturas NEXO → Visions (las que tienen stock descontado y aun no estan en MOVDETALLES).
+                    // 7. Ventas Visions → NEXO: lo que se vendio en el POS (MOVDETALLES).
+                    //    Va despues de articulos Y clientes: tanto el mapeo del articulo como
+                    //    el registro del cliente ya existen, evitando auto-creaciones con datos
+                    //    incompletos en cualquiera de los dos.
+                    var tareaVentas = scope.ServiceProvider.GetRequiredService<TareaExportarVentas>();
+                    await tareaVentas.EjecutarAsync(centroCostoVisions!.Value, stoppingToken, fechaInicioSyncVentas);
+
+                    // 8. Eventos NEXO → Visions: SINCRONIZAR_ARTICULO, AJUSTE_INVENTARIO,
+                    //    BAJA_INVENTARIO, ENTRADA_PRODUCCION, CONSUMO_INSUMO.
+                    //    Va despues de ventas: NEXO ya recibio todo lo de Visions y sus eventos
+                    //    reflejan datos completos y stock actualizado.
+                    var tareaEntradas = scope.ServiceProvider.GetRequiredService<TareaAplicarEntradasInventario>();
+                    await tareaEntradas.EjecutarAsync(stoppingToken);
+
+                    // 9. Facturas NEXO → Visions: solo cuando articulos Y clientes ya existen
+                    //    en ambos sistemas. Va al final para garantizar que no haya FKs rotas
+                    //    ni referencias a NITs o referencias desconocidas en Visions.
                     var tareaFacturasVisions = scope.ServiceProvider.GetRequiredService<TareaSincronizarFacturasNexoVisions>();
                     await tareaFacturasVisions.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
                 }

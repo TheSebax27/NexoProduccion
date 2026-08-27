@@ -49,7 +49,9 @@
                 <MudItem xs="12" md="6">
                     <div class="d-flex align-center gap-2">
                         <MudTextField T="string?" Value="_nit" ValueChanged="OnNitCambiado" Label="Número de Documento"
-                                      Variant="Variant.Outlined" FullWidth="true" />
+                                      Variant="Variant.Outlined" FullWidth="true"
+                                      Error="@(_nitDuplicadoError != null)"
+                                      ErrorText="@_nitDuplicadoError" />
                         <div style="white-space:nowrap; padding:4px 10px; border:1px solid var(--mud-palette-lines-inputs); border-radius:4px; font-size:.85rem; color:var(--mud-palette-text-secondary); min-width:52px; text-align:center;">
                             DV: <strong>@(_dv.HasValue ? _dv.ToString() : "-")</strong>
                         </div>
@@ -60,7 +62,7 @@
                                   Variant="Variant.Outlined" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="_telefono" Label="Teléfono"
+                    <MudTextField @bind-Value="_telefono" Label="Teléfono" Required="true"
                                   Variant="Variant.Outlined" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" md="6">
@@ -73,7 +75,7 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudAutocomplete T="DeptItem?" Label="Departamento"
+                    <MudAutocomplete T="DeptItem?" Label="Departamento *"
                                      Value="_deptSeleccionado" ValueChanged="OnDepartamentoChanged"
                                      SearchFunc="BuscarDepartamento"
                                      ToStringFunc="@(d => d?.Nombre ?? "")"
@@ -83,7 +85,7 @@
                                      Placeholder="Buscar departamento..." />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudAutocomplete T="MunicipioItem?" Label="Municipio / Ciudad"
+                    <MudAutocomplete T="MunicipioItem?" Label="Municipio / Ciudad *"
                                      @bind-Value="_muniSeleccionado"
                                      SearchFunc="BuscarMunicipio"
                                      ToStringFunc="@(m => m?.NombreMuni ?? "")"
@@ -98,7 +100,7 @@
                                   Variant="Variant.Outlined" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12">
-                    <MudTextField @bind-Value="_direccion" Label="Dirección"
+                    <MudTextField @bind-Value="_direccion" Label="Dirección" Required="true"
                                   Variant="Variant.Outlined" FullWidth="true" />
                 </MudItem>
             </MudGrid>
@@ -109,7 +111,9 @@
                 <MudItem xs="12" md="6">
                     <div class="d-flex align-center gap-2">
                         <MudTextField T="string?" Value="_nit" ValueChanged="OnNitCambiado" Label="NIT Empresa"
-                                      Variant="Variant.Outlined" FullWidth="true" />
+                                      Variant="Variant.Outlined" FullWidth="true"
+                                      Error="@(_nitDuplicadoError != null)"
+                                      ErrorText="@_nitDuplicadoError" />
                         <div style="white-space:nowrap; padding:4px 10px; border:1px solid var(--mud-palette-lines-inputs); border-radius:4px; font-size:.85rem; color:var(--mud-palette-text-secondary); min-width:52px; text-align:center;">
                             DV: <strong>@(_dv.HasValue ? _dv.ToString() : "-")</strong>
                         </div>
@@ -124,7 +128,7 @@
                                   Variant="Variant.Outlined" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="_telefono" Label="Teléfono"
+                    <MudTextField @bind-Value="_telefono" Label="Teléfono" Required="true"
                                   Variant="Variant.Outlined" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" md="6">
@@ -137,7 +141,7 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudAutocomplete T="DeptItem?" Label="Departamento"
+                    <MudAutocomplete T="DeptItem?" Label="Departamento *"
                                      Value="_deptSeleccionado" ValueChanged="OnDepartamentoChanged"
                                      SearchFunc="BuscarDepartamento"
                                      ToStringFunc="@(d => d?.Nombre ?? "")"
@@ -147,7 +151,7 @@
                                      Placeholder="Buscar departamento..." />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudAutocomplete T="MunicipioItem?" Label="Municipio / Ciudad"
+                    <MudAutocomplete T="MunicipioItem?" Label="Municipio / Ciudad *"
                                      @bind-Value="_muniSeleccionado"
                                      SearchFunc="BuscarMunicipio"
                                      ToStringFunc="@(m => m?.NombreMuni ?? "")"
@@ -162,7 +166,7 @@
                                   Variant="Variant.Outlined" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12">
-                    <MudTextField @bind-Value="_direccion" Label="Dirección"
+                    <MudTextField @bind-Value="_direccion" Label="Dirección" Required="true"
                                   Variant="Variant.Outlined" FullWidth="true" />
                 </MudItem>
             </MudGrid>
@@ -240,11 +244,21 @@
     private List<MunicipioItem> _municipiosFiltrados = new();
     private DualRolInfo? _dualRol;
 
+    // Validacion NIT duplicado (solo en creacion)
+    private string? _nitDuplicadoError;
+    private CancellationTokenSource? _nitCheckCts;
+
     private record DeptItem(string Codigo, string? Nombre);
 
-    private bool PuedeGuardar => _tipoPersona == "Natural"
-        ? !string.IsNullOrWhiteSpace(_primerNombre) && !string.IsNullOrWhiteSpace(_primerApellido)
-        : !string.IsNullOrWhiteSpace(_razonSocial);
+    private bool PuedeGuardar => _nitDuplicadoError == null
+        && !string.IsNullOrWhiteSpace(_nit)
+        && !string.IsNullOrWhiteSpace(_telefono)
+        && !string.IsNullOrWhiteSpace(_direccion)
+        && _deptSeleccionado != null
+        && _muniSeleccionado != null
+        && (_tipoPersona == "Natural"
+            ? !string.IsNullOrWhiteSpace(_primerNombre) && !string.IsNullOrWhiteSpace(_primerApellido)
+            : !string.IsNullOrWhiteSpace(_razonSocial));
 
     private string NombreCompleto => _tipoPersona == "Natural"
         ? string.Join(" ", new[] { _primerNombre, _segundoNombre, _primerApellido, _segundoApellido }
@@ -319,14 +333,32 @@
             _muniSeleccionado = _municipiosFiltrados.FirstOrDefault(m => m.CodigoMuni == codigoMuni);
     }
 
-    private async void OnNitCambiado(string? valor)
+    private async Task OnNitCambiado(string? valor)
     {
         _nit = valor;
         _dv  = CalcularDV(valor);
         _dualRol = null;
-        if (!string.IsNullOrWhiteSpace(valor) && valor.Length >= 5)
-            await CargarDualRolAsync(valor);
-        StateHasChanged();
+        _nitDuplicadoError = null;
+
+        _nitCheckCts?.Cancel();
+        if (string.IsNullOrWhiteSpace(valor) || Proveedor != null) return;
+
+        _nitCheckCts = new CancellationTokenSource();
+        var ct = _nitCheckCts.Token;
+        try
+        {
+            await Task.Delay(450, ct);
+            if (ct.IsCancellationRequested) return;
+            var dual = await ApiClient.GetAsync<DualRolInfo?>($"api/catalogo/verificar-dual-rol?nit={Uri.EscapeDataString(valor.Trim())}");
+            if (ct.IsCancellationRequested) return;
+            _dualRol = dual;
+            // Solo bloquear si ya existe como proveedor y estamos CREANDO (no editando)
+            if (Proveedor == null && dual?.EsProveedor == true)
+                _nitDuplicadoError = "Este NIT ya está registrado como proveedor.";
+            StateHasChanged();
+        }
+        catch (OperationCanceledException) { }
+        catch { }
     }
 
     private async Task CargarDualRolAsync(string nit)

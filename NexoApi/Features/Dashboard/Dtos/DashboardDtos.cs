@@ -39,3 +39,18 @@ public record IngresoPorMesPunto(int Anio, int Mes, string NombreMes, decimal To
 public record TopClienteItem(int ClienteID, string Cliente, string? NIT, decimal TotalFacturado, int NumDocumentos);
 
 public record TopArticuloItem(int ArticuloID, string SKU, string Nombre, decimal CantidadVendida, decimal TotalFacturado);
+
+// ---------- Analisis Financiero — margen por artículo ----------
+public record MargenArticuloItem(
+    int ArticuloID, string SKU, string Nombre,
+    decimal CantidadVendida, decimal TotalFacturado,
+    decimal CostoEstimado, decimal MargenBruto, decimal PorcentajeMargen
+);
+
+// ---------- Alertas de stock bajo mínimo ----------
+public record AlertaStockItem(
+    int ArticuloID, string SKU, string Articulo,
+    string CentroCosto, string Bodega,
+    decimal CantidadActual, decimal StockMinimo,
+    decimal Deficit
+);

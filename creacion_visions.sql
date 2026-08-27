@@ -140,6 +140,9 @@ AFTER UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
+    -- Ignorar updates hechos por el agente NEXO (SESSION_CONTEXT marcado por TareaAplicarEntradasInventario)
+    -- Evita el eco: NEXO→Visions TARJETA→trigger→NEXO_TarjetasCambios→agente→NEXO (bucle infinito)
+    IF CAST(SESSION_CONTEXT(N'nexo_agente') AS NVARCHAR(5)) = '1' RETURN;
 
     -- Capturar cambio de EXISTENCIAS
     IF UPDATE(EXISTENCIAS)

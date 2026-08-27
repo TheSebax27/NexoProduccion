@@ -80,7 +80,7 @@ BEGIN
     IF @CentroCostoID IS NULL
         THROW 54003, 'La bodega indicada no existe.', 1;
 
-    IF NOT EXISTS (SELECT 1 FROM Catalogo.Articulos WHERE ArticuloID = @ArticuloID)
+    IF NOT EXISTS (SELECT 1 FROM Catalogo.Tarjetas WHERE ArticuloID = @ArticuloID)
         THROW 54004, 'El articulo indicado no existe.', 1;
 
     BEGIN TRANSACTION;
@@ -108,13 +108,13 @@ BEGIN
     -- Recalcula el costo promedio ponderado del articulo, igual criterio que las compras.
     DECLARE @StockTotalActual DECIMAL(18,4) = Catalogo.fn_StockTotalArticulo(@ArticuloID);
     DECLARE @StockPrevio DECIMAL(18,4) = @StockTotalActual - @Cantidad;
-    DECLARE @CostoPromedioPrevio DECIMAL(18,4) = (SELECT CostoPromedio FROM Catalogo.Articulos WHERE ArticuloID = @ArticuloID);
+    DECLARE @CostoPromedioPrevio DECIMAL(18,4) = (SELECT CostoPromedio FROM Catalogo.Tarjetas WHERE ArticuloID = @ArticuloID);
     DECLARE @NuevoCostoPromedio DECIMAL(18,4) =
         CASE WHEN @StockPrevio IS NULL OR @StockPrevio <= 0 OR @CostoPromedioPrevio IS NULL THEN @CostoUnitario
              ELSE ((@StockPrevio * @CostoPromedioPrevio) + (@Cantidad * @CostoUnitario)) / (@StockPrevio + @Cantidad)
         END;
 
-    UPDATE Catalogo.Articulos SET CostoPromedio = @NuevoCostoPromedio WHERE ArticuloID = @ArticuloID;
+    UPDATE Catalogo.Tarjetas SET CostoPromedio = @NuevoCostoPromedio WHERE ArticuloID = @ArticuloID;
 
     DECLARE @NuevoSaldo DECIMAL(18,4) = (SELECT SUM(CantidadActual) FROM Inventario.InventarioStock WHERE ArticuloID = @ArticuloID AND BodegaID = @BodegaID);
     DECLARE @TipoAjuste INT = (SELECT TipoMovID FROM Kardex.TiposMovimientoKardex WHERE Codigo = 'AJU_INV');

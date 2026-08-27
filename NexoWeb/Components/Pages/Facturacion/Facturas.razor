@@ -3,6 +3,7 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.ConfiguracionEmpresaState ConfiguracionEmpresa
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Components.Pages.Compras
 
@@ -543,7 +544,8 @@
         {
             { x => x.Clientes, _clientes },
             { x => x.CombosActivos, _combosActivos },
-            { x => x.CentrosCosto, _centrosCosto }
+            { x => x.CentrosCosto, _centrosCosto },
+            { x => x.UsaVisions, ConfiguracionEmpresa.UsaVisions }
         };
         var dialogo = await DialogService.ShowAsync<FacturaDialog>("Nueva Factura", parametros,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });

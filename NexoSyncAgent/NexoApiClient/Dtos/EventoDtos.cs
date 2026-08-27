@@ -26,7 +26,8 @@ public record EventoPendienteItem(
     decimal? PCredito = null,
     decimal? UPublico = null,
     decimal? UBodega = null,
-    decimal? UCredito = null
+    decimal? UCredito = null,
+    string? TipoProductoCodigo = null
 );
 
 // NombreArticuloVisions/CostoArticuloVisions/PrecioArticuloVisions: lo que ya
@@ -45,7 +46,37 @@ public record RegistrarEventoEntranteRequest(
     string? ClienteNit,
     string? ClienteNombre,
     string? TipDoc = null,
-    string? NroDoc = null
+    string? NroDoc = null,
+    string? ClienteTipoPersona = null,
+    string? ClientePrimerNombre = null,
+    string? ClienteSegundoNombre = null,
+    string? ClientePrimerApellido = null,
+    string? ClienteSegundoApellido = null,
+    string? ClienteEmpresa = null,
+    string? ClienteTelefono = null,
+    string? ClienteDireccion = null,
+    string? ClienteCiudad = null,
+    string? ClienteDepartamento = null,
+    string? ClienteCodigoMuni = null,
+    string? ClienteCodigoDept = null,
+    // Datos del catálogo de Visions (dbo.TARJETA) al momento de la venta.
+    // Si el artículo no existe en NEXO todavía, se usan para crearlo completo.
+    string? MarcaCodigo = null,
+    decimal? IvaValor = null,
+    string? IvaDescripcion = null,
+    string? IvaSiNo = null,
+    decimal? Iva2 = null,
+    string? IvaDescripcion2 = null,
+    string? GrupoMenorCodigo = null,
+    string? PresentacionCodigo = null,
+    string? TipoProductoCodigo = null,
+    decimal? PBodega = null,
+    decimal? PCredito = null,
+    decimal? UPublico = null,
+    decimal? UBodega = null,
+    decimal? UCredito = null,
+    decimal? ExistenciasActuales = null,
+    decimal? ExistenciasMinimas = null
 );
 
 // Configuracion que el Administrador dejo en NEXO Web (Catalogo > Centros de
@@ -55,7 +86,7 @@ public record RegistrarEventoEntranteRequest(
 // Visions (puede ser null si el Administrador aun no lo configuro en NEXO).
 // IntervalMinutes viene de la BD de NEXO -- el admin lo cambia desde la web
 // sin necesidad de tocar appsettings.json en el servidor de Visions.
-public record ConfiguracionAgenteResponse(int? CentroCostoVisions, bool Activo, string? PrefijosDocumentoVenta, int IntervalMinutes);
+public record ConfiguracionAgenteResponse(int? CentroCostoVisions, bool Activo, string? PrefijosDocumentoVenta, int IntervalMinutes, DateTime? FechaInicioSyncVentas = null);
 
 // Respuesta del endpoint /latido -- confirma que la API recibio el latido
 // y devuelve la hora del servidor para que el agente pueda detectar desfase de reloj.
@@ -100,7 +131,10 @@ public record SyncArticuloDesdeVisionsRequest(
     decimal? PCredito = null,
     decimal? UPublico = null,
     decimal? UBodega = null,
-    decimal? UCredito = null
+    decimal? UCredito = null,
+    string? TipoProductoCodigo = null,
+    decimal? ExistenciasActuales = null,
+    decimal? ExistenciasMinimas = null
 );
 
 // ──────────── Clientes para sync NEXO → Visions ────────────
@@ -121,7 +155,8 @@ public record ClienteParaSyncDto(
     string? NombreMuni = null,
     string? CodigoDept = null,
     string? CodigoMuni = null,
-    int? DigitoVerificacion = null
+    int? DigitoVerificacion = null,
+    bool Estado = true
 );
 
 public record SyncClienteDesdeVisionsRequest(
@@ -154,7 +189,8 @@ public record ProveedorParaSyncDto(
     string? TipoIdentificacion = null, int? DigitoVerificacion = null,
     string? Departamento = null, string? Ciudad = null,
     string? CodigoDept = null, string? CodigoMuni = null,
-    string? Pais = null, string? CodigoPais = null
+    string? Pais = null, string? CodigoPais = null,
+    bool Estado = true
 );
 
 // ──────────── Proveedores desde Visions → NEXO ────────────

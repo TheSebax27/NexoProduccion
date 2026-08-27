@@ -9,18 +9,18 @@
 <PageTitle>Editar Artículo — NEXO</PageTitle>
 
 @* ── Encabezado ───────────────────────────────────────────────────────── *@
-<div class="na-page-header">
-    <nav class="na-breadcrumb">
-        <a class="na-breadcrumb__link" href="/catalogo/articulos">Artículos</a>
-        <span class="na-breadcrumb__sep">›</span>
-        <span class="na-breadcrumb__current">@(_articulo?.Nombre ?? "Cargando…")</span>
+<div class="nexo-page-header">
+    <nav class="nexo-page-header__breadcrumb">
+        <a class="nexo-page-header__crumb-link" href="/catalogo/articulos">Artículos</a>
+        <span class="nexo-page-header__crumb-sep">›</span>
+        <span class="nexo-page-header__crumb-cur">@(_articulo?.Nombre ?? "Cargando…")</span>
     </nav>
-    <div class="na-page-header__body">
+    <div class="nexo-page-header__body">
         <div>
-            <h1 class="na-page-title">Editar artículo</h1>
+            <h1 class="nexo-page-header__title">Editar artículo</h1>
             @if (_articulo is not null)
             {
-                <p class="na-page-sub">
+                <p class="nexo-page-header__sub">
                     <span class="na-sku-badge">@_articulo.Referencia</span>
                     &nbsp;· @_articulo.TipoArticulo
                     @if (!_estado)
@@ -52,23 +52,23 @@ else if (_errorCarga is not null)
 else
 {
     <MudForm @ref="_form" Model="@this">
-        <div class="na-layout">
+        <div class="nexo-form-layout">
 
             @* ── Fila 1: Información básica + Clasificación ──────────────── *@
-            <div class="na-row-2">
+            <div class="nexo-form-row-2">
 
                 @* Información básica *@
-                <div class="na-card">
-                    <div class="na-card__header">
-                        <div class="na-card__icon" style="background: rgba(124,92,255,0.10);">
+                <div class="nexo-section">
+                    <div class="nexo-section__header">
+                        <div class="nexo-section__icon" style="background: rgba(124,92,255,0.10);">
                             <MudIcon Icon="@Icons.Material.Filled.Inventory" Style="color:var(--n-purple); font-size:1.25rem;" />
                         </div>
                         <div>
-                            <div class="na-card__title">Información básica</div>
-                            <div class="na-card__sub">SKU: @_articulo!.Referencia (no editable)</div>
+                            <div class="nexo-section__title">Información básica</div>
+                            <div class="nexo-section__sub">SKU: @_articulo!.Referencia (no editable)</div>
                         </div>
                     </div>
-                    <div class="na-card__body">
+                    <div class="nexo-section__body">
                         <MudTextField @bind-Value="_nombre" Label="Nombre del artículo" Required="true"
                                       RequiredError="El nombre es obligatorio"
                                       Variant="Variant.Outlined" Class="mb-4" />
@@ -80,17 +80,17 @@ else
                 </div>
 
                 @* Clasificación *@
-                <div class="na-card">
-                    <div class="na-card__header">
-                        <div class="na-card__icon" style="background: rgba(16,185,129,0.10);">
+                <div class="nexo-section">
+                    <div class="nexo-section__header">
+                        <div class="nexo-section__icon" style="background: rgba(16,185,129,0.10);">
                             <MudIcon Icon="@Icons.Material.Filled.Sell" Style="color:#10B981; font-size:1.25rem;" />
                         </div>
                         <div>
-                            <div class="na-card__title">Clasificación</div>
-                            <div class="na-card__sub">Tipo: @_articulo!.TipoArticulo (no editable)</div>
+                            <div class="nexo-section__title">Clasificación</div>
+                            <div class="nexo-section__sub">Tipo: @_articulo!.TipoArticulo (no editable)</div>
                         </div>
                     </div>
-                    <div class="na-card__body">
+                    <div class="nexo-section__body">
                         <MudSelect T="string?" @bind-Value="_marcaCodigo" Label="Marca" Clearable="true"
                                    Placeholder="Sin marca" Variant="Variant.Outlined" Class="mb-4">
                             @foreach (var m in _marcas)
@@ -122,20 +122,20 @@ else
             </div>
 
             @* ── Presentación + IVA ───────────────────────────────────────── *@
-            <div class="na-row-2">
+            <div class="nexo-form-row-2">
 
                 @* Presentación *@
-                <div class="na-card">
-                    <div class="na-card__header">
-                        <div class="na-card__icon" style="background: rgba(245,158,11,0.10);">
+                <div class="nexo-section">
+                    <div class="nexo-section__header">
+                        <div class="nexo-section__icon" style="background: rgba(245,158,11,0.10);">
                             <MudIcon Icon="@Icons.Material.Filled.Inventory2" Style="color:#F59E0B; font-size:1.25rem;" />
                         </div>
                         <div>
-                            <div class="na-card__title">Presentación</div>
-                            <div class="na-card__sub">Define cómo se empaca o presenta el artículo</div>
+                            <div class="nexo-section__title">Presentación</div>
+                            <div class="nexo-section__sub">Define cómo se empaca o presenta el artículo</div>
                         </div>
                     </div>
-                    <div class="na-card__body">
+                    <div class="nexo-section__body">
                         <div class="d-flex align-center mb-4" style="gap:0.5rem;">
                             <MudSelect T="string?" Value="_presentacionCodigo" ValueChanged="OnPresentacionChanged"
                                        Label="Presentación" Clearable="true"
@@ -197,17 +197,17 @@ else
                 </div>
 
                 @* IVA *@
-                <div class="na-card">
-                    <div class="na-card__header">
-                        <div class="na-card__icon" style="background: rgba(14,165,233,0.10);">
+                <div class="nexo-section">
+                    <div class="nexo-section__header">
+                        <div class="nexo-section__icon" style="background: rgba(14,165,233,0.10);">
                             <MudIcon Icon="@Icons.Material.Filled.Receipt" Style="color:#0EA5E9; font-size:1.25rem;" />
                         </div>
                         <div>
-                            <div class="na-card__title">IVA e Impuestos</div>
-                            <div class="na-card__sub">Configuración fiscal del artículo</div>
+                            <div class="nexo-section__title">IVA e Impuestos</div>
+                            <div class="nexo-section__sub">Configuración fiscal del artículo</div>
                         </div>
                     </div>
-                    <div class="na-card__body">
+                    <div class="nexo-section__body">
                         <MudSelect T="int?" Value="_ivaId" ValueChanged="OnIvaChanged"
                                    Label="Impuesto 1 — IVA" Clearable="true" Placeholder="Sin IVA"
                                    Variant="Variant.Outlined" Class="mb-4">
@@ -248,17 +248,17 @@ else
             </div>
 
             @* ── Precios y Costos ─────────────────────────────────────────── *@
-            <div class="na-card">
-                <div class="na-card__header">
-                    <div class="na-card__icon" style="background: rgba(239,68,68,0.10);">
+            <div class="nexo-section">
+                <div class="nexo-section__header">
+                    <div class="nexo-section__icon" style="background: rgba(239,68,68,0.10);">
                         <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Style="color:#EF4444; font-size:1.25rem;" />
                     </div>
                     <div>
-                        <div class="na-card__title">Precios y Costos</div>
-                        <div class="na-card__sub">Define el costo y los precios de venta por canal</div>
+                        <div class="nexo-section__title">Precios y Costos</div>
+                        <div class="nexo-section__sub">Define el costo y los precios de venta por canal</div>
                     </div>
                 </div>
-                <div class="na-card__body">
+                <div class="nexo-section__body">
                     @if (_articulo!.CostoPromedio > 0)
                     {
                         <div class="na-costo-promedio-badge mb-4">
@@ -341,20 +341,20 @@ else
             </div>
 
             @* ── Stock + Imagen ───────────────────────────────────────────── *@
-            <div class="na-row-2">
+            <div class="nexo-form-row-2">
 
                 @* Control de Inventario *@
-                <div class="na-card">
-                    <div class="na-card__header">
-                        <div class="na-card__icon" style="background: rgba(124,92,255,0.10);">
+                <div class="nexo-section">
+                    <div class="nexo-section__header">
+                        <div class="nexo-section__icon" style="background: rgba(124,92,255,0.10);">
                             <MudIcon Icon="@Icons.Material.Filled.Warehouse" Style="color:var(--n-purple); font-size:1.25rem;" />
                         </div>
                         <div>
-                            <div class="na-card__title">Control de Inventario</div>
-                            <div class="na-card__sub">Umbrales y parámetros de stock</div>
+                            <div class="nexo-section__title">Control de Inventario</div>
+                            <div class="nexo-section__sub">Umbrales y parámetros de stock</div>
                         </div>
                     </div>
-                    <div class="na-card__body">
+                    <div class="nexo-section__body">
                         <div class="na-field-row na-field-row--2">
                             <MudNumericField @bind-Value="_stockMinimo" Label="Stock mínimo" Min="0m"
                                              Format="N2" Variant="Variant.Outlined"
@@ -386,17 +386,17 @@ else
                 </div>
 
                 @* Imagen *@
-                <div class="na-card">
-                    <div class="na-card__header">
-                        <div class="na-card__icon" style="background: rgba(124,92,255,0.10);">
+                <div class="nexo-section">
+                    <div class="nexo-section__header">
+                        <div class="nexo-section__icon" style="background: rgba(124,92,255,0.10);">
                             <MudIcon Icon="@Icons.Material.Filled.Image" Style="color:var(--n-purple); font-size:1.25rem;" />
                         </div>
                         <div>
-                            <div class="na-card__title">Imagen del artículo</div>
-                            <div class="na-card__sub">Agrega o actualiza la imagen</div>
+                            <div class="nexo-section__title">Imagen del artículo</div>
+                            <div class="nexo-section__sub">Agrega o actualiza la imagen</div>
                         </div>
                     </div>
-                    <div class="na-card__body na-imagen-body">
+                    <div class="nexo-section__body na-imagen-body">
                         @if (_imagenPreviewUrl is not null)
                         {
                             <div class="na-imagen-preview">
@@ -441,8 +441,8 @@ else
 }
 
 @* ── Barra de acciones fija ───────────────────────────────────────────── *@
-<div class="na-action-bar">
-    <div class="na-action-bar__inner">
+<div class="nexo-action-bar">
+    <div class="nexo-action-bar__inner">
         <MudButton Variant="Variant.Outlined" OnClick="Cancelar" StartIcon="@Icons.Material.Filled.Close"
                    Style="border-color:var(--n-border-2); color:var(--n-text-2);">
             Cancelar

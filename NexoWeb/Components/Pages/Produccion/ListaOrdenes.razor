@@ -19,7 +19,7 @@
     </div>
     <div class="prod-header__actions">
         <BotonFavorito Href="/produccion/ordenes" Etiqueta="Órdenes de Producción" />
-        @if (_puedeGestionar)
+        @if (_puedeGestionar && (_cargando || _todas.Any() || _filtroEstado is not null))
         {
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Add" Href="/produccion/ordenes/crear">
@@ -75,14 +75,23 @@
 }
 else if (_ordenes.Count == 0)
 {
-    <div class="prod-vacio">
-        <MudIcon Icon="@Icons.Material.Outlined.Assignment" Style="font-size:3rem; color:var(--n-text-3); display:block; margin-bottom:.75rem;" />
-        <p>@(_filtroEstado is null ? "No hay órdenes de producción." : $"No hay órdenes en estado '{_filtroEstado}'.")</p>
-        @if (_filtroEstado is not null)
-        {
+    @if (_filtroEstado is null)
+    {
+        <NexoEmptyState
+            Icono="@Icons.Material.Outlined.Assignment"
+            Titulo="Crea tu primera orden de producción"
+            Descripcion="Planifica, libera y cierra órdenes. Al liberarlas el stock de insumos se descuenta automáticamente."
+            BotonTexto="Nueva orden"
+            BotonHref="/produccion/ordenes/crear" />
+    }
+    else
+    {
+        <div class="prod-vacio">
+            <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Style="font-size:3rem; color:var(--n-text-3); display:block; margin-bottom:.75rem;" />
+            <p>No hay órdenes en estado '@_filtroEstado'.</p>
             <button class="prod-pipeline__clear mt-2" @onclick="@(() => SetFiltro(null))">Ver todas las órdenes</button>
-        }
-    </div>
+        </div>
+    }
 }
 else
 {

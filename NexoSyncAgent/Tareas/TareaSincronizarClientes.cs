@@ -21,10 +21,11 @@ public class TareaSincronizarClientes
         _logger = logger;
     }
 
-    public async Task EjecutarAsync(DateTime? ultimaSync, CancellationToken ct)
+    public async Task EjecutarAsync(DateTime? ultimaSync, CancellationToken ct, bool incluirVisionsANexo = true)
     {
         await SincronizarNexoAVisionsAsync(ultimaSync, ct);
-        await SincronizarVisionsANexoAsync(ct);
+        if (incluirVisionsANexo)
+            await SincronizarVisionsANexoAsync(ct);
     }
 
     // NEXO → dbo.USUARIOS
@@ -41,6 +42,23 @@ public class TareaSincronizarClientes
         {
             if (string.IsNullOrWhiteSpace(c.NIT)) continue;
 
+            // Si el cliente fue inactivado en NEXO, solo propagar el de-rol en Visions
+            if (!c.Estado)
+            {
+                try
+                {
+                    await connection.ExecuteAsync(
+                        "UPDATE dbo.USUARIOS SET CLIENTE = 0 WHERE NIT = @NIT",
+                        new { NIT = c.NIT });
+                    _logger.LogDebug("Cliente NIT {NIT} inactivado en NEXO → CLIENTE=0 en Visions", c.NIT);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error al propagar inactivacion del cliente NIT {NIT} a Visions", c.NIT);
+                }
+                continue;
+            }
+
             var esJuridica = c.TipoPersona == "Juridica";
             var tipotercero = esJuridica ? "JURIDICA" : "NATURAL";
             // Usar el detalle de tipo de identificación desde NEXO; fallback al tipo de persona
@@ -53,6 +71,23 @@ public class TareaSincronizarClientes
             // Usar nombres resueltos de Municipios; fallback a los textos libres de Departamento/Ciudad
             var departamento = c.NombreDept ?? c.Departamento;
             var ciudad = c.NombreMuni ?? c.Ciudad;
+
+            // Validar campos obligatorios antes de escribir en Visions
+            // (SegundoNombre y SegundoApellido son opcionales)
+            var camposFaltantes = new List<string>();
+            if (esJuridica) { if (string.IsNullOrWhiteSpace(empresa))      camposFaltantes.Add("Empresa/RazonSocial"); }
+            else             { if (string.IsNullOrWhiteSpace(c.PrimerNombre))   camposFaltantes.Add("PrimerNombre");
+                               if (string.IsNullOrWhiteSpace(c.PrimerApellido)) camposFaltantes.Add("PrimerApellido"); }
+            if (string.IsNullOrWhiteSpace(telefono))     camposFaltantes.Add("Telefono");
+            if (string.IsNullOrWhiteSpace(direccion))    camposFaltantes.Add("Direccion");
+            if (string.IsNullOrWhiteSpace(ciudad))       camposFaltantes.Add("Ciudad");
+            if (string.IsNullOrWhiteSpace(departamento)) camposFaltantes.Add("Departamento");
+            if (camposFaltantes.Count > 0)
+            {
+                _logger.LogWarning("Cliente NIT {NIT} omitido del sync a Visions: campos obligatorios vacios en NEXO: {Campos}",
+                    c.NIT, string.Join(", ", camposFaltantes));
+                continue;
+            }
 
             try
             {
@@ -188,9 +223,9 @@ public class TareaSincronizarClientes
                     PrimerApellido: usaRepresentante ? null : u.APELLIDO1,
                     SegundoApellido: usaRepresentante ? null : u.APELLIDO2,
                     NombreEmpresa: u.EMPRESA,
-                    Telefono: u.TELEFONOVIVE ?? u.TELEFONOEMPRESA,
+                    Telefono: esJuridica ? (u.TELEFONOEMPRESA ?? u.TELEFONOVIVE) : (u.TELEFONOVIVE ?? u.TELEFONOEMPRESA),
                     Email: u.EMAIL,
-                    Direccion: u.DIRECCIONVIVE ?? u.DIRECCIONEMPRESA,
+                    Direccion: esJuridica ? (u.DIRECCIONEMPRESA ?? u.DIRECCIONVIVE) : (u.DIRECCIONVIVE ?? u.DIRECCIONEMPRESA),
                     Departamento: u.DEPARTAMENTO,
                     Ciudad: u.CIUDAD,
                     CodigoDept: u.DEPARTAMENTOCODIGO,
@@ -198,8 +233,9 @@ public class TareaSincronizarClientes
                     DigitoVerificacion: int.TryParse(u.NITVERIFICA, out var dv) ? dv : null
                 ), ct);
             }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            catch (OperationCanceledException)
             {
+                // Puede ser el stoppingToken o el timeout del HttpClient; en ambos casos no tiene sentido continuar.
                 break;
             }
             catch (Exception ex)

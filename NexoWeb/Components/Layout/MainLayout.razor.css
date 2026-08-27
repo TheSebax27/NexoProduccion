@@ -21,17 +21,21 @@
 }
 
 /* ══ TOP BAR ════════════════════════════════════════════════════
-   Mismo color que la barra lateral (#13131F) y un poco mas alta
-   (antes 64px, se veia "flaca" comparada con el ancho/peso visual
-   del sidebar) -- pedido explicito del usuario. Todos los textos e
-   iconos que antes asumian fondo blanco se reinvierten a claros. */
+   AVISO: el background, backdrop-filter, border y box-shadow de
+   .mud-appbar.nexo-topbar son sobreescritos por app.css (sección
+   "Glass TopBar y Sidebar") con mayor especificidad (ID selector).
+   Para cambiar el fondo/glass del topbar: editar app.css, NO aquí.
+   Lo que SÍ manda desde este archivo: padding, height, color texto,
+   y todos los sub-elementos del topbar (búsqueda, notificaciones...) */
 ::deep .mud-appbar.nexo-topbar {
-  background: #13131F !important;
-  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.25) !important;
+  background: rgba(10,14,36,0.60) !important; /* sobreescrito por app.css */
+  backdrop-filter: blur(24px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(140%) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 1px 0 rgba(124,92,255,0.10) !important;
   color: #FFFFFF !important;
-  padding: 0 1.5rem !important;
-  height: 76px !important;
+  padding: 0 1.25rem !important;
+  height: 68px !important;
 }
 
 ::deep .nexo-topbar__menu-btn {
@@ -53,24 +57,24 @@
   flex-shrink: 0;
 }
 
-/* Barra de búsqueda */
+/* Barra de búsqueda — más prominente, centrada */
 ::deep .nexo-topbar__search {
   position: relative;
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  background: rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 12px;
-  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  padding: 0.45rem 1rem;
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
   transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 ::deep .nexo-topbar__search:focus-within {
-  border-color: #9B7FFF;
-  box-shadow: 0 0 0 3px rgba(124,92,255,0.25);
-  background: rgba(255,255,255,0.12);
+  border-color: rgba(124,92,255,0.60);
+  box-shadow: 0 0 0 3px rgba(124,92,255,0.18);
+  background: rgba(255,255,255,0.09);
 }
 ::deep .nexo-topbar__search-icon {
   color: #9B9BB4 !important;
@@ -322,11 +326,18 @@
   flex-shrink: 0;
 }
 
-/* ══ SIDEBAR ════════════════════════════════════════════════════ */
+/* ══ SIDEBAR ════════════════════════════════════════════════════
+   AVISO: igual que el topbar, background/backdrop-filter/border del
+   sidebar son sobreescritos por app.css (sección "Glass TopBar y
+   Sidebar"). Para cambiar el glass/fondo del sidebar: editar app.css.
+   Lo que SÍ manda desde aquí: estructura interna (mud-drawer-content,
+   logo, nav, footer) y estilos de los nav links en modo oscuro. */
 ::deep .mud-drawer.nexo-sidebar {
-  background: #13131F !important;
-  border-right: none !important;
-  box-shadow: 4px 0 32px rgba(0,0,0,0.25) !important;
+  background: rgba(10,14,36,0.68) !important; /* sobreescrito por app.css */
+  backdrop-filter: blur(34px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(34px) saturate(160%) !important;
+  border-right: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 2px 0 24px rgba(0,0,0,0.20), inset -1px 0 0 rgba(124,92,255,0.08) !important;
 }
 
 ::deep .nexo-sidebar .mud-drawer-content {
