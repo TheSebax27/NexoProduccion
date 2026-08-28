@@ -28,6 +28,11 @@ public interface IDashboardService
     // Tab Financiero BI
     Task<IEnumerable<MargenArticuloItem>> ObtenerMargenPorArticuloAsync(DateTime desde, DateTime hasta, int top = 20);
     Task<IEnumerable<AlertaStockItem>> ObtenerAlertasStockAsync();
+    Task<IEnumerable<ComparativaMesItem>> ObtenerComparativaYoYAsync(int meses);
+
+    // Feed de actividad y sparklines
+    Task<IEnumerable<ActividadItem>> ObtenerActividadRecienteAsync(int n = 20);
+    Task<SparklinesDashboard> ObtenerSparklinesAsync();
 }
 
 public class DashboardService : IDashboardService
@@ -302,5 +307,143 @@ public class DashboardService : IDashboardService
             WHERE s.RequierePedido = 1
             ORDER BY Deficit DESC";
         return await connection.QueryAsync<AlertaStockItem>(sql);
+    }
+
+    public async Task<IEnumerable<ComparativaMesItem>> ObtenerComparativaYoYAsync(int meses)
+    {
+        using var con = _db.CreateConnection();
+        var desde = new DateTime(DateTime.Today.Year - 1, DateTime.Today.Month, 1).AddMonths(-meses + 1);
+        const string sql = @"
+            WITH Base AS (
+                SELECT YEAR(f.Fecha) AS Anio, MONTH(f.Fecha) AS Mes,
+                       ISNULL(SUM(ISNULL(fl.Total,0)), 0) AS TotalFacturado
+                FROM Facturacion.Facturas f
+                LEFT JOIN (SELECT FacturaID, SUM(Cantidad * PrecioUnitario) AS Total
+                           FROM Facturacion.FacturaLineas GROUP BY FacturaID) fl ON fl.FacturaID = f.FacturaID
+                WHERE f.Fecha >= @Desde
+                GROUP BY YEAR(f.Fecha), MONTH(f.Fecha)
+            )
+            SELECT a.Anio, a.Mes,
+                DATENAME(month, DATEFROMPARTS(a.Anio, a.Mes, 1)) AS NombreMes,
+                ISNULL(a.TotalFacturado, 0) AS TotalActual,
+                ISNULL(b.TotalFacturado, 0) AS TotalAnterior,
+                CASE WHEN ISNULL(b.TotalFacturado, 0) = 0 THEN 0
+                     ELSE ((a.TotalFacturado - b.TotalFacturado) / b.TotalFacturado) * 100
+                END AS VariacionPct
+            FROM Base a
+            LEFT JOIN Base b ON b.Anio = a.Anio - 1 AND b.Mes = a.Mes
+            WHERE a.Anio = YEAR(GETDATE())
+            ORDER BY a.Mes";
+        return await con.QueryAsync<ComparativaMesItem>(sql, new { Desde = desde });
+    }
+
+    public async Task<IEnumerable<ActividadItem>> ObtenerActividadRecienteAsync(int n = 20)
+    {
+        using var con = _db.CreateConnection();
+        const string sql = @"
+            SELECT TOP (@N) Tipo, Descripcion, Entidad, FechaHora, Link, Icono, Color
+            FROM (
+                SELECT TOP 7
+                    'FACTURA' AS Tipo,
+                    'Factura #' + ISNULL(f.NroDoc, CAST(f.FacturaID AS NVARCHAR)) + ' — ' + ISNULL(cl.Nombre, 'Cliente') AS Descripcion,
+                    ISNULL(cl.Nombre, 'Cliente') AS Entidad,
+                    CAST(f.Fecha AS DATETIME2) AS FechaHora,
+                    '/ventas/facturas' AS Link,
+                    'receipt' AS Icono,
+                    'primary' AS Color
+                FROM Facturacion.Facturas f
+                LEFT JOIN Crm.Clientes cl ON cl.ClienteID = f.ClienteID
+                ORDER BY f.Fecha DESC, f.FacturaID DESC
+
+                UNION ALL
+
+                SELECT TOP 5
+                    'OC',
+                    'OC ' + oc.Codigo + ' — ' + p.RazonSocial,
+                    p.RazonSocial,
+                    CAST(oc.FechaEmision AS DATETIME2),
+                    '/compras/ordenes',
+                    'shopping_cart',
+                    'secondary'
+                FROM Compras.OrdenesCompra oc
+                JOIN Catalogo.Proveedores p ON p.ProveedorID = oc.ProveedorID
+                ORDER BY oc.FechaEmision DESC, oc.OrdenCompraID DESC
+
+                UNION ALL
+
+                SELECT TOP 5
+                    'PRODUCCION',
+                    'OP #' + CAST(op.OrdenProduccionID AS NVARCHAR) + ' — ' + ISNULL(tp.Nombre, '') AS Descripcion,
+                    ISNULL(tp.Nombre, 'Producción'),
+                    ISNULL(CAST(op.FechaFin AS DATETIME2), CAST(op.FechaCreacion AS DATETIME2)),
+                    '/produccion/ordenes',
+                    'factory',
+                    'success'
+                FROM Produccion.OrdenesProduccion op
+                LEFT JOIN Produccion.TiposProduccion tp ON tp.TipoProduccionID = op.TipoProduccionID
+                WHERE op.FechaFin IS NOT NULL
+                ORDER BY op.FechaFin DESC, op.OrdenProduccionID DESC
+
+                UNION ALL
+
+                SELECT TOP 5
+                    'COTIZACION',
+                    'Cotización #' + CAST(c.CotizacionID AS NVARCHAR) + ' — ' + cl.Nombre,
+                    cl.Nombre,
+                    CAST(c.Fecha AS DATETIME2),
+                    '/crm/cotizaciones',
+                    'description',
+                    'info'
+                FROM Crm.Cotizaciones c
+                JOIN Crm.Clientes cl ON cl.ClienteID = c.ClienteID
+                WHERE c.Estado IN ('ENVIADA','ACEPTADA')
+                ORDER BY c.Fecha DESC, c.CotizacionID DESC
+
+                UNION ALL
+
+                SELECT TOP 3
+                    'SYNC',
+                    'Visions: ' + CAST(COUNT(*) AS NVARCHAR) + ' eventos confirmados',
+                    'Sincronización',
+                    CAST(MAX(FechaEnvio) AS DATETIME2),
+                    '/admin/integracion-visions',
+                    'sync',
+                    'default'
+                FROM Integracion.EventosSalientes
+                WHERE Estado = 'CONFIRMADO'
+                  AND FechaEnvio >= DATEADD(day, -7, GETDATE())
+                GROUP BY CAST(FechaEnvio AS DATE)
+                ORDER BY CAST(FechaEnvio AS DATE) DESC
+            ) t
+            ORDER BY FechaHora DESC";
+        return await con.QueryAsync<ActividadItem>(sql, new { N = n });
+    }
+
+    public async Task<SparklinesDashboard> ObtenerSparklinesAsync()
+    {
+        using var con = _db.CreateConnection();
+
+        var facturas = await con.QueryAsync<SparklineItem>(@"
+            SELECT CAST(Fecha AS DATE) AS Fecha, COUNT(*) AS Valor
+            FROM Facturacion.Facturas
+            WHERE Fecha >= DATEADD(day, -6, CAST(GETDATE() AS DATE))
+            GROUP BY CAST(Fecha AS DATE)
+            ORDER BY CAST(Fecha AS DATE)");
+
+        var ordenes = await con.QueryAsync<SparklineItem>(@"
+            SELECT CAST(FechaCreacion AS DATE) AS Fecha, COUNT(*) AS Valor
+            FROM Produccion.OrdenesProduccion
+            WHERE FechaCreacion >= DATEADD(day, -6, CAST(GETDATE() AS DATE))
+            GROUP BY CAST(FechaCreacion AS DATE)
+            ORDER BY CAST(FechaCreacion AS DATE)");
+
+        var cotizaciones = await con.QueryAsync<SparklineItem>(@"
+            SELECT CAST(Fecha AS DATE) AS Fecha, COUNT(*) AS Valor
+            FROM Crm.Cotizaciones
+            WHERE Fecha >= DATEADD(day, -6, CAST(GETDATE() AS DATE))
+            GROUP BY CAST(Fecha AS DATE)
+            ORDER BY CAST(Fecha AS DATE)");
+
+        return new SparklinesDashboard(facturas, ordenes, cotizaciones);
     }
 }

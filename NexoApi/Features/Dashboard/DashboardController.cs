@@ -117,6 +117,18 @@ public class DashboardController : ControllerBase
     public async Task<ActionResult<IEnumerable<AlertaStockItem>>> AlertasStock()
         => Ok(await _service.ObtenerAlertasStockAsync());
 
+    [HttpGet("comparativa-yoy")]
+    public async Task<ActionResult<IEnumerable<ComparativaMesItem>>> ComparativaYoY([FromQuery] int meses = 12)
+        => Ok(await _service.ObtenerComparativaYoYAsync(meses));
+
+    [HttpGet("actividad")]
+    public async Task<ActionResult<IEnumerable<ActividadItem>>> ActividadReciente([FromQuery] int n = 20)
+        => Ok(await _service.ObtenerActividadRecienteAsync(n));
+
+    [HttpGet("sparklines")]
+    public async Task<ActionResult<SparklinesDashboard>> Sparklines()
+        => Ok(await _service.ObtenerSparklinesAsync());
+
     [HttpGet("exportar/excel")]
     public async Task<IActionResult> ExportarExcel([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
     {

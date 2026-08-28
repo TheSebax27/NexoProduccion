@@ -1513,3 +1513,57 @@ Solo exploración amplia cuando:
 - Hay dependencias desconocidas que impiden el cambio de forma segura.
 - El cambio afecta transversalmente múltiples módulos sin mapa previo.
 - Una búsqueda localizada no permite determinar el impacto.
+
+---
+
+## 40. Nuevas features de agosto 2026 (segunda tanda)
+
+### 40.1 — NPS automático post-ticket
+
+- Tabla: `Soporte.EncuestasNPS` (TicketID único, Puntuacion 0-10, Comentario, FechaRespuesta)
+- SQL: `C:\Produccion\migration_nps_v1.sql` — ejecutar antes de usar
+- API: `GET/POST api/soporte/tickets/{id}/nps`, `GET api/soporte/nps/resumen`
+- Web: después de confirmar resolución en `Tickets.razor`, aparece panel NPS inline en el drawer
+- DTOs en `SoporteDtos.cs`: `NpsItem`, `RegistrarNpsRequest`, `ResumenNpsItem`
+
+### 40.2 — Base de Conocimiento
+
+- Schema SQL: `Conocimiento`, tabla `Conocimiento.Articulos`
+- SQL: `C:\Produccion\migration_conocimiento_v1.sql` — ejecutar antes de usar
+- API: `GET/POST/PUT/DELETE api/conocimiento`, `GET api/conocimiento/categorias`, `GET api/conocimiento/{id}`
+- Web: `/conocimiento` (lista), `/conocimiento/{id}` (ver), `/conocimiento/nuevo` y `/conocimiento/{id}/editar` (editar)
+- NavMenu: dentro del grupo CRM, bajo Tickets de Soporte
+- Service: `IConocimientoService`/`ConocimientoService` en `Features/Conocimiento/`
+
+### 40.3 — Reportes personalizados
+
+- API: `GET api/reportes` (lista de tipos), `POST api/reportes/ejecutar`, `POST api/reportes/exportar` (devuelve Excel bytes)
+- Tipos: `ventas_por_cliente`, `ventas_por_articulo`, `tickets_por_estado`, `oportunidades_embudo`, `nps_resumen`, `clientes_nuevos`
+- Web: `/reportes` con tabla y botón "Exportar Excel"
+- Se agrega `PostBytesAsync<TRequest>` a `INexoApiClient`/`NexoApiClient`
+- NavMenu: junto a Business Intelligence
+
+### 40.4 — Comparativa año a año (Dashboard)
+
+- API: `GET api/dashboard/comparativa-yoy?meses=N` → `List<ComparativaMesItem>`
+- Muestra cada mes del año actual vs el mismo mes del año anterior, con variación %
+- Web: tabla en el tab Facturación de `Dashboard.razor`, entre el gráfico de ingresos y los rankings
+- DTO en `DashboardDtos.cs` (Web y API): `ComparativaMesItem(Anio, Mes, NombreMes, TotalActual, TotalAnterior, VariacionPct)`
+
+### 40.5 — Mapa de Clientes (Leaflet.js)
+
+- Nueva página: `/crm/clientes/mapa` → `MapaClientes.razor`
+- Leaflet.js cargado desde CDN (`unpkg.com/leaflet@1.9.4`) en `App.razor`
+- Helper JS: `wwwroot/js/mapa-clientes.js` — función `nexoMapa.init(elementId, puntos)` / `nexoMapa.destroy`
+- Usa diccionario estático de coordenadas por departamento colombiano en el componente
+- Agrupa clientes por `Departamento`, hace pin de tamaño proporcional al conteo
+- NavMenu: sub-link bajo Clientes en el grupo Comercial
+
+### 40.6 — WhatsApp via Twilio
+
+- API: `POST api/whatsapp/enviar` → `{Telefono, Mensaje}` → `{Enviado, MensajeSid, Error}`
+- Usa HTTP directo a Twilio REST API (sin SDK) con Basic Auth (AccountSid:AuthToken)
+- Config en `appsettings.json`: sección `Twilio { AccountSid, AuthToken, FromNumber }`
+- **FromNumber por defecto = Twilio Sandbox** (`whatsapp:+14155238886`). Para producción, comprar número Twilio con WhatsApp habilitado.
+- Web: botón WhatsApp en el drawer de Tickets → panel inline con campo teléfono + mensaje (pre-rellenado con contexto del ticket)
+- Service: `IWhatsAppService`/`WhatsAppService` en `Features/WhatsApp/` (HttpClient inyectado)

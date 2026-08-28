@@ -34,6 +34,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcRW1wdHlMYXlvdXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Produccion/NexoWeb/Components/Layout/FormPublicoLayout.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcRm9ybVB1YmxpY29MYXlvdXQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Produccion/NexoWeb/Components/Layout/InicializadorSesion.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcSW5pY2lhbGl6YWRvclNlc2lvbi5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
@@ -138,6 +142,18 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDb21wcmFzXFJlY2liaXJMaW5lYURpYWxvZy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Produccion/NexoWeb/Components/Pages/Conocimiento/ArticuloEditar.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDb25vY2ltaWVudG9cQXJ0aWN1bG9FZGl0YXIucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Conocimiento/ArticuloVer.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDb25vY2ltaWVudG9cQXJ0aWN1bG9WZXIucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Conocimiento/ConocimientoIndex.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDb25vY2ltaWVudG9cQ29ub2NpbWllbnRvSW5kZXgucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Produccion/NexoWeb/Components/Pages/Crm/Actividades.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDcm1cQWN0aXZpZGFkZXMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
@@ -194,6 +210,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDcm1cTGVhZHMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Produccion/NexoWeb/Components/Pages/Crm/MapaClientes.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDcm1cTWFwYUNsaWVudGVzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Produccion/NexoWeb/Components/Pages/Crm/OportunidadDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDcm1cT3BvcnR1bmlkYWREaWFsb2cucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
@@ -216,6 +236,26 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Produccion/NexoWeb/Components/Pages/Finanzas/GastoDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xGaW5hbnphc1xHYXN0b0RpYWxvZy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Finanzas/GastosOperativos.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xGaW5hbnphc1xHYXN0b3NPcGVyYXRpdm9zLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Formularios/FormPublico.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xGb3JtdWxhcmlvc1xGb3JtUHVibGljby5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Formularios/FormularioBuilder.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xGb3JtdWxhcmlvc1xGb3JtdWxhcmlvQnVpbGRlci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Formularios/FormularioRespuestas.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xGb3JtdWxhcmlvc1xGb3JtdWxhcmlvUmVzcHVlc3Rhcy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Formularios/Formularios.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xGb3JtdWxhcmlvc1xGb3JtdWxhcmlvcy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Pages/Logistica/AnularDespachoDialog.razor]
@@ -244,10 +284,6 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Produccion/NexoWeb/Components/Pages/NotFound.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xOb3RGb3VuZC5yYXpvcg==
-build_metadata.AdditionalFiles.CssScope = 
-
-[C:/Produccion/NexoWeb/Components/Pages/Operaciones/Movimientos.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xPcGVyYWNpb25lc1xNb3ZpbWllbnRvcy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Pages/Planificacion/Calendario.razor]
@@ -320,6 +356,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Produccion/NexoWeb/Components/Pages/Proyectos/Proyectos.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm95ZWN0b3NcUHJveWVjdG9zLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Reportes/ReportesIndex.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xSZXBvcnRlc1xSZXBvcnRlc0luZGV4LnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Pages/Rrhh/Asistencia.razor]
@@ -396,6 +436,18 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Produccion/NexoWeb/Components/Pages/Settings/Settings.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTZXR0aW5nc1xTZXR0aW5ncy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Settings/WhatsAppSettings.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTZXR0aW5nc1xXaGF0c0FwcFNldHRpbmdzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Soporte/TicketDialog.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTb3BvcnRlXFRpY2tldERpYWxvZy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Pages/Soporte/Tickets.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTb3BvcnRlXFRpY2tldHMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Pages/Traspasos/CrearTraspasoDialog.razor]

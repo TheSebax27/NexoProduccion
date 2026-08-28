@@ -206,13 +206,16 @@
 
     private static readonly List<SeccionNavU> _seccionesNav =
     [
-        new("Ventas", code =>
-            code == "OPERACIONES"            || code == "OPERACIONES.FACTURACION" ||
-            code == "OPERACIONES.DESPACHOS"  || code == "CRM.COTIZACIONES"        ||
-            code == "CRM.CLIENTES"),
+        new("Comercial", code =>
+            code == "OPERACIONES"              || code == "OPERACIONES.FACTURACION" ||
+            code == "OPERACIONES.DESPACHOS"    || code == "CRM.COTIZACIONES"        ||
+            code == "CRM.CLIENTES"             ||
+            code == "FINANZAS"                 || code == "FINANZAS.GASTOS"),
 
         new("CRM & Marketing", code =>
-            (code == "CRM" || code.StartsWith("CRM.")) &&
+            (code == "CRM" || code.StartsWith("CRM.") ||
+             code == "FORMULARIOS" || code.StartsWith("FORMULARIOS.") ||
+             code == "SOPORTE"     || code.StartsWith("SOPORTE.")) &&
             code != "CRM.COTIZACIONES" && code != "CRM.CLIENTES"),
 
         new("Catálogo", code =>
@@ -222,8 +225,7 @@
             code == "PRODUCCION" || code.StartsWith("PRODUCCION.")),
 
         new("Inventario", code =>
-            code == "INVENTARIO" || code.StartsWith("INVENTARIO.") ||
-            code == "OPERACIONES.MOVIMIENTOS"),
+            code == "INVENTARIO" || code.StartsWith("INVENTARIO.")),
 
         new("Planificación", code =>
             code == "PLANIFICACION" || code.StartsWith("PLANIFICACION.")),

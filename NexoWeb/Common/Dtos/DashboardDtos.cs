@@ -34,6 +34,13 @@ public record MargenArticuloItem(
     decimal CostoEstimado, decimal MargenBruto, decimal PorcentajeMargen
 );
 
+// Comparativa año a año
+public record ComparativaMesItem(
+    int Anio, int Mes, string NombreMes,
+    decimal TotalActual, decimal TotalAnterior,
+    decimal VariacionPct
+);
+
 public record AlertaStockItem(
     int ArticuloID, string SKU, string Articulo,
     string CentroCosto, string Bodega,

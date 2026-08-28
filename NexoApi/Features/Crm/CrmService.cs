@@ -4,6 +4,7 @@ using NexoApi.Features.Crm.Dtos;
 using NexoApi.Features.Email;
 using NexoApi.Features.Facturacion;
 using NexoApi.Features.Facturacion.Dtos;
+using NexoApi.Features.WhatsApp;
 
 namespace NexoApi.Features.Crm;
 
@@ -55,6 +56,7 @@ public interface ICrmService
     Task ActualizarEstadoCotizacionAsync(int cotizacionId, ActualizarEstadoCotizacionRequest request);
     Task<int> ConvertirCotizacionAFacturaAsync(int cotizacionId, int usuarioId);
     Task<bool> EnviarEmailCotizacionAsync(int cotizacionId);
+    Task<(bool Enviado, string? Error)> EnviarWhatsAppCotizacionAsync(int cotizacionId);
 
     // Catálogo de referencia geográfica/tributaria
     Task<IEnumerable<PaisItem>> ListarPaisesAsync();
@@ -68,13 +70,15 @@ public class CrmService : ICrmService
     private readonly IFacturacionService _facturacion;
     private readonly IAutomacionService _automacion;
     private readonly IEmailService _email;
+    private readonly IWhatsAppService _whatsApp;
 
-    public CrmService(IDbConnectionFactory db, IFacturacionService facturacion, IAutomacionService automacion, IEmailService email)
+    public CrmService(IDbConnectionFactory db, IFacturacionService facturacion, IAutomacionService automacion, IEmailService email, IWhatsAppService whatsApp)
     {
         _db = db;
         _facturacion = facturacion;
         _automacion = automacion;
         _email = email;
+        _whatsApp = whatsApp;
     }
 
     public async Task<IEnumerable<ClienteItem>> ListarClientesAsync(int? responsableId, string? tipoCliente, string? fuenteContacto, bool? soloActivos)
@@ -922,6 +926,51 @@ public class CrmService : ICrmService
                 new { CotizacionId = cotizacionId });
 
         return enviado;
+    }
+
+    public async Task<(bool Enviado, string? Error)> EnviarWhatsAppCotizacionAsync(int cotizacionId)
+    {
+        using var connection = _db.CreateConnection();
+
+        var data = await connection.QueryFirstOrDefaultAsync<(int ClienteID, string Cliente, string? Telefono,
+            DateTime Fecha, DateTime? ValidoHasta, decimal Total, string? Notas)>(@"
+            SELECT c.ClienteID, cl.Nombre AS Cliente, cl.Telefono,
+                   c.Fecha, c.ValidoHasta, c.Total, c.Notas
+            FROM Crm.Cotizaciones c
+            JOIN Crm.Clientes cl ON cl.ClienteID = c.ClienteID
+            WHERE c.CotizacionID = @Id", new { Id = cotizacionId });
+
+        if (data.Telefono is null)
+            return (false, "El cliente no tiene número de celular registrado. Agrégalo en su ficha de cliente.");
+
+        var empresa = await connection.ExecuteScalarAsync<string>(
+            "SELECT TOP 1 NombreEmpresa FROM Organizacion.ConfiguracionEmpresa") ?? "NEXO ERP";
+
+        var validoHasta = data.ValidoHasta ?? data.Fecha.AddDays(30);
+        var mensaje = $"""
+            🏭 *{empresa} — Cotización #{cotizacionId}*
+
+            Estimado/a *{data.Cliente}*,
+
+            Le compartimos nuestra cotización:
+
+            📅 Fecha: {data.Fecha:dd/MM/yyyy}
+            ⏳ Válida hasta: {validoHasta:dd/MM/yyyy}
+            💰 Total: ${data.Total:N0}
+
+            {(string.IsNullOrWhiteSpace(data.Notas) ? "" : $"📋 Notas: {data.Notas}\n\n")}Para aceptar o consultar detalles, responda este mensaje.
+
+            _{empresa}_
+            """;
+
+        var resultado = await _whatsApp.EnviarAsync(data.Telefono, mensaje);
+
+        if (resultado.Enviado)
+            await connection.ExecuteAsync(
+                "UPDATE Crm.Cotizaciones SET Estado = 'ENVIADA' WHERE CotizacionID = @Id AND Estado = 'BORRADOR'",
+                new { Id = cotizacionId });
+
+        return (resultado.Enviado, resultado.Error);
     }
 
     public async Task<IEnumerable<PaisItem>> ListarPaisesAsync()

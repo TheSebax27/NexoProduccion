@@ -96,6 +96,13 @@
                 </div>
 
                 <div class="nexo-settings-nav-item"
+                     @onclick='() => Navegacion.NavigateTo("/settings/whatsapp")'>
+                    <MudIcon Icon="@Icons.Material.Outlined.Chat" Size="Size.Small" />
+                    <span>WhatsApp</span>
+                    <MudIcon Icon="@Icons.Material.Outlined.ChevronRight" Size="Size.Small" Class="ns-chevron" />
+                </div>
+
+                <div class="nexo-settings-nav-item"
                      @onclick='() => Navegacion.NavigateTo("/settings/automatizacion")'>
                     <MudIcon Icon="@Icons.Material.Outlined.Autorenew" Size="Size.Small" />
                     <span>Automatizacion CRM</span>
@@ -580,7 +587,7 @@
     };
     private static readonly Dictionary<string, string> _nombresGrupo = new()
     {
-        ["ventas"]       = "Ventas",
+        ["ventas"]       = "Comercial",
         ["crm"]          = "CRM",
         ["catalogo"]     = "Catálogo",
         ["produccion"]   = "Producción",

@@ -4,18 +4,33 @@
 <MudDialog>
     <DialogContent>
         <MudForm @ref="_form" Model="@this">
-            <MudSelect T="int?" Value="_clienteId"
-                       ValueChanged="@((int? v) => { _clienteId = v; _oportunidadId = null; })"
-                       Label="Cliente" Required="true"
-                       RequiredError="Selecciona un cliente" Class="mb-3">
-                @foreach (var c in Clientes)
-                {
-                    <MudSelectItem T="int?" Value="@c.ClienteID">@c.Nombre</MudSelectItem>
-                }
-            </MudSelect>
 
+            @* ── Cliente ─────────────────────────────────────── *@
+            <MudAutocomplete T="ClienteItem"
+                             Value="_clienteSeleccionado"
+                             ValueChanged="OnClienteSeleccionado"
+                             Label="Cliente"
+                             Required="true"
+                             RequiredError="Selecciona un cliente"
+                             SearchFunc="BuscarClienteAsync"
+                             ToStringFunc="@(c => c is null ? "" : $"{c.Nombre}  ·  {c.NIT}")"
+                             Placeholder="Buscar por nombre o NIT…"
+                             MinCharacters="1"
+                             AdornmentIcon="@Icons.Material.Outlined.Search"
+                             Clearable="true"
+                             CoerceValue="true"
+                             Class="mb-3">
+                <ItemTemplate>
+                    <div>
+                        <span style="font-weight:600">@context.Nombre</span>
+                        <span style="font-size:0.78rem; color:var(--mud-palette-text-secondary); margin-left:8px">@context.NIT</span>
+                    </div>
+                </ItemTemplate>
+            </MudAutocomplete>
+
+            @* ── Oportunidad ─────────────────────────────────── *@
             <MudSelect T="int?" @bind-Value="_oportunidadId" Label="Oportunidad (opcional)" Clearable="true" Class="mb-3"
-                       HelperText="@(_clienteId is not null && !OportunidadesFiltradas.Any() ? "Sin oportunidades activas para este cliente" : null)">
+                       HelperText="@(_clienteSeleccionado is not null && !OportunidadesFiltradas.Any() ? "Sin oportunidades activas para este cliente" : null)">
                 @foreach (var o in OportunidadesFiltradas)
                 {
                     <MudSelectItem T="int?" Value="@o.OportunidadID">@o.Nombre</MudSelectItem>
@@ -32,13 +47,25 @@
             @foreach (var linea in _lineas)
             {
                 <div class="d-flex align-center mb-2" style="gap: 0.5rem;">
-                    <MudSelect T="int?" Value="linea.ArticuloID" ValueChanged="@((int? v) => OnArticuloCambiado(linea, v))"
-                               Label="Articulo" Style="flex: 3;">
-                        @foreach (var a in Articulos)
-                        {
-                            <MudSelectItem T="int?" Value="@a.ArticuloID">@a.SKU - @a.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <MudAutocomplete T="ArticuloItem"
+                                     Value="linea.ArticuloSeleccionado"
+                                     ValueChanged="@((ArticuloItem v) => OnArticuloCambiado(linea, v))"
+                                     Label="Artículo"
+                                     SearchFunc="BuscarArticuloAsync"
+                                     ToStringFunc="@(a => a is null ? "" : $"{a.SKU} — {a.Nombre}")"
+                                     Placeholder="SKU o nombre…"
+                                     MinCharacters="1"
+                                     AdornmentIcon="@Icons.Material.Outlined.Search"
+                                     Clearable="true"
+                                     CoerceValue="true"
+                                     Style="flex: 3;">
+                        <ItemTemplate>
+                            <div>
+                                <span style="font-size:0.78rem; font-weight:700; color:var(--mud-palette-primary); margin-right:6px">@context.SKU</span>
+                                <span style="font-size:0.85rem">@context.Nombre</span>
+                            </div>
+                        </ItemTemplate>
+                    </MudAutocomplete>
                     <MudNumericField T="decimal" @bind-Value="linea.Cantidad" Label="Cantidad" Style="flex: 1;" Min="0.01m" Format="N2" />
                     <MudNumericField T="decimal" @bind-Value="linea.PrecioUnitario" Label="Precio Unit." Style="flex: 1;" Min="0m" Format="N0" />
                     <MudText Typo="Typo.body2" Style="flex: 1; text-align: right;">@((linea.Cantidad * linea.PrecioUnitario).ToString("C0"))</MudText>
@@ -48,7 +75,7 @@
 
             <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add"
                        OnClick="@(() => _lineas.Add(new LineaEditable()))" Class="mt-2 mb-3">
-                Agregar Articulo
+                Agregar Artículo
             </MudButton>
 
             <MudText Typo="Typo.subtitle1" Class="d-block" Style="text-align: right;">
@@ -67,34 +94,68 @@
 @code {
     [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter] public List<ClienteItem> Clientes { get; set; } = new();
+    [Parameter] public List<ClienteItem>    Clientes     { get; set; } = new();
     [Parameter] public List<OportunidadItem> Oportunidades { get; set; } = new();
-    [Parameter] public List<ArticuloItem> Articulos { get; set; } = new();
+    [Parameter] public List<ArticuloItem>   Articulos    { get; set; } = new();
 
     private class LineaEditable
     {
-        public int? ArticuloID { get; set; }
-        public decimal Cantidad { get; set; } = 1;
-        public decimal PrecioUnitario { get; set; }
+        public ArticuloItem? ArticuloSeleccionado { get; set; }
+        public int?     ArticuloID      { get; set; }
+        public decimal  Cantidad        { get; set; } = 1;
+        public decimal  PrecioUnitario  { get; set; }
     }
 
-    private MudForm _form = default!;
-    private int? _clienteId;
-    private int? _oportunidadId;
+    private MudForm      _form   = default!;
+    private ClienteItem? _clienteSeleccionado;
+    private int?         _oportunidadId;
 
     private IEnumerable<OportunidadItem> OportunidadesFiltradas =>
-        _clienteId is null
+        _clienteSeleccionado is null
             ? Oportunidades
-            : Oportunidades.Where(o => o.ClienteID == _clienteId);
-    private DateTime? _fecha = DateTime.Today;
+            : Oportunidades.Where(o => o.ClienteID == _clienteSeleccionado.ClienteID);
+
+    private DateTime? _fecha      = DateTime.Today;
     private DateTime? _validoHasta = DateTime.Today.AddDays(15);
-    private string? _notas;
+    private string?   _notas;
     private List<LineaEditable> _lineas = new() { new LineaEditable() };
 
-    private void OnArticuloCambiado(LineaEditable linea, int? articuloId)
+    private void OnClienteSeleccionado(ClienteItem? cliente)
     {
-        linea.ArticuloID = articuloId;
-        var articulo = Articulos.FirstOrDefault(a => a.ArticuloID == articuloId);
+        _clienteSeleccionado = cliente;
+        _oportunidadId = null;
+    }
+
+    private Task<IEnumerable<ClienteItem>> BuscarClienteAsync(string texto, CancellationToken _)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+            return Task.FromResult(Clientes.Take(20));
+
+        var q = texto.Trim();
+        var resultado = Clientes.Where(c =>
+            c.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+            c.NIT.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .Take(15);
+        return Task.FromResult(resultado);
+    }
+
+    private Task<IEnumerable<ArticuloItem>> BuscarArticuloAsync(string texto, CancellationToken _)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+            return Task.FromResult(Articulos.Take(20));
+
+        var q = texto.Trim();
+        var resultado = Articulos.Where(a =>
+            a.SKU.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+            a.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .Take(15);
+        return Task.FromResult(resultado);
+    }
+
+    private void OnArticuloCambiado(LineaEditable linea, ArticuloItem? articulo)
+    {
+        linea.ArticuloSeleccionado = articulo;
+        linea.ArticuloID           = articulo?.ArticuloID;
         if (articulo is not null)
             linea.PrecioUnitario = articulo.PrecioVenta;
     }
@@ -102,7 +163,7 @@
     private async Task GuardarAsync()
     {
         await _form.Validate();
-        if (!_form.IsValid || _clienteId is null || _fecha is null)
+        if (!_form.IsValid || _clienteSeleccionado is null || _fecha is null)
             return;
 
         var lineasValidas = _lineas
@@ -116,7 +177,7 @@
             return;
         }
 
-        var request = new CrearCotizacionRequest(_clienteId.Value, _oportunidadId, _fecha.Value, _validoHasta, _notas, lineasValidas);
+        var request = new CrearCotizacionRequest(_clienteSeleccionado.ClienteID, _oportunidadId, _fecha.Value, _validoHasta, _notas, lineasValidas);
         MudDialog.Close(DialogResult.Ok(request));
     }
 

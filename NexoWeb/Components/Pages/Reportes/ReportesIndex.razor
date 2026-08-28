@@ -1,0 +1,146 @@
+@page "/reportes"
+@attribute [Authorize]
+@inject INexoApiClient Api
+@inject ISnackbar Snackbar
+
+<PageTitle>Reportes | NEXO ERP</PageTitle>
+
+<div class="d-flex align-center mb-4" style="gap:0.25rem">
+    <MudText Typo="Typo.h5">Reportes</MudText>
+    <BotonFavorito Href="/reportes" Etiqueta="Reportes" />
+</div>
+<InfoAyuda Texto="Genera reportes predefinidos con filtros de fecha y exporta a Excel." />
+
+<MudGrid Spacing="3" Class="mb-4">
+    <MudItem xs="12" sm="4">
+        <MudSelect @bind-Value="_tipoSeleccionado" Label="Tipo de reporte *" Variant="Variant.Outlined">
+            @foreach (var r in _reportes)
+            {
+                <MudSelectItem Value="@r.Tipo">@r.Nombre</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" sm="3">
+        <MudDatePicker @bind-Date="_desde" Label="Desde" Variant="Variant.Outlined" />
+    </MudItem>
+    <MudItem xs="12" sm="3">
+        <MudDatePicker @bind-Date="_hasta" Label="Hasta" Variant="Variant.Outlined" />
+    </MudItem>
+    <MudItem xs="12" sm="2" Class="d-flex align-center gap-1">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.PlayArrow"
+                   OnClick="Ejecutar" Disabled="_ejecutando" FullWidth="true">
+            Generar
+        </MudButton>
+    </MudItem>
+</MudGrid>
+
+@if (_tipoSeleccionado is not null)
+{
+    var info = _reportes.FirstOrDefault(r => r.Tipo == _tipoSeleccionado);
+    if (info is not null)
+    {
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">@info.Descripcion</MudText>
+    }
+}
+
+@if (_ejecutando)
+{
+    <MudProgressCircular Indeterminate="true" Class="d-block mx-auto mt-6" />
+}
+else if (_filas.Count > 0)
+{
+    <div class="d-flex justify-space-between align-center mb-3">
+        <MudText Typo="Typo.subtitle2">@_filas.Count resultado(s)</MudText>
+        <MudButton Variant="Variant.Outlined" Color="Color.Success"
+                   StartIcon="@Icons.Material.Filled.Download"
+                   OnClick="Exportar" Disabled="_exportando">
+            @if (_exportando) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" /> }
+            Exportar Excel
+        </MudButton>
+    </div>
+
+    <div style="overflow-x:auto">
+        <MudTable Items="_filas" Dense="true" Striped="true" Hover="true"
+                  Style="min-width:600px" FixedHeader="true" Height="450px">
+            <HeaderContent>
+                @foreach (var col in _columnas)
+                {
+                    <MudTh>@col</MudTh>
+                }
+            </HeaderContent>
+            <RowTemplate>
+                @foreach (var col in _columnas)
+                {
+                    <MudTd>@FormatoValor(context.TryGetValue(col, out var v) ? v : null)</MudTd>
+                }
+            </RowTemplate>
+        </MudTable>
+    </div>
+}
+else if (_ejecutoAlMenos)
+{
+    <MudAlert Severity="Severity.Info">No hay datos para los filtros seleccionados.</MudAlert>
+}
+
+@code {
+    private record ReporteInfo(string Tipo, string Nombre, string Descripcion, string[] Columnas);
+
+    private List<ReporteInfo> _reportes = [];
+    private string? _tipoSeleccionado;
+    private DateTime? _desde = DateTime.Today.AddMonths(-3);
+    private DateTime? _hasta = DateTime.Today;
+    private List<Dictionary<string, object?>> _filas = [];
+    private List<string> _columnas = [];
+    private bool _ejecutando;
+    private bool _exportando;
+    private bool _ejecutoAlMenos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _reportes = (await Api.GetAsync<List<ReporteInfo>>("api/reportes") ?? []);
+        if (_reportes.Count > 0) _tipoSeleccionado = _reportes[0].Tipo;
+    }
+
+    private async Task Ejecutar()
+    {
+        if (_tipoSeleccionado is null) return;
+        _ejecutando = true;
+        _filas = [];
+        _columnas = [];
+
+        var req = new { Tipo = _tipoSeleccionado, Desde = _desde, Hasta = _hasta, Limite = 500 };
+        _filas = (await Api.PostAsync<object, List<Dictionary<string, object?>>>("api/reportes/ejecutar", req) ?? []);
+        if (_filas.Count > 0) _columnas = [.. _filas[0].Keys];
+        _ejecutoAlMenos = true;
+        _ejecutando = false;
+    }
+
+    private async Task Exportar()
+    {
+        if (_tipoSeleccionado is null) return;
+        _exportando = true;
+        try
+        {
+            var bytes = await Api.PostBytesAsync("api/reportes/exportar",
+                new { Tipo = _tipoSeleccionado, Desde = _desde, Hasta = _hasta, Limite = 500 });
+            var b64    = Convert.ToBase64String(bytes);
+            var nombre = $"reporte_{_tipoSeleccionado}_{DateTime.Today:yyyy-MM-dd}.xlsx";
+            await JsRuntime.InvokeVoidAsync("nexoDescargarArchivo", nombre,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", b64);
+        }
+        catch { Snackbar.Add("Error al exportar.", Severity.Error); }
+        _exportando = false;
+    }
+
+    private static string FormatoValor(object? v) => v switch
+    {
+        null          => "",
+        DateTime dt   => dt.ToString("dd/MM/yyyy"),
+        decimal d     => d.ToString("N2"),
+        double dbl    => dbl.ToString("N2"),
+        _             => v.ToString() ?? ""
+    };
+
+    [Inject] private Microsoft.JSInterop.IJSRuntime JsRuntime { get; set; } = default!;
+}

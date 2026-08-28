@@ -26,9 +26,9 @@
     {
         @if (key == "ventas")
         {
-            @if (Modulos.EsVisible("OPERACIONES") || Modulos.EsVisible("CRM.CLIENTES") || Modulos.EsVisible("CRM.COTIZACIONES"))
+            @if (Modulos.EsVisible("OPERACIONES") || Modulos.EsVisible("CRM.CLIENTES") || Modulos.EsVisible("CRM.COTIZACIONES") || Modulos.EsVisible("FINANZAS.GASTOS"))
             {
-                <MudNavGroup Title="Ventas"
+                <MudNavGroup Title="Comercial"
                              Icon="@Icons.Material.Filled.PointOfSale"
                              Class="nexo-nav-group">
                     @if (Modulos.EsVisible("OPERACIONES.FACTURACION"))
@@ -54,7 +54,19 @@
                         <MudNavLink Href="/crm/clientes"
                                     Icon="@Icons.Material.Filled.People"
                                     Class="nexo-nav-item">Clientes</MudNavLink>
+                        <MudNavLink Href="/crm/clientes/mapa"
+                                    Icon="@Icons.Material.Filled.Map"
+                                    Class="nexo-nav-item">Mapa de Clientes</MudNavLink>
                     }
+                    @if (Modulos.EsVisible("FINANZAS.GASTOS"))
+                    {
+                        <MudNavLink Href="/finanzas/gastos"
+                                    Icon="@Icons.Material.Filled.MoneyOff"
+                                    Class="nexo-nav-item">Gastos Operativos</MudNavLink>
+                    }
+                    <MudNavLink Href="/reportes"
+                                Icon="@Icons.Material.Filled.Assessment"
+                                Class="nexo-nav-item">Reportes</MudNavLink>
                 </MudNavGroup>
             }
         }
@@ -95,6 +107,21 @@
                                     Icon="@Icons.Material.Filled.LocalOffer"
                                     Class="nexo-nav-item">Combos / Ofertas</MudNavLink>
                     }
+                    @if (Modulos.EsVisible("FORMULARIOS.GESTOR"))
+                    {
+                        <MudNavLink Href="/formularios"
+                                    Icon="@Icons.Material.Filled.Assignment"
+                                    Class="nexo-nav-item">Formularios</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("SOPORTE.TICKETS"))
+                    {
+                        <MudNavLink Href="/soporte/tickets"
+                                    Icon="@Icons.Material.Filled.ConfirmationNumber"
+                                    Class="nexo-nav-item">Tickets de Soporte</MudNavLink>
+                    }
+                    <MudNavLink Href="/conocimiento"
+                                Icon="@Icons.Material.Filled.MenuBook"
+                                Class="nexo-nav-item">Base de Conocimiento</MudNavLink>
                 </MudNavGroup>
             }
         }
@@ -172,12 +199,6 @@
                         <MudNavLink Href="/inventario/kardex"
                                     Icon="@Icons.Material.Filled.ReceiptLong"
                                     Class="nexo-nav-item">Kardex de Artículos</MudNavLink>
-                    }
-                    @if (Modulos.EsVisible("OPERACIONES.MOVIMIENTOS"))
-                    {
-                        <MudNavLink Href="/operaciones/movimientos"
-                                    Icon="@Icons.Material.Filled.Timeline"
-                                    Class="nexo-nav-item">Movimientos</MudNavLink>
                     }
                     @if (Modulos.EsVisible("INVENTARIO.AJUSTES"))
                     {

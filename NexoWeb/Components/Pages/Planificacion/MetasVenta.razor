@@ -74,14 +74,12 @@ else
         <div class="mv-cards-grid mb-4">
             @foreach (var meta in grupo.OrderByDescending(m => m.MetaValor))
             {
-                @{
-                    var pct = meta.MetaValor > 0
+                var pct = meta.MetaValor > 0
                         ? (double)(meta.VentaReal / meta.MetaValor * 100)
                         : 0;
                     var pctCap  = Math.Min(pct, 100);
                     var colorPct = pct >= 100 ? Color.Success : pct >= 70 ? Color.Warning : Color.Error;
                     var esMesActual = meta.Periodo.Year == DateTime.Today.Year && meta.Periodo.Month == DateTime.Today.Month;
-
                     decimal ritmoProyectado = 0;
                     double pctRitmo = 0;
                     if (esMesActual && meta.VentaReal > 0 && DateTime.Today.Day > 0)
@@ -90,7 +88,6 @@ else
                         ritmoProyectado = meta.VentaReal / DateTime.Today.Day * diasMes;
                         pctRitmo = meta.MetaValor > 0 ? (double)(ritmoProyectado / meta.MetaValor * 100) : 0;
                     }
-                }
                 <div class="mv-card">
                     <div class="mv-card__header">
                         <span class="mv-card__centro">@meta.CentroCosto</span>

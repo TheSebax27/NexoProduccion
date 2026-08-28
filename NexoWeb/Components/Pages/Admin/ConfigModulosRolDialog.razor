@@ -115,15 +115,19 @@
 
     private static readonly List<SeccionNav> _secciones =
     [
-        new("ventas", "Ventas", Icons.Material.Outlined.PointOfSale, code =>
-            code == "OPERACIONES"           ||
+        new("ventas", "Comercial", Icons.Material.Outlined.PointOfSale, code =>
+            code == "OPERACIONES"              ||
             code == "OPERACIONES.FACTURACION"  ||
             code == "OPERACIONES.DESPACHOS"    ||
             code == "CRM.COTIZACIONES"         ||
-            code == "CRM.CLIENTES"),
+            code == "CRM.CLIENTES"             ||
+            code == "FINANZAS"                 ||
+            code == "FINANZAS.GASTOS"),
 
         new("crm", "CRM & Marketing", Icons.Material.Outlined.Groups, code =>
-            (code == "CRM" || code.StartsWith("CRM.")) &&
+            (code == "CRM" || code.StartsWith("CRM.") ||
+             code == "FORMULARIOS" || code.StartsWith("FORMULARIOS.") ||
+             code == "SOPORTE"     || code.StartsWith("SOPORTE.")) &&
             code != "CRM.COTIZACIONES" &&
             code != "CRM.CLIENTES"),
 
@@ -134,9 +138,7 @@
             code == "PRODUCCION" || code.StartsWith("PRODUCCION.")),
 
         new("inventario", "Inventario", Icons.Material.Outlined.Warehouse, code =>
-            code == "INVENTARIO"              ||
-            code.StartsWith("INVENTARIO.")    ||
-            code == "OPERACIONES.MOVIMIENTOS"),
+            code == "INVENTARIO" || code.StartsWith("INVENTARIO.")),
 
         new("planificacion", "Planificación", Icons.Material.Outlined.CalendarMonth, code =>
             code == "PLANIFICACION" || code.StartsWith("PLANIFICACION.")),

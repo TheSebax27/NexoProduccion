@@ -20,12 +20,17 @@
 
 <MudGrid Class="mb-4">
     <MudItem xs="12" sm="4">
-        <MudSelect T="int?" Value="_filtroClienteId" ValueChanged="OnFiltroClienteCambiadoAsync" Label="Cliente" Clearable="true">
-            @foreach (var c in _clientes)
-            {
-                <MudSelectItem T="int?" Value="@c.ClienteID">@c.Nombre</MudSelectItem>
-            }
-        </MudSelect>
+        <MudAutocomplete T="ClienteItem"
+                         Value="_filtroCliente"
+                         ValueChanged="OnFiltroClienteCambiadoAsync"
+                         Label="Filtrar por cliente"
+                         SearchFunc="BuscarClienteFiltroAsync"
+                         ToStringFunc="@(c => c?.Nombre ?? "")"
+                         Placeholder="Nombre o NIT…"
+                         MinCharacters="1"
+                         Clearable="true"
+                         CoerceValue="true"
+                         AdornmentIcon="@Icons.Material.Outlined.Search" />
     </MudItem>
     <MudItem xs="12" sm="4">
         <MudSelect T="string" Value="_filtroEstado" ValueChanged="OnFiltroEstadoCambiadoAsync" Label="Estado" Clearable="true">
@@ -74,9 +79,9 @@ else
                     <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
                     @if (context.Estado is "BORRADOR" or "ENVIADA" or "PENDIENTE")
                     {
-                        <MudIconButton Size="Size.Small" Icon="@Icons.Material.Outlined.Email"
-                                       Color="Color.Primary" Title="Enviar por email"
-                                       OnClick="@(() => EnviarEmailAsync(context.CotizacionID))" />
+                        <MudIconButton Size="Size.Small" Icon="@Icons.Material.Outlined.Send"
+                                       Color="Color.Primary" Title="Enviar cotización"
+                                       OnClick="@(() => AbrirDialogoEnvio(context))" />
                     }
                     @if (context.Estado == "ACEPTADA" && context.FacturaID is null)
                     {
@@ -95,6 +100,38 @@ else
     </MudTable>
 }
 
+@* ── Diálogo envío (Email / WhatsApp / Ambos) ──────────────────────── *@
+<MudDialog @bind-IsVisible="_envioDialogVisible" Options='new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true }'>
+    <TitleContent>
+        <div class="d-flex align-center" style="gap:10px;">
+            <MudIcon Icon="@Icons.Material.Outlined.Send" Color="Color.Primary" />
+            <span style="font-weight:700">Enviar cotización #@(_envioContexto?.CotizacionID)</span>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-4">¿Por qué canal deseas enviar la cotización a <strong>@(_envioContexto?.Cliente)</strong>?</MudText>
+        <div class="d-flex flex-column" style="gap:10px;">
+            <MudCheckBox @bind-Value="_envioEmail"   Label="Correo electrónico" Color="Color.Primary" />
+            <MudCheckBox @bind-Value="_envioWhatsApp" Label="WhatsApp" Color="Color.Success" />
+        </div>
+        @if (_envioWhatsApp && string.IsNullOrWhiteSpace(_envioCliente?.Telefono))
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3">
+                <strong>@(_envioCliente?.Nombre)</strong> no tiene teléfono registrado. WhatsApp no se enviará.
+            </MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="@(() => _envioDialogVisible = false)">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Outlined.Send"
+                   OnClick="ConfirmarEnvioAsync"
+                   Disabled="@(_envioEnviando || (!_envioEmail && !_envioWhatsApp))">
+            @(_envioEnviando ? "Enviando..." : "Enviar")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
 @code {
     private List<CotizacionItem> _cotizaciones = new();
     private List<ClienteItem> _clientes = new();
@@ -102,7 +139,7 @@ else
     private List<ArticuloItem> _articulos = new();
     private bool _cargando = true;
     private string? _errorCarga;
-    private int? _filtroClienteId;
+    private ClienteItem? _filtroCliente;
     private string? _filtroEstado;
 
     private Color ColorEstado(string estado) => estado switch
@@ -139,13 +176,23 @@ else
         }
     }
 
+    private Task<IEnumerable<ClienteItem>> BuscarClienteFiltroAsync(string texto, CancellationToken _)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+            return Task.FromResult(_clientes.Take(20));
+        var q = texto.Trim();
+        return Task.FromResult(_clientes.Where(c =>
+            c.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+            c.NIT.Contains(q, StringComparison.OrdinalIgnoreCase)).Take(15));
+    }
+
     private async Task CargarCotizacionesAsync()
     {
         try
         {
             var ruta = "api/crm/cotizaciones";
             var query = new List<string>();
-            if (_filtroClienteId is not null) query.Add($"clienteId={_filtroClienteId}");
+            if (_filtroCliente is not null) query.Add($"clienteId={_filtroCliente.ClienteID}");
             if (_filtroEstado is not null) query.Add($"estado={_filtroEstado}");
             if (query.Count > 0) ruta += "?" + string.Join("&", query);
 
@@ -157,9 +204,9 @@ else
         }
     }
 
-    private async Task OnFiltroClienteCambiadoAsync(int? nuevoValor)
+    private async Task OnFiltroClienteCambiadoAsync(ClienteItem? cliente)
     {
-        _filtroClienteId = nuevoValor;
+        _filtroCliente = cliente;
         await CargarCotizacionesAsync();
     }
 
@@ -205,18 +252,44 @@ else
         await CargarCotizacionesAsync();
     }
 
-    private async Task EnviarEmailAsync(int cotizacionId)
+    // ── Envío (Email / WhatsApp / Ambos) ─────────────────────────────────
+    private bool _envioDialogVisible;
+    private bool _envioEnviando;
+    private bool _envioEmail    = true;
+    private bool _envioWhatsApp = false;
+    private CotizacionItem? _envioContexto;
+    private ClienteItem?    _envioCliente;
+
+    private void AbrirDialogoEnvio(CotizacionItem cotizacion)
     {
+        _envioContexto  = cotizacion;
+        _envioCliente   = _clientes.FirstOrDefault(c => c.ClienteID == cotizacion.ClienteID);
+        _envioEmail     = true;
+        _envioWhatsApp  = false;
+        _envioDialogVisible = true;
+    }
+
+    private async Task ConfirmarEnvioAsync()
+    {
+        if (_envioContexto is null) return;
+        _envioEnviando = true;
         try
         {
-            await ApiClient.PostAsync<object?, object?>($"api/crm/cotizaciones/{cotizacionId}/enviar-email", null);
-            Snackbar.Add("Email enviado correctamente al cliente.", Severity.Success);
+            var tareas = new List<Task>();
+            if (_envioEmail)
+                tareas.Add(ApiClient.PostAsync<object?, object?>($"api/crm/cotizaciones/{_envioContexto.CotizacionID}/enviar-email", null));
+            if (_envioWhatsApp && !string.IsNullOrWhiteSpace(_envioCliente?.Telefono))
+                tareas.Add(ApiClient.PostAsync<object?, object?>($"api/crm/cotizaciones/{_envioContexto.CotizacionID}/enviar-whatsapp", null));
+            await Task.WhenAll(tareas);
+            var canales = new List<string>();
+            if (_envioEmail) canales.Add("email");
+            if (_envioWhatsApp && !string.IsNullOrWhiteSpace(_envioCliente?.Telefono)) canales.Add("WhatsApp");
+            Snackbar.Add($"Cotización enviada por {string.Join(" y ", canales)}.", Severity.Success);
+            _envioDialogVisible = false;
             await CargarCotizacionesAsync();
         }
-        catch (HttpRequestException ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _envioEnviando = false; }
     }
 
     private async Task ConvertirAFacturaAsync(int cotizacionId)

@@ -367,4 +367,13 @@ public class CrmController : ControllerBase
             return BadRequest(new { error = "El cliente no tiene email registrado o el servicio de email no está activo." });
         return Ok(new { mensaje = "Email enviado correctamente." });
     }
+
+    [HttpPost("cotizaciones/{id:int}/enviar-whatsapp")]
+    public async Task<ActionResult> EnviarWhatsAppCotizacion(int id)
+    {
+        var (enviado, error) = await _service.EnviarWhatsAppCotizacionAsync(id);
+        if (!enviado)
+            return BadRequest(new { error = error ?? "No se pudo enviar el mensaje de WhatsApp." });
+        return Ok(new { mensaje = "Mensaje de WhatsApp enviado correctamente." });
+    }
 }

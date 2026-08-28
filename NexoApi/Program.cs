@@ -19,7 +19,6 @@ using NexoApi.Features.Inventario;
 using NexoApi.Features.Logistica;
 using NexoApi.Features.Notificaciones;
 using NexoApi.Features.Marketing;
-using NexoApi.Features.Operaciones;
 using NexoApi.Features.Planificacion;
 using NexoApi.Features.Preferencias;
 using NexoApi.Features.Produccion;
@@ -50,6 +49,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "NEXO API", Version = "v1" });
+
+    // Evita colisión de SchemaId cuando dos namespaces distintos usan el mismo nombre de clase
+    options.CustomSchemaIds(t => t.FullName?.Replace('+', '.') ?? t.Name);
 
     // Security definition para JWT (Usuarios)
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -110,13 +112,17 @@ builder.Services.AddScoped<INotificacionesService, NotificacionesService>();
 builder.Services.AddScoped<IBusquedaService, BusquedaService>();
 builder.Services.AddScoped<IPreferenciasService, PreferenciasService>();
 builder.Services.AddScoped<IConfiguracionService, ConfiguracionService>();
-builder.Services.AddScoped<IOperacionesService, OperacionesService>();
 builder.Services.AddScoped<IMarketingService, MarketingService>();
 builder.Services.AddScoped<IMaquinariaService, MaquinariaService>();
 builder.Services.AddScoped<IEmpleadoProduccionService, EmpleadoProduccionService>();
 builder.Services.AddScoped<IComboService, ComboService>();
 builder.Services.AddScoped<ISeguridadService, SeguridadService>();
 builder.Services.AddScoped<NexoApi.Features.Finanzas.IFinanzasService, NexoApi.Features.Finanzas.FinanzasService>();
+builder.Services.AddScoped<NexoApi.Features.Soporte.ISoporteService, NexoApi.Features.Soporte.SoporteService>();
+builder.Services.AddScoped<NexoApi.Features.Formularios.IFormulariosService, NexoApi.Features.Formularios.FormulariosService>();
+builder.Services.AddScoped<NexoApi.Features.Conocimiento.IConocimientoService, NexoApi.Features.Conocimiento.ConocimientoService>();
+builder.Services.AddScoped<NexoApi.Features.Reportes.IReportesService, NexoApi.Features.Reportes.ReportesService>();
+builder.Services.AddHttpClient<NexoApi.Features.WhatsApp.IWhatsAppService, NexoApi.Features.WhatsApp.WhatsAppService>();
 
 // ----------------------------------------------------------------------------
 // AUTENTICACIÓN Y AUTORIZACIÓN (AQUÍ ESTÁ EL CAMBIO)

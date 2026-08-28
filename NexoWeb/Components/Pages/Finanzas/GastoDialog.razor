@@ -5,11 +5,11 @@
         <MudGrid Spacing="2">
             <MudItem xs="12" md="6">
                 <MudDatePicker @bind-Date="_fecha" Label="Fecha *" Required="true"
-                               Variant="Variant.Outlined" FullWidth="true" />
+                               Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudSelect T="string" @bind-Value="_categoria" Label="Categoría *" Required="true"
-                           Variant="Variant.Outlined" FullWidth="true">
+                           Variant="Variant.Outlined">
                     @foreach (var cat in Categorias)
                     {
                         <MudSelectItem Value="@cat">@cat</MudSelectItem>
@@ -18,16 +18,16 @@
             </MudItem>
             <MudItem xs="12">
                 <MudTextField @bind-Value="_descripcion" Label="Descripción *" Required="true"
-                              Variant="Variant.Outlined" FullWidth="true" />
+                              Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudNumericField T="decimal" @bind-Value="_monto" Label="Monto *" Required="true"
-                                 Format="N2" Min="0" Variant="Variant.Outlined" FullWidth="true"
+                                 Format="N2" Min="0" Variant="Variant.Outlined"
                                  Adornment="Adornment.Start" AdornmentText="$" />
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo"
-                           Clearable="true" Variant="Variant.Outlined" FullWidth="true">
+                           Clearable="true" Variant="Variant.Outlined">
                     @foreach (var cc in CentrosCosto)
                     {
                         <MudSelectItem T="int?" Value="@((int?)cc.CentroCostoID)">@cc.Nombre</MudSelectItem>
@@ -36,15 +36,15 @@
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudTextField @bind-Value="_proveedor" Label="Proveedor / Beneficiario"
-                              Variant="Variant.Outlined" FullWidth="true" />
+                              Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudTextField @bind-Value="_comprobante" Label="N° Comprobante / Factura"
-                              Variant="Variant.Outlined" FullWidth="true" />
+                              Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12">
                 <MudTextField @bind-Value="_notas" Label="Notas" Lines="2"
-                              Variant="Variant.Outlined" FullWidth="true" />
+                              Variant="Variant.Outlined" />
             </MudItem>
         </MudGrid>
     </DialogContent>

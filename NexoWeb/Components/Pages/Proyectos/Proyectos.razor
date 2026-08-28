@@ -50,12 +50,10 @@ else
     <div class="nexo-card-grid">
         @foreach (var p in _proyectosFiltrados)
         {
-            @{
-                var tareasPct    = p.TotalTareas > 0 ? (double)p.TareasCompletadas / p.TotalTareas * 100 : 0;
+            var tareasPct    = p.TotalTareas > 0 ? (double)p.TareasCompletadas / p.TotalTareas * 100 : 0;
                 var sobrepresup  = p.CostoTotal > p.Presupuesto;
                 var diasRestantes = p.FechaFin.HasValue ? (int)(p.FechaFin.Value.Date - DateTime.Today).TotalDays : (int?)null;
                 var salud        = Salud(p, diasRestantes);
-            }
             <div class="nexo-item-card py-card">
                 @* Indicador de salud — borde top *@
                 <div class="py-card__health-bar py-card__health-bar--@salud.Color"></div>

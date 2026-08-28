@@ -14,6 +14,7 @@ public interface INexoApiClient
     // Para descargas (Excel, PDF): trae los bytes crudos ya autenticados con
     // el JWT -- un <a href> plano no puede mandar ese header.
     Task<byte[]> GetBytesAsync(string ruta);
+    Task<byte[]> PostBytesAsync<TRequest>(string ruta, TRequest body);
     Task<TResponse?> PostAsync<TRequest, TResponse>(string ruta, TRequest body);
     Task PostAsync<TRequest>(string ruta, TRequest body);
     Task<TResponse?> PutAsync<TRequest, TResponse>(string ruta, TRequest body);

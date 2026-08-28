@@ -1556,6 +1556,106 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "NexoApi.Features.Conocimiento.ConocimientoController",
+    "Method": "Listar",
+    "RelativePath": "api/conocimiento",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "categoria",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "q",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Conocimiento.ConocimientoController",
+    "Method": "Crear",
+    "RelativePath": "api/conocimiento",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "NexoApi.Features.Conocimiento.Dtos.CrearArticuloRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Conocimiento.ConocimientoController",
+    "Method": "Obtener",
+    "RelativePath": "api/conocimiento/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Conocimiento.ConocimientoController",
+    "Method": "Actualizar",
+    "RelativePath": "api/conocimiento/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "NexoApi.Features.Conocimiento.Dtos.ActualizarArticuloRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Conocimiento.ConocimientoController",
+    "Method": "Eliminar",
+    "RelativePath": "api/conocimiento/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Conocimiento.ConocimientoController",
+    "Method": "Categorias",
+    "RelativePath": "api/conocimiento/categorias",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "NexoApi.Features.Crm.CrmController",
     "Method": "ListarActividades",
     "RelativePath": "api/crm/actividades",
@@ -2165,6 +2265,22 @@
   },
   {
     "ContainingType": "NexoApi.Features.Crm.CrmController",
+    "Method": "EnviarWhatsAppCotizacion",
+    "RelativePath": "api/crm/cotizaciones/{id}/enviar-whatsapp",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Crm.CrmController",
     "Method": "ActualizarEstadoCotizacion",
     "RelativePath": "api/crm/cotizaciones/{id}/estado",
     "HttpMethod": "PUT",
@@ -2498,6 +2614,32 @@
   },
   {
     "ContainingType": "NexoApi.Features.Dashboard.DashboardController",
+    "Method": "ActividadReciente",
+    "RelativePath": "api/dashboard/actividad",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "n",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Dashboard.Dtos.ActividadItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Dashboard.DashboardController",
     "Method": "AlertasStock",
     "RelativePath": "api/dashboard/alertas-stock",
     "HttpMethod": "GET",
@@ -2507,6 +2649,32 @@
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Dashboard.Dtos.AlertaStockItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Dashboard.DashboardController",
+    "Method": "ComparativaYoY",
+    "RelativePath": "api/dashboard/comparativa-yoy",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "meses",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Dashboard.Dtos.ComparativaMesItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2835,6 +3003,26 @@
     "ReturnTypes": [
       {
         "Type": "NexoApi.Features.Dashboard.Dtos.ResumenPlanificacionItem",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Dashboard.DashboardController",
+    "Method": "Sparklines",
+    "RelativePath": "api/dashboard/sparklines",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Dashboard.Dtos.SparklinesDashboard",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3324,6 +3512,321 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Finanzas.FinanzasController",
+    "Method": "Listar",
+    "RelativePath": "api/finanzas/gastos",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "desde",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "hasta",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "categoria",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "centroCostoId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Finanzas.Dtos.GastoItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Finanzas.FinanzasController",
+    "Method": "Crear",
+    "RelativePath": "api/finanzas/gastos",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Finanzas.Dtos.CrearGastoRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Finanzas.FinanzasController",
+    "Method": "Actualizar",
+    "RelativePath": "api/finanzas/gastos/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Finanzas.Dtos.ActualizarGastoRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Finanzas.FinanzasController",
+    "Method": "Eliminar",
+    "RelativePath": "api/finanzas/gastos/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Finanzas.FinanzasController",
+    "Method": "ResumenCategoria",
+    "RelativePath": "api/finanzas/gastos/resumen-categoria",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "desde",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "hasta",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Finanzas.Dtos.ResumenGastoCategoria, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Finanzas.FinanzasController",
+    "Method": "ResumenMes",
+    "RelativePath": "api/finanzas/gastos/resumen-mes",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "meses",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Finanzas.Dtos.ResumenGastoMes, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Formularios.FormulariosController",
+    "Method": "Listar",
+    "RelativePath": "api/formularios",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Formularios.FormulariosController",
+    "Method": "Crear",
+    "RelativePath": "api/formularios",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Formularios.Dtos.CrearFormularioRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Formularios.FormulariosController",
+    "Method": "Obtener",
+    "RelativePath": "api/formularios/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Formularios.FormulariosController",
+    "Method": "Actualizar",
+    "RelativePath": "api/formularios/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Formularios.Dtos.ActualizarFormularioRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Formularios.FormulariosController",
+    "Method": "Eliminar",
+    "RelativePath": "api/formularios/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Formularios.FormulariosController",
+    "Method": "ListarCampos",
+    "RelativePath": "api/formularios/{id}/campos",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Formularios.FormulariosController",
+    "Method": "GuardarCampos",
+    "RelativePath": "api/formularios/{id}/campos",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Formularios.Dtos.GuardarCamposRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Formularios.FormulariosController",
+    "Method": "ListarRespuestas",
+    "RelativePath": "api/formularios/{id}/respuestas",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Formularios.FormulariosController",
+    "Method": "ObtenerPublico",
+    "RelativePath": "api/formularios/publico/{token}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "token",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Formularios.FormulariosController",
+    "Method": "EnviarRespuesta",
+    "RelativePath": "api/formularios/respuestas",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Formularios.Dtos.EnviarRespuestaRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "NexoApi.Features.Integracion.IntegracionController",
@@ -4859,32 +5362,6 @@
     ]
   },
   {
-    "ContainingType": "NexoApi.Features.Operaciones.OperacionesController",
-    "Method": "ListarMovimientos",
-    "RelativePath": "api/operaciones/movimientos",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "desde",
-        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "hasta",
-        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "tipo",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
     "ContainingType": "NexoApi.Features.Planificacion.PlanificacionController",
     "Method": "ListarDemanda",
     "RelativePath": "api/planificacion/demanda",
@@ -6239,6 +6716,48 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "NexoApi.Features.Reportes.ReportesController",
+    "Method": "ListarTipos",
+    "RelativePath": "api/reportes",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Reportes.ReportesController",
+    "Method": "Ejecutar",
+    "RelativePath": "api/reportes/ejecutar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "NexoApi.Features.Reportes.Dtos.ReporteRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Reportes.ReportesController",
+    "Method": "Exportar",
+    "RelativePath": "api/reportes/exportar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "NexoApi.Features.Reportes.Dtos.ReporteRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "NexoApi.Features.Rrhh.AsistenciaController",
     "Method": "EmpleadosSinHorario",
     "RelativePath": "api/rrhh/asistencia/empleados-sin-horario",
@@ -7224,6 +7743,290 @@
         "Name": "usuarioId",
         "Type": "System.Int32",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Soporte.SoporteController",
+    "Method": "ResumenNps",
+    "RelativePath": "api/soporte/nps/resumen",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "desde",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "hasta",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Soporte.SoporteController",
+    "Method": "Listar",
+    "RelativePath": "api/soporte/tickets",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "estado",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "prioridad",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "asignadoA",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "reportadoPor",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Soporte.SoporteController",
+    "Method": "Crear",
+    "RelativePath": "api/soporte/tickets",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Soporte.Dtos.CrearTicketRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Soporte.SoporteController",
+    "Method": "Obtener",
+    "RelativePath": "api/soporte/tickets/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Soporte.SoporteController",
+    "Method": "Actualizar",
+    "RelativePath": "api/soporte/tickets/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Soporte.Dtos.ActualizarTicketRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Soporte.SoporteController",
+    "Method": "ListarComentarios",
+    "RelativePath": "api/soporte/tickets/{id}/comentarios",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Soporte.SoporteController",
+    "Method": "AgregarComentario",
+    "RelativePath": "api/soporte/tickets/{id}/comentarios",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Soporte.Dtos.CrearTicketComentarioRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Soporte.SoporteController",
+    "Method": "CambiarEstado",
+    "RelativePath": "api/soporte/tickets/{id}/estado",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Soporte.Dtos.CambiarEstadoTicketRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Soporte.SoporteController",
+    "Method": "ObtenerNps",
+    "RelativePath": "api/soporte/tickets/{id}/nps",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Soporte.SoporteController",
+    "Method": "RegistrarNps",
+    "RelativePath": "api/soporte/tickets/{id}/nps",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Soporte.Dtos.RegistrarNpsRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.WhatsApp.WhatsAppController",
+    "Method": "ObtenerConfig",
+    "RelativePath": "api/whatsapp/config",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.WhatsApp.Dtos.WhatsAppConfigItem",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.WhatsApp.WhatsAppController",
+    "Method": "GuardarConfig",
+    "RelativePath": "api/whatsapp/config",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "config",
+        "Type": "NexoApi.Features.WhatsApp.Dtos.WhatsAppConfigItem",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.WhatsApp.WhatsAppController",
+    "Method": "Enviar",
+    "RelativePath": "api/whatsapp/enviar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "NexoApi.Features.WhatsApp.Dtos.EnviarWhatsAppRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.WhatsApp.WhatsAppController",
+    "Method": "EnviarMasivo",
+    "RelativePath": "api/whatsapp/enviar-masivo",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "NexoApi.Features.WhatsApp.Dtos.EnvioMasivoRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.WhatsApp.WhatsAppController",
+    "Method": "EnviarTest",
+    "RelativePath": "api/whatsapp/test",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "telefono",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
