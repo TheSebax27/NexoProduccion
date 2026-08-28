@@ -59,6 +59,12 @@
             <span>Menú lateral</span>
         </div>
 
+        <div class="nexo-settings-nav-item @(_seccion == "produccion" ? "ns-active" : "")"
+             @onclick='() => _seccion = "produccion"'>
+            <MudIcon Icon="@Icons.Material.Outlined.Factory" Size="Size.Small" />
+            <span>Producción</span>
+        </div>
+
         <div class="nexo-settings-nav-item @(_seccion == "ayuda" ? "ns-active" : "")"
              @onclick='() => _seccion = "ayuda"'>
             <MudIcon Icon="@Icons.Material.Outlined.HelpOutline" Size="Size.Small" />
@@ -219,6 +225,19 @@
                     <MudSwitch T="bool" Value="Preferencias.TemaOscuro" ValueChanged="OnTemaOscuroCambiadoAsync"
                                Color="Color.Primary" />
                 </div>
+
+                <MudDivider Class="my-1" />
+
+                <div class="d-flex align-center justify-space-between py-2">
+                    <div>
+                        <div style="font-weight:600; font-size:0.9rem;">🐾 Modo antiestres</div>
+                        <div style="font-size:0.78rem; color:var(--n-text-3);">
+                            Cada cierto tiempo aparece un mensaje motivacional con compania canina. Para cuando el dia se pone pesado.
+                        </div>
+                    </div>
+                    <MudSwitch T="bool" Value="Preferencias.AntiestresActivo"
+                               ValueChanged="OnAntiestresActivoCambiadoAsync" Color="Color.Secondary" />
+                </div>
             </MudPaper>
         }
 
@@ -329,6 +348,69 @@
                         </MudButton>
                     </div>
                 </div>
+            </MudPaper>
+        }
+
+        @* ── Produccion ── *@
+        else if (_seccion == "produccion")
+        {
+            <MudPaper Class="pa-5">
+                <div class="nexo-chart-header mb-4">
+                    <MudIcon Icon="@Icons.Material.Outlined.Factory" Size="Size.Small" Class="nexo-chart-header__icon" />
+                    <div>
+                        <div class="nexo-chart-header__title">Producción</div>
+                        <div class="nexo-chart-header__sub">Automatiza la generación de códigos para que no tengas que escribirlos cada vez.</div>
+                    </div>
+                </div>
+
+                @* ── OP ── *@
+                <div class="d-flex align-center justify-space-between mb-1">
+                    <div>
+                        <div style="font-weight:600; font-size:0.9rem">Código de OP automático</div>
+                        <div style="font-size:0.78rem; color:var(--n-text-3)">
+                            Al crear una orden se pre-llena el código con el formato <strong>@Preferencias.PrefijoOP-YYYYMM-NNN</strong>.
+                            Puedes editarlo antes de guardar.
+                        </div>
+                    </div>
+                    <MudSwitch T="bool" Value="Preferencias.AutoCodigoOP"
+                               ValueChanged="OnAutoCodigoOPCambiadoAsync" Color="Color.Primary" />
+                </div>
+                @if (Preferencias.AutoCodigoOP)
+                {
+                    <div class="mt-2 mb-4" style="max-width:200px">
+                        <MudTextField T="string" Value="Preferencias.PrefijoOP"
+                                      ValueChanged="OnPrefijoOPCambiadoAsync"
+                                      Label="Prefijo" Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" HelperText="Máx. 6 caracteres"
+                                      MaxLength="6" />
+                    </div>
+                }
+                else { <div class="mb-4"></div> }
+
+                <MudDivider Class="mb-4" />
+
+                @* ── Lote ── *@
+                <div class="d-flex align-center justify-space-between mb-1">
+                    <div>
+                        <div style="font-weight:600; font-size:0.9rem">Número de lote automático</div>
+                        <div style="font-size:0.78rem; color:var(--n-text-3)">
+                            Al cerrar una OP se pre-llena el número de lote con el formato <strong>@Preferencias.PrefijoLote-YYYYMM-NNN</strong>.
+                            Puedes editarlo antes de confirmar.
+                        </div>
+                    </div>
+                    <MudSwitch T="bool" Value="Preferencias.AutoNumeroLote"
+                               ValueChanged="OnAutoNumeroLoteCambiadoAsync" Color="Color.Primary" />
+                </div>
+                @if (Preferencias.AutoNumeroLote)
+                {
+                    <div class="mt-2" style="max-width:200px">
+                        <MudTextField T="string" Value="Preferencias.PrefijoLote"
+                                      ValueChanged="OnPrefijoLoteCambiadoAsync"
+                                      Label="Prefijo" Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" HelperText="Máx. 6 caracteres"
+                                      MaxLength="6" />
+                    </div>
+                }
             </MudPaper>
         }
 
@@ -664,6 +746,14 @@
             : "Sesion normal: cerrara al vencer el token.", Severity.Info);
     }
 
+    private async Task OnAntiestresActivoCambiadoAsync(bool nuevoValor)
+    {
+        await Preferencias.EstablecerAntiestresActivoAsync(nuevoValor);
+        Snackbar.Add(nuevoValor
+            ? "Modo antiestres activado 🐾 El perrito aparecera cada cierto tiempo."
+            : "Modo antiestres desactivado.", Severity.Info);
+    }
+
     // ── Integraciones (Administracion) ───────────────────────────────
     private async Task OnUsaVisionsCambiadoAsync(bool nuevoValor)
     {
@@ -698,6 +788,12 @@
     private string _modoNroDoc = "Manual";
     private long _ultimoNroDocSecuencial = 0;
     private bool _guardandoNroDoc;
+
+    // ── Produccion (Personal) ─────────────────────────────────────────
+    private async Task OnAutoCodigoOPCambiadoAsync(bool v)    => await Preferencias.EstablecerAutoCodigoOPAsync(v);
+    private async Task OnPrefijoOPCambiadoAsync(string v)     { if (!string.IsNullOrWhiteSpace(v)) await Preferencias.EstablecerPrefijoOPAsync(v); }
+    private async Task OnAutoNumeroLoteCambiadoAsync(bool v)  => await Preferencias.EstablecerAutoNumeroLoteAsync(v);
+    private async Task OnPrefijoLoteCambiadoAsync(string v)   { if (!string.IsNullOrWhiteSpace(v)) await Preferencias.EstablecerPrefijoLoteAsync(v); }
 
     private async Task GuardarConfigNroDocAsync()
     {

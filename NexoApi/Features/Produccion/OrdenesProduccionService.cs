@@ -22,6 +22,8 @@ public interface IOrdenesProduccionService
     Task<IEnumerable<ConsumoOpItem>> ListarConsumosAsync(int ordenProduccionId);
     Task<IEnumerable<MotivoExcesoItem>> ListarMotivosExcesoAsync();
     Task<IEnumerable<StockLineaItem>> VerificarStockOrdenAsync(int ordenProduccionId);
+    Task<string> GenerarSiguienteCodigoOPAsync(string prefijo);
+    Task<string> GenerarSiguienteNumeroLoteAsync(string prefijo);
 }
 
 public record StockLineaItem(string Articulo, string Unidad, decimal CantidadRequerida, decimal StockDisponible);
@@ -337,5 +339,27 @@ public class OrdenesProduccionService : IOrdenesProduccionService
                      r.CantidadRendimientoBase, rd.PorcentajeMermaEstandar
             ORDER BY a.Nombre",
             new { ordenProduccionId });
+    }
+
+    public async Task<string> GenerarSiguienteCodigoOPAsync(string prefijo)
+    {
+        var mesActual = DateTime.Today.ToString("yyyyMM");
+        var patron    = $"{prefijo}-{mesActual}-%";
+        using var connection = _db.CreateConnection();
+        var usados = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM Produccion.OrdenesProduccion WHERE CodigoOP LIKE @Patron",
+            new { Patron = patron });
+        return $"{prefijo}-{mesActual}-{(usados + 1):D3}";
+    }
+
+    public async Task<string> GenerarSiguienteNumeroLoteAsync(string prefijo)
+    {
+        var mesActual = DateTime.Today.ToString("yyyyMM");
+        var patron    = $"{prefijo}-{mesActual}-%";
+        using var connection = _db.CreateConnection();
+        var usados = await connection.ExecuteScalarAsync<int>(
+            @"SELECT COUNT(*) FROM Inventario.Lotes WHERE NumeroLote LIKE @Patron",
+            new { Patron = patron });
+        return $"{prefijo}-{mesActual}-{(usados + 1):D3}";
     }
 }

@@ -90,13 +90,19 @@ else
                                 <MudSelectItem T="int?" Value="@((int?)tipo.TipoArticuloID)">@tipo.Nombre</MudSelectItem>
                             }
                         </MudSelect>
-                        <MudSelect T="string?" @bind-Value="_marcaCodigo" Label="Marca" Clearable="true"
-                                   Placeholder="Sin marca" Variant="Variant.Outlined" Class="mb-4">
-                            @foreach (var m in _marcas)
-                            {
-                                <MudSelectItem T="string?" Value="@m.Codigo">@m.Codigo — @m.Nombre</MudSelectItem>
-                            }
-                        </MudSelect>
+                        <div class="d-flex align-center mb-4" style="gap:0.5rem;">
+                            <MudAutocomplete T="string?" @bind-Value="_marcaCodigo"
+                                             Label="Marca" Clearable="true"
+                                             Placeholder="Busca por código o nombre..."
+                                             Variant="Variant.Outlined" Style="flex:1;"
+                                             SearchFunc="BuscarMarca"
+                                             ToStringFunc="@(c => c is null ? "" : (_marcas.FirstOrDefault(m => m.Codigo == c) is { } m ? $"{m.Codigo} — {m.Nombre}" : c))"
+                                             ResetValueOnEmptyText="true" CoerceText="false" CoerceValue="false" />
+                            <MudTooltip Text="Nueva marca">
+                                <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
+                                               OnClick="AbrirCrearMarcaAsync" />
+                            </MudTooltip>
+                        </div>
                         <div class="na-field-row na-field-row--2">
                             <MudSelect T="string?" Value="_grupoMayorCodigo" ValueChanged="OnGrupoMayorChanged"
                                        Label="Grupo mayor" Clearable="true" Placeholder="Sin grupo mayor"
@@ -581,6 +587,30 @@ else
         var nueva = new PresentacionItem(data.Codigo, data.Nombre, data.Fracciones, data.Tipo);
         _presentaciones = new List<PresentacionItem>(_presentaciones) { nueva };
         OnPresentacionChanged(data.Codigo);
+        StateHasChanged();
+    }
+
+    // ── Marca ─────────────────────────────────────────────────────────────
+    private Task<IEnumerable<string?>> BuscarMarca(string? texto, CancellationToken ct)
+    {
+        IEnumerable<string?> resultados = string.IsNullOrWhiteSpace(texto)
+            ? _marcas.Take(20).Select(m => (string?)m.Codigo)
+            : _marcas
+                .Where(m => (m.Codigo?.Contains(texto, StringComparison.OrdinalIgnoreCase) == true)
+                         || (m.Nombre?.Contains(texto, StringComparison.OrdinalIgnoreCase) == true))
+                .Take(20)
+                .Select(m => (string?)m.Codigo);
+        return Task.FromResult(resultados);
+    }
+
+    private async Task AbrirCrearMarcaAsync()
+    {
+        var dialogo = await DialogService.ShowAsync<MarcaDialog>("Nueva Marca",
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialogo.Result;
+        if (result is null || result.Canceled || result.Data is not MarcaDialog.Result data) return;
+        _marcas = new List<MarcaItem>(_marcas) { new MarcaItem(data.Codigo, data.Nombre) };
+        _marcaCodigo = data.Codigo;
         StateHasChanged();
     }
 

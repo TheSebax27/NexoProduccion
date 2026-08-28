@@ -482,9 +482,9 @@ public class IntegracionService : IIntegracionService
         {
             await connection.ExecuteAsync(
                 @"UPDATE Integracion.AgentesSync
-                  SET ApiKeyHash = @ApiKeyHash, Descripcion = @Descripcion
+                  SET ApiKeyHash = @ApiKeyHash, ApiKeyPlain = @ApiKeyPlain, Descripcion = @Descripcion
                   WHERE AgenteSyncID = @AgenteSyncID",
-                new { ApiKeyHash = apiKeyHash, r.Descripcion, AgenteSyncID = existingId.Value });
+                new { ApiKeyHash = apiKeyHash, ApiKeyPlain = apiKey, r.Descripcion, AgenteSyncID = existingId.Value });
             await connection.ExecuteAsync(
                 "UPDATE Organizacion.CentrosCosto SET TieneVisions = 1, IdentificadorClienteVisions = '1' WHERE CentroCostoID = @CentroCostoID",
                 new { r.CentroCostoID });
@@ -492,10 +492,10 @@ public class IntegracionService : IIntegracionService
         }
 
         var id = await connection.ExecuteScalarAsync<int>(
-            @"INSERT INTO Integracion.AgentesSync (CentroCostoID, ApiKeyHash, Descripcion)
+            @"INSERT INTO Integracion.AgentesSync (CentroCostoID, ApiKeyHash, ApiKeyPlain, Descripcion)
               OUTPUT INSERTED.AgenteSyncID
-              VALUES (@CentroCostoID, @ApiKeyHash, @Descripcion)",
-            new { r.CentroCostoID, ApiKeyHash = apiKeyHash, r.Descripcion });
+              VALUES (@CentroCostoID, @ApiKeyHash, @ApiKeyPlain, @Descripcion)",
+            new { r.CentroCostoID, ApiKeyHash = apiKeyHash, ApiKeyPlain = apiKey, r.Descripcion });
 
         await connection.ExecuteAsync(
             "UPDATE Organizacion.CentrosCosto SET TieneVisions = 1, IdentificadorClienteVisions = '1' WHERE CentroCostoID = @CentroCostoID",
@@ -1012,13 +1012,26 @@ public class IntegracionService : IIntegracionService
             throw new InvalidOperationException(
                 "Faltan archivos en la carpeta Agent/ del servidor. Republica NexoApi.");
 
-        // Generar API Key fresca y actualizar hash en BD.
+        // Reusar la key existente si ya hay un agente desplegado; solo generar nueva si no hay plaintext.
+        // Esto evita romper agentes activos cada vez que alguien descarga el instalador.
         using var connection = _db.CreateConnection();
-        var apiKey     = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-        var apiKeyHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(apiKey)));
-        await connection.ExecuteAsync(
-            "UPDATE Integracion.AgentesSync SET ApiKeyHash = @ApiKeyHash WHERE AgenteSyncID = @AgenteSyncId",
-            new { ApiKeyHash = apiKeyHash, AgenteSyncId = agenteSyncId });
+        var existingPlain = await connection.ExecuteScalarAsync<string?>(
+            "SELECT ApiKeyPlain FROM Integracion.AgentesSync WHERE AgenteSyncID = @AgenteSyncId",
+            new { AgenteSyncId = agenteSyncId });
+
+        string apiKey;
+        if (!string.IsNullOrWhiteSpace(existingPlain))
+        {
+            apiKey = existingPlain;
+        }
+        else
+        {
+            apiKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+            var apiKeyHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(apiKey)));
+            await connection.ExecuteAsync(
+                "UPDATE Integracion.AgentesSync SET ApiKeyHash = @ApiKeyHash, ApiKeyPlain = @ApiKeyPlain WHERE AgenteSyncID = @AgenteSyncId",
+                new { ApiKeyHash = apiKeyHash, ApiKeyPlain = apiKey, AgenteSyncId = agenteSyncId });
+        }
 
         var config          = await ObtenerConfiguracionCompletaAsync(agenteSyncId);
         var settingsBytes   = Encoding.UTF8.GetBytes(GenerarAppsettingsJson(config, apiKey));
@@ -1052,11 +1065,23 @@ public class IntegracionService : IIntegracionService
     public async Task<string> PrepararAppsettingsConKeyFrescaAsync(int agenteSyncId)
     {
         using var connection = _db.CreateConnection();
-        var apiKey     = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-        var apiKeyHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(apiKey)));
-        await connection.ExecuteAsync(
-            "UPDATE Integracion.AgentesSync SET ApiKeyHash = @ApiKeyHash WHERE AgenteSyncID = @AgenteSyncId",
-            new { ApiKeyHash = apiKeyHash, AgenteSyncId = agenteSyncId });
+        var existingPlain = await connection.ExecuteScalarAsync<string?>(
+            "SELECT ApiKeyPlain FROM Integracion.AgentesSync WHERE AgenteSyncID = @AgenteSyncId",
+            new { AgenteSyncId = agenteSyncId });
+
+        string apiKey;
+        if (!string.IsNullOrWhiteSpace(existingPlain))
+        {
+            apiKey = existingPlain;
+        }
+        else
+        {
+            apiKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+            var apiKeyHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(apiKey)));
+            await connection.ExecuteAsync(
+                "UPDATE Integracion.AgentesSync SET ApiKeyHash = @ApiKeyHash, ApiKeyPlain = @ApiKeyPlain WHERE AgenteSyncID = @AgenteSyncId",
+                new { ApiKeyHash = apiKeyHash, ApiKeyPlain = apiKey, AgenteSyncId = agenteSyncId });
+        }
 
         var config = await ObtenerConfiguracionCompletaAsync(agenteSyncId);
         return GenerarAppsettingsJson(config, apiKey);
@@ -1339,7 +1364,7 @@ public class IntegracionService : IIntegracionService
                 VALUES
                     (@Referencia, @Nombre, @TipoArticuloID, @PPublico, @Costo,
                      @PBodega, @PCredito, @UPublico, @UBodega, @UCredito,
-                     @StockMinimo, 0, 'N',
+                     @StockMinimo, 0, CASE WHEN ISNULL(@Fracciones, 0) > 1 THEN 'SI' ELSE 'NO' END,
                      @MarcaCodigo,
                      (SELECT Codigo FROM Catalogo.GrupoMenor WHERE Codigo = @GrupoMenorCodigo),
                      @PresentacionCodigo,
@@ -1364,7 +1389,8 @@ public class IntegracionService : IIntegracionService
                     IvaValor           = (short)(r.IvaValor.HasValue ? Math.Clamp((long)r.IvaValor.Value, short.MinValue, short.MaxValue) : 19L),
                     IvaDescripcion     = r.IvaDescripcion ?? "IVA 19%",
                     Iva2               = r.Iva2.HasValue ? (short?)Math.Clamp((long)r.Iva2.Value, short.MinValue, short.MaxValue) : null,
-                    IvaDescripcion2    = r.IvaDescripcion2
+                    IvaDescripcion2    = r.IvaDescripcion2,
+                    Fracciones         = r.Fracciones
                 });
 
             articuloId = await connection.ExecuteScalarAsync<int?>(
@@ -1448,6 +1474,7 @@ public class IntegracionService : IIntegracionService
                                                 TipoArticuloID)
                                             ELSE TipoArticuloID END,
                   StockMinimo        = COALESCE(@ExistenciasMinimas, StockMinimo),
+                  Fracciona          = CASE WHEN @Fracciones IS NOT NULL AND @Fracciones > 1 THEN 'SI' ELSE Fracciona END,
                   FechaModificacion  = @FechaCambio
               WHERE ArticuloID = @ArticuloId
                 AND (FechaModificacion IS NULL OR MarcaCodigo IS NULL OR DATEADD(SECOND, 5, FechaModificacion) < @FechaCambio)",
@@ -1466,6 +1493,7 @@ public class IntegracionService : IIntegracionService
                 r.IvaDescripcion2,
                 r.TipoProductoCodigo,
                 ExistenciasMinimas = r.ExistenciasMinimas,
+                Fracciones         = r.Fracciones,
                 r.FechaCambio, ArticuloId = articuloId
             });
 
@@ -1691,15 +1719,40 @@ public class IntegracionService : IIntegracionService
               WHERE FacturaID = @FacturaId",
             new { FacturaId = facturaId, request.TipDoc, request.NroDoc });
 
+        // Registrar pago automático si Visions confirmó y aún no hay pagos en NEXO.
+        // Esto cambia el estado de la factura a PAGADA sin intervención manual.
+        try
+        {
+            var totalFactura = await connection.ExecuteScalarAsync<decimal>(
+                @"SELECT ISNULL(SUM(Cantidad * PrecioUnitario), 0)
+                  FROM Facturacion.FacturaLineas WHERE FacturaID = @FacturaId",
+                new { FacturaId = facturaId });
+
+            if (totalFactura > 0)
+            {
+                var pagosExistentes = await connection.ExecuteScalarAsync<int>(
+                    "SELECT COUNT(*) FROM Facturacion.Pagos WHERE FacturaID = @FacturaId",
+                    new { FacturaId = facturaId });
+
+                if (pagosExistentes == 0)
+                {
+                    await connection.ExecuteAsync(
+                        @"INSERT INTO Facturacion.Pagos (FacturaID, Monto, FechaPago, MetodoPago, Notas, UsuarioID)
+                          VALUES (@FacturaID, @Monto, GETDATE(), 'VISIONS', 'Pago registrado automáticamente desde Visions (' + @NroDoc + ')', 0)",
+                        new { FacturaID = facturaId, Monto = totalFactura, request.NroDoc });
+                }
+            }
+        }
+        catch { /* mejor esfuerzo: no bloquear la confirmación si falla el pago */ }
+
         // Descontar stock automáticamente ahora que Visions confirmó.
-        // Si ya fue descontado o la factura no tiene líneas, el SP lo ignora sin error.
         try
         {
             await connection.ExecuteAsync(
                 "EXEC Facturacion.sp_DescontarStockFactura @FacturaID, @UsuarioID",
                 new { FacturaID = facturaId, UsuarioID = 0 });
         }
-        catch { /* best-effort: si falla (ej. stock insuficiente) no bloquear la confirmación */ }
+        catch { /* mejor esfuerzo: si falla (ej. stock insuficiente) no bloquear */ }
     }
 
     public async Task<SaludCatalogoResponse> ObtenerSaludCatalogoAsync()

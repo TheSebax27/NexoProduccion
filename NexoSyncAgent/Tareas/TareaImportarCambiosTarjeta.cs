@@ -48,6 +48,7 @@ public class TareaImportarCambiosTarjeta
                      tp.Codigo                                             AS TipoProductoCodigo,
                      tar.EXISTENCIAS                                       AS ExistenciasActuales,
                      tar.EXISTENCIASMINIMAS                                AS ExistenciasMinimas,
+                     NULLIF(tar.FRACCIONES, 0)                             AS Fracciones,
                      CAST(CASE WHEN tar.REFERENCIA IS NULL THEN 1 ELSE 0 END AS BIT) AS EliminadoEnVisions
               FROM dbo.NEXO_TarjetasCambios t
               INNER JOIN (
@@ -98,7 +99,8 @@ public class TareaImportarCambiosTarjeta
                         UCredito:           cambio.UCredito,
                         TipoProductoCodigo:  cambio.TipoProductoCodigo,
                         ExistenciasActuales: cambio.ExistenciasActuales,
-                        ExistenciasMinimas:  cambio.ExistenciasMinimas), ct);
+                        ExistenciasMinimas:  cambio.ExistenciasMinimas,
+                        Fracciones:          cambio.Fracciones), ct);
                     _logger.LogInformation("Cambio de TARJETA ({Ref}) sincronizado a NEXO", cambio.REFERENCIA);
                 }
 
@@ -125,5 +127,6 @@ public class TareaImportarCambiosTarjeta
         string? TipoProductoCodigo = null,
         decimal? ExistenciasActuales = null,
         decimal? ExistenciasMinimas = null,
+        decimal? Fracciones = null,
         bool EliminadoEnVisions = false);
 }

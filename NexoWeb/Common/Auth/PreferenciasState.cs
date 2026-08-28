@@ -36,6 +36,8 @@ public class PreferenciasState
 
     public bool MantenerSesionActiva => ObtenerValor("MantenerSesionActiva") == "true";
 
+    public bool AntiestresActivo => ObtenerValor("AntiestresActivo") == "true";
+
     // Paginas marcadas como favoritas (menu lateral) -- se guardan como JSON
     // bajo la clave generica "Favoritos". Requiere que Seguridad.PreferenciasUsuario.Valor
     // sea NVARCHAR(MAX) (ampliado agosto 2026 -- antes era nvarchar(50), muy chico para una lista).
@@ -105,6 +107,21 @@ public class PreferenciasState
     {
         await EstablecerAsync("MantenerSesionActiva", valor ? "true" : "false");
     }
+
+    public async Task EstablecerAntiestresActivoAsync(bool valor)
+    {
+        await EstablecerAsync("AntiestresActivo", valor ? "true" : "false");
+    }
+
+    public bool AutoCodigoOP => ObtenerValor("AutoCodigoOP") == "true";
+    public string PrefijoOP   => ObtenerValor("PrefijoOP", "OP");
+    public async Task EstablecerAutoCodigoOPAsync(bool valor)   => await EstablecerAsync("AutoCodigoOP", valor ? "true" : "false");
+    public async Task EstablecerPrefijoOPAsync(string valor)    => await EstablecerAsync("PrefijoOP", valor.Trim().ToUpper());
+
+    public bool AutoNumeroLote => ObtenerValor("AutoNumeroLote") == "true";
+    public string PrefijoLote  => ObtenerValor("PrefijoLote", "LOTE");
+    public async Task EstablecerAutoNumeroLoteAsync(bool valor)  => await EstablecerAsync("AutoNumeroLote", valor ? "true" : "false");
+    public async Task EstablecerPrefijoLoteAsync(string valor)   => await EstablecerAsync("PrefijoLote", valor.Trim().ToUpper());
 
     public List<string> OrdenGruposNav
     {

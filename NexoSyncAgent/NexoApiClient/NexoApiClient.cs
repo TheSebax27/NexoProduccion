@@ -51,6 +51,15 @@ public class NexoApiClient : INexoApiClient
     public async Task<LatidoResponse> EnviarLatidoAsync(string version, CancellationToken ct)
     {
         var respuesta = await _http.PostAsJsonAsync("api/integracion/latido", new { Version = version }, ct);
+
+        // 401 = key invalida/inactiva; es distinto de un error de red y no debe
+        // tratarse como backoff de conectividad — por eso lanzamos excepcion propia.
+        if (respuesta.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            throw new ApiKeyInvalidaException(
+                "La API Key es invalida o esta inactiva. " +
+                "Ve a NEXO Web > Integracion Visions > Configurar agente y regenera la clave, " +
+                "luego actualiza ApiKey en C:\\NexoSyncAgent\\appsettings.json y reinicia el servicio.");
+
         respuesta.EnsureSuccessStatusCode();
 
         var latido = await respuesta.Content.ReadFromJsonAsync<LatidoResponse>(cancellationToken: ct);

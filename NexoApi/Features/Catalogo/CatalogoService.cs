@@ -207,6 +207,16 @@ public class CatalogoService : ICatalogoService
     {
         using var connection = _db.CreateConnection();
 
+        // Auto-crear Marca y Presentacion si el codigo llega desde Visions pero aun no existe en NEXO.
+        // GrupoMenor no se auto-crea porque requiere GrupoMayor (FK no-nullable).
+        const string sqlEnsureCatalogos = @"
+            IF @MarcaCodigo IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Catalogo.Marca WHERE Codigo = @MarcaCodigo)
+                INSERT INTO Catalogo.Marca (Codigo, Marca) VALUES (@MarcaCodigo, @MarcaCodigo);
+            IF @PresentacionCodigo IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Catalogo.Presentacion WHERE Codigo = @PresentacionCodigo)
+                INSERT INTO Catalogo.Presentacion (Codigo, Presentacion) VALUES (@PresentacionCodigo, @PresentacionCodigo);";
+
+        await connection.ExecuteAsync(sqlEnsureCatalogos, new { r.MarcaCodigo, r.PresentacionCodigo });
+
         const string sql = @"
             INSERT INTO Catalogo.Tarjetas
                 (Referencia, Nombre, Descripcion, TipoArticuloID, StockMinimo, PuntoReorden,
@@ -219,7 +229,9 @@ public class CatalogoService : ICatalogoService
                 (@Referencia, @Nombre, @Descripcion, @TipoArticuloID, @StockMinimo, @PuntoReorden,
                  @DiasVidaUtil, ISNULL(@Fracciona, 'SI'), @PrecioVentaUnidad,
                  @Costo, @PPublico, @PBodega, @PCredito, @UPublico, @UBodega, @UCredito,
-                 @MarcaCodigo, @GrupoMenorCodigo, @PresentacionCodigo,
+                 @MarcaCodigo,
+                 CASE WHEN EXISTS (SELECT 1 FROM Catalogo.GrupoMenor WHERE Codigo = @GrupoMenorCodigo) THEN @GrupoMenorCodigo ELSE NULL END,
+                 @PresentacionCodigo,
                  @Peso, @IvaSiNo, @IvaValor, @IvaDescripcion, @Iva2, @IvaDescripcion2)";
 
         var articuloId = await connection.ExecuteScalarAsync<int>(sql, r);

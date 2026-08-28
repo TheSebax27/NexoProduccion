@@ -51,6 +51,7 @@ public class FacturacionController : ControllerBase
             var id = await _service.CrearFacturaAsync(request, UsuarioActualId);
             return Ok(new { facturaId = id });
         }
+
         catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 

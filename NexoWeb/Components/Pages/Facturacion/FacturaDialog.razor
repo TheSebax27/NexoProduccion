@@ -4,6 +4,7 @@
 @inject ISnackbar Snackbar
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
+@inject NavigationManager Nav
 
 <MudDialog>
     <TitleContent>
@@ -246,19 +247,33 @@
         }
         @if (_lineasSinStock.Count > 0)
         {
-            <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-1" Style="font-size:0.78rem">
-                @if (_lineasSinStock.Count == 1)
-                {
-                    @($"'{_lineasSinStock[0].Articulo!.Nombre}' supera el stock disponible ({_lineasSinStock[0].Articulo!.Existencias:N0} unid.). Se creará igualmente pero deberás reponer inventario.")
-                }
-                else
-                {
-                    @($"{_lineasSinStock.Count} artículos superan el stock disponible. Se crearán igualmente pero deberás reponer inventario.")
-                }
-            </MudAlert>
+            <div style="width:100%; padding:0 8px 8px">
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mb-2" Style="font-size:0.78rem">
+                    @if (_lineasSinStock.Count == 1)
+                    {
+                        @($"No hay stock suficiente de '{_lineasSinStock[0].Articulo!.Nombre}' ({_lineasSinStock[0].Articulo!.Existencias:N0} disponibles). Debes producir antes de facturar.")
+                    }
+                    else
+                    {
+                        @($"{_lineasSinStock.Count} artículos no tienen stock suficiente. Debes producirlos antes de facturar.")
+                    }
+                </MudAlert>
+                <div style="display:flex; flex-wrap:wrap; gap:8px">
+                    @foreach (var linea in _lineasSinStock)
+                    {
+                        <MudButton Color="Color.Warning" Variant="Variant.Filled" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Outlined.PrecisionManufacturing"
+                                   OnClick="@(() => IrAProducirAsync(linea.Articulo!))"
+                                   Disabled="_navegandoAProduccion">
+                            Producir @linea.Articulo!.Nombre
+                        </MudButton>
+                    }
+                </div>
+            </div>
         }
         <MudButton OnClick="Cancelar">Cancelar</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="GuardarAsync">
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="GuardarAsync"
+                   Disabled="_lineasSinStock.Count > 0">
             Crear Factura
         </MudButton>
     </DialogActions>
@@ -292,6 +307,7 @@
     private const int ClienteConsumidorFinalId = 11;
 
     private MudForm _form = default!;
+    private bool _navegandoAProduccion;
     private string _tipDoc = "FACTURA";
     private string? _nroDoc;
     private bool _consumidorFinal;
@@ -490,4 +506,24 @@
     }
 
     private void Cancelar() => MudDialog.Cancel();
+
+    private async Task IrAProducirAsync(ArticuloItem art)
+    {
+        _navegandoAProduccion = true;
+        string destino;
+        try
+        {
+            var recetas = await ApiClient.GetAsync<List<RecetaResumen>>(
+                $"api/produccion/recetas?productoTerminadoId={art.ArticuloID}&soloActivas=true");
+            destino = (recetas?.Count ?? 0) > 0
+                ? $"/produccion/ordenes/crear?articuloId={art.ArticuloID}"
+                : $"/produccion/recetas/crear?articuloId={art.ArticuloID}";
+        }
+        catch
+        {
+            destino = $"/produccion/ordenes/crear?articuloId={art.ArticuloID}";
+        }
+        MudDialog.Cancel();
+        Nav.NavigateTo(destino);
+    }
 }

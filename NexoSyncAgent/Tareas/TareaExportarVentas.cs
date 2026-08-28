@@ -173,6 +173,10 @@ public class TareaExportarVentas
 
                 _logger.LogInformation("Venta {IdEventoExterno} exportada", idEventoExterno);
             }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                break;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "No se pudo exportar la venta {NRODOC}-{REFERENCIA}", venta.NRODOC, venta.REFERENCIA);

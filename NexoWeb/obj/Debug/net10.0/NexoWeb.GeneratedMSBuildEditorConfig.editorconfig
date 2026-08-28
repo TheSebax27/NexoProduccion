@@ -114,6 +114,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xHcnVwb01lbm9yRGlhbG9nLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Produccion/NexoWeb/Components/Pages/Catalogo/MarcaDialog.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xNYXJjYURpYWxvZy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Produccion/NexoWeb/Components/Pages/Catalogo/PresentacionDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRhbG9nb1xQcmVzZW50YWNpb25EaWFsb2cucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
@@ -210,8 +214,8 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDcm1cTGVhZHMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Produccion/NexoWeb/Components/Pages/Crm/MapaClientes.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDcm1cTWFwYUNsaWVudGVzLnJhem9y
+[C:/Produccion/NexoWeb/Components/Pages/Crm/MapaClientesDialog.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDcm1cTWFwYUNsaWVudGVzRGlhbG9nLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Pages/Crm/OportunidadDialog.razor]
@@ -358,10 +362,6 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm95ZWN0b3NcUHJveWVjdG9zLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Produccion/NexoWeb/Components/Pages/Reportes/ReportesIndex.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xSZXBvcnRlc1xSZXBvcnRlc0luZGV4LnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
-
 [C:/Produccion/NexoWeb/Components/Pages/Rrhh/Asistencia.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xScmhoXEFzaXN0ZW5jaWEucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
@@ -489,6 +489,10 @@ build_metadata.AdditionalFiles.CssScope =
 [C:/Produccion/NexoWeb/Components/_Imports.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xfSW1wb3J0cy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Layout/AntiestresModal.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcQW50aWVzdHJlc01vZGFsLnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-7c90dguwx3
 
 [C:/Produccion/NexoWeb/Components/Layout/AuthLayout.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcQXV0aExheW91dC5yYXpvcg==

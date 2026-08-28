@@ -66,20 +66,30 @@ public class TareaSincronizarClientes
                 ? c.TipoIdentificacionDetalle
                 : (esJuridica ? "NIT" : "CEDULA DE CIUDADANIA");
             var empresa = esJuridica ? c.Nombre : null;
-            var telefono = c.Telefono;
-            var direccion = c.Direccion;
+            // Si NEXO no tiene el dígito de verificación, calcularlo desde el NIT.
+            var digitoVerificacion = c.DigitoVerificacion
+                ?? ColombiaUtils.CalcularDigitoVerificacion(c.NIT);
+            var telefono  = string.IsNullOrWhiteSpace(c.Telefono)  ? "3000000000"      : c.Telefono;
+            var email     = string.IsNullOrWhiteSpace(c.Email)     ? "default@gmail.com" : c.Email;
+            var direccion = string.IsNullOrWhiteSpace(c.Direccion) ? "default"           : c.Direccion;
             // Usar nombres resueltos de Municipios; fallback a los textos libres de Departamento/Ciudad
             var departamento = c.NombreDept ?? c.Departamento;
             var ciudad = c.NombreMuni ?? c.Ciudad;
 
             // Validar campos obligatorios antes de escribir en Visions
-            // (SegundoNombre y SegundoApellido son opcionales)
+            // (SegundoNombre, SegundoApellido, Telefono, Email y Direccion son opcionales — se usan defaults)
+            // Para naturales: si falta apellido, intentar partir el nombre (ej. "Juan Perez" → apellido "Perez").
+            // Si tampoco hay espacios, usar "." como placeholder mínimo válido para Visions.
+            string? primerApellido = c.PrimerApellido;
+            if (!esJuridica && string.IsNullOrWhiteSpace(primerApellido))
+            {
+                var partes = (c.PrimerNombre ?? "").Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                primerApellido = partes.Length > 1 ? partes[^1] : ".";
+            }
+
             var camposFaltantes = new List<string>();
-            if (esJuridica) { if (string.IsNullOrWhiteSpace(empresa))      camposFaltantes.Add("Empresa/RazonSocial"); }
-            else             { if (string.IsNullOrWhiteSpace(c.PrimerNombre))   camposFaltantes.Add("PrimerNombre");
-                               if (string.IsNullOrWhiteSpace(c.PrimerApellido)) camposFaltantes.Add("PrimerApellido"); }
-            if (string.IsNullOrWhiteSpace(telefono))     camposFaltantes.Add("Telefono");
-            if (string.IsNullOrWhiteSpace(direccion))    camposFaltantes.Add("Direccion");
+            if (esJuridica) { if (string.IsNullOrWhiteSpace(empresa))    camposFaltantes.Add("Empresa/RazonSocial"); }
+            else             { if (string.IsNullOrWhiteSpace(c.PrimerNombre)) camposFaltantes.Add("PrimerNombre"); }
             if (string.IsNullOrWhiteSpace(ciudad))       camposFaltantes.Add("Ciudad");
             if (string.IsNullOrWhiteSpace(departamento)) camposFaltantes.Add("Departamento");
             if (camposFaltantes.Count > 0)
@@ -138,26 +148,24 @@ public class TareaSincronizarClientes
                          'COLOMBIA', 170, 1);",
                     new
                     {
-                        NIT = c.NIT,
-                        Nombre1    = esJuridica ? null : c.PrimerNombre,
-                        Nombre2    = esJuridica ? null : c.SegundoNombre,
-                        Apellido1  = esJuridica ? null : c.PrimerApellido,
-                        Apellido2  = esJuridica ? null : c.SegundoApellido,
-                        Empresa    = empresa,
-                        Tipotercero = tipotercero,
-                        Tipoid     = tipoid,
-                        Email      = c.Email,
-                        TelNatural = telNatural,
-                        TelEmpresa = telEmpresa,
-                        DirNatural = dirNatural,
-                        DirEmpresa = dirEmpresa,
-                        Ciudad     = ciudad,
-                        CiudadCodigo = c.CodigoMuni,
-                        Departamento = departamento,
-                        DeptCodigo   = c.CodigoDept,
-                        DigitoVerificacion = c.DigitoVerificacion.HasValue
-                            ? c.DigitoVerificacion.Value.ToString()
-                            : null
+                        NIT          = T(c.NIT, 25),
+                        Nombre1      = T(esJuridica ? null : c.PrimerNombre, 255),
+                        Nombre2      = T(esJuridica ? null : c.SegundoNombre, 50),
+                        Apellido1    = T(esJuridica ? null : primerApellido, 50),
+                        Apellido2    = T(esJuridica ? null : c.SegundoApellido, 50),
+                        Empresa      = T(empresa, 50),
+                        Tipotercero  = T(tipotercero, 10),
+                        Tipoid       = T(tipoid, 20),
+                        Email        = T(email, 50),
+                        TelNatural   = T(telNatural, 50),
+                        TelEmpresa   = T(telEmpresa, 50),
+                        DirNatural   = T(dirNatural, 200),
+                        DirEmpresa   = T(dirEmpresa, 50),
+                        Ciudad       = T(ciudad, 50),
+                        CiudadCodigo = T(c.CodigoMuni, 10),
+                        Departamento = T(departamento, 50),
+                        DeptCodigo   = T(c.CodigoDept, 10),
+                        DigitoVerificacion = digitoVerificacion?.ToString()
                     });
 
                 _logger.LogDebug("Cliente NIT {NIT} sincronizado a USUARIOS en Visions", c.NIT);
@@ -215,6 +223,9 @@ public class TareaSincronizarClientes
                     continue;
                 }
 
+                var telVisions  = esJuridica ? (u.TELEFONOEMPRESA ?? u.TELEFONOVIVE) : (u.TELEFONOVIVE ?? u.TELEFONOEMPRESA);
+                var dirVisions  = esJuridica ? (u.DIRECCIONEMPRESA ?? u.DIRECCIONVIVE) : (u.DIRECCIONVIVE ?? u.DIRECCIONEMPRESA);
+
                 await _apiClient.SyncClienteDesdeVisionsAsync(new SyncClienteDesdeVisionsRequest(
                     NIT: u.NIT,
                     TipoPersona: esJuridica ? "Juridica" : "Natural",
@@ -223,9 +234,9 @@ public class TareaSincronizarClientes
                     PrimerApellido: usaRepresentante ? null : u.APELLIDO1,
                     SegundoApellido: usaRepresentante ? null : u.APELLIDO2,
                     NombreEmpresa: u.EMPRESA,
-                    Telefono: esJuridica ? (u.TELEFONOEMPRESA ?? u.TELEFONOVIVE) : (u.TELEFONOVIVE ?? u.TELEFONOEMPRESA),
-                    Email: u.EMAIL,
-                    Direccion: esJuridica ? (u.DIRECCIONEMPRESA ?? u.DIRECCIONVIVE) : (u.DIRECCIONVIVE ?? u.DIRECCIONEMPRESA),
+                    Telefono: string.IsNullOrWhiteSpace(telVisions)  ? "3000000000"      : telVisions,
+                    Email:    string.IsNullOrWhiteSpace(u.EMAIL)     ? "default@gmail.com" : u.EMAIL,
+                    Direccion: string.IsNullOrWhiteSpace(dirVisions) ? "default"          : dirVisions,
                     Departamento: u.DEPARTAMENTO,
                     Ciudad: u.CIUDAD,
                     CodigoDept: u.DEPARTAMENTOCODIGO,
@@ -246,6 +257,8 @@ public class TareaSincronizarClientes
 
         _logger.LogInformation("Usuarios Visions → NEXO completado");
     }
+
+    private static string? T(string? s, int max) => s?.Length > max ? s[..max] : s;
 
     private record UsuarioVisions(
         string NIT, string? TIPOTERCERO, string? TIPOID,

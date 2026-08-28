@@ -6142,6 +6142,58 @@
   },
   {
     "ContainingType": "NexoApi.Features.Produccion.OrdenesProduccionController",
+    "Method": "SiguienteCodigoOP",
+    "RelativePath": "api/produccion/ordenes/siguiente-codigo",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "prefijo",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.String",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.OrdenesProduccionController",
+    "Method": "SiguienteNumeroLote",
+    "RelativePath": "api/produccion/ordenes/siguiente-lote",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "prefijo",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.String",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Produccion.OrdenesProduccionController",
     "Method": "ListarTiposProduccion",
     "RelativePath": "api/produccion/ordenes/tipos-produccion",
     "HttpMethod": "GET",

@@ -74,19 +74,29 @@ public class TareaSincronizarProveedores
                 var nombre2   = esJuridica ? null : p.SegundoNombre;
                 var apellido1 = esJuridica ? null : p.PrimerApellido;
                 var apellido2 = esJuridica ? null : p.SegundoApellido;
+
+                // Aplicar defaults para campos de contacto opcionales
+                var telProv   = string.IsNullOrWhiteSpace(p.Telefono)  ? "3000000000"       : p.Telefono;
+                var emailProv = string.IsNullOrWhiteSpace(p.Email)     ? "default@gmail.com" : p.Email;
+                var dirProv   = string.IsNullOrWhiteSpace(p.Direccion) ? "default"           : p.Direccion;
                 // Teléfono y dirección van a la columna correcta según tipo de persona
-                var telNatural  = esJuridica ? null : p.Telefono;
-                var telEmpresa  = esJuridica ? p.Telefono : null;
-                var dirNatural  = esJuridica ? null : p.Direccion;
-                var dirEmpresa  = esJuridica ? p.Direccion : null;
+                var telNatural  = esJuridica ? null : telProv;
+                var telEmpresa  = esJuridica ? telProv : null;
+                var dirNatural  = esJuridica ? null : dirProv;
+                var dirEmpresa  = esJuridica ? dirProv : null;
+
+                // Si NEXO no tiene el dígito de verificación, calcularlo desde el NIT.
+                var digitoVerificacion = p.DigitoVerificacion
+                    ?? ColombiaUtils.CalcularDigitoVerificacion(p.NIT);
+                if (digitoVerificacion.HasValue && !p.DigitoVerificacion.HasValue)
+                    _logger.LogDebug("Proveedor NIT {NIT}: digito de verificacion calculado automaticamente = {Digito}", p.NIT, digitoVerificacion.Value);
 
                 // Campos realmente obligatorios en Visions para insertar un proveedor.
                 var camposFaltantes = new List<string>();
                 if (esJuridica)  { if (string.IsNullOrWhiteSpace(empresa))   camposFaltantes.Add("Empresa/RazonSocial"); }
                 else             { if (string.IsNullOrWhiteSpace(nombre1))   camposFaltantes.Add("PrimerNombre");
                                    if (string.IsNullOrWhiteSpace(apellido1)) camposFaltantes.Add("PrimerApellido"); }
-                if (p.DigitoVerificacion is null)              camposFaltantes.Add("DigitoVerificacion");
-                if (string.IsNullOrWhiteSpace(p.Email))        camposFaltantes.Add("Email");
+                if (digitoVerificacion is null)                camposFaltantes.Add("DigitoVerificacion");
                 if (string.IsNullOrWhiteSpace(p.Ciudad))       camposFaltantes.Add("Ciudad");
                 if (string.IsNullOrWhiteSpace(p.Departamento)) camposFaltantes.Add("Departamento");
                 if (camposFaltantes.Count > 0)
@@ -140,24 +150,24 @@ public class TareaSincronizarProveedores
                              'COLOMBIA', 170, 1)",
                     new
                     {
-                        NIT                = p.NIT,
-                        Nombre1            = nombre1,
-                        Nombre2            = nombre2,
-                        Apellido1          = apellido1,
-                        Apellido2          = apellido2,
-                        Empresa            = empresa,
-                        Tipotercero        = tipotercero,
-                        Tipoid             = tipoid,
-                        DigitoVerificacion = p.DigitoVerificacion?.ToString(),
-                        TelNatural         = telNatural,
-                        TelEmpresa         = telEmpresa,
-                        Email              = p.Email,
-                        DirNatural         = dirNatural,
-                        DirEmpresa         = dirEmpresa,
-                        Ciudad             = p.Ciudad,
-                        CiudadCodigo       = p.CodigoMuni,
-                        Departamento       = p.Departamento,
-                        DeptCodigo         = p.CodigoDept
+                        NIT                = T(p.NIT, 25),
+                        Nombre1            = T(nombre1, 255),
+                        Nombre2            = T(nombre2, 50),
+                        Apellido1          = T(apellido1, 50),
+                        Apellido2          = T(apellido2, 50),
+                        Empresa            = T(empresa, 50),
+                        Tipotercero        = T(tipotercero, 10),
+                        Tipoid             = T(tipoid, 20),
+                        DigitoVerificacion = digitoVerificacion?.ToString(),
+                        TelNatural         = T(telNatural, 50),
+                        TelEmpresa         = T(telEmpresa, 50),
+                        Email              = T(emailProv, 50),
+                        DirNatural         = T(dirNatural, 200),
+                        DirEmpresa         = T(dirEmpresa, 50),
+                        Ciudad             = T(p.Ciudad, 50),
+                        CiudadCodigo       = T(p.CodigoMuni, 10),
+                        Departamento       = T(p.Departamento, 50),
+                        DeptCodigo         = T(p.CodigoDept, 10)
                     });
 
                 _logger.LogDebug("Proveedor NIT {NIT} sincronizado a USUARIOS en Visions", p.NIT);
@@ -208,12 +218,15 @@ public class TareaSincronizarProveedores
                 var esJuridica = (u.TIPOTERCERO ?? "").Contains("JURIDICA", StringComparison.OrdinalIgnoreCase)
                     || !string.IsNullOrWhiteSpace(u.EMPRESA);
 
+                var telProvV = u.TELEFONOEMPRESA ?? u.TELEFONOVIVE;
+                var dirProvV = u.DIRECCIONEMPRESA ?? u.DIRECCIONVIVE;
+
                 await _apiClient.SyncProveedorDesdeVisionsAsync(new SyncProveedorDesdeVisionsRequest(
                     NIT:               u.NIT,
                     RazonSocial:       razonSocial,
-                    Telefono:          u.TELEFONOEMPRESA ?? u.TELEFONOVIVE,
-                    Email:             u.EMAIL,
-                    Direccion:         u.DIRECCIONEMPRESA ?? u.DIRECCIONVIVE,
+                    Telefono:          string.IsNullOrWhiteSpace(telProvV) ? "3000000000"       : telProvV,
+                    Email:             string.IsNullOrWhiteSpace(u.EMAIL)  ? "default@gmail.com" : u.EMAIL,
+                    Direccion:         string.IsNullOrWhiteSpace(dirProvV) ? "default"           : dirProvV,
                     TipoPersona:       esJuridica ? "Juridica" : "Natural",
                     PrimerNombre:      esJuridica ? null : u.NOMBRE1,
                     SegundoNombre:     esJuridica ? null : u.NOMBRE2,
@@ -237,6 +250,8 @@ public class TareaSincronizarProveedores
 
         _logger.LogInformation("Proveedores Visions → NEXO completado");
     }
+
+    private static string? T(string? s, int max) => s?.Length > max ? s[..max] : s;
 
     private record ProveedorVisions(
         string NIT, string? TIPOTERCERO,

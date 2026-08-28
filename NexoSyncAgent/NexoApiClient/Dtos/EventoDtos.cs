@@ -134,7 +134,8 @@ public record SyncArticuloDesdeVisionsRequest(
     decimal? UCredito = null,
     string? TipoProductoCodigo = null,
     decimal? ExistenciasActuales = null,
-    decimal? ExistenciasMinimas = null
+    decimal? ExistenciasMinimas = null,
+    decimal? Fracciones = null
 );
 
 // ──────────── Clientes para sync NEXO → Visions ────────────

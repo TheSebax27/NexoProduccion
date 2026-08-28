@@ -31,6 +31,7 @@ builder.Services.AddHttpClient<INexoApiClient, NexoApiClient>((sp, client) =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
     client.BaseAddress = new Uri(config["NexoApi:BaseUrl"]!);
+    client.Timeout = TimeSpan.FromMinutes(5);
 });
 
 // Cliente sin-auth para proxy de imágenes (los endpoints de imagen son AllowAnonymous en la API)

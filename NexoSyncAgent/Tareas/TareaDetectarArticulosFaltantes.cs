@@ -50,7 +50,8 @@ public class TareaDetectarArticulosFaltantes
                 t.UBICA4                                        AS IvaDescripcion2,
                 tp.Codigo                                       AS TipoProductoCodigo,
                 t.EXISTENCIAS                                   AS ExistenciasActuales,
-                t.EXISTENCIASMINIMAS                            AS ExistenciasMinimas
+                t.EXISTENCIASMINIMAS                            AS ExistenciasMinimas,
+                NULLIF(t.FRACCIONES, 0)                         AS Fracciones
             FROM dbo.TARJETA t
             LEFT JOIN dbo.TIPOPRODUCTO_TIPOS tp ON tp.TipoID = t.VV3
             WHERE t.CENTROCOSTO = @CC
@@ -95,7 +96,8 @@ public class TareaDetectarArticulosFaltantes
                     UCredito:             a.UCredito,
                     TipoProductoCodigo:   a.TipoProductoCodigo,
                     ExistenciasActuales:  a.ExistenciasActuales,
-                    ExistenciasMinimas:   a.ExistenciasMinimas), ct);
+                    ExistenciasMinimas:   a.ExistenciasMinimas,
+                    Fracciones:           a.Fracciones), ct);
 
                 // Marcar en NEXO_TarjetasCambios como procesado para no repetir.
                 await connection.ExecuteAsync(@"
@@ -124,5 +126,6 @@ public class TareaDetectarArticulosFaltantes
         decimal? Iva2, string? IvaDescripcion2,
         string? TipoProductoCodigo = null,
         decimal? ExistenciasActuales = null,
-        decimal? ExistenciasMinimas = null);
+        decimal? ExistenciasMinimas = null,
+        decimal? Fracciones = null);
 }

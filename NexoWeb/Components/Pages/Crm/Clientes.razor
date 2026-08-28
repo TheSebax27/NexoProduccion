@@ -9,9 +9,15 @@
 
 <PageTitle>Clientes - NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
-    <MudText Typo="Typo.h5">Clientes</MudText>
-    <BotonFavorito Href="/crm/clientes" Etiqueta="Clientes" />
+<div class="d-flex align-center justify-space-between mb-4">
+    <div class="d-flex align-center" style="gap:0.25rem">
+        <MudText Typo="Typo.h5">Clientes</MudText>
+        <BotonFavorito Href="/crm/clientes" Etiqueta="Clientes" />
+    </div>
+    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Map"
+               OnClick="AbrirMapaAsync" Size="Size.Small">
+        Ver mapa
+    </MudButton>
 </div>
 <InfoAyuda Texto="Registra los clientes de la empresa, con seguimiento comercial: de dónde vinieron, qué tipo de cliente son y quién los atiende. Usa 'Gestionar' para ver contactos, bitácora, historial completo y documentos de cada uno." />
 
@@ -221,6 +227,12 @@ else
     private async Task OnFiltroFuenteCambiadoAsync(string? v)  { _filtroFuenteContacto = v; _pagina = 1; await CargarAsync(); }
     private async Task OnFiltroBusquedaCambiadoAsync(string? v){ _filtroBusqueda       = v; _pagina = 1; await CargarAsync(); }
     private async Task IrPaginaAsync(int p)                    { _pagina = p; await CargarAsync(); }
+
+    private async Task AbrirMapaAsync()
+    {
+        await DialogService.ShowAsync<MapaClientesDialog>("Mapa de Clientes",
+            new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true });
+    }
 
     private async Task AbrirCreacionAsync()
     {

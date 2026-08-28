@@ -32,7 +32,7 @@
                    Variant="Variant.Outlined" Style="max-width:160px" />
     <MudSelect T="string?" Value="_filtroCategoria" ValueChanged="OnCategoriaChanged"
                Label="Categoría" Clearable="true" Variant="Variant.Outlined" Style="max-width:220px">
-        @foreach (var cat in _categorias)
+        @foreach (var cat in CategoriasParaFiltro)
         {
             <MudSelectItem T="string?" Value="@cat">@cat</MudSelectItem>
         }
@@ -176,12 +176,17 @@ else
     private IEnumerable<GastoItem> _gastosPorFecha =>
         _gastos.OrderByDescending(g => g.Fecha);
 
-    private static readonly string[] _categorias =
+    private static readonly string[] _categoriasDefecto =
     {
         "Eventos", "Viáticos y Transporte", "Publicidad y Marketing",
         "Servicios y Suscripciones", "Mantenimiento", "Oficina y Suministros",
         "Nómina y RRHH", "Impuestos y Legales", "Tecnología", "Otro"
     };
+
+    private IEnumerable<string> CategoriasParaFiltro =>
+        _categoriasDefecto.Concat(_gastos.Select(g => g.Categoria))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(c => c);
 
     private static string CatIcon(string cat) => cat switch
     {
@@ -231,7 +236,12 @@ else
 
     private async Task AbrirCreacionAsync()
     {
-        var p = new DialogParameters<GastoDialog> { { x => x.CentrosCosto, _centrosCosto } };
+        var catExistentes = _gastos.Select(g => g.Categoria).Distinct().ToArray();
+        var p = new DialogParameters<GastoDialog>
+        {
+            { x => x.CentrosCosto, _centrosCosto },
+            { x => x.CategoriasExistentes, catExistentes }
+        };
         var d = await DialogService.ShowAsync<GastoDialog>("Registrar gasto", p);
         var r = await d.Result;
         if (r is null || r.Canceled) return;
@@ -246,10 +256,12 @@ else
 
     private async Task AbrirEdicionAsync(GastoItem gasto)
     {
+        var catExistentes = _gastos.Select(g => g.Categoria).Distinct().ToArray();
         var p = new DialogParameters<GastoDialog>
         {
             { x => x.Gasto, gasto },
-            { x => x.CentrosCosto, _centrosCosto }
+            { x => x.CentrosCosto, _centrosCosto },
+            { x => x.CategoriasExistentes, catExistentes }
         };
         var d = await DialogService.ShowAsync<GastoDialog>("Editar gasto", p);
         var r = await d.Result;

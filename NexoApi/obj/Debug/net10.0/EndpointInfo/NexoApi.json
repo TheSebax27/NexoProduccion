@@ -10040,6 +10040,84 @@
         }
       }
     },
+    "/api/produccion/ordenes/siguiente-codigo": {
+      "get": {
+        "tags": [
+          "OrdenesProduccion"
+        ],
+        "parameters": [
+          {
+            "name": "prefijo",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "OP"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/produccion/ordenes/siguiente-lote": {
+      "get": {
+        "tags": [
+          "OrdenesProduccion"
+        ],
+        "parameters": [
+          {
+            "name": "prefijo",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "LOTE"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/produccion/ordenes/{id}": {
       "get": {
         "tags": [
@@ -19938,6 +20016,11 @@
             "nullable": true
           },
           "existenciasMinimas": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "fracciones": {
             "type": "number",
             "format": "double",
             "nullable": true

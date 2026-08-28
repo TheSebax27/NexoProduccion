@@ -4,6 +4,7 @@
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject NavigationManager Navegacion
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>@(EsEdicion ? "Editar Orden de Produccion" : "Nueva Orden de Produccion") - NEXO</PageTitle>
@@ -55,7 +56,7 @@ else
             <MudItem xs="12" sm="6">
                 <MudTextField @bind-Value="_codigoOp" Label="Codigo de la OP" Required="true"
                               Disabled="@EsEdicion" Variant="Variant.Outlined"
-                              HelperText="@(EsEdicion ? "No se puede cambiar una vez creada." : "Este codigo es unico e identificara la orden.")" />
+                              HelperText="@(EsEdicion ? "No se puede cambiar una vez creada." : (Preferencias.AutoCodigoOP ? "Generado automáticamente — puedes editarlo si necesitas." : "Este codigo es unico e identificara la orden."))" />
             </MudItem>
 
             @if (!EsEdicion && mtoItem is not null)
@@ -441,6 +442,7 @@ else
 
 @code {
     [Parameter] public int? OrdenProduccionId { get; set; }
+    [SupplyParameterFromQuery] public int? ArticuloId { get; set; }
 
     private bool EsEdicion => OrdenProduccionId.HasValue;
 
@@ -531,6 +533,23 @@ else
         _todasLasBodegas         = await tareaBodegas ?? new();
         _bodegasMateriaPrima     = _todasLasBodegas.Where(b => b.TipoBodega == "MATERIA_PRIMA").ToList();
         _bodegasProductoTerminado = _todasLasBodegas.Where(b => b.TipoBodega == "PRODUCTO_TERMINADO").ToList();
+
+        if (!EsEdicion && Preferencias.AutoCodigoOP)
+        {
+            try
+            {
+                _codigoOp = await ApiClient.GetAsync<string>(
+                    $"api/produccion/ordenes/siguiente-codigo?prefijo={Uri.EscapeDataString(Preferencias.PrefijoOP)}") ?? "";
+            }
+            catch { /* mejor esfuerzo */ }
+        }
+
+        if (!EsEdicion && ArticuloId.HasValue)
+        {
+            _productoSeleccionado = _productosTerminados.FirstOrDefault(a => a.ArticuloID == ArticuloId.Value);
+            if (_productoSeleccionado is not null)
+                await OnProductoTerminadoCambiadoAsync(_productoSeleccionado.ArticuloID);
+        }
 
         if (EsEdicion)
         {

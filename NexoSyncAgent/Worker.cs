@@ -72,6 +72,17 @@ public class Worker : BackgroundService
                             "Hay una actualizacion del agente disponible: v{Disponible} (instalada: v{Actual}). Descarga el instalador desde NEXO Web > Integracion Visions.",
                             latido.VersionDisponible, _version);
                 }
+                catch (ApiKeyInvalidaException exKey)
+                {
+                    // No es un error de red: reintentar con backoff no ayuda.
+                    // El administrador debe corregir la ApiKey en appsettings.json.
+                    _logger.LogError(
+                        "⛔ API KEY INVALIDA — {Mensaje}", exKey.Message);
+                    // Esperar el intervalo normal (sin backoff) para que el log sea visible
+                    // pero no inunde el Event Viewer. El error persiste hasta que se corrija la clave.
+                    await Task.Delay(_intervalo, stoppingToken);
+                    continue;
+                }
                 catch (Exception exLatido) when (EsErrorDeConectividad(exLatido))
                 {
                     _backoffActual = CalcularBackoff(_backoffActual, _intervalo);

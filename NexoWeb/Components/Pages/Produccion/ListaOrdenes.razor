@@ -182,7 +182,7 @@ else
                                 {
                                     <MudTooltip Text="Cerrar y registrar producción final">
                                         <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small"
-                                                       Color="Color.Success" OnClick="@(() => AbrirCierreAsync(o.OrdenProduccionID))" />
+                                                       Color="Color.Success" OnClick="@(() => AbrirCierreAsync(o.OrdenProduccionID, o.CodigoOP))" />
                                     </MudTooltip>
                                 }
                                 @if (o.Estado == "Finalizada")
@@ -313,9 +313,10 @@ else
         await dlg.Result;
     }
 
-    private async Task AbrirCierreAsync(int id)
+    private async Task AbrirCierreAsync(int id, string codigoOP)
     {
-        var dlg = await DialogService.ShowAsync<CerrarOrdenDialog>("Cerrar Orden de Producción");
+        var p = new DialogParameters<CerrarOrdenDialog> { { x => x.CodigoOP, codigoOP } };
+        var dlg = await DialogService.ShowAsync<CerrarOrdenDialog>("Cerrar Orden de Producción", p);
         var resultado = await dlg.Result;
         if (resultado is null || resultado.Canceled) return;
         var request = (CerrarOrdenProduccionRequest)resultado.Data!;

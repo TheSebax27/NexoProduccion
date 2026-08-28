@@ -259,6 +259,7 @@ else
 
 @code {
     [Parameter] public int? RecetaBaseId { get; set; }
+    [SupplyParameterFromQuery] public int? ArticuloId { get; set; }
 
     private bool EsNuevaVersion => RecetaBaseId.HasValue;
 
@@ -347,6 +348,10 @@ else
         else
         {
             AgregarLinea();
+            if (ArticuloId.HasValue)
+            {
+                _productoTerminado = await ApiClient.GetAsync<ArticuloItem>($"api/catalogo/articulos/{ArticuloId.Value}");
+            }
         }
 
         _cargandoCatalogos = false;
