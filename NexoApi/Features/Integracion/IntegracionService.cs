@@ -208,12 +208,16 @@ public class IntegracionService : IIntegracionService
         var parametros = new DynamicParameters();
         parametros.Add("EventoEntranteID", eventoEntranteId);
 
+        // NOTA DEVOLUCION = cliente devuelve mercancía → el stock debe SUMARSE, no restarse.
+        // Usa un SP dedicado que invierte la dirección del movimiento de inventario.
+        var esDevolucionCliente = r.TipDoc == "NOTA DEVOLUCION";
+        var spNombre = esDevolucionCliente
+            ? "Integracion.sp_ProcesarDevolucionVisions"
+            : "Integracion.sp_ProcesarEventoEntrante";
+
         try
         {
-            await connection.ExecuteAsync(
-                "Integracion.sp_ProcesarEventoEntrante",
-                parametros,
-                commandType: CommandType.StoredProcedure);
+            await connection.ExecuteAsync(spNombre, parametros, commandType: CommandType.StoredProcedure);
         }
         catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 54000)
         {
@@ -333,10 +337,7 @@ public class IntegracionService : IIntegracionService
             }
 
             // Reintentar ahora que el articulo existe en Catalogo.Tarjetas.
-            await connection.ExecuteAsync(
-                "Integracion.sp_ProcesarEventoEntrante",
-                parametros,
-                commandType: CommandType.StoredProcedure);
+            await connection.ExecuteAsync(spNombre, parametros, commandType: CommandType.StoredProcedure);
         }
 
         // Si la venta vino con NIT de cliente, crear o completar el registro en CRM.
@@ -1738,7 +1739,7 @@ public class IntegracionService : IIntegracionService
                 {
                     await connection.ExecuteAsync(
                         @"INSERT INTO Facturacion.Pagos (FacturaID, Monto, FechaPago, MetodoPago, Notas, UsuarioID)
-                          VALUES (@FacturaID, @Monto, GETDATE(), 'VISIONS', 'Pago registrado automáticamente desde Visions (' + @NroDoc + ')', 0)",
+                          VALUES (@FacturaID, @Monto, GETDATE(), 'VISIONS', 'Pago registrado automáticamente desde Visions (' + @NroDoc + ')', NULL)",
                         new { FacturaID = facturaId, Monto = totalFactura, request.NroDoc });
                 }
             }

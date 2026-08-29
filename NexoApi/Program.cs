@@ -108,6 +108,7 @@ builder.Services.AddScoped<ICalendarioService, CalendarioService>();
 builder.Services.AddScoped<ILogisticaService, LogisticaService>();
 builder.Services.AddScoped<IProyectosService, ProyectosService>();
 builder.Services.AddScoped<IFacturacionService, FacturacionService>();
+builder.Services.AddScoped<IDevolucionService, DevolucionService>();
 builder.Services.AddScoped<INotificacionesService, NotificacionesService>();
 builder.Services.AddScoped<IBusquedaService, BusquedaService>();
 builder.Services.AddScoped<IPreferenciasService, PreferenciasService>();

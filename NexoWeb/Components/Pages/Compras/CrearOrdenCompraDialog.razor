@@ -1,14 +1,51 @@
-﻿@inject INexoApiClient ApiClient
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
 @using NexoWeb.Common.Dtos
+@using NexoWeb.Components.Pages.Catalogo
 
 <MudDialog>
     <DialogContent>
-        <MudTextField @bind-Value="_codigo" Label="Codigo de la orden" Class="mb-3" />
+        <MudTextField @bind-Value="_codigo" Label="Código de la orden" Class="mb-3" />
 
-        <MudSelect T="int" @bind-Value="_proveedorId" Label="Proveedor" Class="mb-3">
-            @foreach (var proveedor in _proveedores)
+        @* ── Proveedor: búsqueda por NIT ── *@
+        <MudTextField Value="@_nitBusqueda"
+                      ValueChanged="@((string v) => { _nitBusqueda = v; OnNitBusquedaCambiado(); })"
+                      Label="NIT del proveedor"
+                      Variant="Variant.Outlined"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      DebounceInterval="350"
+                      OnDebounceIntervalElapsed="OnNitBusquedaCambiado"
+                      Immediate="true"
+                      Class="mb-2" />
+
+        @if (_proveedorEncontrado is not null)
+        {
+            <MudAlert Severity="Severity.Success" Dense="true" Class="mb-3">
+                <strong>@_proveedorEncontrado.RazonSocial</strong>
+            </MudAlert>
+        }
+        else if (_nitNoEncontrado)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-1">
+                No se encontró proveedor con NIT <strong>@_nitBusqueda</strong>.
+            </MudAlert>
+            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.PersonAdd"
+                       OnClick="AbrirCreacionProveedorAsync"
+                       Class="mb-3">
+                Crear proveedor
+            </MudButton>
+        }
+        else
+        {
+            <div class="mb-3"></div>
+        }
+
+        <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de costo (opcional)" Clearable="true" Class="mb-3">
+            @foreach (var cc in _centrosCosto)
             {
-                <MudSelectItem T="int" Value="@proveedor.ProveedorID">@proveedor.RazonSocial</MudSelectItem>
+                <MudSelectItem T="int?" Value="@((int?)cc.CentroCostoID)">@cc.Nombre</MudSelectItem>
             }
         </MudSelect>
 
@@ -58,7 +95,7 @@
     <DialogActions>
         <MudButton OnClick="Cancelar">Cancelar</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Confirmar" Disabled="!FormularioValido">
-            Crear Orden
+            Crear Pedido
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -68,9 +105,13 @@
     [Parameter] public List<ProveedorItem> _proveedores { get; set; } = new();
     [Parameter] public List<BodegaItem> _bodegas { get; set; } = new();
     [Parameter] public List<ArticuloItem> _articulos { get; set; } = new();
+    [Parameter] public List<CentroCostoItem> _centrosCosto { get; set; } = new();
 
     private string _codigo = "";
-    private int _proveedorId;
+    private string _nitBusqueda = "";
+    private ProveedorItem? _proveedorEncontrado;
+    private bool _nitNoEncontrado;
+    private int? _centroCostoId;
     private int _bodegaDestinoId;
     private List<LineaFormulario> _lineas = new();
 
@@ -82,11 +123,9 @@
     }
 
     private bool FormularioValido =>
-        !string.IsNullOrWhiteSpace(_codigo) && _proveedorId > 0 && _bodegaDestinoId > 0 &&
+        !string.IsNullOrWhiteSpace(_codigo) && _proveedorEncontrado is not null && _bodegaDestinoId > 0 &&
         _lineas.Count > 0 && _lineas.All(l => l.ArticuloID > 0 && l.Cantidad > 0 && l.CostoUnitario > 0);
 
-    // Llegada desde Consulta de Stock (chip "Requiere pedido"): precarga este
-    // articulo en la primera linea en vez de arrancar vacio.
     [Parameter] public int? ArticuloPreseleccionadoID { get; set; }
 
     protected override void OnInitialized()
@@ -94,6 +133,35 @@
         AgregarLinea();
         if (ArticuloPreseleccionadoID.HasValue)
             _lineas[0].ArticuloID = ArticuloPreseleccionadoID.Value;
+    }
+
+    private void OnNitBusquedaCambiado()
+    {
+        if (string.IsNullOrWhiteSpace(_nitBusqueda))
+        {
+            _proveedorEncontrado = null;
+            _nitNoEncontrado = false;
+            return;
+        }
+        var nit = _nitBusqueda.Trim();
+        _proveedorEncontrado = _proveedores.FirstOrDefault(p =>
+            p.NIT.Equals(nit, StringComparison.OrdinalIgnoreCase));
+        _nitNoEncontrado = _proveedorEncontrado is null;
+    }
+
+    private async Task AbrirCreacionProveedorAsync()
+    {
+        var parametros = new DialogParameters<ProveedorDialog>
+        {
+            { x => x.Proveedor, (ProveedorItem?)null },
+            { x => x.NitInicial, _nitBusqueda.Trim() }
+        };
+        var dialogo = await DialogService.ShowAsync<ProveedorDialog>("Nuevo Proveedor", parametros);
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled) return;
+
+        _proveedores = await ApiClient.GetAsync<List<ProveedorItem>>("api/catalogo/proveedores") ?? _proveedores;
+        OnNitBusquedaCambiado();
     }
 
     private void AgregarLinea() => _lineas.Add(new LineaFormulario());
@@ -114,8 +182,9 @@
     private void Confirmar()
     {
         var request = new CrearOrdenCompraRequest(
-            _codigo, _proveedorId, _bodegaDestinoId,
-            _lineas.Select(l => new DetalleOrdenCompraRequest(l.ArticuloID, l.Cantidad, l.CostoUnitario)).ToList());
+            _codigo, _proveedorEncontrado!.ProveedorID, _bodegaDestinoId,
+            _lineas.Select(l => new DetalleOrdenCompraRequest(l.ArticuloID, l.Cantidad, l.CostoUnitario)).ToList(),
+            _centroCostoId);
 
         MudDialog.Close(DialogResult.Ok(request));
     }

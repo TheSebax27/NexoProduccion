@@ -50,4 +50,10 @@ public class OrdenesCompraController : ControllerBase
         var (loteId, nuevoCostoPromedio) = await _service.RecibirLineaAsync(ordenCompraDetalleId, request, UsuarioActualId);
         return Ok(new { mensaje = "Mercancia recibida.", loteId, nuevoCostoPromedio });
     }
+
+    [HttpGet("comparacion-precios")]
+    public async Task<ActionResult<IEnumerable<ComparacionPrecioRow>>> ComparacionPrecios(
+        [FromQuery] int? articuloId,
+        [FromQuery] int? proveedorId)
+        => Ok(await _service.ComparacionPreciosAsync(articuloId, proveedorId));
 }

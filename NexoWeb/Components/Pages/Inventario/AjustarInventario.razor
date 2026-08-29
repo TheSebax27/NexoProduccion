@@ -25,16 +25,9 @@
     @* ── Artículo ─────────────────────────────────────────────────── *@
     <div class="inv-form-section">
         <label class="inv-form-label">Artículo <span class="inv-req">*</span></label>
-        <MudSelect T="int?" @bind-Value="_articuloId" @bind-Value:after="OnArticuloCambiado"
-                   Variant="Variant.Outlined" Placeholder="Selecciona el artículo"
-                   Class="inv-form-field">
-            @foreach (var articulo in _articulos)
-            {
-                <MudSelectItem T="int?" Value="@((int?)articulo.ArticuloID)">
-                    @articulo.SKU — @articulo.Nombre (@articulo.TipoArticulo)
-                </MudSelectItem>
-            }
-        </MudSelect>
+        <ArticuloAutocomplete Value="_articuloSeleccionado"
+                              ValueChanged="OnArticuloCambiado"
+                              Label="Artículo" Required="true" />
     </div>
 
     @* ── Bodega ───────────────────────────────────────────────────── *@
@@ -133,10 +126,9 @@
 </div>
 
 @code {
-    private List<ArticuloItem> _articulos = new();
-    private List<BodegaItem>   _bodegas   = new();
+    private ArticuloItem? _articuloSeleccionado;
+    private List<BodegaItem> _bodegas = new();
 
-    private int?    _articuloId;
     private int?    _bodegaId;
     private decimal _cantidad;
     private decimal _costoUnitario;
@@ -146,24 +138,20 @@
     private decimal _cajas;
     private decimal _unidades;
 
-    private ArticuloItem? ArticuloSeleccionado =>
-        _articuloId.HasValue ? _articulos.FirstOrDefault(a => a.ArticuloID == _articuloId.Value) : null;
+    private ArticuloItem? ArticuloSeleccionado => _articuloSeleccionado;
 
     private bool FormularioValido =>
-        _articuloId.HasValue && _bodegaId.HasValue && _cantidad > 0 &&
+        _articuloSeleccionado is not null && _bodegaId.HasValue && _cantidad > 0 &&
         _costoUnitario >= 0 && _motivo.Trim().Length >= 5;
 
     protected override async Task OnInitializedAsync()
     {
-        var t1 = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
-        var t2 = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
-        await Task.WhenAll(t1, t2);
-        _articulos = await t1 ?? new();
-        _bodegas   = await t2 ?? new();
+        _bodegas = await ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas") ?? new();
     }
 
-    private void OnArticuloCambiado()
+    private void OnArticuloCambiado(ArticuloItem? art)
     {
+        _articuloSeleccionado = art;
         _modoManual = false;
         _cajas = 0; _unidades = 0; _cantidad = 0;
     }
@@ -214,7 +202,7 @@
         try
         {
             var request = new AjustarInventarioRequest(
-                _articuloId!.Value, _bodegaId!.Value, _cantidad, _costoUnitario, _motivo.Trim());
+                _articuloSeleccionado!.ArticuloID, _bodegaId!.Value, _cantidad, _costoUnitario, _motivo.Trim());
             var resultado = await ApiClient.PostAsync<AjustarInventarioRequest, AjustarInventarioResponse>(
                 "api/inventario/ajustes", request);
 

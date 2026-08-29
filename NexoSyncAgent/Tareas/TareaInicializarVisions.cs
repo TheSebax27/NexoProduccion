@@ -196,8 +196,13 @@ public class TareaInicializarVisions
                     INSERT INTO dbo.TIPOPRODUCTO_TIPOS VALUES (1, 'PT', 'Producto Terminado');
                     INSERT INTO dbo.TIPOPRODUCTO_TIPOS VALUES (2, 'MP', 'Materia Prima');
                     INSERT INTO dbo.TIPOPRODUCTO_TIPOS VALUES (3, 'IN', 'Insumo');
-                    INSERT INTO dbo.TIPOPRODUCTO_TIPOS VALUES (4, 'SV', 'Servicio');
+                    INSERT INTO dbo.TIPOPRODUCTO_TIPOS VALUES (4, 'SER', 'Servicio');
                 END");
+
+            // Migracion: corregir codigo SV->SER en bases ya existentes.
+            await connection.ExecuteAsync(@"
+                IF EXISTS (SELECT 1 FROM dbo.TIPOPRODUCTO_TIPOS WHERE Codigo = 'SV')
+                    UPDATE dbo.TIPOPRODUCTO_TIPOS SET Codigo = 'SER' WHERE Codigo = 'SV'");
 
             // Staging de facturas NEXO pendientes de ser procesadas en Visions.
             await connection.ExecuteAsync(@"
@@ -262,6 +267,72 @@ public class TareaInicializarVisions
                         TipDocVisions   = @TipDocVisions,
                         FechaConfirmada = GETDATE()
                     WHERE FacturaID = @FacturaID;
+                END");
+
+            // Staging de pedidos (órdenes de compra) NEXO → Visions Entradas.
+            await connection.ExecuteAsync(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'NEXO_Pedidos')
+                CREATE TABLE dbo.NEXO_Pedidos (
+                    PedidoID        INT           NOT NULL CONSTRAINT PK_NEXO_Pedidos PRIMARY KEY,
+                    Codigo          NVARCHAR(50)  NOT NULL DEFAULT '',
+                    NombreProveedor NVARCHAR(200) NOT NULL DEFAULT '',
+                    NITProveedor    NVARCHAR(30)  NOT NULL DEFAULT '',
+                    Fecha           DATE          NOT NULL,
+                    TotalNexo       DECIMAL(18,4) NOT NULL DEFAULT 0,
+                    TipoMovimiento  NVARCHAR(20)  NOT NULL DEFAULT 'COMPRA',
+                    Estado          NVARCHAR(20)  NOT NULL DEFAULT 'PENDIENTE',
+                    FechaEnvio      DATETIME      NOT NULL DEFAULT GETDATE(),
+                    NroDocVisions   NVARCHAR(50)  NULL,
+                    TipDocVisions   NVARCHAR(20)  NULL,
+                    FechaConfirmada DATETIME      NULL
+                );");
+
+            await connection.ExecuteAsync(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'NEXO_PedidosLineas')
+                CREATE TABLE dbo.NEXO_PedidosLineas (
+                    PedidoID       INT           NOT NULL,
+                    Orden          INT           NOT NULL,
+                    Referencia     NVARCHAR(30)  NOT NULL,
+                    Detalle        NVARCHAR(255) NULL,
+                    Cantidad       DECIMAL(18,4) NOT NULL DEFAULT 0,
+                    PrecioUnitario DECIMAL(18,4) NOT NULL DEFAULT 0,
+                    Total          DECIMAL(18,4) NOT NULL DEFAULT 0,
+                    CONSTRAINT PK_NEXO_PedidosLineas PRIMARY KEY (PedidoID, Orden)
+                );");
+
+            // SP: lista pedidos PENDIENTE con dos resultsets (cabeceras + líneas).
+            await connection.ExecuteAsync(@"
+                CREATE OR ALTER PROCEDURE dbo.NEXO_SP_PedidosPendientes
+                AS
+                BEGIN
+                    SET NOCOUNT ON;
+                    SELECT PedidoID, Codigo, NombreProveedor, NITProveedor, Fecha, TotalNexo, TipoMovimiento, FechaEnvio
+                    FROM dbo.NEXO_Pedidos
+                    WHERE Estado = 'PENDIENTE'
+                    ORDER BY Fecha, PedidoID;
+
+                    SELECT l.PedidoID, l.Orden, l.Referencia, l.Detalle, l.Cantidad, l.PrecioUnitario, l.Total
+                    FROM dbo.NEXO_PedidosLineas l
+                    INNER JOIN dbo.NEXO_Pedidos p ON p.PedidoID = l.PedidoID
+                    WHERE p.Estado = 'PENDIENTE'
+                    ORDER BY l.PedidoID, l.Orden;
+                END");
+
+            // SP: Visions llama este SP al confirmar un pedido con su número de Entrada asignado.
+            await connection.ExecuteAsync(@"
+                CREATE OR ALTER PROCEDURE dbo.NEXO_SP_ConfirmarPedido
+                    @PedidoID      INT,
+                    @NroDocVisions NVARCHAR(50),
+                    @TipDocVisions NVARCHAR(20)
+                AS
+                BEGIN
+                    SET NOCOUNT ON;
+                    UPDATE dbo.NEXO_Pedidos
+                    SET Estado          = 'PROCESADA',
+                        NroDocVisions   = @NroDocVisions,
+                        TipDocVisions   = @TipDocVisions,
+                        FechaConfirmada = GETDATE()
+                    WHERE PedidoID = @PedidoID;
                 END");
 
             // Parámetros requeridos en Visions para la integración NEXO.

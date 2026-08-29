@@ -8500,6 +8500,109 @@
         }
       }
     },
+    "/api/integracion/pedidos-para-visions": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Compras.Dtos.PedidoParaVisionsDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Compras.Dtos.PedidoParaVisionsDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Compras.Dtos.PedidoParaVisionsDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integracion/pedidos/{id}/marcar-exportado-visions": {
+      "post": {
+        "tags": [
+          "Integracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/pedidos/{id}/numero-visions": {
+      "put": {
+        "tags": [
+          "Integracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Compras.Dtos.ActualizarNumeroPedidoVisionsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Compras.Dtos.ActualizarNumeroPedidoVisionsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Compras.Dtos.ActualizarNumeroPedidoVisionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/inventario/stock": {
       "get": {
         "tags": [
@@ -9142,6 +9245,90 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/produccion/maquinaria/{id}/foto": {
+      "get": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Produccion.Dtos.ActualizarFotoMaquinariaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Produccion.Dtos.ActualizarFotoMaquinariaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Produccion.Dtos.ActualizarFotoMaquinariaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Maquinaria"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -15888,6 +16075,20 @@
         },
         "additionalProperties": false
       },
+      "NexoApi.Features.Compras.Dtos.ActualizarNumeroPedidoVisionsRequest": {
+        "type": "object",
+        "properties": {
+          "tipDoc": {
+            "type": "string",
+            "nullable": true
+          },
+          "nroDoc": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "NexoApi.Features.Compras.Dtos.CrearOrdenCompraRequest": {
         "type": "object",
         "properties": {
@@ -15909,6 +16110,11 @@
               "$ref": "#/components/schemas/NexoApi.Features.Compras.Dtos.DetalleOrdenCompraRequest"
             },
             "nullable": true
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -15921,6 +16127,32 @@
             "format": "int32"
           },
           "cantidadSolicitada": {
+            "type": "number",
+            "format": "double"
+          },
+          "costoUnitario": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Compras.Dtos.LineaPedidoParaVisionsDto": {
+        "type": "object",
+        "properties": {
+          "orden": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "referenciaVisions": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreArticulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidad": {
             "type": "number",
             "format": "double"
           },
@@ -16005,6 +16237,43 @@
           "fechaRecepcion": {
             "type": "string",
             "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Compras.Dtos.PedidoParaVisionsDto": {
+        "type": "object",
+        "properties": {
+          "pedidoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipoMovimiento": {
+            "type": "string",
+            "nullable": true
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "proveedorNit": {
+            "type": "string",
+            "nullable": true
+          },
+          "proveedorNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NexoApi.Features.Compras.Dtos.LineaPedidoParaVisionsDto"
+            },
             "nullable": true
           }
         },
@@ -16859,6 +17128,15 @@
           "total": {
             "type": "number",
             "format": "double"
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "centroCosto": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -17082,6 +17360,11 @@
             "items": {
               "$ref": "#/components/schemas/NexoApi.Features.Crm.Dtos.LineaCotizacionInput"
             },
+            "nullable": true
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           }
         },
@@ -21130,6 +21413,20 @@
         "type": "object",
         "properties": {
           "valor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Produccion.Dtos.ActualizarFotoMaquinariaRequest": {
+        "type": "object",
+        "properties": {
+          "base64": {
+            "type": "string",
+            "nullable": true
+          },
+          "contentType": {
             "type": "string",
             "nullable": true
           }

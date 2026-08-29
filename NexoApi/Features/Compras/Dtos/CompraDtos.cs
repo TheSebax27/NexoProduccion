@@ -10,7 +10,8 @@ public record CrearOrdenCompraRequest(
     string Codigo,
     int ProveedorID,
     int BodegaDestinoID,
-    List<DetalleOrdenCompraRequest> Detalle
+    List<DetalleOrdenCompraRequest> Detalle,
+    int? CentroCostoID = null
 );
 
 public record RecibirLineaOrdenCompraRequest(
@@ -27,6 +28,34 @@ public record OrdenCompraResumen(
     DateTime FechaEmision,
     decimal Total,
     DateTime? FechaRecepcion
+);
+
+public record PedidoParaVisionsDto(
+    int PedidoID,
+    string Codigo,
+    string TipoMovimiento,
+    DateTime Fecha,
+    string? ProveedorNit,
+    string ProveedorNombre,
+    List<LineaPedidoParaVisionsDto> Lineas
+);
+
+public record LineaPedidoParaVisionsDto(
+    int Orden,
+    string? ReferenciaVisions,
+    string NombreArticulo,
+    decimal Cantidad,
+    decimal CostoUnitario
+);
+
+public record ActualizarNumeroPedidoVisionsRequest(string TipDoc, string NroDoc);
+
+public record ComparacionPrecioRow(
+    int ArticuloID, string SKU, string Articulo,
+    int ProveedorID, string Proveedor,
+    int TotalPedidos,
+    decimal PrecioMin, decimal PrecioMax, decimal PrecioPromedio, decimal UltimoPrecio,
+    DateTime UltimaCompra
 );
 
 public record OrdenCompraDetalleItem(

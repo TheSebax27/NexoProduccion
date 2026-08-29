@@ -229,8 +229,12 @@ Ajuste positivo NEXO           NEXO → Visions    TareaAplicarEntradasInventari
 Baja/merma NEXO                NEXO → Visions    TareaAplicarEntradasInventario
                                (BAJA_INVENTARIO, Cantidad negativa)
 Factura NEXO exportada         NEXO → Visions    TareaSincronizarFacturasNexoVisions
-a Visions                      (descuenta TARJETA.EXISTENCIAS en la misma transaccion
-                               que escribe MOVDETALLES)
+a Visions (Salida)             (botón Salidas en Visions escribe MOVDETALLES y descuenta
+                               TARJETA.EXISTENCIAS; llama NEXO_SP_ConfirmarFactura)
+Pedido NEXO exportado          NEXO → Visions    TareaSincronizarPedidos
+a Visions (Entrada)            (botón Entradas en Visions registra entrada de mercancía,
+                               actualiza TARJETA.EXISTENCIAS; llama NEXO_SP_ConfirmarPedido)
+                               TipoMovimiento: COMPRA=suma existencias, DEVOLUCION=resta
 Venta POS en Visions           Visions → NEXO    TareaExportarVentas +
                                sp_ProcesarEventoEntrante
                                (descuenta Inventario.InventarioStock en NEXO)
@@ -275,14 +279,25 @@ Visions → NEXO  TareaExportarVentas: incluye NIT y CLIENTE de cada linea de MO
 TABLAS NEXO_* EN VISIONS (creadas automaticamente por el agente al arrancar)
 --------------------------------------------------------------
 
-Tabla                    Proposito
-------------------------  -------------------------------------------------------
-NEXO_ConfiguracionSync    Configuracion activa/prefijos de venta por CENTROCOSTO
-NEXO_VentasExportadas     Idempotencia: evita reimportar ventas ya procesadas
-NEXO_EntradasInventario   Log de entradas de inventario aplicadas desde NEXO
-NEXO_TarjetasCambios      Cola de cambios en TARJETA (llenada por trigger) para
-                          sincronizar precios/nombre de vuelta a NEXO
-NEXO_Clientes             Clientes de NEXO replicados para referencia en el POS
+Tabla                         Proposito
+------------------------------ -------------------------------------------------------
+NEXO_ConfiguracionSync         Configuracion activa/prefijos de venta por CENTROCOSTO
+NEXO_VentasExportadas          Idempotencia: evita reimportar ventas ya procesadas
+NEXO_EntradasInventario        Log de entradas de inventario aplicadas desde NEXO
+NEXO_TarjetasCambios           Cola de cambios en TARJETA (llenada por trigger) para
+                               sincronizar precios/nombre de vuelta a NEXO
+NEXO_Clientes                  Clientes de NEXO replicados para referencia en el POS
+NEXO_FacturasPendientes        Staging de facturas NEXO → Visions Salidas
+NEXO_FacturasPendientesLineas  Líneas de NEXO_FacturasPendientes
+NEXO_Pedidos                   Staging de pedidos (órdenes de compra) NEXO → Visions Entradas
+NEXO_PedidosLineas             Líneas de NEXO_Pedidos
+NEXO_FacturasSalientes         Log de facturas salientes (ventas Visions → NEXO)
+
+SPs creados automaticamente:
+  NEXO_SP_FacturasPendientes     Devuelve facturas PENDIENTE (2 resultsets: cabeceras + lineas)
+  NEXO_SP_ConfirmarFactura       Visions llama al confirmar una factura con su NroDoc
+  NEXO_SP_PedidosPendientes      Devuelve pedidos PENDIENTE (2 resultsets: cabeceras + lineas)
+  NEXO_SP_ConfirmarPedido        Visions llama al confirmar un pedido con su NroDoc de Entrada
 
 Trigger en Visions (creado automaticamente):
   TR_TARJETA_NexoCambios  AFTER UPDATE en dbo.TARJETA. MERGE en NEXO_TarjetasCambios

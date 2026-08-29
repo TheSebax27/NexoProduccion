@@ -23,7 +23,7 @@
    cualquier combinacion de clases/atributos y gana siempre, sin importar
    el orden de carga. *@
 <div id="nexo-app-root" class="@(Preferencias.TemaOscuro ? "nexo-tema-oscuro" : "")">
-    <MudThemeProvider Theme="@NexoTheme.Theme" />
+    <MudThemeProvider Theme="@NexoTheme.Theme" IsDarkMode="@Preferencias.TemaOscuro" />
     <MudPopoverProvider />
     <MudDialogProvider />
     <MudSnackbarProvider />
@@ -363,7 +363,8 @@
                 "/inventario/kardex"        => "Kardex",
                 "/inventario/bajas"         => "Registrar Baja",
                 "/inventario/traspasos"     => "Traspasos",
-                "/compras/ordenes"          => "Órdenes de Compra",
+                "/facturacion"              => "Salidas",
+                "/compras/ordenes"          => "Entradas",
                 "/catalogo/articulos"       => "Artículos",
                 "/catalogo/centros-costo"   => "Centros de Costo",
                 "/catalogo/bodegas"         => "Bodegas",

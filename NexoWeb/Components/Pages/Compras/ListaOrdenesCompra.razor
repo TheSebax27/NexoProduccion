@@ -1,4 +1,4 @@
-﻿@page "/compras/ordenes"
+@page "/compras/ordenes"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -6,106 +6,247 @@
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
-<PageTitle>Ordenes de Compra - NEXO</PageTitle>
+<PageTitle>Entradas - NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
-    <MudText Typo="Typo.h5">Ordenes de Compra</MudText>
-    <BotonFavorito Href="/compras/ordenes" Etiqueta="Ordenes de Compra" />
+<div class="nexo-page-hero">
+    <div class="nexo-page-hero__left">
+        <div class="nexo-page-hero__accent"></div>
+        <div>
+            <p class="nexo-page-hero__module">Operaciones</p>
+            <h1 class="nexo-page-hero__title">Entradas</h1>
+        </div>
+    </div>
+    <div class="d-flex align-center" style="gap:8px">
+        <BotonFavorito Href="/compras/ordenes" Etiqueta="Entradas" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => AbrirCreacionAsync(null))">
+            Nuevo Pedido
+        </MudButton>
+    </div>
 </div>
-<InfoAyuda Texto="Crea una Orden de Compra a un proveedor. Puedes recibirla en varias entregas parciales desde 'Ver / Recibir' � cada l�nea guarda cu�nto se ha recibido y en qu� fecha, hasta completarse." />
 
-<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => AbrirCreacionAsync(null))"
-           StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
-    Nueva Orden de Compra
-</MudButton>
+<InfoAyuda Texto="Registra pedidos a proveedores. Puedes recibirlos en varias entregas parciales desde 'Ver / Recibir'. Al crearse, el pedido se exporta automáticamente a Visions para su procesamiento como Entrada de Mercancía." />
 
 @if (_errorCarga is not null)
 {
-    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar las ordenes de compra: @_errorCarga</MudAlert>
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar los pedidos: @_errorCarga</MudAlert>
 }
-@if (_cargando)
-{
-    <MudProgressCircular Indeterminate="true" Class="ma-4" />
-}
-else if (_ordenes.Count == 0)
-{
-    <MudText>No hay ordenes de compra registradas.</MudText>
-}
-else if (Preferencias.VistaListado == "tarjetas")
-{
-    <div class="nexo-card-grid">
-        @foreach (var orden in _ordenes)
+
+<MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true"
+         ActiveTabClass="nexo-tab-active" Class="mb-2"
+         ActivePanelIndexChanged="OnTabCambiado">
+
+    @* ════ Tab 1: Pendientes ════ *@
+    <MudTabPanel Text="Pendientes" Icon="@Icons.Material.Filled.Schedule">
+        @if (_cargando)
+        { <MudProgressLinear Indeterminate="true" Class="mt-2" /> }
+        else if (!_pendientes.Any())
+        { <MudAlert Severity="Severity.Success" Class="mt-2">No hay pedidos pendientes de recibir.</MudAlert> }
+        else
         {
-            <div class="nexo-item-card">
-                <div class="d-flex align-center justify-space-between">
-                    <div class="nexo-item-card__title">@orden.Codigo</div>
-                    <MudChip T="string" Color="@(orden.EstadoOC == "RECIBIDA" ? Color.Success : Color.Warning)" Size="Size.Small">
-                        @orden.EstadoOC
-                    </MudChip>
-                </div>
-                <div class="nexo-item-card__sub">@orden.Proveedor</div>
-                <div class="nexo-item-card__row"><span>Emisi�n</span><strong>@orden.FechaEmision.ToString("dd/MM/yyyy")</strong></div>
-                <div class="nexo-item-card__row"><span>Recibido</span><strong>@(orden.FechaRecepcion?.ToString("dd/MM/yyyy") ?? "-")</strong></div>
-                <div class="nexo-item-card__row"><span>Total</span><strong>@orden.Total.ToString("C0")</strong></div>
-                <div class="nexo-item-card__actions">
-                    <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(orden.OrdenCompraID))">Ver / Recibir</MudButton>
-                </div>
+            <MudTable Items="_pendientes" Hover="true" Dense="true" Striped="true" Class="mt-2">
+                <HeaderContent>
+                    <MudTh>Código</MudTh>
+                    <MudTh>Proveedor</MudTh>
+                    <MudTh>Estado</MudTh>
+                    <MudTh>Emisión</MudTh>
+                    <MudTh Style="text-align:right">Total</MudTh>
+                    <MudTh>Detalle</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Código">@context.Codigo</MudTd>
+                    <MudTd DataLabel="Proveedor">@context.Proveedor</MudTd>
+                    <MudTd DataLabel="Estado">
+                        <MudChip T="string" Color="Color.Warning" Size="Size.Small">@context.EstadoOC</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Emisión">@context.FechaEmision.ToString("dd/MM/yyyy")</MudTd>
+                    <MudTd DataLabel="Total" Style="text-align:right">@context.Total.ToString("C0")</MudTd>
+                    <MudTd DataLabel="Detalle">
+                        <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(context.OrdenCompraID))">
+                            Ver / Recibir
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudTabPanel>
+
+    @* ════ Tab 2: Comparación de Precios ════ *@
+    <MudTabPanel Text="Comparación" Icon="@Icons.Material.Filled.BarChart">
+        @if (_cmpCargando)
+        { <MudProgressLinear Indeterminate="true" Class="mt-2" /> }
+        else
+        {
+            @* Filtros *@
+            <div class="d-flex flex-wrap gap-2 mt-2 mb-3">
+                <MudSelect T="int?" @bind-Value="_cmpFiltroArticulo"
+                           Label="Filtrar por artículo" Variant="Variant.Outlined"
+                           Clearable="true" Style="min-width:220px"
+                           @bind-Value:after="StateHasChanged">
+                    @foreach (var art in _cmpArticulos)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)art.Key)">@art.Value</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSelect T="int?" @bind-Value="_cmpFiltroProveedor"
+                           Label="Filtrar por proveedor" Variant="Variant.Outlined"
+                           Clearable="true" Style="min-width:220px"
+                           @bind-Value:after="StateHasChanged">
+                    @foreach (var prov in _cmpProveedores)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)prov.Key)">@prov.Value</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+
+            @if (!_cmpDatos.Any())
+            {
+                <MudAlert Severity="Severity.Info">Sin datos de compra para comparar con los filtros actuales.</MudAlert>
+            }
+            else
+            {
+                @* Agrupamos por artículo para mostrar comparación entre proveedores *@
+                @foreach (var grupo in _cmpDatos.GroupBy(r => r.ArticuloID))
+                {
+                    var filas = grupo.ToList();
+                    var precioMenor = filas.Min(f => f.PrecioPromedio);
+
+                    <MudPaper Class="pa-3 mb-3" Elevation="1">
+                        <div class="d-flex align-center justify-space-between mb-2">
+                            <MudText Typo="Typo.subtitle1"><strong>@filas[0].Articulo</strong></MudText>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Default">@filas[0].SKU</MudChip>
+                        </div>
+                        <MudTable Items="@filas" Dense="true" Hover="true" Elevation="0">
+                            <HeaderContent>
+                                <MudTh>Proveedor</MudTh>
+                                <MudTh Style="text-align:right">Pedidos</MudTh>
+                                <MudTh Style="text-align:right">Precio Mín.</MudTh>
+                                <MudTh Style="text-align:right">Precio Prom.</MudTh>
+                                <MudTh Style="text-align:right">Precio Máx.</MudTh>
+                                <MudTh Style="text-align:right">Último</MudTh>
+                                <MudTh Style="text-align:right">Variación</MudTh>
+                                <MudTh>Últ. compra</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                @{
+                                    var esMasBarato = context.PrecioPromedio == precioMenor;
+                                    var variacion = precioMenor > 0
+                                        ? (context.PrecioPromedio - precioMenor) / precioMenor * 100m
+                                        : 0m;
+                                }
+                                <MudTd DataLabel="Proveedor">
+                                    @if (esMasBarato)
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Success"
+                                                 Size="Size.Small" Class="mr-1" Style="vertical-align:middle" />
+                                    }
+                                    @context.Proveedor
+                                </MudTd>
+                                <MudTd DataLabel="Pedidos" Style="text-align:right">@context.TotalPedidos</MudTd>
+                                <MudTd DataLabel="Precio Mín." Style="text-align:right">@context.PrecioMin.ToString("C2")</MudTd>
+                                <MudTd DataLabel="Precio Prom." Style="@($"text-align:right;font-weight:{(esMasBarato ? "700" : "400")};color:{(esMasBarato ? "var(--mud-palette-success)" : "inherit")}")">
+                                    @context.PrecioPromedio.ToString("C2")
+                                </MudTd>
+                                <MudTd DataLabel="Precio Máx." Style="text-align:right">@context.PrecioMax.ToString("C2")</MudTd>
+                                <MudTd DataLabel="Último" Style="text-align:right">@context.UltimoPrecio.ToString("C2")</MudTd>
+                                <MudTd DataLabel="Variación" Style="text-align:right">
+                                    @if (variacion == 0)
+                                    { <MudChip T="string" Size="Size.Small" Color="Color.Success" Style="pointer-events:none">Más barato</MudChip> }
+                                    else
+                                    { <MudChip T="string" Size="Size.Small" Color="Color.Warning" Style="pointer-events:none">+@variacion.ToString("N1")%</MudChip> }
+                                </MudTd>
+                                <MudTd DataLabel="Últ. compra">@context.UltimaCompra.ToString("dd/MM/yyyy")</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudPaper>
+                }
+            }
+        }
+    </MudTabPanel>
+
+    @* ════ Tab 3: Historial ════ *@
+    <MudTabPanel Text="Historial" Icon="@Icons.Material.Filled.History">
+        @if (_cargando)
+        { <MudProgressLinear Indeterminate="true" Class="mt-2" /> }
+        else if (_ordenes.Count == 0)
+        { <MudAlert Severity="Severity.Info" Class="mt-2">No hay pedidos registrados.</MudAlert> }
+        else if (Preferencias.VistaListado == "tarjetas")
+        {
+            <div class="nexo-card-grid mt-2">
+                @foreach (var orden in _ordenes)
+                {
+                    <div class="nexo-item-card">
+                        <div class="d-flex align-center justify-space-between">
+                            <div class="nexo-item-card__title">@orden.Codigo</div>
+                            <MudChip T="string" Color="@(orden.EstadoOC == "RECIBIDA" ? Color.Success : Color.Warning)" Size="Size.Small">
+                                @orden.EstadoOC
+                            </MudChip>
+                        </div>
+                        <div class="nexo-item-card__sub">@orden.Proveedor</div>
+                        <div class="nexo-item-card__row"><span>Emisión</span><strong>@orden.FechaEmision.ToString("dd/MM/yyyy")</strong></div>
+                        <div class="nexo-item-card__row"><span>Recibido</span><strong>@(orden.FechaRecepcion?.ToString("dd/MM/yyyy") ?? "-")</strong></div>
+                        <div class="nexo-item-card__row"><span>Total</span><strong>@orden.Total.ToString("C0")</strong></div>
+                        <div class="nexo-item-card__actions">
+                            <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(orden.OrdenCompraID))">Ver / Recibir</MudButton>
+                        </div>
+                    </div>
+                }
             </div>
         }
-    </div>
-}
-else
-{
-    <MudTable Items="_ordenes" Hover="true" Dense="true" Striped="true">
-        <HeaderContent>
-            <MudTh>Codigo</MudTh>
-            <MudTh>Proveedor</MudTh>
-            <MudTh>Estado</MudTh>
-            <MudTh>Emision</MudTh>
-            <MudTh>Recibido</MudTh>
-            <MudTh>Total</MudTh>
-            <MudTh>Detalle</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Codigo">@context.Codigo</MudTd>
-            <MudTd DataLabel="Proveedor">@context.Proveedor</MudTd>
-            <MudTd DataLabel="Estado">
-                <MudChip T="string" Color="@(context.EstadoOC == "RECIBIDA" ? Color.Success : Color.Warning)" Size="Size.Small">
-                    @context.EstadoOC
-                </MudChip>
-            </MudTd>
-            <MudTd DataLabel="Emision">@context.FechaEmision.ToString("dd/MM/yyyy")</MudTd>
-            <MudTd DataLabel="Recibido">@(context.FechaRecepcion?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
-            <MudTd DataLabel="Total">@context.Total.ToString("C0")</MudTd>
-            <MudTd DataLabel="Detalle">
-                <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(context.OrdenCompraID))">
-                    Ver / Recibir
-                </MudButton>
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
-}
+        else
+        {
+            <MudTable Items="_ordenes" Hover="true" Dense="true" Striped="true" Class="mt-2">
+                <HeaderContent>
+                    <MudTh>Código</MudTh>
+                    <MudTh>Proveedor</MudTh>
+                    <MudTh>Estado</MudTh>
+                    <MudTh>Emisión</MudTh>
+                    <MudTh>Recepción</MudTh>
+                    <MudTh Style="text-align:right">Total</MudTh>
+                    <MudTh>Detalle</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Código">@context.Codigo</MudTd>
+                    <MudTd DataLabel="Proveedor">@context.Proveedor</MudTd>
+                    <MudTd DataLabel="Estado">
+                        <MudChip T="string" Color="@(context.EstadoOC == "RECIBIDA" ? Color.Success : Color.Warning)" Size="Size.Small">
+                            @context.EstadoOC
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Emisión">@context.FechaEmision.ToString("dd/MM/yyyy")</MudTd>
+                    <MudTd DataLabel="Recepción">@(context.FechaRecepcion?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
+                    <MudTd DataLabel="Total" Style="text-align:right">@context.Total.ToString("C0")</MudTd>
+                    <MudTd DataLabel="Detalle">
+                        <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(context.OrdenCompraID))">
+                            Ver / Recibir
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudTabPanel>
+</MudTabs>
 
 @if (_detalleAbierto is not null)
 {
     <MudPaper Class="pa-4 mt-4">
-        <MudText Typo="Typo.subtitle1" Class="mb-2">Detalle de la orden</MudText>
+        <MudText Typo="Typo.subtitle1" Class="mb-2">Detalle del pedido</MudText>
         <MudTable Items="_detalle" Dense="true">
             <HeaderContent>
-                <MudTh>Articulo</MudTh>
-                <MudTh>Solicitado</MudTh>
-                <MudTh>Recibido</MudTh>
+                <MudTh>Artículo</MudTh>
+                <MudTh Style="text-align:right">Solicitado</MudTh>
+                <MudTh Style="text-align:right">Recibido</MudTh>
                 <MudTh>Fecha Recibido</MudTh>
-                <MudTh>Costo Unit.</MudTh>
-                <MudTh>Accion</MudTh>
+                <MudTh Style="text-align:right">Costo Unit.</MudTh>
+                <MudTh>Acción</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Articulo">@context.Articulo</MudTd>
-                <MudTd DataLabel="Solicitado">@context.CantidadSolicitada.ToString("N2")</MudTd>
-                <MudTd DataLabel="Recibido">@context.CantidadRecibida.ToString("N2")</MudTd>
+                <MudTd DataLabel="Artículo">@context.Articulo</MudTd>
+                <MudTd DataLabel="Solicitado" Style="text-align:right">@context.CantidadSolicitada.ToString("N2")</MudTd>
+                <MudTd DataLabel="Recibido" Style="text-align:right">@context.CantidadRecibida.ToString("N2")</MudTd>
                 <MudTd DataLabel="Fecha Recibido">@(context.FechaUltimaRecepcion?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
-                <MudTd DataLabel="Costo Unit.">@context.CostoUnitario.ToString("C2")</MudTd>
-                <MudTd DataLabel="Accion">
+                <MudTd DataLabel="Costo Unit." Style="text-align:right">@context.CostoUnitario.ToString("C2")</MudTd>
+                <MudTd DataLabel="Acción">
                     @if (context.CantidadRecibida < context.CantidadSolicitada)
                     {
                         <MudButton Size="Size.Small" Color="Color.Primary"
@@ -125,16 +266,29 @@ else
 
 @code {
     private List<OrdenCompraResumen> _ordenes = new();
+    private IEnumerable<OrdenCompraResumen> _pendientes => _ordenes.Where(o => o.EstadoOC != "RECIBIDA");
     private List<OrdenCompraDetalleItem> _detalle = new();
     private List<ProveedorItem> _proveedores = new();
     private List<BodegaItem> _bodegas = new();
     private List<ArticuloItem> _articulos = new();
+    private List<CentroCostoItem> _centrosCosto = new();
     private int? _detalleAbierto;
     private bool _cargando = true;
     private string? _errorCarga;
 
-    // Llegada desde Consulta de Stock (chip "Requiere pedido"): abre el
-    // dialogo de creacion automaticamente con el articulo ya cargado.
+    // ── Tab Comparación ──
+    private List<ComparacionPrecioRow> _cmpTodos = new();
+    private IEnumerable<ComparacionPrecioRow> _cmpDatos =>
+        _cmpTodos.Where(r =>
+            (_cmpFiltroArticulo is null || r.ArticuloID == _cmpFiltroArticulo) &&
+            (_cmpFiltroProveedor is null || r.ProveedorID == _cmpFiltroProveedor));
+    private Dictionary<int, string> _cmpArticulos = new();
+    private Dictionary<int, string> _cmpProveedores = new();
+    private int? _cmpFiltroArticulo;
+    private int? _cmpFiltroProveedor;
+    private bool _cmpCargando;
+    private bool _cmpCargado;
+
     [SupplyParameterFromQuery] private int? ArticuloId { get; set; }
 
     protected override async Task OnInitializedAsync()
@@ -172,24 +326,21 @@ else
 
     private async Task AbrirCreacionAsync(int? articuloPreseleccionado = null)
     {
-        // Se cargan los catalogos SOLO cuando el usuario realmente va a crear
-        // una orden -- no en cada carga de la pagina, para no pedir datos
-        // que quiza nunca se usen en esa visita.
         if (_proveedores.Count == 0)
         {
             var tareaProveedores = ApiClient.GetAsync<List<ProveedorItem>>("api/catalogo/proveedores");
             var tareaBodegas = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
-            // Se compran Materia Prima, Insumos y Servicios (lo que llega de proveedores,
-            // ej. claves de licencia). Producto Terminado no se compra (se produce).
             var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
+            var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
 
-            await Task.WhenAll(tareaProveedores, tareaBodegas, tareaArticulos);
+            await Task.WhenAll(tareaProveedores, tareaBodegas, tareaArticulos, tareaCentrosCosto);
 
             _proveedores = await tareaProveedores ?? new();
             _bodegas = await tareaBodegas ?? new();
             _articulos = (await tareaArticulos ?? new())
                 .Where(a => a.TipoArticulo is "Materia Prima" or "Insumo" or "Servicio")
                 .ToList();
+            _centrosCosto = await tareaCentrosCosto ?? new();
         }
 
         var parametros = new DialogParameters<CrearOrdenCompraDialog>
@@ -197,10 +348,11 @@ else
             { x => x._proveedores, _proveedores },
             { x => x._bodegas, _bodegas },
             { x => x._articulos, _articulos },
+            { x => x._centrosCosto, _centrosCosto },
             { x => x.ArticuloPreseleccionadoID, articuloPreseleccionado }
         };
 
-        var dialogo = await DialogService.ShowAsync<CrearOrdenCompraDialog>("Nueva Orden de Compra", parametros);
+        var dialogo = await DialogService.ShowAsync<CrearOrdenCompraDialog>("Nuevo Pedido", parametros);
         var resultado = await dialogo.Result;
 
         if (resultado is null || resultado.Canceled)
@@ -210,13 +362,38 @@ else
         {
             var request = (CrearOrdenCompraRequest)resultado.Data!;
             await ApiClient.PostAsync<CrearOrdenCompraRequest, object?>("api/compras/ordenes", request);
-            Snackbar.Add("Orden de compra creada correctamente.", Severity.Success);
+            Snackbar.Add("Pedido creado correctamente.", Severity.Success);
             await CargarAsync();
         }
         catch (HttpRequestException ex)
         {
             Snackbar.Add(ex.Message, Severity.Error);
         }
+    }
+
+    private async Task OnTabCambiado(int index)
+    {
+        if (index == 1 && !_cmpCargado)
+            await CargarComparacionAsync();
+    }
+
+    private async Task CargarComparacionAsync()
+    {
+        _cmpCargando = true;
+        try
+        {
+            _cmpTodos = await ApiClient.GetAsync<List<ComparacionPrecioRow>>(
+                "api/compras/ordenes/comparacion-precios") ?? new();
+            _cmpArticulos = _cmpTodos
+                .GroupBy(r => r.ArticuloID)
+                .ToDictionary(g => g.Key, g => $"{g.First().SKU} – {g.First().Articulo}");
+            _cmpProveedores = _cmpTodos
+                .GroupBy(r => r.ProveedorID)
+                .ToDictionary(g => g.Key, g => g.First().Proveedor);
+            _cmpCargado = true;
+        }
+        catch (Exception ex) { Snackbar.Add($"Error al cargar comparación: {ex.Message}", Severity.Warning); }
+        finally { _cmpCargando = false; }
     }
 
     private async Task AbrirRecepcionAsync(OrdenCompraDetalleItem linea)
@@ -231,7 +408,7 @@ else
             { x => x.UnidadesPorEmbalaje, linea.UnidadesPorEmbalaje }
         };
 
-        var dialogo = await DialogService.ShowAsync<RecibirLineaDialog>("Recibir Mercancia", parametros);
+        var dialogo = await DialogService.ShowAsync<RecibirLineaDialog>("Recibir Mercancía", parametros);
         var resultado = await dialogo.Result;
 
         if (resultado is null || resultado.Canceled)
@@ -243,8 +420,8 @@ else
             await ApiClient.PostAsync<RecibirLineaOrdenCompraRequest, object?>(
                 $"api/compras/ordenes/detalle/{linea.OrdenCompraDetalleID}/recibir", request);
 
-            Snackbar.Add("Mercancia recibida correctamente.", Severity.Success);
-            await VerDetalleAsync(_detalleAbierto!.Value); // recarga el detalle para reflejar la cantidad nueva
+            Snackbar.Add("Mercancía recibida correctamente.", Severity.Success);
+            await VerDetalleAsync(_detalleAbierto!.Value);
         }
         catch (HttpRequestException ex)
         {

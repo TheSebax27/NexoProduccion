@@ -131,7 +131,6 @@ else
 
     private List<OportunidadItem> _oportunidades = new();
     private List<LeadItem> _leads = new();
-    private List<ClienteItem> _clientes = new();
     private List<EmpleadoItem> _empleados = new();
     private bool _cargando = true;
     private string? _errorCarga;
@@ -165,14 +164,12 @@ else
         {
             var tareaOportunidades = ApiClient.GetAsync<List<OportunidadItem>>("api/crm/oportunidades");
             var tareaLeads = ApiClient.GetAsync<List<LeadItem>>("api/crm/leads");
-            var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
             var tareaEmpleados = ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados?soloActivos=true");
 
-            await Task.WhenAll(tareaOportunidades, tareaLeads, tareaClientes, tareaEmpleados);
+            await Task.WhenAll(tareaOportunidades, tareaLeads, tareaEmpleados);
 
             _oportunidades = await tareaOportunidades ?? new();
             _leads = (await tareaLeads ?? new()).Where(l => l.Etapa != "CONVERTIDO").ToList();
-            _clientes = (await tareaClientes ?? new()).Where(c => c.Estado).ToList();
             _empleados = await tareaEmpleados ?? new();
         }
         catch (Exception ex)
@@ -202,7 +199,6 @@ else
         var parametros = new DialogParameters<OportunidadDialog>
         {
             { x => x.Leads, _leads },
-            { x => x.Clientes, _clientes },
             { x => x.Empleados, _empleados }
         };
 

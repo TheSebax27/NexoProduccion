@@ -5,20 +5,19 @@
 @inject ISnackbar Snackbar
 @inject NexoWeb.Common.Auth.ConfiguracionEmpresaState ConfiguracionEmpresa
 @using NexoWeb.Common.Dtos
-@using NexoWeb.Components.Pages.Compras
 
-<PageTitle>Facturacion - NEXO</PageTitle>
+<PageTitle>Salidas - NEXO</PageTitle>
 
 <div class="nexo-page-hero">
     <div class="nexo-page-hero__left">
         <div class="nexo-page-hero__accent"></div>
         <div>
             <p class="nexo-page-hero__module">Operaciones</p>
-            <h1 class="nexo-page-hero__title">Facturacion</h1>
+            <h1 class="nexo-page-hero__title">Salidas</h1>
         </div>
     </div>
     <div class="d-flex align-center" style="gap:8px">
-        <BotonFavorito Href="/facturacion" Etiqueta="Facturacion" />
+        <BotonFavorito Href="/facturacion" Etiqueta="Salidas" />
         <MudButton Variant="Variant.Filled" Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirCreacionAsync">
             Nueva Factura
@@ -99,94 +98,7 @@
         }
     </MudTabPanel>
 
-    @* ════ Tab 2: Ordenes de Compra ════ *@
-    <MudTabPanel Text="Ordenes de Compra" Icon="@Icons.Material.Filled.ShoppingCart">
-        <div class="d-flex align-center justify-space-between mt-2 mb-3">
-            <span style="font-size:0.85rem; opacity:.7">Pedidos a proveedores — recepción parcial por línea</span>
-            <MudButton Variant="Variant.Filled" Color="Color.Success"
-                       StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => AbrirCreacionOCAsync(null))">
-                Nueva Orden de Compra
-            </MudButton>
-        </div>
-
-        @if (_ocCargando)
-        { <MudProgressLinear Indeterminate="true" /> }
-        else if (_ocError is not null)
-        { <MudAlert Severity="Severity.Error">@_ocError</MudAlert> }
-        else if (_ordenes.Count == 0)
-        { <MudAlert Severity="Severity.Info">No hay ordenes de compra registradas.</MudAlert> }
-        else
-        {
-            <MudTable Items="_ordenes" Hover="true" Dense="true" Striped="true" Style="overflow-x:auto">
-                <HeaderContent>
-                    <MudTh>Código</MudTh>
-                    <MudTh>Proveedor</MudTh>
-                    <MudTh>Estado</MudTh>
-                    <MudTh>Emisión</MudTh>
-                    <MudTh>Recepción</MudTh>
-                    <MudTh Style="text-align:right">Total</MudTh>
-                    <MudTh>Detalle</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Código" Style="font-weight:500">@context.Codigo</MudTd>
-                    <MudTd DataLabel="Proveedor">@context.Proveedor</MudTd>
-                    <MudTd DataLabel="Estado">
-                        <MudChip T="string" Size="Size.Small"
-                                 Color="@(context.EstadoOC == "RECIBIDA" ? Color.Success : Color.Warning)">
-                            @context.EstadoOC
-                        </MudChip>
-                    </MudTd>
-                    <MudTd DataLabel="Emisión">@context.FechaEmision.ToString("dd/MM/yyyy")</MudTd>
-                    <MudTd DataLabel="Recepción">@(context.FechaRecepcion?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
-                    <MudTd DataLabel="Total" Style="text-align:right">@context.Total.ToString("C0")</MudTd>
-                    <MudTd DataLabel="Detalle">
-                        <MudButton Size="Size.Small" OnClick="@(() => VerDetalleOCAsync(context.OrdenCompraID))">
-                            Ver / Recibir
-                        </MudButton>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-
-        @if (_ocDetalleAbierto is not null)
-        {
-            <MudPaper Elevation="1" Class="pa-4 mt-4" Style="border-radius:8px">
-                <MudText Typo="Typo.subtitle1" Class="mb-2">Detalle de la orden</MudText>
-                <MudTable Items="_ocDetalle" Dense="true" Hover="true">
-                    <HeaderContent>
-                        <MudTh>Artículo</MudTh>
-                        <MudTh Style="text-align:right">Solicitado</MudTh>
-                        <MudTh Style="text-align:right">Recibido</MudTh>
-                        <MudTh>Fecha Recibido</MudTh>
-                        <MudTh Style="text-align:right">Costo Unit.</MudTh>
-                        <MudTh>Acción</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd DataLabel="Artículo">@context.Articulo</MudTd>
-                        <MudTd DataLabel="Solicitado" Style="text-align:right">@context.CantidadSolicitada.ToString("N2")</MudTd>
-                        <MudTd DataLabel="Recibido" Style="text-align:right">@context.CantidadRecibida.ToString("N2")</MudTd>
-                        <MudTd DataLabel="Fecha Recibido">@(context.FechaUltimaRecepcion?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
-                        <MudTd DataLabel="Costo Unit." Style="text-align:right">@context.CostoUnitario.ToString("C2")</MudTd>
-                        <MudTd DataLabel="Acción">
-                            @if (context.CantidadRecibida < context.CantidadSolicitada)
-                            {
-                                <MudButton Size="Size.Small" Color="Color.Primary"
-                                           OnClick="@(() => AbrirRecepcionOCAsync(context))">
-                                    Recibir
-                                </MudButton>
-                            }
-                            else
-                            {
-                                <MudChip T="string" Color="Color.Success" Size="Size.Small">Completo</MudChip>
-                            }
-                        </MudTd>
-                    </RowTemplate>
-                </MudTable>
-            </MudPaper>
-        }
-    </MudTabPanel>
-
-    @* ════ Tab 3: Historial ════ *@
+    @* ════ Tab 2: Historial ════ *@
     <MudTabPanel Text="Historial" Icon="@Icons.Material.Filled.History">
         @* Filtros historial *@
         <MudPaper Elevation="0" Class="pa-3 mt-2 mb-3"
@@ -202,11 +114,7 @@
                     @foreach (var td in TiposDocumento.Todos)
                     { <MudSelectItem T="string?" Value="@td">@td</MudSelectItem> }
                 </MudSelect>
-                <MudSelect T="int?" Value="_filtroClienteId" ValueChanged="OnFiltroClienteAsync"
-                           Label="Cliente" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
-                    @foreach (var c in _clientes)
-                    { <MudSelectItem T="int?" Value="@c.ClienteID">@c.Nombre</MudSelectItem> }
-                </MudSelect>
+                <ClienteAutocomplete Value="_filtroCliente" ValueChanged="OnFiltroClienteAsync" Label="Cliente" />
                 <MudSelect T="int?" Value="_filtroCentroCostoId" ValueChanged="OnFiltroCCAsync"
                            Label="Centro de Costo" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
                     @foreach (var cc in _centrosCosto)
@@ -297,6 +205,89 @@
             </MudTable>
         }
     </MudTabPanel>
+
+    @* ════ Tab 3: Devoluciones ════ *@
+    <MudTabPanel Text="Devoluciones" Icon="@Icons.Material.Filled.AssignmentReturn"
+                 BadgeData="@(_devoluciones.Count > 0 ? _devoluciones.Count.ToString() : null)"
+                 BadgeColor="Color.Warning">
+        <div class="d-flex justify-space-between align-center my-2">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+                <MudSelect T="string?" Value="_devFiltroTipo" ValueChanged="@(async v => { _devFiltroTipo = v; await CargarDevolucionesAsync(); })"
+                           Label="Tipo" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:160px">
+                    <MudSelectItem T="string?" Value="@("CLIENTE")">Cliente</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("PROVEEDOR")">Proveedor</MudSelectItem>
+                </MudSelect>
+                <MudDatePicker Date="_devDesde"
+                               DateChanged="@(async v => { _devDesde = v; await CargarDevolucionesAsync(); })"
+                               Label="Desde" DateFormat="dd/MM/yyyy" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:140px" />
+                <MudDatePicker Date="_devHasta"
+                               DateChanged="@(async v => { _devHasta = v; await CargarDevolucionesAsync(); })"
+                               Label="Hasta" DateFormat="dd/MM/yyyy" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:140px" />
+            </div>
+            <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirNuevaDevolucionAsync">
+                Nueva Devolución
+            </MudButton>
+        </div>
+
+        @if (_devCargando)
+        { <MudProgressLinear Indeterminate="true" /> }
+        else if (!_devoluciones.Any())
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-2">No hay devoluciones registradas en el período.</MudAlert>
+        }
+        else
+        {
+            <MudTable Items="_devoluciones" Hover="true" Dense="true" Striped="true" Style="overflow-x:auto">
+                <HeaderContent>
+                    <MudTh>Tipo</MudTh>
+                    <MudTh>Fecha</MudTh>
+                    <MudTh>Contraparte</MudTh>
+                    <MudTh>Motivo</MudTh>
+                    <MudTh>Nro. Doc</MudTh>
+                    <MudTh Style="text-align:right">Total</MudTh>
+                    <MudTh>Stock</MudTh>
+                    <MudTh>Origen</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <MudChip T="string" Size="Size.Small"
+                                 Color="@(context.TipoDevolucion == "CLIENTE" ? Color.Info : Color.Warning)">
+                            @context.TipoDevolucion
+                        </MudChip>
+                    </MudTd>
+                    <MudTd>@context.Fecha.ToString("dd/MM/yyyy")</MudTd>
+                    <MudTd Style="font-size:0.82rem">
+                        @(context.TipoDevolucion == "CLIENTE" ? (context.Cliente ?? "-") : (context.Proveedor ?? "-"))
+                    </MudTd>
+                    <MudTd Style="font-size:0.82rem;max-width:200px;overflow:hidden;text-overflow:ellipsis">
+                        @(context.Motivo ?? "-")
+                    </MudTd>
+                    <MudTd Style="font-size:0.82rem">@(context.NroDoc ?? "-")</MudTd>
+                    <MudTd Style="text-align:right">@context.Total.ToString("C0")</MudTd>
+                    <MudTd>
+                        @if (context.StockRestituido)
+                        { <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" /> }
+                        else
+                        { <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Color="Color.Warning" Size="Size.Small" /> }
+                    </MudTd>
+                    <MudTd>
+                        @if (context.OrigenVisions)
+                        { <MudChip T="string" Size="Size.Small" Color="Color.Secondary">Visions</MudChip> }
+                        else
+                        { <MudChip T="string" Size="Size.Small" Color="Color.Default">NEXO</MudChip> }
+                    </MudTd>
+                </RowTemplate>
+                <FooterContent>
+                    <MudTd colspan="5" Style="text-align:right;font-weight:bold">Total devuelto:</MudTd>
+                    <MudTd Style="text-align:right;font-weight:bold">
+                        @_devoluciones.Sum(d => d.Total).ToString("C0")
+                    </MudTd>
+                    <MudTd colspan="2" />
+                </FooterContent>
+            </MudTable>
+        }
+    </MudTabPanel>
 </MudTabs>
 
 @* ── Ventas recibidas desde Visions ── *@
@@ -374,21 +365,18 @@
 
 @code {
     // ── Estado general ──
-    private List<ClienteItem> _clientes = new();
+    private ClienteItem? _filtroCliente;
     private List<ComboItem> _combosActivos = new();
     private List<CentroCostoBasicoItem> _centrosCosto = new();
     private string? _errorCarga;
     private int _tabActivo;
 
-    // ── Tab Ordenes de Compra ──
-    private List<OrdenCompraResumen> _ordenes = new();
-    private List<OrdenCompraDetalleItem> _ocDetalle = new();
-    private List<ProveedorItem> _proveedores = new();
-    private List<BodegaItem> _bodegas = new();
-    private List<ArticuloItem> _articulosOC = new();
-    private int? _ocDetalleAbierto;
-    private bool _ocCargando = true;
-    private string? _ocError;
+    // ── Tab Devoluciones ──
+    private List<DevolucionItem> _devoluciones = new();
+    private bool    _devCargando;
+    private string? _devFiltroTipo;
+    private DateTime? _devDesde = DateTime.Today.AddDays(-30);
+    private DateTime? _devHasta;
 
     // ── Tab Pendientes ──
     private List<FacturaItem> _pendientes = new();
@@ -403,7 +391,7 @@
     private bool   _cargando = true;
     private string? _filtroTexto;
     private string? _filtroTipDoc;
-    private int?    _filtroClienteId;
+    private int?    _filtroClienteId => _filtroCliente?.ClienteID;
     private int?    _filtroCentroCostoId;
     private string? _filtroEstado;
     private DateTime? _filtroDesde = DateTime.Today.AddDays(-30);
@@ -448,17 +436,14 @@
     };
     protected override async Task OnInitializedAsync()
     {
-        var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
         var tareaCombos   = ApiClient.GetAsync<List<ComboItem>>("api/marketing/combos");
         var tareaCentros  = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
         var tareaPend     = CargarPendientesAsync();
         var tareaHist     = CargarHistorialAsync();
         var tareaVisions  = CargarVentasVisionsAsync();
-        var tareaOC       = CargarOrdenesCompraAsync();
 
-        await Task.WhenAll(tareaClientes, tareaCombos, tareaCentros, tareaPend, tareaHist, tareaVisions, tareaOC);
+        await Task.WhenAll(tareaCombos, tareaCentros, tareaPend, tareaHist, tareaVisions);
 
-        _clientes = (await tareaClientes ?? new()).Where(c => c.Estado).ToList();
         _combosActivos = (await tareaCombos ?? new()).Where(c => c.Estado != "Inactivo").ToList();
         _centrosCosto = (await tareaCentros ?? new())
             .Where(c => c.Estado)
@@ -512,7 +497,7 @@
 
     private async Task OnFiltroTextoAsync(string? v)   { _filtroTexto = v;        _pagina = 1; await CargarHistorialAsync(); }
     private async Task OnFiltroTipDocAsync(string? v)  { _filtroTipDoc = v;       _pagina = 1; await CargarHistorialAsync(); }
-    private async Task OnFiltroClienteAsync(int? v)    { _filtroClienteId = v;    _pagina = 1; await CargarHistorialAsync(); }
+    private async Task OnFiltroClienteAsync(ClienteItem? v) { _filtroCliente = v; _pagina = 1; await CargarHistorialAsync(); }
     private async Task OnFiltroCCAsync(int? v)         { _filtroCentroCostoId = v; _pagina = 1; await CargarHistorialAsync(); }
     private async Task OnFiltroEstadoAsync(string? v)  { _filtroEstado = v;       _pagina = 1; await CargarHistorialAsync(); }
 
@@ -537,12 +522,36 @@
         finally { _vCargando = false; }
     }
 
+    // ── Devoluciones ──
+    private async Task CargarDevolucionesAsync()
+    {
+        _devCargando = true;
+        try
+        {
+            var q = new List<string>();
+            if (_devFiltroTipo is not null) q.Add($"tipo={_devFiltroTipo}");
+            if (_devDesde is not null) q.Add($"desde={_devDesde.Value:yyyy-MM-dd}");
+            if (_devHasta is not null) q.Add($"hasta={_devHasta.Value:yyyy-MM-dd}");
+            _devoluciones = await ApiClient.GetAsync<List<DevolucionItem>>(
+                "api/facturacion/devoluciones" + (q.Any() ? "?" + string.Join("&", q) : "")) ?? new();
+        }
+        catch { _devoluciones = new(); }
+        finally { _devCargando = false; }
+    }
+
+    private async Task AbrirNuevaDevolucionAsync()
+    {
+        var dialog = await DialogService.ShowAsync<DevolucionDialog>("Nueva Devolución",
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true });
+        var result = await dialog.Result;
+        if (!result.Canceled) await CargarDevolucionesAsync();
+    }
+
     // ── Diálogos ──
     private async Task AbrirCreacionAsync()
     {
         var parametros = new DialogParameters<FacturaDialog>
         {
-            { x => x.Clientes, _clientes },
             { x => x.CombosActivos, _combosActivos },
             { x => x.CentrosCosto, _centrosCosto },
             { x => x.UsaVisions, ConfiguracionEmpresa.UsaVisions }
@@ -557,80 +566,6 @@
             await ApiClient.PostAsync<CrearFacturaRequest, object?>("api/facturacion/facturas", request);
             Snackbar.Add("Documento creado correctamente.", Severity.Success);
             await Task.WhenAll(CargarPendientesAsync(), CargarHistorialAsync());
-        }
-        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
-    }
-
-    // ── Ordenes de Compra ──
-    private async Task CargarOrdenesCompraAsync()
-    {
-        _ocCargando = true;
-        _ocError = null;
-        try { _ordenes = await ApiClient.GetAsync<List<OrdenCompraResumen>>("api/compras/ordenes") ?? new(); }
-        catch (Exception ex) { _ocError = ex.Message; }
-        finally { _ocCargando = false; }
-    }
-
-    private async Task VerDetalleOCAsync(int ordenCompraId)
-    {
-        _ocDetalleAbierto = ordenCompraId;
-        _ocDetalle = await ApiClient.GetAsync<List<OrdenCompraDetalleItem>>($"api/compras/ordenes/{ordenCompraId}/detalle") ?? new();
-    }
-
-    private async Task AbrirCreacionOCAsync(int? articuloPreseleccionado = null)
-    {
-        if (_proveedores.Count == 0)
-        {
-            var tareaProvs  = ApiClient.GetAsync<List<ProveedorItem>>("api/catalogo/proveedores");
-            var tareaBods   = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
-            var tareaArts   = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
-            await Task.WhenAll(tareaProvs, tareaBods, tareaArts);
-            _proveedores = await tareaProvs ?? new();
-            _bodegas     = await tareaBods  ?? new();
-            _articulosOC = (await tareaArts ?? new())
-                .Where(a => a.TipoArticulo is "Materia Prima" or "Insumo" or "Servicio")
-                .ToList();
-        }
-        var parametros = new DialogParameters<CrearOrdenCompraDialog>
-        {
-            { x => x._proveedores, _proveedores },
-            { x => x._bodegas, _bodegas },
-            { x => x._articulos, _articulosOC },
-            { x => x.ArticuloPreseleccionadoID, articuloPreseleccionado }
-        };
-        var dialogo = await DialogService.ShowAsync<CrearOrdenCompraDialog>("Nueva Orden de Compra", parametros);
-        var resultado = await dialogo.Result;
-        if (resultado is null || resultado.Canceled) return;
-        try
-        {
-            var request = (CrearOrdenCompraRequest)resultado.Data!;
-            await ApiClient.PostAsync<CrearOrdenCompraRequest, object?>("api/compras/ordenes", request);
-            Snackbar.Add("Orden de compra creada.", Severity.Success);
-            await CargarOrdenesCompraAsync();
-        }
-        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
-    }
-
-    private async Task AbrirRecepcionOCAsync(OrdenCompraDetalleItem linea)
-    {
-        var pendiente = linea.CantidadSolicitada - linea.CantidadRecibida;
-        var parametros = new DialogParameters<RecibirLineaDialog>
-        {
-            { x => x.Articulo, linea.Articulo },
-            { x => x.Pendiente, pendiente },
-            { x => x.Unidad, linea.Unidad },
-            { x => x.UnidadesPorEmbalaje, linea.UnidadesPorEmbalaje }
-        };
-        var dialogo = await DialogService.ShowAsync<RecibirLineaDialog>("Recibir Mercancía", parametros);
-        var resultado = await dialogo.Result;
-        if (resultado is null || resultado.Canceled) return;
-        try
-        {
-            var request = (RecibirLineaOrdenCompraRequest)resultado.Data!;
-            await ApiClient.PostAsync<RecibirLineaOrdenCompraRequest, object?>(
-                $"api/compras/ordenes/detalle/{linea.OrdenCompraDetalleID}/recibir", request);
-            Snackbar.Add("Mercancía recibida.", Severity.Success);
-            await VerDetalleOCAsync(_ocDetalleAbierto!.Value);
         }
         catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
     }

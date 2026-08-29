@@ -22,12 +22,9 @@
                 }
                 else
                 {
-                    <MudSelect T="int?" @bind-Value="_clienteId" Label="Cliente" Required="true" RequiredError="Selecciona un cliente" Class="mb-3">
-                        @foreach (var c in Clientes)
-                        {
-                            <MudSelectItem T="int?" Value="@c.ClienteID">@c.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <ClienteAutocomplete Value="_clienteSeleccionado"
+                                        ValueChanged="@(c => { _clienteSeleccionado = c; _clienteId = c?.ClienteID; })"
+                                        Label="Cliente" Required="true" />
                 }
             }
 
@@ -101,7 +98,6 @@
 
     [Parameter] public OportunidadItem? Oportunidad { get; set; }
     [Parameter] public List<LeadItem> Leads { get; set; } = new();
-    [Parameter] public List<ClienteItem> Clientes { get; set; } = new();
     [Parameter] public List<EmpleadoItem> Empleados { get; set; } = new();
 
     private bool EsEdicion => Oportunidad is not null;
@@ -110,6 +106,7 @@
     private string _origen = "LEAD";
     private int? _leadId;
     private int? _clienteId;
+    private ClienteItem? _clienteSeleccionado;
     private string _nombre = string.Empty;
     private decimal _valorEstimado;
     private string _confianza = "NEUTRO";

@@ -226,6 +226,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xFcnJvci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Produccion/NexoWeb/Components/Pages/Facturacion/DevolucionDialog.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xGYWN0dXJhY2lvblxEZXZvbHVjaW9uRGlhbG9nLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Produccion/NexoWeb/Components/Pages/Facturacion/FacturaDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xGYWN0dXJhY2lvblxGYWN0dXJhRGlhbG9nLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -462,8 +466,16 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xSb3V0ZXMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Produccion/NexoWeb/Components/Shared/ArticuloAutocomplete.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcQXJ0aWN1bG9BdXRvY29tcGxldGUucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Produccion/NexoWeb/Components/Shared/BotonFavorito.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcQm90b25GYXZvcml0by5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Produccion/NexoWeb/Components/Shared/ClienteAutocomplete.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcQ2xpZW50ZUF1dG9jb21wbGV0ZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Produccion/NexoWeb/Components/Shared/InfoAyuda.razor]

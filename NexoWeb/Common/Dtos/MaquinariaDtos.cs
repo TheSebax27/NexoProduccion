@@ -10,7 +10,8 @@ public record MaquinariaItem(
     string? Marca, string? Modelo,
     decimal? CostoHoraOperacion,
     DateOnly? ProximoMantenimiento,
-    bool MantenimientoVencido
+    bool MantenimientoVencido,
+    bool TieneFoto = false
 );
 
 public record MaquinariaDetalle(
@@ -23,8 +24,11 @@ public record MaquinariaDetalle(
     decimal? CostoAdquisicion, decimal? CostoHoraOperacion,
     decimal? CapacidadMaxima, string? UnidadCapacidad,
     string? UbicacionFisica, string? Notas,
-    DateTime FechaCreacion
+    DateTime FechaCreacion,
+    bool TieneFoto = false
 );
+
+public record ActualizarFotoMaquinariaRequest(string Base64, string ContentType);
 
 public record MantenimientoItem(
     int MantenimientoID, int MaquinariaID, string Maquinaria,

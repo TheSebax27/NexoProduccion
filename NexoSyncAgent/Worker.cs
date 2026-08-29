@@ -163,6 +163,13 @@ public class Worker : BackgroundService
                     //    ni referencias a NITs o referencias desconocidas en Visions.
                     var tareaFacturasVisions = scope.ServiceProvider.GetRequiredService<TareaSincronizarFacturasNexoVisions>();
                     await tareaFacturasVisions.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
+
+                    // 10. Pedidos NEXO → Visions Entradas: órdenes de compra pendientes de procesar
+                    //     en Visions como Entrada de Mercancía. Va después de facturas para
+                    //     respetar el mismo orden de procesamiento (primero salidas, luego entradas).
+                    //     TipoMovimiento distingue COMPRA (entrada) de DEVOLUCION (salida inversa).
+                    var tareaPedidosVisions = scope.ServiceProvider.GetRequiredService<TareaSincronizarPedidos>();
+                    await tareaPedidosVisions.EjecutarAsync(stoppingToken);
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

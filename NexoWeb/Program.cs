@@ -92,6 +92,9 @@ app.UseAntiforgery();
 
     app.MapGet("api/marketing/combos/{id:int}/imagen",
         (int id, IHttpClientFactory hf) => ProxyImagen($"{apiBase}/api/marketing/combos/{id}/imagen", hf));
+
+    app.MapGet("api/produccion/maquinaria/{id:int}/foto",
+        (int id, IHttpClientFactory hf) => ProxyImagen($"{apiBase}/api/produccion/maquinaria/{id}/foto", hf));
 }
 
 app.MapRazorComponents<App>()

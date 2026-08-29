@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\Produccion\\NexoWeb\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\crm\\cotizaciones.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\crm\\cotizaciones.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\traspasos\\creartraspasodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\traspasos\\creartraspasodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
@@ -25,10 +29,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\formulariosdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\formulariosdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\crm\\cotizaciones.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\crm\\cotizaciones.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\formularios\\formpublico.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
@@ -210,24 +210,28 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 4,
           "Children": [
             {
+              "$type": "Bookmark",
+              "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            },
+            {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "CrearTraspasoDialog.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
               "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
               "RelativeToolTip": "Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAAABoAAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2026-08-28T22:54:19.272Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "AutomacionDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\AutomacionDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\AutomacionDtos.cs",
@@ -235,12 +239,11 @@
               "RelativeToolTip": "Common\\Dtos\\AutomacionDtos.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-28T22:54:08.466Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-28T22:54:08.466Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
               "Title": "FormulariosDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\FormulariosDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\FormulariosDtos.cs",
@@ -248,20 +251,20 @@
               "RelativeToolTip": "Common\\Dtos\\FormulariosDtos.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-28T19:17:48.599Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-28T19:17:48.599Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 0,
               "Title": "Cotizaciones.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Crm\\Cotizaciones.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Crm\\Cotizaciones.razor",
               "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Crm\\Cotizaciones.razor",
               "RelativeToolTip": "Components\\Pages\\Crm\\Cotizaciones.razor",
-              "ViewState": "AgIAAEAAAAAAAAAAAAAlwFIAAAAmAAAAAAAAAA==",
+              "ViewState": "AgIAAPoAAAAAAAAAAAAcwAEBAAAEAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-08-28T14:19:46.995Z"
+              "WhenOpened": "2026-08-28T14:19:46.995Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -301,7 +304,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "LogisticaDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\LogisticaDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\LogisticaDtos.cs",
@@ -309,12 +312,11 @@
               "RelativeToolTip": "Common\\Dtos\\LogisticaDtos.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-12T20:07:23.909Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-12T20:07:23.909Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "GastosOperativos.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Finanzas\\GastosOperativos.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Finanzas\\GastosOperativos.razor",
@@ -322,12 +324,11 @@
               "RelativeToolTip": "Components\\Pages\\Finanzas\\GastosOperativos.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-08-28T19:33:11.332Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-28T19:33:11.332Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "NexoApiClient.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\ApiClient\\NexoApiClient.cs",
               "RelativeDocumentMoniker": "Common\\ApiClient\\NexoApiClient.cs",
@@ -335,12 +336,7 @@
               "RelativeToolTip": "Common\\ApiClient\\NexoApiClient.cs",
               "ViewState": "AgIAAJMAAAAAAAAAAAAvwKoAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-03T14:11:55.419Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+              "WhenOpened": "2026-08-03T14:11:55.419Z"
             },
             {
               "$type": "Document",

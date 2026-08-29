@@ -145,9 +145,10 @@ public record CompletarActividadRequest(bool Completada);
 public record LineaCotizacionInput(int ArticuloID, decimal Cantidad, decimal PrecioUnitario);
 public record CotizacionItem(
     int CotizacionID, int ClienteID, string Cliente, int? OportunidadID, DateTime Fecha,
-    DateTime? ValidoHasta, string Estado, string? Notas, int? FacturaID, decimal Total
+    DateTime? ValidoHasta, string Estado, string? Notas, int? FacturaID, decimal Total,
+    int? CentroCostoID = null, string? CentroCosto = null
 );
-public record CrearCotizacionRequest(int ClienteID, int? OportunidadID, DateTime Fecha, DateTime? ValidoHasta, string? Notas, List<LineaCotizacionInput> Lineas);
+public record CrearCotizacionRequest(int ClienteID, int? OportunidadID, DateTime Fecha, DateTime? ValidoHasta, string? Notas, List<LineaCotizacionInput> Lineas, int? CentroCostoID = null);
 public record ActualizarEstadoCotizacionRequest(string Estado);
 public record CotizacionLineaItem(int LineaID, int CotizacionID, int ArticuloID, string SkuArticulo, string NombreArticulo, decimal Cantidad, decimal PrecioUnitario, decimal Subtotal);
 public record ConvertirCotizacionResponse(int FacturaId);

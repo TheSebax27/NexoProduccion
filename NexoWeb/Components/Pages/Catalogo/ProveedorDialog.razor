@@ -217,6 +217,7 @@
 @code {
     [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public ProveedorItem? Proveedor { get; set; }
+    [Parameter] public string? NitInicial { get; set; }
 
     private string _tipoPersona = "Juridica";
     private string _razonSocial = "";
@@ -287,6 +288,8 @@
 
             if (Proveedor is not null)
                 ResolverSelecciones(Proveedor.CodigoDept, Proveedor.CodigoMuni);
+            else if (!string.IsNullOrWhiteSpace(NitInicial))
+                _nit = NitInicial;
         }
         catch { /* catálogos opcionales */ }
 

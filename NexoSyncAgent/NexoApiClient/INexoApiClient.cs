@@ -43,4 +43,9 @@ public interface INexoApiClient
 
     // Número de factura asignado por Visions → actualizar NEXO
     Task ActualizarNumeroVisionsAsync(int facturaId, ActualizarNumeroVisionsRequest request, CancellationToken ct);
+
+    // Pedidos NEXO → Visions (Entradas)
+    Task<List<PedidoParaVisionsDto>> ListarPedidosParaVisionsAsync(CancellationToken ct);
+    Task MarcarPedidoExportadoVisionsAsync(int pedidoId, CancellationToken ct);
+    Task ActualizarNumeroPedidoVisionsAsync(int pedidoId, ActualizarNumeroPedidoVisionsRequest request, CancellationToken ct);
 }

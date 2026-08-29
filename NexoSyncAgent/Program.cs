@@ -21,6 +21,7 @@ builder.Services.AddScoped<TareaImportarCambiosTarjeta>();
 builder.Services.AddScoped<TareaDetectarArticulosFaltantes>();
 builder.Services.AddScoped<TareaSincronizarClientes>();
 builder.Services.AddScoped<TareaSincronizarProveedores>();
+builder.Services.AddScoped<TareaSincronizarPedidos>();
 
 // HttpClient tipado: cada vez que alguien pida INexoApiClient, le dan un
 // NexoApiClient ya configurado con la URL base y el header de autenticacion.

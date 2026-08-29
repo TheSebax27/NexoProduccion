@@ -22,13 +22,9 @@
 
 @* ── Filtros ──────────────────────────────────────────────────────────── *@
 <div class="kx-filtros">
-    <MudSelect T="int?" @bind-Value="_articuloId" Label="Artículo" Variant="Variant.Outlined"
-               Clearable="true" Style="flex:2; min-width:200px;">
-        @foreach (var a in _articulos)
-        {
-            <MudSelectItem T="int?" Value="@((int?)a.ArticuloID)">@a.SKU — @a.Nombre</MudSelectItem>
-        }
-    </MudSelect>
+    <ArticuloAutocomplete Value="_articuloSeleccionado"
+                          ValueChanged="@(a => _articuloSeleccionado = a)"
+                          Label="Artículo" />
     <MudSelect T="int?" @bind-Value="_bodegaId" Label="Bodega" Variant="Variant.Outlined"
                Clearable="true" Style="flex:1; min-width:150px;">
         @foreach (var b in _bodegas)
@@ -212,9 +208,9 @@ else
 
 @code {
     private List<KardexMovimientoItem> _movimientos = new();
-    private List<ArticuloItem> _articulos = new();
+    private ArticuloItem? _articuloSeleccionado;
     private List<BodegaItem>   _bodegas   = new();
-    private int? _articuloId;
+    private int? _articuloId => _articuloSeleccionado?.ArticuloID;
     private int? _bodegaId;
     private DateTime? _desde;
     private DateTime? _hasta;
@@ -245,11 +241,7 @@ else
     {
         try
         {
-            var t1 = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
-            var t2 = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
-            await Task.WhenAll(t1, t2);
-            _articulos = await t1 ?? new();
-            _bodegas   = await t2 ?? new();
+            _bodegas = await ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas") ?? new();
         }
         catch { }
     }

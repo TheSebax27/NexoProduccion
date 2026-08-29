@@ -282,7 +282,7 @@
 @code {
     [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter] public List<ClienteItem> Clientes { get; set; } = new();
+    // Clientes ya no se pasa como lista — se busca por NIT vía API
     [Parameter] public List<ArticuloItem> Articulos { get; set; } = new();
     [Parameter] public List<ComboItem> CombosActivos { get; set; } = new();
     [Parameter] public List<CentroCostoBasicoItem> CentrosCosto { get; set; } = new();
@@ -318,18 +318,13 @@
     private string? _nitBusqueda;
     private ClienteItem? _clienteEncontrado;
     private bool _nitNoEncontrado;
-    private List<ClienteItem> _clientesDisponibles = new();
+    private bool _buscandoNit;
     private bool _ccTieneVisions;
     private DateTime? _fecha = DateTime.Today;
     private string? _notas;
     private List<LineaEditable> _lineas = new() { new LineaEditable() };
     private List<ComboItem> _combosActivos => CombosActivos;
 
-    protected override void OnParametersSet()
-    {
-        if (_clientesDisponibles.Count == 0)
-            _clientesDisponibles = new(Clientes);
-    }
 
 
     private void OnConsumidorFinalCambiado(bool valor)
@@ -341,23 +336,34 @@
         _clienteId = null;
     }
 
-    private void OnNitBusquedaCambiado(string? nit)
+    private async Task OnNitBusquedaCambiado(string? nit)
     {
         _nitBusqueda = nit?.Trim();
         _clienteEncontrado = null;
         _nitNoEncontrado = false;
-        if (string.IsNullOrWhiteSpace(_nitBusqueda)) { _clienteId = null; return; }
+        _clienteId = null;
+        if (string.IsNullOrWhiteSpace(_nitBusqueda)) return;
 
-        var c = _clientesDisponibles.FirstOrDefault(x => x.NIT?.Trim() == _nitBusqueda);
-        if (c is not null)
+        _buscandoNit = true;
+        StateHasChanged();
+        try
         {
-            _clienteEncontrado = c;
-            _clienteId = c.ClienteID;
+            var resp = await ApiClient.GetAsync<ClientesPaginadosResponse>(
+                $"api/crm/clientes/paginados?texto={Uri.EscapeDataString(_nitBusqueda)}&tamano=10");
+            var c = resp?.Items?.FirstOrDefault(x => x.NIT?.Trim() == _nitBusqueda);
+            if (c is not null)
+            {
+                _clienteEncontrado = c;
+                _clienteId = c.ClienteID;
+            }
+            else
+            {
+                _nitNoEncontrado = true;
+            }
         }
-        else
+        finally
         {
-            _nitNoEncontrado = true;
-            _clienteId = null;
+            _buscandoNit = false;
         }
     }
 
@@ -378,10 +384,7 @@
         try
         {
             await ApiClient.PostAsync<CrearClienteRequest, object?>("api/crm/clientes", req);
-            var actualizados = await ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
-            if (actualizados is not null)
-                _clientesDisponibles = actualizados.Where(c => c.Estado).ToList();
-            OnNitBusquedaCambiado(_nitBusqueda);
+            await OnNitBusquedaCambiado(_nitBusqueda);
             if (_clienteEncontrado is not null)
                 Snackbar.Add("Cliente creado y seleccionado.", Severity.Success);
         }

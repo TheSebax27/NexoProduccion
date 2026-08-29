@@ -1,5 +1,6 @@
 @using NexoWeb.Common.Dtos
 @inject ISnackbar Snackbar
+@inject INexoApiClient ApiClient
 
 <MudDialog>
     <DialogContent>
@@ -39,6 +40,12 @@
 
             <MudDatePicker @bind-Date="_fecha" Label="Fecha" Required="true" Class="mb-3" />
             <MudDatePicker @bind-Date="_validoHasta" Label="Válida hasta (opcional)" Class="mb-3" />
+            <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de costo (opcional)" Clearable="true" Class="mb-3">
+                @foreach (var cc in CentrosCosto)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)cc.CentroCostoID)">@cc.Nombre</MudSelectItem>
+                }
+            </MudSelect>
             <MudTextField @bind-Value="_notas" Label="Notas (opcional)" Lines="2" Class="mb-3" />
 
             <MudDivider Class="mb-3" />
@@ -94,9 +101,8 @@
 @code {
     [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter] public List<ClienteItem>    Clientes     { get; set; } = new();
     [Parameter] public List<OportunidadItem> Oportunidades { get; set; } = new();
-    [Parameter] public List<ArticuloItem>   Articulos    { get; set; } = new();
+    [Parameter] public List<CentroCostoItem> CentrosCosto { get; set; } = new();
 
     private class LineaEditable
     {
@@ -118,6 +124,7 @@
     private DateTime? _fecha      = DateTime.Today;
     private DateTime? _validoHasta = DateTime.Today.AddDays(15);
     private string?   _notas;
+    private int?      _centroCostoId;
     private List<LineaEditable> _lineas = new() { new LineaEditable() };
 
     private void OnClienteSeleccionado(ClienteItem? cliente)
@@ -126,30 +133,22 @@
         _oportunidadId = null;
     }
 
-    private Task<IEnumerable<ClienteItem>> BuscarClienteAsync(string texto, CancellationToken _)
+    private async Task<IEnumerable<ClienteItem>> BuscarClienteAsync(string texto, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(texto))
-            return Task.FromResult(Clientes.Take(20));
-
-        var q = texto.Trim();
-        var resultado = Clientes.Where(c =>
-            c.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase) ||
-            c.NIT.Contains(q, StringComparison.OrdinalIgnoreCase))
-            .Take(15);
-        return Task.FromResult(resultado);
+        var url = string.IsNullOrWhiteSpace(texto)
+            ? "api/crm/clientes/paginados?pagina=1&tamano=15"
+            : $"api/crm/clientes/paginados?texto={Uri.EscapeDataString(texto)}&pagina=1&tamano=15";
+        var resp = await ApiClient.GetAsync<ClientesPaginadosResponse>(url);
+        return resp?.Items ?? new();
     }
 
-    private Task<IEnumerable<ArticuloItem>> BuscarArticuloAsync(string texto, CancellationToken _)
+    private async Task<IEnumerable<ArticuloItem>> BuscarArticuloAsync(string texto, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(texto))
-            return Task.FromResult(Articulos.Take(20));
-
-        var q = texto.Trim();
-        var resultado = Articulos.Where(a =>
-            a.SKU.Contains(q, StringComparison.OrdinalIgnoreCase) ||
-            a.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase))
-            .Take(15);
-        return Task.FromResult(resultado);
+        var url = string.IsNullOrWhiteSpace(texto)
+            ? "api/catalogo/articulos?estado=true&pagina=1&tamano=15"
+            : $"api/catalogo/articulos?texto={Uri.EscapeDataString(texto)}&estado=true&pagina=1&tamano=15";
+        var resp = await ApiClient.GetAsync<ArticulosPaginadosResponse>(url);
+        return resp?.Items ?? new();
     }
 
     private void OnArticuloCambiado(LineaEditable linea, ArticuloItem? articulo)
@@ -177,7 +176,7 @@
             return;
         }
 
-        var request = new CrearCotizacionRequest(_clienteSeleccionado.ClienteID, _oportunidadId, _fecha.Value, _validoHasta, _notas, lineasValidas);
+        var request = new CrearCotizacionRequest(_clienteSeleccionado.ClienteID, _oportunidadId, _fecha.Value, _validoHasta, _notas, lineasValidas, _centroCostoId);
         MudDialog.Close(DialogResult.Ok(request));
     }
 

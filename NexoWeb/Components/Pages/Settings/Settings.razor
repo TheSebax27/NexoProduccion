@@ -47,12 +47,6 @@
             <span>Sesion</span>
         </div>
 
-        <div class="nexo-settings-nav-item @(_seccion == "vista" ? "ns-active" : "")"
-             @onclick='() => _seccion = "vista"'>
-            <MudIcon Icon="@Icons.Material.Outlined.ViewModule" Size="Size.Small" />
-            <span>Vista de listados</span>
-        </div>
-
         <div class="nexo-settings-nav-item @(_seccion == "menu" ? "ns-active" : "")"
              @onclick='() => _seccion = "menu"'>
             <MudIcon Icon="@Icons.Material.Outlined.ViewSidebar" Size="Size.Small" />
@@ -69,6 +63,12 @@
              @onclick='() => _seccion = "ayuda"'>
             <MudIcon Icon="@Icons.Material.Outlined.HelpOutline" Size="Size.Small" />
             <span>Ayuda</span>
+        </div>
+
+        <div class="nexo-settings-nav-item @(_seccion == "descanso" ? "ns-active" : "")"
+             @onclick='() => _seccion = "descanso"'>
+            <MudIcon Icon="@Icons.Material.Outlined.SelfImprovement" Size="Size.Small" />
+            <span>Descanso</span>
         </div>
 
         <AuthorizeView Roles="Administracion">
@@ -238,6 +238,32 @@
                     <MudSwitch T="bool" Value="Preferencias.AntiestresActivo"
                                ValueChanged="OnAntiestresActivoCambiadoAsync" Color="Color.Secondary" />
                 </div>
+                @if (Preferencias.AntiestresActivo)
+                {
+                    <div class="py-2">
+                        <div style="font-size:0.85rem; font-weight:600; margin-bottom:6px;">⏱ Frecuencia del recordatorio</div>
+                        <div class="d-flex align-center gap-3 flex-wrap">
+                            <MudNumericField T="int" Value="_intervaloMin" ValueChanged="OnIntervaloMinCambiadoAsync"
+                                            Label="Minutos" Min="0" Max="120" Style="max-width:110px"
+                                            Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            <MudNumericField T="int" Value="_intervaloSegExtra" ValueChanged="OnIntervaloSegCambiadoAsync"
+                                            Label="Segundos extra" Min="0" Max="59" Style="max-width:130px"
+                                            Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            <div style="font-size:0.78rem; color:var(--n-text-3);">
+                                = cada <strong>@(Preferencias.IntervaloAntiestresSeg)s</strong>
+                                @if (Preferencias.IntervaloAntiestresSeg < 60)
+                                {
+                                    <span>(@Preferencias.IntervaloAntiestresSeg segundos)</span>
+                                }
+                                else
+                                {
+                                    <span>(@(Preferencias.IntervaloAntiestresSeg / 60) min @(Preferencias.IntervaloAntiestresSeg % 60) seg)</span>
+                                }
+                            </div>
+                        </div>
+                        <div style="font-size:0.75rem; color:var(--n-text-3); margin-top:4px;">Minimo 10 segundos. El perrito aparecera con exactamente ese intervalo.</div>
+                    </div>
+                }
             </MudPaper>
         }
 
@@ -263,41 +289,6 @@
                     </div>
                     <MudSwitch T="bool" Value="Preferencias.MantenerSesionActiva"
                                ValueChanged="OnMantenerSesionCambiadoAsync" Color="Color.Primary" />
-                </div>
-            </MudPaper>
-        }
-
-        @* ── Vista de listados ── *@
-        else if (_seccion == "vista")
-        {
-            <MudPaper Class="pa-5">
-                <div class="nexo-chart-header mb-4">
-                    <MudIcon Icon="@Icons.Material.Outlined.ViewModule" Size="Size.Small" Class="nexo-chart-header__icon" />
-                    <div>
-                        <div class="nexo-chart-header__title">Vista de listados</div>
-                        <div class="nexo-chart-header__sub">Aplica a todas las pantallas con listas (Articulos, Ordenes, Stock, etc.)</div>
-                    </div>
-                </div>
-
-                <div class="d-flex align-center justify-space-between py-2">
-                    <div>
-                        <div style="font-weight:600; font-size:0.9rem;">Mostrar como</div>
-                        <div style="font-size:0.78rem; color:var(--n-text-3);">Se guarda para tu usuario y no cambia hasta que lo vuelvas a cambiar.</div>
-                    </div>
-                    <MudButtonGroup OverrideStyles="false">
-                        <MudButton Variant="@(Preferencias.VistaListado == "lista" ? Variant.Filled : Variant.Outlined)"
-                                   Color="@(Preferencias.VistaListado == "lista" ? Color.Primary : Color.Default)"
-                                   StartIcon="@(Preferencias.VistaListado == "lista" ? Icons.Material.Filled.Check : Icons.Material.Filled.ViewList)"
-                                   OnClick="@(() => OnVistaCambiadaAsync("lista"))">
-                            Lista
-                        </MudButton>
-                        <MudButton Variant="@(Preferencias.VistaListado == "tarjetas" ? Variant.Filled : Variant.Outlined)"
-                                   Color="@(Preferencias.VistaListado == "tarjetas" ? Color.Primary : Color.Default)"
-                                   StartIcon="@(Preferencias.VistaListado == "tarjetas" ? Icons.Material.Filled.Check : Icons.Material.Filled.ViewModule)"
-                                   OnClick="@(() => OnVistaCambiadaAsync("tarjetas"))">
-                            Tarjetas
-                        </MudButton>
-                    </MudButtonGroup>
                 </div>
             </MudPaper>
         }
@@ -445,6 +436,57 @@
                                StartIcon="@Icons.Material.Outlined.OpenInNew"
                                OnClick="@(() => Navegacion.NavigateTo("/settings/ayuda"))">
                         Ver guia
+                    </MudButton>
+                </div>
+            </MudPaper>
+        }
+
+        @* ── Descanso ── *@
+        else if (_seccion == "descanso")
+        {
+            <MudPaper Class="pa-0" Style="overflow:hidden">
+                <div class="nexo-chart-header pa-5 pb-4" style="border-bottom:1px solid var(--mud-palette-lines-default)">
+                    <MudIcon Icon="@Icons.Material.Outlined.SelfImprovement" Size="Size.Small" Class="nexo-chart-header__icon" />
+                    <div>
+                        <div class="nexo-chart-header__title">Descanso</div>
+                        <div class="nexo-chart-header__sub">Tómate un momento. Las burbujas no se van a explotar solas.</div>
+                    </div>
+                </div>
+
+                <div class="pa-5">
+                    <MudText Typo="Typo.body2" Class="mb-1" Style="color:var(--n-text-3)">
+                        @(_burbujasPopped.Count(x => x)) de @_burbujasPopped.Length explotadas
+                    </MudText>
+
+                    @if (_burbujasPopped.All(x => x))
+                    {
+                        <MudAlert Severity="Severity.Success" Class="mb-3">
+                            ¡Todas explotadas! Ya puedes volver al trabajo.
+                        </MudAlert>
+                    }
+
+                    <div style="display:flex; flex-wrap:wrap; gap:6px; max-width:520px; margin-bottom:20px">
+                        @for (int i = 0; i < _burbujasPopped.Length; i++)
+                        {
+                            var idx = i;
+                            var popped = _burbujasPopped[idx];
+                            <div @onclick="() => ExplotarBurbuja(idx)"
+                                 title="@(popped ? "ya explotada" : "explotar")"
+                                 style="width:40px; height:40px; border-radius:50%;
+                                        cursor:@(popped ? "default" : "pointer");
+                                        background:@(popped ? "var(--mud-palette-lines-default)" : "var(--mud-palette-primary)");
+                                        box-shadow:@(popped ? "none" : "inset -2px -3px 5px rgba(0,0,0,.25), 2px 2px 5px rgba(0,0,0,.15)");
+                                        transform:@(popped ? "scale(0.82)" : "scale(1)");
+                                        transition:all .12s ease;
+                                        opacity:@(popped ? "0.35" : "1")">
+                            </div>
+                        }
+                    </div>
+
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small"
+                               StartIcon="@Icons.Material.Outlined.Refresh"
+                               OnClick="ReiniciarBurbujas">
+                        Nuevo lote
                     </MudButton>
                 </div>
             </MudPaper>
@@ -725,14 +767,6 @@
         await Preferencias.EstablecerTemaOscuroAsync(nuevoValor);
     }
 
-    private async Task OnVistaCambiadaAsync(string nuevaVista)
-    {
-        if (Preferencias.VistaListado == nuevaVista) return;
-
-        await Preferencias.EstablecerVistaListadoAsync(nuevaVista);
-        Snackbar.Add("Nuevo formato de listado aplicado.", Severity.Success);
-    }
-
     private async Task OnMostrarAyudaCambiadoAsync(bool nuevoValor)
     {
         await Preferencias.EstablecerMostrarAyudaAsync(nuevoValor);
@@ -746,6 +780,9 @@
             : "Sesion normal: cerrara al vencer el token.", Severity.Info);
     }
 
+    private int _intervaloMin     => Preferencias.IntervaloAntiestresSeg / 60;
+    private int _intervaloSegExtra => Preferencias.IntervaloAntiestresSeg % 60;
+
     private async Task OnAntiestresActivoCambiadoAsync(bool nuevoValor)
     {
         await Preferencias.EstablecerAntiestresActivoAsync(nuevoValor);
@@ -753,6 +790,25 @@
             ? "Modo antiestres activado 🐾 El perrito aparecera cada cierto tiempo."
             : "Modo antiestres desactivado.", Severity.Info);
     }
+
+    private async Task OnIntervaloMinCambiadoAsync(int min)
+    {
+        var seg = Math.Max(0, min) * 60 + _intervaloSegExtra;
+        if (seg < 10) seg = 10;
+        await Preferencias.EstablecerIntervaloAntiestresSeg(seg);
+    }
+
+    private async Task OnIntervaloSegCambiadoAsync(int segExtra)
+    {
+        var seg = _intervaloMin * 60 + Math.Max(0, segExtra);
+        if (seg < 10) seg = 10;
+        await Preferencias.EstablecerIntervaloAntiestresSeg(seg);
+    }
+
+    // ── Descanso (burbujas) ───────────────────────────────────────────
+    private bool[] _burbujasPopped = new bool[70];
+    private void ExplotarBurbuja(int idx) { if (!_burbujasPopped[idx]) _burbujasPopped[idx] = true; }
+    private void ReiniciarBurbujas() => _burbujasPopped = new bool[70];
 
     // ── Integraciones (Administracion) ───────────────────────────────
     private async Task OnUsaVisionsCambiadoAsync(bool nuevoValor)

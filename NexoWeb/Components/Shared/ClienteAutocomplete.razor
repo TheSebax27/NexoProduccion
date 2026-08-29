@@ -1,0 +1,40 @@
+@inject INexoApiClient ApiClient
+
+<MudAutocomplete T="ClienteItem?"
+                 Value="Value" ValueChanged="OnValueChanged"
+                 Label="@Label"
+                 SearchFunc="BuscarAsync"
+                 ToStringFunc="@(c => c is null ? "" : $"{c.NIT} — {c.Nombre}")"
+                 Placeholder="NIT o nombre del cliente…"
+                 Variant="Variant.Outlined"
+                 Margin="Margin.Dense"
+                 Required="@Required"
+                 Disabled="@Disabled"
+                 ResetValueOnEmptyText="true"
+                 CoerceText="false"
+                 MinCharacters="0"
+                 DebounceInterval="200" />
+
+@code {
+    [Parameter] public ClienteItem? Value { get; set; }
+    [Parameter] public EventCallback<ClienteItem?> ValueChanged { get; set; }
+    [Parameter] public string Label { get; set; } = "Cliente";
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private async Task<IEnumerable<ClienteItem?>> BuscarAsync(string? texto, CancellationToken ct)
+    {
+        var url = string.IsNullOrWhiteSpace(texto)
+            ? "api/crm/clientes/paginados?pagina=1&tamano=15"
+            : $"api/crm/clientes/paginados?texto={Uri.EscapeDataString(texto)}&pagina=1&tamano=15";
+
+        var resp = await ApiClient.GetAsync<ClientesPaginadosResponse>(url);
+        return resp?.Items?.Cast<ClienteItem?>() ?? [];
+    }
+
+    private async Task OnValueChanged(ClienteItem? value)
+    {
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+    }
+}

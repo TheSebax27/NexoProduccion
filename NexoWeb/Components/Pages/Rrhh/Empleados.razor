@@ -20,6 +20,10 @@
         <BotonFavorito Href="/rrhh/empleados" Etiqueta="Empleados" />
         @if (!_cargando && _empleados.Count > 0)
         {
+            <MudTextField T="string" @bind-Value="_busqueda" Placeholder="Buscar empleado…"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Style="min-width:220px" Immediate="true" />
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="AbrirCreacionAsync">
                 Nuevo Empleado
@@ -56,7 +60,7 @@ else if (_empleados.Count == 0)
 }
 else
 {
-    <MudTable Items="_empleados" Hover="true" Dense="true" Striped="true">
+    <MudTable Items="EmpleadosFiltrados" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
             <MudTh></MudTh>
             <MudTh>Nombre</MudTh>
@@ -124,7 +128,18 @@ else
     private List<RolItem> _roles = new();
     private bool _cargando = true;
     private string? _errorCarga;
+    private string? _busqueda;
     private long _cacheBust = DateTime.UtcNow.Ticks;
+
+    private IEnumerable<EmpleadoItem> EmpleadosFiltrados =>
+        string.IsNullOrWhiteSpace(_busqueda)
+            ? _empleados
+            : _empleados.Where(e =>
+                (e.Nombres + " " + e.Apellidos).Contains(_busqueda, StringComparison.OrdinalIgnoreCase)
+                || (e.Cargo ?? "").Contains(_busqueda, StringComparison.OrdinalIgnoreCase)
+                || (e.CentroCosto ?? "").Contains(_busqueda, StringComparison.OrdinalIgnoreCase)
+                || (e.Email ?? "").Contains(_busqueda, StringComparison.OrdinalIgnoreCase)
+                || (e.Telefono ?? "").Contains(_busqueda, StringComparison.OrdinalIgnoreCase));
 
     // Estado laboral: Inactivo (ya no trabaja aqui) gana sobre Ausente (esta
     // de vacaciones/incapacidad/permiso pero sigue siendo empleado), que a su

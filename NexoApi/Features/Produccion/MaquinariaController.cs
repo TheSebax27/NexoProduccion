@@ -69,6 +69,35 @@ public class MaquinariaController(IMaquinariaService svc) : ControllerBase
         catch (KeyNotFoundException) { return NotFound(); }
     }
 
+    // ── Foto ──────────────────────────────────────────────────────
+
+    [HttpGet("api/produccion/maquinaria/{id:int}/foto")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ObtenerFoto(int id)
+    {
+        var foto = await svc.ObtenerFotoAsync(id);
+        if (foto is null) return NotFound();
+        return File(foto.Value.Data, foto.Value.ContentType);
+    }
+
+    [HttpPut("api/produccion/maquinaria/{id:int}/foto")]
+    public async Task<IActionResult> ActualizarFoto(int id, [FromBody] ActualizarFotoMaquinariaRequest r)
+    {
+        try
+        {
+            await svc.ActualizarFotoAsync(id, r.Base64, r.ContentType);
+            return NoContent();
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    [HttpDelete("api/produccion/maquinaria/{id:int}/foto")]
+    public async Task<IActionResult> EliminarFoto(int id)
+    {
+        await svc.EliminarFotoAsync(id);
+        return NoContent();
+    }
+
     // ── Estadísticas ──────────────────────────────────────────────
 
     [HttpGet("api/produccion/maquinaria/{id:int}/estadisticas")]

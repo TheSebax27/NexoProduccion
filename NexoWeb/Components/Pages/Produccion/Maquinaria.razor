@@ -117,11 +117,20 @@ else
                     <tr class="prod-table__row @(m.Estado == "EnMantenimiento" ? "prod-table__row--warn" : m.MantenimientoVencido ? "prod-table__row--alerta" : "")">
                         <td><code class="prod-codigo">@m.Codigo</code></td>
                         <td class="prod-table__nombre">
-                            <div class="prod-table__prod">@m.Nombre</div>
-                            @if (m.Marca is not null || m.Modelo is not null)
-                            {
-                                <div class="inv-muted" style="font-size:.78rem;">@m.Marca @m.Modelo</div>
-                            }
+                            <div style="display:flex; align-items:center; gap:8px">
+                                @if (m.TieneFoto)
+                                {
+                                    <img src="@($"api/produccion/maquinaria/{m.MaquinariaID}/foto")" alt=""
+                                         style="width:36px; height:36px; object-fit:cover; border-radius:4px; flex-shrink:0;" />
+                                }
+                                <div>
+                                    <div class="prod-table__prod">@m.Nombre</div>
+                                    @if (m.Marca is not null || m.Modelo is not null)
+                                    {
+                                        <div class="inv-muted" style="font-size:.78rem;">@m.Marca @m.Modelo</div>
+                                    }
+                                </div>
+                            </div>
                         </td>
                         <td class="inv-muted">@m.TipoMaquinaria</td>
                         <td class="inv-muted">@(m.CentroTrabajo ?? "—")</td>

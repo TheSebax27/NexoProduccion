@@ -227,9 +227,10 @@ public class AsistenciaService(IDbConnectionFactory db) : IAsistenciaService
                         VALUES (@empleadoId,@fecha,@hora,@metodo,@adminId,@nota,@tardanza);
                     """, new { empleadoId, fecha, hora, metodo, adminId, nota, tardanza });
             }
-            else if (estado.HoraSalida is not null && estado.HoraEntrada2 is null)
+            else if (estado.HoraEntrada2 is null)
             {
-                // 2da entrada (regreso de almuerzo): solo si el horario tiene almuerzo
+                // 2da entrada (regreso de almuerzo): solo si el horario tiene almuerzo.
+                // Se permite aunque no haya salida 1 registrada (operador que solo marca entradas).
                 var tieneAlmuerzo = await TieneAlmuerzoDiaAsync(conn, empleadoId, fechaDate);
                 if (!tieneAlmuerzo)
                     throw new InvalidOperationException("Ya existe una entrada registrada para ese empleado en esa fecha.");

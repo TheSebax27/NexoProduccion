@@ -28,7 +28,7 @@ public class PreferenciasState
     // Vista Lista/Tarjetas: es un unico control global (Settings), no por
     // pantalla -- antes era por pagina (clave "Vista:{pagina}"), se
     // simplifico a pedido del usuario.
-    public string VistaListado => ObtenerValor("VistaListado", "lista");
+    public string VistaListado => "lista";
 
     // Icono de ayuda por pagina -- activado por defecto (util para usuarios
     // nuevos desde el primer login, sin tener que descubrir el toggle antes).
@@ -111,6 +111,21 @@ public class PreferenciasState
     public async Task EstablecerAntiestresActivoAsync(bool valor)
     {
         await EstablecerAsync("AntiestresActivo", valor ? "true" : "false");
+    }
+
+    public int IntervaloAntiestresSeg
+    {
+        get
+        {
+            var raw = ObtenerValor("IntervaloAntiestresSeg");
+            return int.TryParse(raw, out var v) && v >= 10 ? v : 300;
+        }
+    }
+
+    public async Task EstablecerIntervaloAntiestresSeg(int segundos)
+    {
+        var valor = Math.Max(10, segundos);
+        await EstablecerAsync("IntervaloAntiestresSeg", valor.ToString());
     }
 
     public bool AutoCodigoOP => ObtenerValor("AutoCodigoOP") == "true";

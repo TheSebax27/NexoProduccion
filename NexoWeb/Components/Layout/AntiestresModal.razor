@@ -167,10 +167,9 @@
 
     private async Task BucleTimerAsync(CancellationToken ct)
     {
-        var rng = new Random();
         while (!ct.IsCancellationRequested)
         {
-            var espera = TimeSpan.FromMinutes(rng.Next(4, 9));
+            var espera = TimeSpan.FromSeconds(Preferencias.IntervaloAntiestresSeg);
             try { await Task.Delay(espera, ct); }
             catch (OperationCanceledException) { break; }
             if (!ct.IsCancellationRequested)

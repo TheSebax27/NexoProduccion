@@ -318,26 +318,42 @@ public class OrdenesProduccionService : IOrdenesProduccionService
         using var connection = _db.CreateConnection();
         return await connection.QueryAsync<StockLineaItem>(@"
             SELECT
-                a.Nombre                                                        AS Articulo,
-                ISNULL(a.PresentacionCodigo, '')                                AS Unidad,
-                CAST(rd.CantidadRequerida
-                     * op.CantidadProgramada
-                     / NULLIF(r.CantidadRendimientoBase, 0)
-                     * (1 + rd.PorcentajeMermaEstandar / 100.0) AS DECIMAL(18,4)) AS CantidadRequerida,
+                t.Nombre                                                        AS Articulo,
+                ISNULL(t.PresentacionCodigo, '')                                AS Unidad,
+                CAST(
+                    CASE
+                        WHEN rd.UnidadID = art.UnidadID THEN
+                            CASE WHEN um.Tipo = 'UNIDAD'
+                                 THEN CEILING((rd.CantidadRequerida * op.CantidadProgramada / NULLIF(r.CantidadRendimientoBase,0)) * (1 + rd.PorcentajeMermaEstandar/100.0))
+                                 ELSE (rd.CantidadRequerida * op.CantidadProgramada / NULLIF(r.CantidadRendimientoBase,0)) * (1 + rd.PorcentajeMermaEstandar/100.0)
+                            END
+                        WHEN um.Abreviatura = 'und' AND umArt.Abreviatura = 'cja' AND art.UnidadesPorEmbalaje > 0 THEN
+                            ((rd.CantidadRequerida * op.CantidadProgramada / NULLIF(r.CantidadRendimientoBase,0)) * (1 + rd.PorcentajeMermaEstandar/100.0)) / art.UnidadesPorEmbalaje
+                        WHEN um.Abreviatura = 'cja' AND umArt.Abreviatura = 'und' AND art.UnidadesPorEmbalaje > 0 THEN
+                            CEILING(((rd.CantidadRequerida * op.CantidadProgramada / NULLIF(r.CantidadRendimientoBase,0)) * (1 + rd.PorcentajeMermaEstandar/100.0)) * art.UnidadesPorEmbalaje)
+                        ELSE
+                            (rd.CantidadRequerida * op.CantidadProgramada / NULLIF(r.CantidadRendimientoBase,0)) * (1 + rd.PorcentajeMermaEstandar/100.0)
+                    END
+                AS DECIMAL(18,4))                                               AS CantidadRequerida,
                 ISNULL(SUM(s.CantidadActual), 0)                                AS StockDisponible
             FROM Produccion.OrdenesProduccion op
             JOIN Produccion.EstadosOP e              ON e.EstadoOPID      = op.EstadoOPID
             JOIN Produccion.RecetaBOM r              ON r.RecetaID        = op.RecetaID
             JOIN Produccion.RecetaBOM_Detalle rd      ON rd.RecetaID       = r.RecetaID
-            JOIN Catalogo.Tarjetas a                 ON a.ArticuloID      = rd.InsumoID
+            JOIN Catalogo.Tarjetas t                 ON t.ArticuloID      = rd.InsumoID
+            JOIN Catalogo.Articulos art              ON art.ArticuloID    = rd.InsumoID
+            JOIN Catalogo.UnidadesMedida um          ON um.UnidadID       = rd.UnidadID
+            LEFT JOIN Catalogo.UnidadesMedida umArt  ON umArt.UnidadID    = art.UnidadID
             LEFT JOIN Inventario.InventarioStock s    ON s.ArticuloID      = rd.InsumoID
                                                      AND s.BodegaID       = op.BodegaOrigenMPID
             WHERE op.OrdenProduccionID = @ordenProduccionId
               AND e.Nombre = 'Planificada'
-            GROUP BY a.Nombre, a.PresentacionCodigo,
+            GROUP BY t.Nombre, t.PresentacionCodigo,
                      rd.CantidadRequerida, op.CantidadProgramada,
-                     r.CantidadRendimientoBase, rd.PorcentajeMermaEstandar
-            ORDER BY a.Nombre",
+                     r.CantidadRendimientoBase, rd.PorcentajeMermaEstandar,
+                     rd.UnidadID, art.UnidadID, art.UnidadesPorEmbalaje,
+                     um.Tipo, um.Abreviatura, umArt.Abreviatura
+            ORDER BY t.Nombre",
             new { ordenProduccionId });
     }
 

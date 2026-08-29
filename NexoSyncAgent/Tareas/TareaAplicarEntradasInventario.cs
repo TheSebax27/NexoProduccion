@@ -72,7 +72,7 @@ public class TareaAplicarEntradasInventario
         // y no cree un eco que volveria a sincronizarse de Visions a NEXO.
         connection.Execute("EXEC sys.sp_set_session_context N'nexo_agente', N'1'");
 
-        // Resolver TipoID numérico de Visions desde el Codigo ('PT','MP','IN','SV').
+        // Resolver TipoID numérico de Visions desde el Codigo ('PT','MP','IN','SER').
         // Si viene null o no se encuentra en TIPOPRODUCTO_TIPOS, se deja VV3 sin cambiar (COALESCE).
         int? tipoProductoID = null;
         if (!string.IsNullOrWhiteSpace(evento.TipoProductoCodigo))

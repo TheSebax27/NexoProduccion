@@ -25,16 +25,9 @@
     @* ── Artículo ─────────────────────────────────────────────────── *@
     <div class="inv-form-section">
         <label class="inv-form-label">Artículo <span class="inv-req">*</span></label>
-        <MudSelect T="int?" Value="_articuloId" ValueChanged="OnArticuloCambiado"
-                   Variant="Variant.Outlined" Placeholder="Selecciona el artículo"
-                   Class="inv-form-field">
-            @foreach (var articulo in _articulos)
-            {
-                <MudSelectItem T="int?" Value="@((int?)articulo.ArticuloID)">
-                    @articulo.SKU — @articulo.Nombre
-                </MudSelectItem>
-            }
-        </MudSelect>
+        <ArticuloAutocomplete Value="_articuloSeleccionado"
+                              ValueChanged="OnArticuloCambiado"
+                              Label="Artículo" Required="true" />
     </div>
 
     @* ── Info artículo si está seleccionado ───────────────────────── *@
@@ -135,20 +128,19 @@
 </div>
 
 @code {
-    private List<ArticuloItem>          _articulos = new();
+    private ArticuloItem?               _articuloSeleccionado;
     private List<BodegaItem>            _bodegas   = new();
     private List<StockConsolidadoItem>  _stock     = new();
     private List<MotivoPerdidaItem>     _motivos   = new();
 
-    private int?    _articuloId;
+    private int?    _articuloId => _articuloSeleccionado?.ArticuloID;
     private int?    _bodegaId;
     private int?    _motivoId;
     private decimal _cantidadPerdida;
     private string  _observacion = "";
     private bool    _guardando;
 
-    private ArticuloItem? ArticuloSeleccionado =>
-        _articuloId.HasValue ? _articulos.FirstOrDefault(a => a.ArticuloID == _articuloId.Value) : null;
+    private ArticuloItem? ArticuloSeleccionado => _articuloSeleccionado;
 
     private StockConsolidadoItem? _stockArticulo =>
         _articuloId.HasValue
@@ -161,25 +153,23 @@
             : _bodegas.Where(b => _stock.Any(s => s.ArticuloID == _articuloId.Value && s.BodegaID == b.BodegaID && s.CantidadActual > 0)).ToList();
 
     private bool FormularioValido =>
-        _articuloId.HasValue && _bodegaId.HasValue && _motivoId.HasValue &&
+        _articuloSeleccionado is not null && _bodegaId.HasValue && _motivoId.HasValue &&
         _cantidadPerdida > 0 && _observacion.Trim().Length >= 5;
 
     protected override async Task OnInitializedAsync()
     {
-        var t1 = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
         var t2 = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
         var t3 = ApiClient.GetAsync<List<StockConsolidadoItem>>("api/inventario/stock");
         var t4 = ApiClient.GetAsync<List<MotivoPerdidaItem>>("api/inventario/motivos-perdida");
-        await Task.WhenAll(t1, t2, t3, t4);
-        _articulos = await t1 ?? new();
-        _bodegas   = await t2 ?? new();
-        _stock     = await t3 ?? new();
-        _motivos   = await t4 ?? new();
+        await Task.WhenAll(t2, t3, t4);
+        _bodegas = await t2 ?? new();
+        _stock   = await t3 ?? new();
+        _motivos = await t4 ?? new();
     }
 
-    private void OnArticuloCambiado(int? nuevoId)
+    private void OnArticuloCambiado(ArticuloItem? art)
     {
-        _articuloId = nuevoId;
+        _articuloSeleccionado = art;
         if (_bodegaId.HasValue && _bodegasConStock.All(b => b.BodegaID != _bodegaId.Value))
             _bodegaId = null;
     }

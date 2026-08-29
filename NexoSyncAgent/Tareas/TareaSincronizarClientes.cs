@@ -87,17 +87,15 @@ public class TareaSincronizarClientes
                 primerApellido = partes.Length > 1 ? partes[^1] : ".";
             }
 
-            var camposFaltantes = new List<string>();
-            if (esJuridica) { if (string.IsNullOrWhiteSpace(empresa))    camposFaltantes.Add("Empresa/RazonSocial"); }
-            else             { if (string.IsNullOrWhiteSpace(c.PrimerNombre)) camposFaltantes.Add("PrimerNombre"); }
-            if (string.IsNullOrWhiteSpace(ciudad))       camposFaltantes.Add("Ciudad");
-            if (string.IsNullOrWhiteSpace(departamento)) camposFaltantes.Add("Departamento");
-            if (camposFaltantes.Count > 0)
+            // Jurídica sin nombre: omitir. Natural sin nombre: usar "." como placeholder mínimo aceptado por Visions.
+            if (esJuridica && string.IsNullOrWhiteSpace(empresa))
             {
-                _logger.LogWarning("Cliente NIT {NIT} omitido del sync a Visions: campos obligatorios vacios en NEXO: {Campos}",
-                    c.NIT, string.Join(", ", camposFaltantes));
+                _logger.LogWarning("Cliente NIT {NIT} omitido del sync a Visions: empresa/razón social vacía", c.NIT);
                 continue;
             }
+            var primerNombre = !esJuridica && string.IsNullOrWhiteSpace(c.PrimerNombre) ? "." : c.PrimerNombre;
+            if (string.IsNullOrWhiteSpace(ciudad))       ciudad       = "SIN DATOS";
+            if (string.IsNullOrWhiteSpace(departamento)) departamento = "SIN DATOS";
 
             try
             {
@@ -149,7 +147,7 @@ public class TareaSincronizarClientes
                     new
                     {
                         NIT          = T(c.NIT, 25),
-                        Nombre1      = T(esJuridica ? null : c.PrimerNombre, 255),
+                        Nombre1      = T(esJuridica ? null : primerNombre, 255),
                         Nombre2      = T(esJuridica ? null : c.SegundoNombre, 50),
                         Apellido1    = T(esJuridica ? null : primerApellido, 50),
                         Apellido2    = T(esJuridica ? null : c.SegundoApellido, 50),
@@ -211,16 +209,20 @@ public class TareaSincronizarClientes
                 // Se inyecta como PrimerNombre para que el API lo use directamente como Nombre
                 // sin tocar TipoPersona (que viene de TIPOTERCERO en Visions y determina el tipo
                 // de identificación que se asigna en NEXO).
-                var tieneNombrePersona = !string.IsNullOrWhiteSpace(u.NOMBRE1) || !string.IsNullOrWhiteSpace(u.APELLIDO1);
-                var tieneNombreEmpresa = !string.IsNullOrWhiteSpace(u.EMPRESA);
+                // "." es el placeholder que el sync NEXO→Visions pone cuando faltan campos; tratarlo como vacío.
+                var nombre1Real   = EsDotPlaceholder(u.NOMBRE1)   ? null : u.NOMBRE1;
+                var apellido1Real = EsDotPlaceholder(u.APELLIDO1) ? null : u.APELLIDO1;
+                var empresaReal   = EsDotPlaceholder(u.EMPRESA)   ? null : u.EMPRESA;
+
+                var tieneNombrePersona = !string.IsNullOrWhiteSpace(nombre1Real) || !string.IsNullOrWhiteSpace(apellido1Real);
+                var tieneNombreEmpresa = !string.IsNullOrWhiteSpace(empresaReal);
                 var usaRepresentante   = !tieneNombrePersona && !tieneNombreEmpresa && !string.IsNullOrWhiteSpace(u.REPRESENTANTE);
 
-                // Solo SegundoNombre (NOMBRE2) y SegundoApellido (APELLIDO2) pueden ir vacíos.
-                // Si no hay ningún campo de nombre válido, omitir este registro.
                 if (!tieneNombrePersona && !tieneNombreEmpresa && !usaRepresentante)
                 {
-                    _logger.LogDebug("Usuario NIT {NIT} sin nombre en Visions — omitido del sync a NEXO", u.NIT);
-                    continue;
+                    // Todos los campos de nombre son "." o vacíos; usar NIT como nombre de display en NEXO.
+                    nombre1Real = u.NIT;
+                    tieneNombrePersona = true;
                 }
 
                 var telVisions  = esJuridica ? (u.TELEFONOEMPRESA ?? u.TELEFONOVIVE) : (u.TELEFONOVIVE ?? u.TELEFONOEMPRESA);
@@ -229,11 +231,11 @@ public class TareaSincronizarClientes
                 await _apiClient.SyncClienteDesdeVisionsAsync(new SyncClienteDesdeVisionsRequest(
                     NIT: u.NIT,
                     TipoPersona: esJuridica ? "Juridica" : "Natural",
-                    PrimerNombre: usaRepresentante ? u.REPRESENTANTE : u.NOMBRE1,
+                    PrimerNombre: usaRepresentante ? u.REPRESENTANTE : nombre1Real,
                     SegundoNombre: usaRepresentante ? null : u.NOMBRE2,
-                    PrimerApellido: usaRepresentante ? null : u.APELLIDO1,
+                    PrimerApellido: usaRepresentante ? null : apellido1Real,
                     SegundoApellido: usaRepresentante ? null : u.APELLIDO2,
-                    NombreEmpresa: u.EMPRESA,
+                    NombreEmpresa: empresaReal,
                     Telefono: string.IsNullOrWhiteSpace(telVisions)  ? "3000000000"      : telVisions,
                     Email:    string.IsNullOrWhiteSpace(u.EMAIL)     ? "default@gmail.com" : u.EMAIL,
                     Direccion: string.IsNullOrWhiteSpace(dirVisions) ? "default"          : dirVisions,
@@ -259,6 +261,7 @@ public class TareaSincronizarClientes
     }
 
     private static string? T(string? s, int max) => s?.Length > max ? s[..max] : s;
+    private static bool EsDotPlaceholder(string? s) => !string.IsNullOrWhiteSpace(s) && s.Trim() == ".";
 
     private record UsuarioVisions(
         string NIT, string? TIPOTERCERO, string? TIPOID,

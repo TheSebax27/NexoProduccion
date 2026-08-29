@@ -7,8 +7,10 @@
 @inject NavigationManager Navigation
 @inject NexoWeb.Common.Auth.ModulosVisiblesState Modulos
 @inject NexoWeb.Common.Auth.ConfiguracionEmpresaState ConfiguracionEmpresa
+@inject IDialogService DialogService
 @using NexoWeb.Common.Dtos
 @using System.Globalization
+@using NexoWeb.Components.Pages.Crm
 @implements IDisposable
 
 @* ── Estilos del feed de actividad y sparklines ────────────────────── *@
@@ -721,6 +723,91 @@ else
                         </MudPaper>
                     </MudItem>
                 </MudGrid>
+            @* ── Sección Devoluciones ── *@
+            @if (_analyticsDevolucion is not null)
+            {
+                <div class="nexo-section mt-4">
+                    <div class="nexo-section__dot" style="background:#F59E0B"></div>
+                    <span class="nexo-section__label">Devoluciones</span>
+                    <div class="nexo-section__line"></div>
+                </div>
+                <div class="nexo-kpi-grid mb-4">
+                    <div class="nexo-kpi nexo-kpi--rose">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.AssignmentReturn" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value">@_analyticsDevolucion.TotalDevoluciones</div>
+                        <div class="nexo-kpi__label">Devoluciones</div>
+                        <div class="nexo-kpi__sub">En el período</div>
+                    </div>
+                    <div class="nexo-kpi nexo-kpi--rose">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.MoneyOff" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value">@_analyticsDevolucion.ValorTotalDevuelto.ToString("C0")</div>
+                        <div class="nexo-kpi__label">Valor devuelto</div>
+                        <div class="nexo-kpi__sub">Costo mercancía restituida</div>
+                    </div>
+                    <div class="nexo-kpi nexo-kpi--rose">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.TrendingDown" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value">@_analyticsDevolucion.TasaDevolucionPct.ToString("N2")%</div>
+                        <div class="nexo-kpi__label">Tasa de devolución</div>
+                        <div class="nexo-kpi__sub">% sobre ventas del período</div>
+                    </div>
+                </div>
+
+                @if (_analyticsDevolucion.TopArticulos.Any())
+                {
+                    <MudGrid Class="mb-4">
+                        <MudItem xs="12" md="6">
+                            <MudPaper Class="pa-4 nexo-chart-card">
+                                <div class="nexo-chart-header nexo-chart-card__header">
+                                    <MudIcon Icon="@Icons.Material.Outlined.BarChart" Size="Size.Small" Class="nexo-chart-header__icon" />
+                                    <div>
+                                        <div class="nexo-chart-header__title">Artículos más devueltos</div>
+                                        <div class="nexo-chart-header__sub">Top 10 por valor devuelto</div>
+                                    </div>
+                                </div>
+                                <MudTable Items="_analyticsDevolucion.TopArticulos" Dense="true" Hover="true" Elevation="0">
+                                    <HeaderContent>
+                                        <MudTh>#</MudTh><MudTh>Artículo</MudTh>
+                                        <MudTh Style="text-align:right">Veces</MudTh>
+                                        <MudTh Style="text-align:right">Valor</MudTh>
+                                    </HeaderContent>
+                                    <RowTemplate>
+                                        @{ var idxD = _analyticsDevolucion.TopArticulos.IndexOf(context) + 1; }
+                                        <MudTd Style="font-size:0.8rem;color:#F59E0B;font-weight:700">@idxD</MudTd>
+                                        <MudTd>
+                                            <div style="font-size:0.85rem;font-weight:500">@context.Articulo</div>
+                                            <div style="font-size:0.72rem;opacity:.6">@context.SKU</div>
+                                        </MudTd>
+                                        <MudTd Style="text-align:right;font-size:0.82rem">@context.VecesDevuelto</MudTd>
+                                        <MudTd Style="text-align:right;font-weight:700;color:#F59E0B">@context.ValorTotal.ToString("C0")</MudTd>
+                                    </RowTemplate>
+                                </MudTable>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudPaper Class="pa-4 nexo-chart-card" Style="height:100%">
+                                <div class="nexo-chart-header nexo-chart-card__header mb-3">
+                                    <MudIcon Icon="@Icons.Material.Outlined.BarChart" Size="Size.Small" Class="nexo-chart-header__icon" />
+                                    <div>
+                                        <div class="nexo-chart-header__title">Devoluciones por mes</div>
+                                        <div class="nexo-chart-header__sub">Valor devuelto mensual</div>
+                                    </div>
+                                </div>
+                                @if (_analyticsDevolucion.PorMes.Any())
+                                {
+                                    <MudChart ChartType="ChartType.Bar"
+                                              ChartSeries="@(new List<ChartSeries> { new() { Name = "Valor devuelto", Data = _analyticsDevolucion.PorMes.Select(m => (double)m.ValorDevuelto).ToArray() } })"
+                                              XAxisLabels="@(_analyticsDevolucion.PorMes.Select(m => m.Mes[5..]).ToArray())"
+                                              ChartOptions="@_opcionesGrafico" Width="100%" Height="200px" />
+                                }
+                                else
+                                {
+                                    <div class="nexo-empty-state"><MudIcon Icon="@Icons.Material.Outlined.Inbox" Class="nexo-empty-state__icon" /><p>Sin devoluciones en el período.</p></div>
+                                }
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                }
+            }
             }
         </MudTabPanel>
 
@@ -974,10 +1061,16 @@ else
                         <div class="nexo-chart-header nexo-chart-card__header">
                             <MudIcon Icon="@Icons.Material.Outlined.AcUnit" Size="Size.Small" Class="nexo-chart-header__icon" Style="color:#6366F1!important" />
                             <div class="flex-grow-1">
-                                <div class="nexo-chart-header__title">Clientes Fríos — Lista completa</div>
+                                <div class="nexo-chart-header__title">Clientes Fríos</div>
                                 <div class="nexo-chart-header__sub">@_clientesFrios.Count clientes sin interacción reciente</div>
                             </div>
-                            <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => Navigation.NavigateTo("/crm/clientes"))">Ir al CRM</MudButton>
+                            <div class="d-flex gap-2">
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                           StartIcon="@Icons.Material.Filled.Map"
+                                           OnClick="AbrirMapaClientesAsync">Ver Mapa</MudButton>
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                           OnClick="@(() => Navigation.NavigateTo("/crm/clientes"))">Ir al CRM</MudButton>
+                            </div>
                         </div>
                         <div class="nexo-chart-card__body">
                             @if (_clientesFrios.Count == 0)
@@ -989,7 +1082,7 @@ else
                             }
                             else
                             {
-                                <MudTable Items="@_clientesFrios" Dense="true" Hover="true" Elevation="0">
+                                <MudTable Items="@ClientesFriosPaginados" Dense="true" Hover="true" Elevation="0">
                                     <HeaderContent>
                                         <MudTh>Cliente</MudTh><MudTh>Responsable</MudTh><MudTh>Última interacción</MudTh><MudTh>Próximo contacto</MudTh>
                                     </HeaderContent>
@@ -1010,6 +1103,18 @@ else
                                         <MudTd Style="font-size:0.82rem">@(context.ProximoContacto?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
                                     </RowTemplate>
                                 </MudTable>
+                                @if (_totalPaginasFrios > 1)
+                                {
+                                    <div class="d-flex justify-center align-center gap-2 mt-3">
+                                        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Size="Size.Small"
+                                                       Disabled="@(_paginaFrios <= 1)"
+                                                       OnClick="@(() => { _paginaFrios--; StateHasChanged(); })" />
+                                        <MudText Typo="Typo.body2">@_paginaFrios / @_totalPaginasFrios</MudText>
+                                        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small"
+                                                       Disabled="@(_paginaFrios >= _totalPaginasFrios)"
+                                                       OnClick="@(() => { _paginaFrios++; StateHasChanged(); })" />
+                                    </div>
+                                }
                             }
                         </div>
                     </MudPaper>
@@ -1366,9 +1471,9 @@ else
     private ResumenCrmItem _resumenCrm = new(0, 0);
     private List<ClienteFrioItem> _clientesFrios = new();
     private int _paginaFrios = 1;
-    private const int TamanoFrios = 10;
-    private int TotalPaginasFrios => (int)Math.Ceiling((double)_clientesFrios.Count / TamanoFrios);
-    private IEnumerable<ClienteFrioItem> ClientesFriosPagina =>
+    private const int TamanoFrios = 20;
+    private int _totalPaginasFrios => (int)Math.Ceiling((double)_clientesFrios.Count / TamanoFrios);
+    private IEnumerable<ClienteFrioItem> ClientesFriosPaginados =>
         _clientesFrios.Skip((_paginaFrios - 1) * TamanoFrios).Take(TamanoFrios);
     private List<FacturaItem> _cartera = new();
     private decimal _totalSaldoCartera;
@@ -1390,6 +1495,7 @@ else
     private string[] _labelsIngresosMes = Array.Empty<string>();
     private List<TopClienteItem> _topClientes = new();
     private List<TopArticuloItem> _topArticulos = new();
+    private DevolucionesAnalytics? _analyticsDevolucion;
     private DateRange _rangoFact = new(DateTime.Today.AddMonths(-1), DateTime.Today);
     private int _mesesFact = 12;
     private List<ComparativaMesItem> _comparativaYoY = new();
@@ -1431,6 +1537,12 @@ else
     {
         Modulos.OnCambio += VerificarAccesoBI;
         VerificarAccesoBI();
+    }
+
+    private async Task AbrirMapaClientesAsync()
+    {
+        await DialogService.ShowAsync<MapaClientesDialog>("Mapa de Clientes",
+            new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true });
     }
 
     public void Dispose()
@@ -1587,14 +1699,17 @@ else
                 $"api/dashboard/top-articulos?desde={_rangoFact.Start:yyyy-MM-dd}&hasta={_rangoFact.End:yyyy-MM-dd}&top=10");
             var tareaYoY = ApiClient.GetAsync<List<ComparativaMesItem>>(
                 $"api/dashboard/comparativa-yoy?meses={_mesesFact}");
+            var tareaDevolucion = ApiClient.GetAsync<DevolucionesAnalytics>(
+                $"api/facturacion/devoluciones/analytics?meses={_mesesFact}");
 
-            await Task.WhenAll(tareaResumen, tareaIngresos, tareaClientes, tareaArticulos, tareaYoY);
+            await Task.WhenAll(tareaResumen, tareaIngresos, tareaClientes, tareaArticulos, tareaYoY, tareaDevolucion);
 
-            _resumenFact      = await tareaResumen   ?? new(0, 0, 0, 0);
-            _ingresosMes      = await tareaIngresos  ?? new();
-            _topClientes      = await tareaClientes  ?? new();
-            _topArticulos     = await tareaArticulos ?? new();
-            _comparativaYoY   = await tareaYoY       ?? new();
+            _resumenFact         = await tareaResumen    ?? new(0, 0, 0, 0);
+            _ingresosMes         = await tareaIngresos   ?? new();
+            _topClientes         = await tareaClientes   ?? new();
+            _topArticulos        = await tareaArticulos  ?? new();
+            _comparativaYoY      = await tareaYoY        ?? new();
+            _analyticsDevolucion = await tareaDevolucion;
             ActualizarGraficoIngresos();
             _tabFactCargado = true;
         }

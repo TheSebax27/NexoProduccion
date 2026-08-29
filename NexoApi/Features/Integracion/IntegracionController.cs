@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexoApi.Common.Security;
+using NexoApi.Features.Compras;
+using NexoApi.Features.Compras.Dtos;
 using NexoApi.Features.Integracion.Dtos;
 
 namespace NexoApi.Features.Integracion;
@@ -11,10 +13,12 @@ namespace NexoApi.Features.Integracion;
 public class IntegracionController : ControllerBase
 {
     private readonly IIntegracionService _service;
+    private readonly IOrdenesCompraService _compras;
 
-    public IntegracionController(IIntegracionService service)
+    public IntegracionController(IIntegracionService service, IOrdenesCompraService compras)
     {
         _service = service;
+        _compras = compras;
     }
 
     private int CentroCostoDelAgente =>
@@ -389,5 +393,28 @@ public class IntegracionController : ControllerBase
             return Ok(contenido);
         }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+    }
+
+    // ──────── Pedidos NEXO → Visions (Entradas) ────────
+
+    [HttpGet("pedidos-para-visions")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult<IEnumerable<PedidoParaVisionsDto>>> ListarPedidosParaVisions() =>
+        Ok(await _compras.ListarPedidosParaVisionsAsync(CentroCostoDelAgente));
+
+    [HttpPost("pedidos/{id:int}/marcar-exportado-visions")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> MarcarPedidoExportadoVisions(int id)
+    {
+        await _compras.MarcarPedidoExportadoVisionsAsync(id);
+        return Ok(new { mensaje = "Pedido marcado como exportado a Visions." });
+    }
+
+    [HttpPut("pedidos/{id:int}/numero-visions")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> ActualizarNumeroPedidoVisions(int id, ActualizarNumeroPedidoVisionsRequest request)
+    {
+        await _compras.ActualizarNumeroPedidoVisionsAsync(id, request);
+        return Ok(new { mensaje = "Número de pedido actualizado desde Visions." });
     }
 }

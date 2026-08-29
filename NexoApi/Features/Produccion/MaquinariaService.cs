@@ -23,6 +23,10 @@ public interface IMaquinariaService
     Task<IEnumerable<OrdenMaquinariaItem>> ListarMaquinasOrdenAsync(int ordenId);
     Task GuardarMaquinasOrdenAsync(int ordenId, List<MaquinariaOrdenInput> maquinas);
     Task<MaquinariaEstadisticas> GetEstadisticasAsync(int maquinariaId);
+
+    Task<(byte[] Data, string ContentType)?> ObtenerFotoAsync(int id);
+    Task ActualizarFotoAsync(int id, string base64, string contentType);
+    Task EliminarFotoAsync(int id);
 }
 
 public class MaquinariaService(IDbConnectionFactory db) : IMaquinariaService
@@ -53,7 +57,8 @@ public class MaquinariaService(IDbConnectionFactory db) : IMaquinariaService
         int TipoMaquinariaID, string TipoMaquinaria,
         int? CentroTrabajoID, string? CentroTrabajo,
         string Estado, string? Marca, string? Modelo,
-        decimal? CostoHoraOperacion, DateTime? ProximoMantenimiento);
+        decimal? CostoHoraOperacion, DateTime? ProximoMantenimiento,
+        bool TieneFoto);
 
     public async Task<IEnumerable<MaquinariaItem>> ListarAsync(int? tipoId, string? estado, int? centroTrabajoId)
     {
@@ -66,7 +71,8 @@ public class MaquinariaService(IDbConnectionFactory db) : IMaquinariaService
                    (SELECT TOP 1 mm.ProximoMantenimiento
                     FROM Produccion.MantenimientoMaquinaria mm
                     WHERE mm.MaquinariaID=m.MaquinariaID AND mm.ProximoMantenimiento IS NOT NULL
-                    ORDER BY mm.FechaRealizado DESC) AS ProximoMantenimiento
+                    ORDER BY mm.FechaRealizado DESC) AS ProximoMantenimiento,
+                   CASE WHEN m.Foto IS NOT NULL THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS TieneFoto
             FROM Produccion.Maquinaria m
             JOIN Produccion.TiposMaquinaria t ON t.TipoMaquinariaID=m.TipoMaquinariaID
             LEFT JOIN Organizacion.CentrosTrabajo ct ON ct.CentroTrabajoID=m.CentroTrabajoID
@@ -87,7 +93,7 @@ public class MaquinariaService(IDbConnectionFactory db) : IMaquinariaService
                 c.TipoMaquinariaID, c.TipoMaquinaria,
                 c.CentroTrabajoID, c.CentroTrabajo,
                 c.Estado, c.Marca, c.Modelo, c.CostoHoraOperacion,
-                proxFecha, vencido);
+                proxFecha, vencido, c.TieneFoto);
         });
     }
 
@@ -99,7 +105,8 @@ public class MaquinariaService(IDbConnectionFactory db) : IMaquinariaService
         DateTime? FechaAdquisicion, int? VidaUtilAnios,
         decimal? CostoAdquisicion, decimal? CostoHoraOperacion,
         decimal? CapacidadMaxima, string? UnidadCapacidad,
-        string? UbicacionFisica, string? Notas, DateTime FechaCreacion);
+        string? UbicacionFisica, string? Notas, DateTime FechaCreacion,
+        bool TieneFoto);
 
     public async Task<MaquinariaDetalle?> ObtenerAsync(int id)
     {
@@ -112,7 +119,8 @@ public class MaquinariaService(IDbConnectionFactory db) : IMaquinariaService
                    m.FechaAdquisicion, m.VidaUtilAnios,
                    m.CostoAdquisicion, m.CostoHoraOperacion,
                    m.CapacidadMaxima, m.UnidadCapacidad,
-                   m.UbicacionFisica, m.Notas, m.FechaCreacion
+                   m.UbicacionFisica, m.Notas, m.FechaCreacion,
+                   CASE WHEN m.Foto IS NOT NULL THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS TieneFoto
             FROM Produccion.Maquinaria m
             JOIN Produccion.TiposMaquinaria t ON t.TipoMaquinariaID=m.TipoMaquinariaID
             LEFT JOIN Organizacion.CentrosTrabajo ct ON ct.CentroTrabajoID=m.CentroTrabajoID
@@ -127,7 +135,8 @@ public class MaquinariaService(IDbConnectionFactory db) : IMaquinariaService
             c.Marca, c.Modelo, c.NumeroSerie,
             c.FechaAdquisicion.HasValue ? DateOnly.FromDateTime(c.FechaAdquisicion.Value) : null,
             c.VidaUtilAnios, c.CostoAdquisicion, c.CostoHoraOperacion,
-            c.CapacidadMaxima, c.UnidadCapacidad, c.UbicacionFisica, c.Notas, c.FechaCreacion);
+            c.CapacidadMaxima, c.UnidadCapacidad, c.UbicacionFisica, c.Notas, c.FechaCreacion,
+            c.TieneFoto);
     }
 
     public async Task<int> CrearAsync(CrearMaquinariaRequest r)
@@ -341,5 +350,37 @@ public class MaquinariaService(IDbConnectionFactory db) : IMaquinariaService
         if (cruda is null) return new(0, 0, null, 0);
         decimal? promedio = cruda.TotalOrdenes > 0 ? cruda.TotalHorasOrdenes / cruda.TotalOrdenes : null;
         return new(cruda.TotalOrdenes, cruda.TotalHorasOrdenes, promedio, cruda.TotalRecetas);
+    }
+
+    // ── Foto ────────────────────────────────────────────────────
+
+    private record FotoCruda(byte[] Foto, string? FotoContentType);
+
+    public async Task<(byte[] Data, string ContentType)?> ObtenerFotoAsync(int id)
+    {
+        using var conn = db.CreateConnection();
+        var row = await conn.QueryFirstOrDefaultAsync<FotoCruda>(
+            "SELECT Foto, FotoContentType FROM Produccion.Maquinaria WHERE MaquinariaID=@id AND Foto IS NOT NULL",
+            new { id });
+        if (row is null) return null;
+        return (row.Foto, row.FotoContentType ?? "image/jpeg");
+    }
+
+    public async Task ActualizarFotoAsync(int id, string base64, string contentType)
+    {
+        var data = Convert.FromBase64String(base64);
+        using var conn = db.CreateConnection();
+        var affected = await conn.ExecuteAsync(
+            "UPDATE Produccion.Maquinaria SET Foto=@data, FotoContentType=@contentType WHERE MaquinariaID=@id",
+            new { data, contentType, id });
+        if (affected == 0) throw new KeyNotFoundException("Máquina no encontrada.");
+    }
+
+    public async Task EliminarFotoAsync(int id)
+    {
+        using var conn = db.CreateConnection();
+        await conn.ExecuteAsync(
+            "UPDATE Produccion.Maquinaria SET Foto=NULL, FotoContentType=NULL WHERE MaquinariaID=@id",
+            new { id });
     }
 }

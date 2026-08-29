@@ -134,9 +134,8 @@ else
 
 @code {
     private List<CotizacionItem> _cotizaciones = new();
-    private List<ClienteItem> _clientes = new();
     private List<OportunidadItem> _oportunidades = new();
-    private List<ArticuloItem> _articulos = new();
+    private List<CentroCostoItem> _centrosCosto = new();
     private bool _cargando = true;
     private string? _errorCarga;
     private ClienteItem? _filtroCliente;
@@ -155,16 +154,14 @@ else
         try
         {
             var tareaCotizaciones = ApiClient.GetAsync<List<CotizacionItem>>("api/crm/cotizaciones");
-            var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
             var tareaOportunidades = ApiClient.GetAsync<List<OportunidadItem>>("api/crm/oportunidades");
-            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
+            var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
 
-            await Task.WhenAll(tareaCotizaciones, tareaClientes, tareaOportunidades, tareaArticulos);
+            await Task.WhenAll(tareaCotizaciones, tareaOportunidades, tareaCentrosCosto);
 
             _cotizaciones = await tareaCotizaciones ?? new();
-            _clientes = (await tareaClientes ?? new()).Where(c => c.Estado).ToList();
             _oportunidades = (await tareaOportunidades ?? new()).Where(o => o.Etapa is not "GANADA" and not "PERDIDA").ToList();
-            _articulos = (await tareaArticulos ?? new()).Where(a => a.Estado).ToList();
+            _centrosCosto = await tareaCentrosCosto ?? new();
         }
         catch (Exception ex)
         {
@@ -176,14 +173,13 @@ else
         }
     }
 
-    private Task<IEnumerable<ClienteItem>> BuscarClienteFiltroAsync(string texto, CancellationToken _)
+    private async Task<IEnumerable<ClienteItem>> BuscarClienteFiltroAsync(string texto, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(texto))
-            return Task.FromResult(_clientes.Take(20));
-        var q = texto.Trim();
-        return Task.FromResult(_clientes.Where(c =>
-            c.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase) ||
-            c.NIT.Contains(q, StringComparison.OrdinalIgnoreCase)).Take(15));
+        var url = string.IsNullOrWhiteSpace(texto)
+            ? "api/crm/clientes/paginados?pagina=1&tamano=15"
+            : $"api/crm/clientes/paginados?texto={Uri.EscapeDataString(texto)}&pagina=1&tamano=15";
+        var resp = await ApiClient.GetAsync<ClientesPaginadosResponse>(url);
+        return resp?.Items ?? new();
     }
 
     private async Task CargarCotizacionesAsync()
@@ -220,9 +216,8 @@ else
     {
         var parametros = new DialogParameters<CotizacionDialog>
         {
-            { x => x.Clientes, _clientes },
             { x => x.Oportunidades, _oportunidades },
-            { x => x.Articulos, _articulos }
+            { x => x.CentrosCosto, _centrosCosto }
         };
 
         var dialogo = await DialogService.ShowAsync<CotizacionDialog>("Nueva Cotización", parametros,
@@ -263,7 +258,7 @@ else
     private void AbrirDialogoEnvio(CotizacionItem cotizacion)
     {
         _envioContexto  = cotizacion;
-        _envioCliente   = _clientes.FirstOrDefault(c => c.ClienteID == cotizacion.ClienteID);
+        _envioCliente   = new ClienteItem { ClienteID = cotizacion.ClienteID, Nombre = cotizacion.Cliente };
         _envioEmail     = true;
         _envioWhatsApp  = false;
         _envioDialogVisible = true;

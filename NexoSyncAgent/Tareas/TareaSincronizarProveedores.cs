@@ -70,10 +70,12 @@ public class TareaSincronizarProveedores
                 var tipotercero = esJuridica ? "JURIDICA" : "NATURAL";
                 var tipoid = esJuridica ? "NIT" : "CEDULA DE CIUDADANIA";
                 var empresa   = esJuridica ? p.RazonSocial : null;
-                var nombre1   = esJuridica ? null : p.PrimerNombre;
                 var nombre2   = esJuridica ? null : p.SegundoNombre;
-                var apellido1 = esJuridica ? null : p.PrimerApellido;
                 var apellido2 = esJuridica ? null : p.SegundoApellido;
+
+                // Para naturales: aplicar "." como placeholder mínimo si faltan nombre/apellido.
+                var nombre1   = esJuridica ? null : (string.IsNullOrWhiteSpace(p.PrimerNombre) ? "." : p.PrimerNombre);
+                var apellido1 = esJuridica ? null : (string.IsNullOrWhiteSpace(p.PrimerApellido) ? "." : p.PrimerApellido);
 
                 // Aplicar defaults para campos de contacto opcionales
                 var telProv   = string.IsNullOrWhiteSpace(p.Telefono)  ? "3000000000"       : p.Telefono;
@@ -91,14 +93,12 @@ public class TareaSincronizarProveedores
                 if (digitoVerificacion.HasValue && !p.DigitoVerificacion.HasValue)
                     _logger.LogDebug("Proveedor NIT {NIT}: digito de verificacion calculado automaticamente = {Digito}", p.NIT, digitoVerificacion.Value);
 
-                // Campos realmente obligatorios en Visions para insertar un proveedor.
+                // Solo omitir si faltan campos que no tienen fallback razonable.
                 var camposFaltantes = new List<string>();
-                if (esJuridica)  { if (string.IsNullOrWhiteSpace(empresa))   camposFaltantes.Add("Empresa/RazonSocial"); }
-                else             { if (string.IsNullOrWhiteSpace(nombre1))   camposFaltantes.Add("PrimerNombre");
-                                   if (string.IsNullOrWhiteSpace(apellido1)) camposFaltantes.Add("PrimerApellido"); }
-                if (digitoVerificacion is null)                camposFaltantes.Add("DigitoVerificacion");
-                if (string.IsNullOrWhiteSpace(p.Ciudad))       camposFaltantes.Add("Ciudad");
-                if (string.IsNullOrWhiteSpace(p.Departamento)) camposFaltantes.Add("Departamento");
+                if (esJuridica && string.IsNullOrWhiteSpace(empresa)) camposFaltantes.Add("Empresa/RazonSocial");
+                if (digitoVerificacion is null)                        camposFaltantes.Add("DigitoVerificacion");
+                if (string.IsNullOrWhiteSpace(p.Ciudad))               camposFaltantes.Add("Ciudad");
+                if (string.IsNullOrWhiteSpace(p.Departamento))         camposFaltantes.Add("Departamento");
                 if (camposFaltantes.Count > 0)
                 {
                     _logger.LogWarning("Proveedor NIT {NIT} omitido del sync a Visions: faltan campos requeridos: {Campos}",
@@ -208,6 +208,10 @@ public class TareaSincronizarProveedores
                 var razonSocial = !string.IsNullOrWhiteSpace(u.EMPRESA) ? u.EMPRESA
                     : !string.IsNullOrWhiteSpace(u.REPRESENTANTE) ? u.REPRESENTANTE
                     : string.Join(" ", new[] { u.NOMBRE1, u.APELLIDO1 }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+                // "." es el placeholder que el sync NEXO→Visions pone cuando faltan campos. Usar NIT en ese caso.
+                if (string.IsNullOrWhiteSpace(razonSocial) || razonSocial.Trim().All(c => c == '.' || c == ' '))
+                    razonSocial = u.NIT;
 
                 if (string.IsNullOrWhiteSpace(razonSocial))
                 {

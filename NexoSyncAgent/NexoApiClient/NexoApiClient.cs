@@ -203,4 +203,25 @@ public class NexoApiClient : INexoApiClient
         var r = await _http.PutAsJsonAsync($"api/integracion/facturas/{facturaId}/numero-visions", request, ct);
         r.EnsureSuccessStatusCode();
     }
+
+    // ──────────── Pedidos NEXO → Visions (Entradas) ────────────
+
+    public async Task<List<PedidoParaVisionsDto>> ListarPedidosParaVisionsAsync(CancellationToken ct)
+    {
+        var r = await _http.GetAsync("api/integracion/pedidos-para-visions", ct);
+        r.EnsureSuccessStatusCode();
+        return await r.Content.ReadFromJsonAsync<List<PedidoParaVisionsDto>>(cancellationToken: ct) ?? [];
+    }
+
+    public async Task MarcarPedidoExportadoVisionsAsync(int pedidoId, CancellationToken ct)
+    {
+        var r = await _http.PostAsync($"api/integracion/pedidos/{pedidoId}/marcar-exportado-visions", null, ct);
+        r.EnsureSuccessStatusCode();
+    }
+
+    public async Task ActualizarNumeroPedidoVisionsAsync(int pedidoId, ActualizarNumeroPedidoVisionsRequest request, CancellationToken ct)
+    {
+        var r = await _http.PutAsJsonAsync($"api/integracion/pedidos/{pedidoId}/numero-visions", request, ct);
+        r.EnsureSuccessStatusCode();
+    }
 }

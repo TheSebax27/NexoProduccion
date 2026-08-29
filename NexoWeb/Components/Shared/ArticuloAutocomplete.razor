@@ -1,0 +1,41 @@
+@inject INexoApiClient ApiClient
+
+<MudAutocomplete T="ArticuloItem?"
+                 Value="Value" ValueChanged="OnValueChanged"
+                 Label="@Label"
+                 SearchFunc="BuscarAsync"
+                 ToStringFunc="@(a => a is null ? "" : $"{a.Referencia} — {a.Nombre}")"
+                 Placeholder="SKU o nombre del artículo…"
+                 Variant="Variant.Outlined"
+                 Margin="Margin.Dense"
+                 Required="@Required"
+                 Disabled="@Disabled"
+                 ResetValueOnEmptyText="true"
+                 CoerceText="false"
+                 MinCharacters="0"
+                 DebounceInterval="200" />
+
+@code {
+    [Parameter] public ArticuloItem? Value { get; set; }
+    [Parameter] public EventCallback<ArticuloItem?> ValueChanged { get; set; }
+    [Parameter] public string Label { get; set; } = "Artículo";
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? FiltroTipo { get; set; }
+
+    private async Task<IEnumerable<ArticuloItem?>> BuscarAsync(string? texto, CancellationToken ct)
+    {
+        var url = string.IsNullOrWhiteSpace(texto)
+            ? $"api/catalogo/articulos?estado=true&pagina=1&tamano=15{(FiltroTipo is not null ? $"&tipoArticuloId={FiltroTipo}" : "")}"
+            : $"api/catalogo/articulos?texto={Uri.EscapeDataString(texto)}&estado=true&pagina=1&tamano=15{(FiltroTipo is not null ? $"&tipoArticuloId={FiltroTipo}" : "")}";
+
+        var resp = await ApiClient.GetAsync<ArticulosPaginadosResponse>(url);
+        return resp?.Items?.Cast<ArticuloItem?>() ?? [];
+    }
+
+    private async Task OnValueChanged(ArticuloItem? value)
+    {
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+    }
+}

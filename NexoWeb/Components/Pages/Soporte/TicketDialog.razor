@@ -51,7 +51,18 @@
                         </MudSelect>
                     </MudItem>
                 }
-                <MudItem xs="12" sm="@(EsModo("editar") ? 6 : 12)">
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="ClienteItem?" @bind-Value="_cliente"
+                               Label="Cliente *" Variant="Variant.Outlined"
+                               Required="true" RequiredError="Selecciona el cliente"
+                               ToStringFunc="@(c => c?.Nombre ?? string.Empty)">
+                        @foreach (var c in _clientes)
+                        {
+                            <MudSelectItem T="ClienteItem?" Value="@c">@c.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
                     <MudAutocomplete T="UsuarioItem?" @bind-Value="_asignado"
                                      Label="Asignar a (opcional)" Variant="Variant.Outlined"
                                      SearchFunc="BuscarUsuarios" ToStringFunc="NombreUsuario"
@@ -90,7 +101,9 @@
     private string _estado = "ABIERTO";
     private string? _notas;
     private UsuarioItem? _asignado;
+    private ClienteItem? _cliente;
     private List<UsuarioItem> _usuarios = new();
+    private List<ClienteItem> _clientes = new();
 
     private static readonly string[] _categorias = ["Bug", "Consulta", "Mejora", "Acceso", "Otro"];
 
@@ -98,7 +111,12 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _usuarios = (await Api.GetAsync<List<UsuarioItem>>("api/auth/usuarios") ?? []);
+        var tareaUsuarios = Api.GetAsync<List<UsuarioItem>>("api/auth/usuarios");
+        var tareaClientes = Api.GetAsync<List<ClienteItem>>("api/crm/clientes");
+        await Task.WhenAll(tareaUsuarios, tareaClientes);
+
+        _usuarios = (await tareaUsuarios ?? []);
+        _clientes = (await tareaClientes ?? []).Where(c => c.Estado).ToList();
 
         if (Ticket is not null)
         {
@@ -110,6 +128,8 @@
             _notas = Ticket.Notas;
             if (Ticket.AsignadoA.HasValue)
                 _asignado = _usuarios.FirstOrDefault(u => u.UsuarioID == Ticket.AsignadoA.Value);
+            if (Ticket.ClienteID.HasValue)
+                _cliente = _clientes.FirstOrDefault(c => c.ClienteID == Ticket.ClienteID.Value);
         }
     }
 
@@ -138,14 +158,14 @@
         {
             var req = new ActualizarTicketRequest(
                 _titulo, _descripcion, _categoria, _prioridad, _estado,
-                _asignado?.UsuarioID, null, _notas);
+                _asignado?.UsuarioID, _cliente?.ClienteID, _notas);
             Dialog.Close(DialogResult.Ok(req));
         }
         else
         {
             var req = new CrearTicketRequest(
                 _titulo, _descripcion, _categoria, _prioridad,
-                _asignado?.UsuarioID, null, _notas);
+                _asignado?.UsuarioID, _cliente?.ClienteID, _notas);
             Dialog.Close(DialogResult.Ok(req));
         }
 

@@ -778,9 +778,11 @@ public class CrmService : ICrmService
         const string sql = @"
             SELECT c.CotizacionID, c.ClienteID, cl.Nombre AS Cliente, c.OportunidadID, c.Fecha, c.ValidoHasta,
                    c.Estado, c.Notas, c.FacturaID,
-                   ISNULL((SELECT SUM(l.Cantidad * l.PrecioUnitario) FROM Crm.CotizacionLineas l WHERE l.CotizacionID = c.CotizacionID), 0) AS Total
+                   ISNULL((SELECT SUM(l.Cantidad * l.PrecioUnitario) FROM Crm.CotizacionLineas l WHERE l.CotizacionID = c.CotizacionID), 0) AS Total,
+                   c.CentroCostoID, cc.Nombre AS CentroCosto
             FROM Crm.Cotizaciones c
             JOIN Crm.Clientes cl ON cl.ClienteID = c.ClienteID
+            LEFT JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = c.CentroCostoID
             WHERE (@ClienteId IS NULL OR c.ClienteID = @ClienteId)
               AND (@Estado IS NULL OR c.Estado = @Estado)
             ORDER BY c.Fecha DESC, c.CotizacionID DESC";
@@ -803,12 +805,12 @@ public class CrmService : ICrmService
         try
         {
             const string sqlCotizacion = @"
-                INSERT INTO Crm.Cotizaciones (ClienteID, OportunidadID, Fecha, ValidoHasta, Notas, UsuarioID)
+                INSERT INTO Crm.Cotizaciones (ClienteID, OportunidadID, Fecha, ValidoHasta, Notas, UsuarioID, CentroCostoID)
                 OUTPUT INSERTED.CotizacionID
-                VALUES (@ClienteID, @OportunidadID, @Fecha, @ValidoHasta, @Notas, @UsuarioID)";
+                VALUES (@ClienteID, @OportunidadID, @Fecha, @ValidoHasta, @Notas, @UsuarioID, @CentroCostoID)";
 
             var cotizacionId = await connection.ExecuteScalarAsync<int>(sqlCotizacion,
-                new { r.ClienteID, r.OportunidadID, r.Fecha, r.ValidoHasta, r.Notas, UsuarioID = usuarioId }, transaction);
+                new { r.ClienteID, r.OportunidadID, r.Fecha, r.ValidoHasta, r.Notas, UsuarioID = usuarioId, r.CentroCostoID }, transaction);
 
             const string sqlLinea = @"
                 INSERT INTO Crm.CotizacionLineas (CotizacionID, ArticuloID, Cantidad, PrecioUnitario)
@@ -857,7 +859,8 @@ public class CrmService : ICrmService
             throw new KeyNotFoundException($"No existe la cotización {cotizacionId}.");
     }
 
-    private record CotizacionParaConvertir(int ClienteID, string Estado, int? FacturaID);
+    private record CotizacionParaConvertir(int ClienteID, string Estado, int? FacturaID, int? CentroCostoID);
+    private record StockArticulo(int ArticuloID, decimal StockTotal);
 
     // Integracion CRM -> Facturacion (recomendada en la auditoria de agosto
     // 2026, seccion 4.1): una Cotizacion Aceptada genera la Factura sin
@@ -867,7 +870,7 @@ public class CrmService : ICrmService
         using var connection = _db.CreateConnection();
 
         var cotizacion = await connection.QuerySingleOrDefaultAsync<CotizacionParaConvertir>(
-            "SELECT ClienteID, Estado, FacturaID FROM Crm.Cotizaciones WHERE CotizacionID = @CotizacionId",
+            "SELECT ClienteID, Estado, FacturaID, CentroCostoID FROM Crm.Cotizaciones WHERE CotizacionID = @CotizacionId",
             new { CotizacionId = cotizacionId });
 
         if (cotizacion is null)
@@ -880,12 +883,30 @@ public class CrmService : ICrmService
         if (lineas.Count == 0)
             throw new InvalidOperationException("La cotización no tiene artículos para facturar.");
 
+        // Verificar stock antes de crear la factura
+        var articuloIds = lineas.Select(l => l.ArticuloID).Distinct().ToList();
+        var stocks = (await connection.QueryAsync<StockArticulo>(
+            @"SELECT ArticuloID, ISNULL(SUM(CantidadActual), 0) AS StockTotal
+              FROM Inventario.InventarioStock
+              WHERE ArticuloID IN @ids
+              GROUP BY ArticuloID",
+            new { ids = articuloIds })).ToDictionary(s => s.ArticuloID, s => s.StockTotal);
+
+        var sinStock = lineas
+            .Where(l => stocks.ContainsKey(l.ArticuloID) && l.Cantidad > stocks[l.ArticuloID])
+            .Select(l => $"{l.NombreArticulo} (disponible: {stocks.GetValueOrDefault(l.ArticuloID, 0):N2}, pedido: {l.Cantidad:N2})")
+            .ToList();
+
+        if (sinStock.Count > 0)
+            throw new InvalidOperationException($"Stock insuficiente para: {string.Join("; ", sinStock)}.");
+
         var lineasFactura = lineas.Select(l => new LineaFacturaInput(l.ArticuloID, null, null, l.Cantidad, l.PrecioUnitario)).ToList();
         var facturaRequest = new CrearFacturaRequest(
             cotizacion.ClienteID, DateTime.Today,
             $"Generada desde Cotización #{cotizacionId}",
             TipDoc: "FACTURA", NroDoc: null,
-            Lineas: lineasFactura);
+            Lineas: lineasFactura,
+            CentroCostoID: cotizacion.CentroCostoID);
 
         var facturaId = await _facturacion.CrearFacturaAsync(facturaRequest, usuarioId);
 

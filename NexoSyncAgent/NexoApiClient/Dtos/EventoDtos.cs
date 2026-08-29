@@ -209,6 +209,28 @@ public record SyncProveedorDesdeVisionsRequest(
     string? CodigoDept = null, string? CodigoMuni = null
 );
 
+// ──────────── Pedidos NEXO → Visions (Entradas) ────────────
+
+public record PedidoParaVisionsDto(
+    int PedidoID,
+    string Codigo,
+    string TipoMovimiento,
+    DateTime Fecha,
+    string? ProveedorNit,
+    string ProveedorNombre,
+    List<LineaPedidoParaVisionsDto> Lineas
+);
+
+public record LineaPedidoParaVisionsDto(
+    int Orden,
+    string? ReferenciaVisions,
+    string NombreArticulo,
+    decimal Cantidad,
+    decimal CostoUnitario
+);
+
+public record ActualizarNumeroPedidoVisionsRequest(string TipDoc, string NroDoc);
+
 public record LineaFacturaParaVisionsDto(
     int Orden,
     string? ReferenciaVisions,
