@@ -149,4 +149,9 @@ public class DashboardController : ControllerBase
 
         return File(archivo, "application/pdf", $"NEXO-Reporte-{DateTime.Now:yyyyMMdd-HHmm}.pdf");
     }
+
+    [HttpGet("ventas-por-departamento")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<VentasPorDepartamentoItem>>> VentasPorDepartamento()
+        => Ok(await _service.ObtenerVentasPorDepartamentoAsync());
 }

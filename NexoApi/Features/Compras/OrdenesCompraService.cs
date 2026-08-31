@@ -16,8 +16,10 @@ public interface IOrdenesCompraService
     Task<List<PedidoParaVisionsDto>> ListarPedidosParaVisionsAsync(int centroCostoId);
     Task MarcarPedidoExportadoVisionsAsync(int pedidoId);
     Task ActualizarNumeroPedidoVisionsAsync(int pedidoId, ActualizarNumeroPedidoVisionsRequest request);
+    Task AutoRecibirDesdeVisionsAsync(int pedidoId, string nroDoc);
 
     Task<IEnumerable<ComparacionPrecioRow>> ComparacionPreciosAsync(int? articuloId, int? proveedorId);
+    Task EliminarOrdenCompraAsync(int ordenId);
 }
 
 public class OrdenesCompraService : IOrdenesCompraService
@@ -84,12 +86,14 @@ public class OrdenesCompraService : IOrdenesCompraService
 
         const string sql = @"
             SELECT oc.OrdenCompraID, oc.Codigo, p.RazonSocial AS Proveedor, oc.EstadoOC,
-                   oc.FechaEmision, SUM(d.CantidadSolicitada * d.CostoUnitario) AS Total, oc.FechaRecepcion
+                   oc.FechaEmision, SUM(d.CantidadSolicitada * d.CostoUnitario) AS Total, oc.FechaRecepcion,
+                   oc.ExportadoVisions, oc.NroDocVisions, oc.TipDocVisions
             FROM Compras.OrdenesCompra oc
             JOIN Catalogo.Proveedores p ON p.ProveedorID = oc.ProveedorID
             JOIN Compras.OrdenesCompraDetalle d ON d.OrdenCompraID = oc.OrdenCompraID
             WHERE (@Estado IS NULL OR oc.EstadoOC = @Estado)
-            GROUP BY oc.OrdenCompraID, oc.Codigo, p.RazonSocial, oc.EstadoOC, oc.FechaEmision, oc.FechaRecepcion
+            GROUP BY oc.OrdenCompraID, oc.Codigo, p.RazonSocial, oc.EstadoOC, oc.FechaEmision, oc.FechaRecepcion,
+                     oc.ExportadoVisions, oc.NroDocVisions, oc.TipDocVisions
             ORDER BY oc.FechaEmision DESC";
 
         return await connection.QueryAsync<OrdenCompraResumen>(sql, new { Estado = estado });
@@ -167,8 +171,8 @@ public class OrdenesCompraService : IOrdenesCompraService
         {
             // Solo incluir líneas con mapeo a la referencia de Visions del CC del agente.
             const string sqlLineas = @"
-                SELECT ROW_NUMBER() OVER (ORDER BY d.OrdenCompraDetalleID) AS Orden,
-                       ma.ReferenciaVisions,
+                SELECT CAST(ROW_NUMBER() OVER (ORDER BY d.OrdenCompraDetalleID) AS INT) AS Orden,
+                       a.Referencia AS ReferenciaVisions,
                        a.Nombre AS NombreArticulo,
                        d.CantidadSolicitada AS Cantidad,
                        d.CostoUnitario
@@ -207,6 +211,35 @@ public class OrdenesCompraService : IOrdenesCompraService
             new { PedidoId = pedidoId, r.NroDoc, r.TipDoc });
     }
 
+    public async Task AutoRecibirDesdeVisionsAsync(int pedidoId, string nroDoc)
+    {
+        using var connection = _db.CreateConnection();
+
+        var lineas = (await connection.QueryAsync<(int Id, decimal Solicitada, decimal Recibida)>(
+            @"SELECT d.OrdenCompraDetalleID, d.CantidadSolicitada, d.CantidadRecibida
+              FROM Compras.OrdenesCompraDetalle d
+              WHERE d.OrdenCompraID = @PedidoId AND d.CantidadRecibida < d.CantidadSolicitada",
+            new { PedidoId = pedidoId })).ToList();
+
+        // Usar el primer usuario administrador como responsable del auto-recibo.
+        var usuarioSistema = await connection.QuerySingleOrDefaultAsync<int>(
+            "SELECT TOP 1 UsuarioID FROM Seguridad.Usuarios ORDER BY UsuarioID");
+
+        foreach (var linea in lineas)
+        {
+            var parametros = new DynamicParameters();
+            parametros.Add("OrdenCompraDetalleID", linea.Id);
+            parametros.Add("CantidadRecibida", linea.Solicitada - linea.Recibida);
+            parametros.Add("NumeroLote", nroDoc);
+            parametros.Add("FechaVencimiento", null);
+            parametros.Add("UsuarioID", usuarioSistema);
+            // Se usa el SP existente pero sin disparar el evento RECEPCION_COMPRA a Visions
+            // (Visions ya registró la entrada; dispararlo de vuelta duplicaría el stock allá)
+            await connection.QuerySingleAsync<RecibirResultado>(
+                "Compras.sp_RecibirOrdenCompra", parametros, commandType: CommandType.StoredProcedure);
+        }
+    }
+
     public async Task<IEnumerable<ComparacionPrecioRow>> ComparacionPreciosAsync(int? articuloId, int? proveedorId)
     {
         using var connection = _db.CreateConnection();
@@ -219,7 +252,7 @@ public class OrdenesCompraService : IOrdenesCompraService
                 JOIN Compras.OrdenesCompra oc ON oc.OrdenCompraID = d.OrdenCompraID
             )
             SELECT
-                a.ArticuloID, a.SKU, a.Nombre AS Articulo,
+                a.ArticuloID, a.Referencia AS SKU, a.Nombre AS Articulo,
                 p.ProveedorID, p.RazonSocial AS Proveedor,
                 COUNT(DISTINCT oc.OrdenCompraID) AS TotalPedidos,
                 MIN(d.CostoUnitario)                      AS PrecioMin,
@@ -236,8 +269,48 @@ public class OrdenesCompraService : IOrdenesCompraService
                                  AND up.rn = 1
             WHERE (@articuloId IS NULL OR d.ArticuloID  = @articuloId)
               AND (@proveedorId IS NULL OR oc.ProveedorID = @proveedorId)
-            GROUP BY a.ArticuloID, a.SKU, a.Nombre, p.ProveedorID, p.RazonSocial, up.CostoUnitario
+            GROUP BY a.ArticuloID, a.Referencia, a.Nombre, p.ProveedorID, p.RazonSocial, up.CostoUnitario
             ORDER BY a.Nombre, p.RazonSocial",
             new { articuloId, proveedorId });
+    }
+
+    private record EstadoOrdenCompra(string EstadoOC, bool ExportadoVisions);
+
+    public async Task EliminarOrdenCompraAsync(int ordenId)
+    {
+        using var connection = _db.CreateConnection();
+
+        var orden = await connection.QuerySingleOrDefaultAsync<EstadoOrdenCompra>(
+            "SELECT EstadoOC, ExportadoVisions FROM Compras.OrdenesCompra WHERE OrdenCompraID = @Id",
+            new { Id = ordenId });
+
+        if (orden is null)
+            throw new KeyNotFoundException("Orden de compra no encontrada.");
+        if (orden!.EstadoOC == "RECIBIDA")
+            throw new InvalidOperationException("No se puede eliminar: la orden ya fue recibida completamente.");
+
+        var tieneRecibidos = await connection.ExecuteScalarAsync<int>(
+            "SELECT ISNULL(SUM(CantidadRecibida), 0) FROM Compras.OrdenesCompraDetalle WHERE OrdenCompraID = @Id",
+            new { Id = ordenId });
+        if (tieneRecibidos > 0)
+            throw new InvalidOperationException("No se puede eliminar: la orden tiene mercancía parcialmente recibida.");
+
+        connection.Open();
+        using var tx = connection.BeginTransaction();
+        try
+        {
+            await connection.ExecuteAsync(
+                "DELETE FROM Compras.OrdenesCompraDetalle WHERE OrdenCompraID = @Id",
+                new { Id = ordenId }, tx);
+            await connection.ExecuteAsync(
+                "DELETE FROM Compras.OrdenesCompra WHERE OrdenCompraID = @Id",
+                new { Id = ordenId }, tx);
+            if (orden.ExportadoVisions)
+                await connection.ExecuteAsync(
+                    "INSERT INTO Integracion.PendientesLimpiezaVisions (Tipo, EntidadID) VALUES ('PEDIDO', @Id)",
+                    new { Id = ordenId }, tx);
+            tx.Commit();
+        }
+        catch { tx.Rollback(); throw; }
     }
 }

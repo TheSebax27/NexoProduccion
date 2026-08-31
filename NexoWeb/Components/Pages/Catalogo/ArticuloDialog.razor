@@ -15,24 +15,21 @@
                           RequiredError="El nombre es obligatorio" Class="mb-3" />
             <MudTextField @bind-Value="_descripcion" Label="Descripcion" Lines="2" Class="mb-3" />
 
-            @if (!EsEdicion)
-            {
-                <MudSelect T="int" @bind-Value="_tipoArticuloId" Label="Tipo de Articulo" Required="true"
-                           RequiredError="Selecciona un tipo" Class="mb-3">
-                    @foreach (var tipo in TiposArticulo)
-                    {
-                        <MudSelectItem Value="@tipo.TipoArticuloID">@tipo.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
-
-                @if (EsServicio)
+            <MudSelect T="int" @bind-Value="_tipoArticuloId" Label="Tipo de Articulo" Required="true"
+                       RequiredError="Selecciona un tipo" Class="mb-3">
+                @foreach (var tipo in TiposArticulo)
                 {
-                    <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
-                        Opcional: solo si este servicio se mide en unidades (ej. licencias). Si es intangible sin cantidad, dejalo en blanco.
-                    </MudText>
+                    <MudSelectItem Value="@tipo.TipoArticuloID">@tipo.Nombre</MudSelectItem>
                 }
-                else { <div class="mb-3"></div> }
+            </MudSelect>
+
+            @if (EsServicio)
+            {
+                <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
+                    Opcional: solo si este servicio se mide en unidades (ej. licencias). Si es intangible sin cantidad, dejalo en blanco.
+                </MudText>
             }
+            else { <div class="mb-3"></div> }
 
             @* ── Presentacion ─────────────────────────────────────────────── *@
             <MudDivider Class="my-3" />
@@ -294,9 +291,8 @@
 
     private bool EsEdicion => Articulo is not null;
 
-    private string? TipoSeleccionadoNombre => EsEdicion
-        ? Articulo!.TipoArticulo
-        : TiposArticulo.FirstOrDefault(t => t.TipoArticuloID == _tipoArticuloId)?.Nombre;
+    private string? TipoSeleccionadoNombre =>
+        TiposArticulo.FirstOrDefault(t => t.TipoArticuloID == _tipoArticuloId)?.Nombre;
 
     private bool EsServicio => TipoSeleccionadoNombre == "Servicio";
     private bool EsFraccionado => _fracciones is > 0;
@@ -373,6 +369,7 @@
     {
         if (Articulo is not null)
         {
+            _tipoArticuloId     = TiposArticulo.FirstOrDefault(t => t.Nombre == Articulo.TipoArticulo)?.TipoArticuloID ?? 0;
             _nombre             = Articulo.Nombre;
             _descripcion        = Articulo.Descripcion;
             _stockMinimo        = Articulo.StockMinimo;
@@ -561,7 +558,8 @@
                 fraccionaAEnviar, precioUnidadAEnviar,
                 _costo, _ppPublico, _pBodega, _pCredito, _uPublico, _uBodega, _uCredito,
                 _marcaCodigo, _grupoMenorCodigo, _presentacionCodigo,
-                pesoAEnviar, _ivaSiNo, _ivaValor, _ivaDescripcion, _iva2, _ivaDescripcion2);
+                pesoAEnviar, _ivaSiNo, _ivaValor, _ivaDescripcion, _iva2, _ivaDescripcion2,
+                _tipoArticuloId > 0 ? _tipoArticuloId : null);
             MudDialog.Close(DialogResult.Ok(new ArticuloDialogResultado(request, _imagenBase64, _imagenContentType)));
         }
         else

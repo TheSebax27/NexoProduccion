@@ -12,6 +12,10 @@
 {
     <MudProgressLinear Indeterminate Color="Color.Primary" Class="mb-4" />
 }
+else if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudieron cargar las campañas: @_errorCarga</MudAlert>
+}
 else if (_campanas.Count == 0)
 {
     <NexoEmptyState
@@ -140,6 +144,7 @@ else
 @code {
     List<CampanaResumen> _campanas = [];
     bool _cargando = true;
+    string? _errorCarga;
     EmailContadorItem? _contador;
 
     protected override async Task OnInitializedAsync()
@@ -151,8 +156,20 @@ else
     async Task Cargar()
     {
         _cargando = true;
-        _campanas = await Api.GetAsync<List<CampanaResumen>>("api/marketing/campanas") ?? [];
-        _cargando = false;
+        _errorCarga = null;
+        try
+        {
+            _campanas = await Api.GetAsync<List<CampanaResumen>>("api/marketing/campanas") ?? [];
+        }
+        catch (Exception ex)
+        {
+            _errorCarga = ex.Message;
+            _campanas = [];
+        }
+        finally
+        {
+            _cargando = false;
+        }
     }
 
     async Task ConfirmarEliminar(CampanaResumen c)

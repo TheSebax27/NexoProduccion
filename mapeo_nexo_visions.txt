@@ -441,4 +441,43 @@ CORRECCIONES APLICADAS (agosto 2026)
    Solo muestra documentos recibidos DESDE que se activó la integración
    (registros históricos anteriores no tienen TipDoc y no aparecen).
 
+3. BUG CANTIDAD=0 en ventas por caja - CORREGIDO (agosto 2026)
+   TareaExportarVentas leía solo MOVDETALLES.CANTIDAD (unidades sueltas).
+   Cuando una venta se registra como "1 caja", Visions almacena:
+     MOVDETALLES.CANTIDAD = 0 (sin unidades sueltas)
+     MOVDETALLES.CANTIDADCAJA = 1 (la caja)
+   El agente mandaba Cantidad=0 a NEXO para todos los eventos de caja.
+   Esto explicaba EventosEntrantes con Cantidad=.0000 para REMISIONes.
+   CORRECCIÓN: El SELECT ahora calcula:
+     CAST(m.CANTIDAD + (m.CANTIDADCAJA * ISNULL(NULLIF(t.FRACCIONES,0),1)) AS DECIMAL(18,4)) AS CANTIDAD
+   Si FRACCIONES=0, NULLIF convierte 0→1 para que CANTIDADCAJA no se pierda.
+
+4. Diagnóstico "5,0018" en ConsultaStock - NO era un bug de stock
+   Lo que parecía ser stock=5.0018 era la lectura visual de dos celdas
+   contiguas en ConsultaStock.razor: Cantidad="5,00" y Presentación="18 und".
+   InventarioStock siempre fue 5.0000 (confirmado en DB y Kardex).
+   Las ventas Visions (VENTA events) solo actualizan InventarioReportadoVisions
+   via sp_ProcesarEventoEntrante — NUNCA tocan Inventario.InventarioStock.
+   Solo sp_ProcesarDevolucionVisions (NOTA DEVOLUCION) puede SUMAR a InventarioStock.
+
+5. Índices de rendimiento agregados (agosto 2026) - migration_performance_indexes.sql
+   Aplicados en NEXO_ERP para escalar a millones de filas:
+   - FacturaLineas: IX_FacturaLineas_FacturaID (INCLUDE ArticuloID,Cantidad,PrecioUnitario)
+   - FacturaLineas: IX_FacturaLineas_ArticuloID
+   - Facturas: IX_Facturas_ClienteID_Fecha, IX_Facturas_CentroCosto_Fecha
+   - Pagos: IX_Pagos_FacturaID
+   - Cotizaciones: IX_Cotizaciones_ClienteID_Fecha, IX_Cotizaciones_Estado_ValidoHasta
+   - CotizacionLineas: IX_CotizacionLineas_CotizacionID
+   - Clientes: IX_Clientes_FechaCreacion, IX_Clientes_Departamento
+   - Interacciones: IX_Interacciones_ClienteID_Fecha, IX_Interacciones_Fecha
+   - Tarjetas: IX_Tarjetas_Estado_Nombre
+   - OrdenesCompra: IX_OrdenesCompra_Estado_Fecha (columna EstadoOC)
+   - EventosEntrantes: IX_EventosEntrantes_Articulo_CC
+
+6. IMemoryCache en CatalogoService (agosto 2026) - TTL 5 minutos
+   Los listados de catálogo estático (Ivas, GruposMayores, GruposMenores,
+   Marcas, Presentaciones) ahora se cachean en memoria.
+   Los métodos de escritura (Crear/Actualizar/Eliminar) invalidan el cache.
+   Reduce carga en DB cuando múltiples usuarios cargan formularios de artículos.
+
 ==============================================================

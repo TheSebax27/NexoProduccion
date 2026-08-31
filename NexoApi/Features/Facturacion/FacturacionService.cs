@@ -11,6 +11,7 @@ public interface IFacturacionService
     Task<FacturasPaginadasResponse> ListarFacturasAsync(int? clienteId, int? centroCostoId, string? tipDoc, string? estado, DateTime? desde, DateTime? hasta, string? texto, bool soloNoPagadas, int pagina = 1, int tamano = 100);
     Task<string?> ObtenerSiguienteNroDocAsync(string tipDoc);
     Task<int> CrearFacturaAsync(CrearFacturaRequest request, int usuarioId);
+    Task EliminarFacturaAsync(int facturaId);
 
     Task<IEnumerable<FacturaLineaItem>> ListarLineasAsync(int facturaId);
     Task<IEnumerable<FacturaLineaStockItem>> ObtenerStockLineasAsync(int facturaId);
@@ -283,6 +284,43 @@ public class FacturacionService : IFacturacionService
         {
             throw new KeyNotFoundException(ex.Message);
         }
+    }
+
+    public async Task EliminarFacturaAsync(int facturaId)
+    {
+        using var connection = _db.CreateConnection();
+
+        var factura = await connection.QuerySingleOrDefaultAsync<(bool StockDescontado, bool VisionsConfirmado, bool ExportadaVisions)>(
+            @"SELECT f.StockDescontado, f.VisionsConfirmado,
+                     CASE WHEN EXISTS (SELECT 1 FROM Facturacion.FacturasExportadasVisions fev WHERE fev.FacturaID = f.FacturaID) THEN 1 ELSE 0 END AS ExportadaVisions
+              FROM Facturacion.Facturas f WHERE f.FacturaID = @FacturaID",
+            new { FacturaID = facturaId });
+
+        if (factura.Equals(default))
+            throw new KeyNotFoundException("Factura no encontrada.");
+        if (factura.StockDescontado)
+            throw new InvalidOperationException("No se puede eliminar: el stock ya fue descontado.");
+        if (factura.VisionsConfirmado)
+            throw new InvalidOperationException("No se puede eliminar: la factura ya fue confirmada en Visions.");
+
+        connection.Open();
+        using var tx = connection.BeginTransaction();
+        try
+        {
+            await connection.ExecuteAsync("DELETE FROM Facturacion.Pagos WHERE FacturaID = @Id", new { Id = facturaId }, tx);
+            await connection.ExecuteAsync("DELETE FROM Facturacion.FacturasExportadasVisions WHERE FacturaID = @Id", new { Id = facturaId }, tx);
+            await connection.ExecuteAsync("DELETE FROM Facturacion.FacturaLineas WHERE FacturaID = @Id", new { Id = facturaId }, tx);
+            await connection.ExecuteAsync("DELETE FROM Facturacion.Facturas WHERE FacturaID = @Id", new { Id = facturaId }, tx);
+
+            // Si ya se exportó al staging de Visions, encolar limpieza para que el agente la elimine allá también.
+            if (factura.ExportadaVisions)
+                await connection.ExecuteAsync(
+                    "INSERT INTO Integracion.PendientesLimpiezaVisions (Tipo, EntidadID) VALUES ('FACTURA', @Id)",
+                    new { Id = facturaId }, tx);
+
+            tx.Commit();
+        }
+        catch { tx.Rollback(); throw; }
     }
 
     public async Task ConfirmarVisionsAsync(int facturaId)

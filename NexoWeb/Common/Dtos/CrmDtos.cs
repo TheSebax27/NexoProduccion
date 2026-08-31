@@ -132,3 +132,9 @@ public record CrearCotizacionRequest(int ClienteID, int? OportunidadID, DateTime
 public record ActualizarEstadoCotizacionRequest(string Estado);
 public record CotizacionLineaItem(int LineaID, int CotizacionID, int ArticuloID, string SkuArticulo, string NombreArticulo, decimal Cantidad, decimal PrecioUnitario, decimal Subtotal);
 public record ConvertirCotizacionResponse(int FacturaId);
+
+// ---------- Segmentación y crédito ----------
+public record ClienteSegmentoItem(int ClienteID, string Segmento);
+public record LineaCreditoItem(int ClienteID, decimal CupoCredito, string? Observaciones);
+public record ActualizarLineaCreditoRequest(decimal CupoCredito, string? Observaciones);
+public record DisponibilidadCreditoItem(decimal CupoCredito, decimal Utilizado, decimal Disponible);

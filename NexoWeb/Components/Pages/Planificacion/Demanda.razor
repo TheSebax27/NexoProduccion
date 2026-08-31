@@ -14,8 +14,7 @@
 <InfoAyuda Texto="Forecast de producción a futuro, por artículo y mes -- distinto de las Órdenes de Producción ya creadas. Compara cuánto proyectaste contra lo que realmente se produjo ese mes (Kardex de entradas de Producto Terminado)." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
-           StartIcon="@Icons.Material.Filled.Add" Class="mb-4"
-           Disabled="_articulosProductoTerminado.Count == 0">
+           StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
     Nueva Proyeccion
 </MudButton>
 
@@ -154,7 +153,6 @@ else
 
 @code {
     private List<DemandaProyectadaItem> _demanda = new();
-    private List<ArticuloItem> _articulosProductoTerminado = new();
     private List<CentroCostoItem> _centrosCosto = new();
     private List<HistoricoCumplimientoItem> _historico = new();
     private bool _cargando = true;
@@ -185,15 +183,12 @@ else
     {
         try
         {
-            var tareaArticulos   = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
             var tareaCentros     = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true");
             var tareaDemanda     = ApiClient.GetAsync<List<DemandaProyectadaItem>>("api/planificacion/demanda");
             var tareaHistorico   = ApiClient.GetAsync<List<HistoricoCumplimientoItem>>("api/planificacion/historico-cumplimiento?meses=12");
 
-            await Task.WhenAll(tareaArticulos, tareaCentros, tareaDemanda, tareaHistorico);
+            await Task.WhenAll(tareaCentros, tareaDemanda, tareaHistorico);
 
-            _articulosProductoTerminado = (await tareaArticulos ?? new())
-                .Where(a => a.TipoArticulo == "Producto Terminado" && a.Estado).ToList();
             _centrosCosto = await tareaCentros  ?? new();
             _demanda      = await tareaDemanda  ?? new();
             _historico    = await tareaHistorico ?? new();
@@ -212,7 +207,6 @@ else
     {
         var parametros = new DialogParameters<DemandaDialog>
         {
-            { x => x.ArticulosDisponibles, _articulosProductoTerminado },
             { x => x.CentrosCosto, _centrosCosto }
         };
         var dialogo = await DialogService.ShowAsync<DemandaDialog>("Nueva Proyeccion de Demanda", parametros);

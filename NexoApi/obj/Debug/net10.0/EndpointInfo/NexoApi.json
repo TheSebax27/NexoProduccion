@@ -471,6 +471,228 @@
         }
       }
     },
+    "/api/catalogo/articulos/{id}/historial-precios": {
+      "get": {
+        "tags": [
+          "Articulos"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Catalogo.Dtos.HistorialPrecioItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Catalogo.Dtos.HistorialPrecioItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Catalogo.Dtos.HistorialPrecioItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/catalogo/articulos/exportar": {
+      "get": {
+        "tags": [
+          "Articulos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/articulos/{id}/ficha-pdf": {
+      "get": {
+        "tags": [
+          "Articulos"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/catalogo/articulos/importar-excel": {
+      "post": {
+        "tags": [
+          "Articulos"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "archivo": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "archivo": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Catalogo.Dtos.ImportarExcelResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Catalogo.Dtos.ImportarExcelResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Catalogo.Dtos.ImportarExcelResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/catalogo/articulos/{id}/variantes": {
+      "get": {
+        "tags": [
+          "Articulos"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Catalogo.Dtos.VarianteItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Catalogo.Dtos.VarianteItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Catalogo.Dtos.VarianteItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Articulos"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Catalogo.Dtos.CrearVarianteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Catalogo.Dtos.CrearVarianteRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Catalogo.Dtos.CrearVarianteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/rrhh/asistencia/qr-imagen": {
       "get": {
         "tags": [
@@ -4369,6 +4591,189 @@
         }
       }
     },
+    "/api/crm/clientes/{id}/segmento": {
+      "get": {
+        "tags": [
+          "Crm"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Crm.Dtos.ClienteSegmentoItem"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Crm.Dtos.ClienteSegmentoItem"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Crm.Dtos.ClienteSegmentoItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/crm/clientes/{id}/linea-credito": {
+      "get": {
+        "tags": [
+          "Crm"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Crm.Dtos.LineaCreditoItem"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Crm.Dtos.LineaCreditoItem"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Crm.Dtos.LineaCreditoItem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Crm"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Crm.Dtos.ActualizarLineaCreditoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Crm.Dtos.ActualizarLineaCreditoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Crm.Dtos.ActualizarLineaCreditoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/crm/clientes/{id}/linea-credito/disponible": {
+      "get": {
+        "tags": [
+          "Crm"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Crm.Dtos.DisponibilidadCreditoItem"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Crm.Dtos.DisponibilidadCreditoItem"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Crm.Dtos.DisponibilidadCreditoItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/crm/cotizaciones/{id}/pdf": {
+      "get": {
+        "tags": [
+          "Crm"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/dashboard/plan-vs-real": {
       "get": {
         "tags": [
@@ -5260,6 +5665,241 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/dashboard/ventas-por-departamento": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Dashboard.Dtos.VentasPorDepartamentoItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Dashboard.Dtos.VentasPorDepartamentoItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Dashboard.Dtos.VentasPorDepartamentoItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/facturacion/devoluciones": {
+      "get": {
+        "tags": [
+          "Devolucion"
+        ],
+        "parameters": [
+          {
+            "name": "tipo",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clienteId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "proveedorId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Facturacion.Dtos.DevolucionItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Facturacion.Dtos.DevolucionItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Facturacion.Dtos.DevolucionItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Devolucion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Facturacion.Dtos.CrearDevolucionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Facturacion.Dtos.CrearDevolucionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Facturacion.Dtos.CrearDevolucionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/facturacion/devoluciones/{id}/lineas": {
+      "get": {
+        "tags": [
+          "Devolucion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Facturacion.Dtos.DevolucionLineaItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Facturacion.Dtos.DevolucionLineaItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Facturacion.Dtos.DevolucionLineaItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/facturacion/devoluciones/analytics": {
+      "get": {
+        "tags": [
+          "Devolucion"
+        ],
+        "parameters": [
+          {
+            "name": "meses",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 6
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Facturacion.Dtos.DevolucionesAnalytics"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Facturacion.Dtos.DevolucionesAnalytics"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Facturacion.Dtos.DevolucionesAnalytics"
+                }
+              }
+            }
           }
         }
       }
@@ -6308,6 +6948,29 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/facturacion/facturas/{id}": {
+      "delete": {
+        "tags": [
+          "Facturacion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -8603,6 +9266,97 @@
         }
       }
     },
+    "/api/integracion/pedidos/{id}/auto-recibir-visions": {
+      "post": {
+        "tags": [
+          "Integracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "nroDoc",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/integracion/pendientes-limpieza-visions": {
+      "get": {
+        "tags": [
+          "Integracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Integracion.Dtos.PendienteLimpiezaVisions"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Integracion.Dtos.PendienteLimpiezaVisions"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Integracion.Dtos.PendienteLimpiezaVisions"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integracion/pendientes-limpieza-visions/{id}/completar": {
+      "post": {
+        "tags": [
+          "Integracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/inventario/stock": {
       "get": {
         "tags": [
@@ -10136,6 +10890,85 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/compras/ordenes/comparacion-precios": {
+      "get": {
+        "tags": [
+          "OrdenesCompra"
+        ],
+        "parameters": [
+          {
+            "name": "articuloId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "proveedorId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Compras.Dtos.ComparacionPrecioRow"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Compras.Dtos.ComparacionPrecioRow"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Compras.Dtos.ComparacionPrecioRow"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/compras/ordenes/{id}": {
+      "delete": {
+        "tags": [
+          "OrdenesCompra"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -14895,6 +15728,11 @@
           "ivaDescripcion2": {
             "type": "string",
             "nullable": true
+          },
+          "tipoArticuloId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -15297,6 +16135,10 @@
           "ivaDescripcion2": {
             "type": "string",
             "nullable": true
+          },
+          "tipoArticuloID": {
+            "type": "integer",
+            "format": "int32"
           },
           "stockPorCentros": {
             "type": "array",
@@ -15814,6 +16656,24 @@
         },
         "additionalProperties": false
       },
+      "NexoApi.Features.Catalogo.Dtos.CrearVarianteRequest": {
+        "type": "object",
+        "properties": {
+          "nombreVariante": {
+            "type": "string",
+            "nullable": true
+          },
+          "referencia": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "NexoApi.Features.Catalogo.Dtos.DualRolInfo": {
         "type": "object",
         "properties": {
@@ -15867,6 +16727,63 @@
           },
           "grupoMayorNombre": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Catalogo.Dtos.HistorialPrecioItem": {
+        "type": "object",
+        "properties": {
+          "historialID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fechaCambio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nombreUsuario": {
+            "type": "string",
+            "nullable": true
+          },
+          "campo": {
+            "type": "string",
+            "nullable": true
+          },
+          "valorAnterior": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "valorNuevo": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Catalogo.Dtos.ImportarExcelResult": {
+        "type": "object",
+        "properties": {
+          "creados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "actualizados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errores": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mensajes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
             "nullable": true
           }
         },
@@ -16075,6 +16992,35 @@
         },
         "additionalProperties": false
       },
+      "NexoApi.Features.Catalogo.Dtos.VarianteItem": {
+        "type": "object",
+        "properties": {
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "referencia": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreVariante": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "boolean"
+          },
+          "existencias": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "NexoApi.Features.Compras.Dtos.ActualizarNumeroPedidoVisionsRequest": {
         "type": "object",
         "properties": {
@@ -16085,6 +17031,56 @@
           "nroDoc": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Compras.Dtos.ComparacionPrecioRow": {
+        "type": "object",
+        "properties": {
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "articulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "proveedorID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "proveedor": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalPedidos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "precioMin": {
+            "type": "number",
+            "format": "double"
+          },
+          "precioMax": {
+            "type": "number",
+            "format": "double"
+          },
+          "precioPromedio": {
+            "type": "number",
+            "format": "double"
+          },
+          "ultimoPrecio": {
+            "type": "number",
+            "format": "double"
+          },
+          "ultimaCompra": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -16237,6 +17233,17 @@
           "fechaRecepcion": {
             "type": "string",
             "format": "date-time",
+            "nullable": true
+          },
+          "exportadoVisions": {
+            "type": "boolean"
+          },
+          "nroDocVisions": {
+            "type": "string",
+            "nullable": true
+          },
+          "tipDocVisions": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -16763,6 +17770,20 @@
         },
         "additionalProperties": false
       },
+      "NexoApi.Features.Crm.Dtos.ActualizarLineaCreditoRequest": {
+        "type": "object",
+        "properties": {
+          "cupoCredito": {
+            "type": "number",
+            "format": "double"
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "NexoApi.Features.Crm.Dtos.ActualizarOportunidadRequest": {
         "type": "object",
         "properties": {
@@ -16996,6 +18017,20 @@
           "digitoVerificacion": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Crm.Dtos.ClienteSegmentoItem": {
+        "type": "object",
+        "properties": {
+          "clienteID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "segmento": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -17527,6 +18562,24 @@
         },
         "additionalProperties": false
       },
+      "NexoApi.Features.Crm.Dtos.DisponibilidadCreditoItem": {
+        "type": "object",
+        "properties": {
+          "cupoCredito": {
+            "type": "number",
+            "format": "double"
+          },
+          "utilizado": {
+            "type": "number",
+            "format": "double"
+          },
+          "disponible": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "NexoApi.Features.Crm.Dtos.EjecutarReglaResponse": {
         "type": "object",
         "properties": {
@@ -17721,6 +18774,24 @@
           "precioUnitario": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Crm.Dtos.LineaCreditoItem": {
+        "type": "object",
+        "properties": {
+          "clienteID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cupoCredito": {
+            "type": "number",
+            "format": "double"
+          },
+          "observaciones": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -18187,6 +19258,19 @@
           "interacciones": {
             "type": "integer",
             "format": "int32"
+          },
+          "cotizacionesTotal": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "convertidas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tasaConversion": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
           }
         },
         "additionalProperties": false
@@ -18348,6 +19432,24 @@
         },
         "additionalProperties": false
       },
+      "NexoApi.Features.Dashboard.Dtos.VentasPorDepartamentoItem": {
+        "type": "object",
+        "properties": {
+          "departamento": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalVentas": {
+            "type": "number",
+            "format": "double"
+          },
+          "cantidadClientes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "NexoApi.Features.Email.EmailConfigItem": {
         "type": "object",
         "properties": {
@@ -18391,6 +19493,36 @@
         },
         "additionalProperties": false
       },
+      "NexoApi.Features.Facturacion.Dtos.ArticuloMasDevuelto": {
+        "type": "object",
+        "properties": {
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "articulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "vecesDevuelto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cantidadTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "valorTotal": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "NexoApi.Features.Facturacion.Dtos.AutoProducirResultItem": {
         "type": "object",
         "properties": {
@@ -18412,6 +19544,55 @@
           },
           "error": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Facturacion.Dtos.CrearDevolucionRequest": {
+        "type": "object",
+        "properties": {
+          "tipoDevolucion": {
+            "type": "string",
+            "nullable": true
+          },
+          "facturaOrigenID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "clienteID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "proveedorID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "motivo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nroDoc": {
+            "type": "string",
+            "nullable": true
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NexoApi.Features.Facturacion.Dtos.DevolucionLineaInput"
+            },
             "nullable": true
           }
         },
@@ -18477,6 +19658,200 @@
           "notas": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Facturacion.Dtos.DevolucionItem": {
+        "type": "object",
+        "properties": {
+          "devolucionID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tipoDevolucion": {
+            "type": "string",
+            "nullable": true
+          },
+          "facturaOrigenID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "nroDocOrigen": {
+            "type": "string",
+            "nullable": true
+          },
+          "clienteID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "cliente": {
+            "type": "string",
+            "nullable": true
+          },
+          "proveedorID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "proveedor": {
+            "type": "string",
+            "nullable": true
+          },
+          "centroCostoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "centroCosto": {
+            "type": "string",
+            "nullable": true
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "motivo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nroDoc": {
+            "type": "string",
+            "nullable": true
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          },
+          "stockRestituido": {
+            "type": "boolean"
+          },
+          "origenVisions": {
+            "type": "boolean"
+          },
+          "usuario": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaRegistro": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Facturacion.Dtos.DevolucionLineaInput": {
+        "type": "object",
+        "properties": {
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cantidad": {
+            "type": "number",
+            "format": "double"
+          },
+          "costoUnitario": {
+            "type": "number",
+            "format": "double"
+          },
+          "nota": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Facturacion.Dtos.DevolucionLineaItem": {
+        "type": "object",
+        "properties": {
+          "lineaID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "devolucionID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "articuloID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "articulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidad": {
+            "type": "number",
+            "format": "double"
+          },
+          "costoUnitario": {
+            "type": "number",
+            "format": "double"
+          },
+          "subtotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "nota": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Facturacion.Dtos.DevolucionesAnalytics": {
+        "type": "object",
+        "properties": {
+          "totalDevoluciones": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "valorTotalDevuelto": {
+            "type": "number",
+            "format": "double"
+          },
+          "tasaDevolucionPct": {
+            "type": "number",
+            "format": "double"
+          },
+          "porMes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NexoApi.Features.Facturacion.Dtos.DevolucionesResumenMes"
+            },
+            "nullable": true
+          },
+          "topArticulos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NexoApi.Features.Facturacion.Dtos.ArticuloMasDevuelto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Facturacion.Dtos.DevolucionesResumenMes": {
+        "type": "object",
+        "properties": {
+          "mes": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidad": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "valorDevuelto": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -19787,6 +21162,24 @@
           "nombre": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Integracion.Dtos.PendienteLimpiezaVisions": {
+        "type": "object",
+        "properties": {
+          "limpiezaID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tipo": {
+            "type": "string",
+            "nullable": true
+          },
+          "entidadID": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -21974,6 +23367,18 @@
             "nullable": true
           },
           "observaciones": {
+            "type": "string",
+            "nullable": true
+          },
+          "clienteNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "productoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "referenciaProducto": {
             "type": "string",
             "nullable": true
           }

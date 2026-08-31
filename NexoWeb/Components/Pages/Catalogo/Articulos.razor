@@ -20,6 +20,16 @@
     </div>
     <div class="art-header__actions">
         <BotonFavorito Href="/catalogo/articulos" Etiqueta="Artículos" />
+        <ExportButton Endpoint="api/catalogo/articulos/exportar" NombreArchivo="articulos" />
+        <MudFileUpload T="IBrowserFile" FilesChanged="ImportarExcelAsync" Accept=".xlsx,.xls" MaximumFileCount="1">
+            <ActivatorContent>
+                <MudButton Variant="Variant.Outlined" Color="Color.Success"
+                           StartIcon="@Icons.Material.Filled.FileUpload"
+                           Disabled="_importando">
+                    @(_importando ? "Importando…" : "Importar Excel")
+                </MudButton>
+            </ActivatorContent>
+        </MudFileUpload>
         <MudButton Variant="Variant.Filled" Color="Color.Primary"
                    OnClick="@(() => NavigationManager.NavigateTo("/catalogo/articulos/nuevo"))"
                    StartIcon="@Icons.Material.Filled.Add">
@@ -322,6 +332,8 @@ else
     [SupplyParameterFromQuery(Name = "texto")]
     private string? _filtroTexto { get; set; }
 
+    private bool _importando = false;
+
     private IEnumerable<(string Tipo, int Cant)> _tiposResumen =>
         _articulos.GroupBy(a => a.TipoArticulo)
                   .Select(g => (g.Key, g.Count()))
@@ -404,5 +416,47 @@ else
         _filtroEstado        = null;
         _filtroCentroCostoId = null;
         await CargarAsync();
+    }
+
+    private async Task ImportarExcelAsync(IBrowserFile file)
+    {
+        _importando = true;
+        try
+        {
+            using var stream = file.OpenReadStream(10_000_000);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            ms.Position = 0;
+
+            using var content = new MultipartFormDataContent();
+            content.Add(new ByteArrayContent(ms.ToArray()), "file", file.Name);
+
+            var result = await ApiClient.PostMultipartAsync<ImportarExcelResult>(
+                "api/catalogo/articulos/importar-excel", content);
+
+            if (result is null)
+            {
+                Snackbar.Add("No se obtuvo respuesta del servidor.", Severity.Warning);
+                return;
+            }
+
+            var msg = $"Creados: {result.Creados} · Actualizados: {result.Actualizados} · Errores: {result.Errores}";
+            var sev  = result.Errores > 0 ? Severity.Warning : Severity.Success;
+            Snackbar.Add(msg, sev);
+
+            if (result.Mensajes is { Count: > 0 })
+                foreach (var m in result.Mensajes.Take(5))
+                    Snackbar.Add(m, Severity.Error);
+
+            await CargarAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al importar: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _importando = false;
+        }
     }
 }

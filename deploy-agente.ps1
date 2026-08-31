@@ -91,6 +91,21 @@ try {
     if (-not $apiKey -or -not $baseUrl) {
         Write-Host "     ADVERTENCIA: No se pudo leer ApiKey o BaseUrl de appsettings.json." -ForegroundColor Yellow
     } else {
+        # PS 5.1 rechaza el certificado de desarrollo de ASP.NET Core (self-signed).
+        # Para validacion local lo ignoramos — el agente usa HttpClient de .NET que
+        # confía en el certificado normalmente.
+        try {
+            Add-Type -TypeDefinition @'
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+public class _TrustAll : ICertificatePolicy {
+    public bool CheckValidationResult(ServicePoint sp, X509Certificate cert,
+        WebRequest req, int problem) { return true; }
+}
+'@ -ErrorAction SilentlyContinue
+            [System.Net.ServicePointManager]::CertificatePolicy = New-Object _TrustAll
+        } catch { }
+
         $headers    = @{ "X-Api-Key" = $apiKey; "Content-Type" = "application/json" }
         $body       = '{"Version":"deploy-check"}'
         $baseUrl    = $baseUrl.TrimEnd('/')

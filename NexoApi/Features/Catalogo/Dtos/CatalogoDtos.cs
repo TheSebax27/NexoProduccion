@@ -73,7 +73,8 @@ public record ActualizarArticuloRequest(
     string? MarcaCodigo = null, string? GrupoMenorCodigo = null, string? PresentacionCodigo = null,
     decimal? Peso = null,
     string? IvaSiNo = null, short? IvaValor = null, string? IvaDescripcion = null,
-    short? Iva2 = null, string? IvaDescripcion2 = null
+    short? Iva2 = null, string? IvaDescripcion2 = null,
+    int? TipoArticuloId = null
 );
 
 public record StockPorCC(int CentroCostoID, string NombreCC, decimal Stock);
@@ -93,6 +94,7 @@ public record ArticuloItem(
     decimal? Peso,
     string? IvaSiNo, short? IvaValor, string? IvaDescripcion,
     short? Iva2, string? IvaDescripcion2,
+    int TipoArticuloID = 0,
     List<StockPorCC>? StockPorCentros = null
 )
 {
@@ -111,14 +113,15 @@ public record ArticuloItem(
         string? PresentacionCodigo, string? PresentacionNombre,
         decimal? Peso,
         string? IvaSiNo, short? IvaValor, string? IvaDescripcion,
-        short? Iva2, string? IvaDescripcion2)
+        short? Iva2, string? IvaDescripcion2,
+        int TipoArticuloID)
         : this(ArticuloID, Referencia, Nombre, Descripcion, TipoArticulo, CostoPromedio,
                StockMinimo, PuntoReorden, Estado, Existencias, DiasVidaUtil, Fracciones,
                TieneImagen, Fracciona, PrecioVentaUnidad, Costo,
                PPublico, PBodega, PCredito, UPublico, UBodega, UCredito,
                MarcaCodigo, MarcaNombre, GrupoMenorCodigo, GrupoMenorNombre,
                GrupoMayorCodigo, GrupoMayorNombre, PresentacionCodigo, PresentacionNombre,
-               Peso, IvaSiNo, IvaValor, IvaDescripcion, Iva2, IvaDescripcion2, null) { }
+               Peso, IvaSiNo, IvaValor, IvaDescripcion, Iva2, IvaDescripcion2, TipoArticuloID, null) { }
 
     // Helpers para uso en dialogs de despacho/factura
     public bool EsFraccionado => Fracciones is > 0;
@@ -133,6 +136,16 @@ public record ActualizarImagenRequest(string Base64, string ContentType);
 
 // Catalogos base para selectores en formularios
 public record TipoArticuloItem(int TipoArticuloID, string Codigo, string Nombre);
+
+// ---------- Importación masiva por Excel ----------
+public record ImportarExcelResult(int Creados, int Actualizados, int Errores, List<string> Mensajes);
+
+// ---------- Variantes de artículos ----------
+// Un artículo padre puede tener N variantes (Talla S/M/L, Color Rojo/Azul, etc.).
+// Cada variante es un artículo normal con su propio SKU que sincroniza con Visions
+// de forma independiente: ArticuloPadreID solo afecta la UI de NEXO, no Visions.
+public record VarianteItem(int ArticuloID, string Referencia, string Nombre, string? NombreVariante, bool Estado, decimal Existencias);
+public record CrearVarianteRequest(string? NombreVariante, string? Referencia, string? Nombre);
 
 public record ArticulosPaginadosResponse(List<ArticuloItem> Items, int Total, int Pagina, int Tamano);
 public record UnidadMedidaItem(int UnidadID, string Nombre, string Abreviatura, string Tipo);
@@ -215,3 +228,9 @@ public record ActualizarProveedorRequest(
 
 // Informa si un NIT ya está registrado como cliente y/o proveedor en NEXO
 public record DualRolInfo(bool EsCliente, int? ClienteID, bool EsProveedor, int? ProveedorID);
+
+// Auditoría de cambios de precio por artículo
+public record HistorialPrecioItem(
+    int HistorialID, DateTime FechaCambio, string NombreUsuario,
+    string Campo, decimal? ValorAnterior, decimal? ValorNuevo
+);

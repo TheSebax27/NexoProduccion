@@ -20,13 +20,18 @@ public record CumplimientoCentroCostoItem(
 
 // ---------- Resumenes transversales (BI, agosto 2026) ----------
 
-public record ResumenCrmItem(int ClientesNuevos, int Interacciones);
+public record ResumenCrmItem(int ClientesNuevos, int Interacciones, int CotizacionesTotal = 0, int Convertidas = 0)
+{
+    public decimal TasaConversion => CotizacionesTotal == 0 ? 0m : Math.Round(Convertidas * 100m / CotizacionesTotal, 1);
+}
 
 public record EmpleadosPorCentroCostoItem(string CentroCosto, int TotalEmpleados);
 
 public record ResumenPlanificacionItem(decimal CumplimientoDemandaPromedio, decimal CumplimientoVentaPromedio);
 
 public record ResumenInventarioItem(decimal ValorTotalStock, int ArticulosConAlerta);
+
+public record VentasPorDepartamentoItem(string Departamento, decimal TotalVentas, int CantidadClientes);
 
 // ---------- Analisis de Facturacion (BI workspace, agosto 2026) ----------
 

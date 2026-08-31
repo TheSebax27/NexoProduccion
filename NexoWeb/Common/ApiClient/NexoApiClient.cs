@@ -119,6 +119,14 @@ public class NexoApiClient : INexoApiClient
         await ValidarRespuestaAsync(respuesta);
     }
 
+    public async Task<TResponse?> PostMultipartAsync<TResponse>(string ruta, MultipartFormDataContent content)
+    {
+        await AgregarTokenAsync();
+        var respuesta = await _http.PostAsync(ruta, content);
+        await ValidarRespuestaAsync(respuesta);
+        return await LeerContenidoAsync<TResponse>(respuesta);
+    }
+
     // Algunos endpoints (ej. PUT de actualizacion) responden 204/200 sin cuerpo.
     // ReadFromJsonAsync lanza JsonException ante un body vacio, asi que primero
     // verificamos si hay contenido antes de intentar deserializar.

@@ -138,14 +138,8 @@
                                                 }
                                                 else
                                                 {
-                                                    <MudSelect T="int" Value="fila.ArticuloID"
-                                                               Dense="true" Margin="Margin.Dense"
-                                                               ValueChanged="@((v) => OnArticuloCambiadoAsync(fila, v))">
-                                                        @foreach (var a in _articulosDisponibles)
-                                                        {
-                                                            <MudSelectItem Value="@a.ArticuloID">@a.SKU — @a.Nombre</MudSelectItem>
-                                                        }
-                                                    </MudSelect>
+                                                    <ArticuloAutocomplete Value="fila.Articulo"
+                                                                          ValueChanged="@(async a => await OnArticuloCambiadoAsync(fila, a))" />
                                                 }
                                             </td>
                                             <td style="padding:2px 4px">
@@ -218,23 +212,19 @@
 
     private record FilaArticulo
     {
-        public int ArticuloID { get; set; }
+        public ArticuloItem? Articulo { get; set; }
+        public int ArticuloID => Articulo?.ArticuloID ?? 0;
         public decimal Cantidad { get; set; } = 1;
-        public string? NombreArticulo { get; set; }
+        public string? NombreArticulo => Articulo is null ? null : $"{Articulo.SKU} — {Articulo.Nombre}";
         public decimal PrecioVenta { get; set; }
     }
 
-    private record ArticuloSimple(int ArticuloID, string SKU, string Nombre, decimal PrecioVenta);
-
     private List<FilaArticulo> _filas = [];
-    private List<ArticuloSimple> _articulosDisponibles = [];
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            _articulosDisponibles = await CargarArticulosAsync();
-
             if (ComboId.HasValue)
             {
                 var detalle = await ApiClient.GetAsync<ComboDetalle>($"api/marketing/combos/{ComboId}");
@@ -253,13 +243,8 @@
                     _precioCalculado = detalle.PrecioCalculado;
                     _filas = detalle.Items.Select(i =>
                     {
-                        var a = _articulosDisponibles.FirstOrDefault(x => x.ArticuloID == i.ArticuloID);
-                        return new FilaArticulo
-                        {
-                            ArticuloID = i.ArticuloID, Cantidad = i.Cantidad,
-                            NombreArticulo = i.NombreArticulo,
-                            PrecioVenta = i.PrecioUnitarioSnapshot ?? a?.PrecioVenta ?? 0
-                        };
+                        var stub = new ArticuloItem(i.ArticuloID, i.SKU, i.NombreArticulo, null, "Producto Terminado", 0, 0, 0, true, 0, null, null, false, null, null, null, i.PrecioUnitarioSnapshot);
+                        return new FilaArticulo { Articulo = stub, Cantidad = i.Cantidad, PrecioVenta = i.PrecioUnitarioSnapshot ?? 0 };
                     }).ToList();
                 }
             }
@@ -267,25 +252,12 @@
         finally { _cargando = false; }
     }
 
-    private async Task<List<ArticuloSimple>> CargarArticulosAsync()
-    {
-        var raw = await ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos") ?? [];
-        return raw.Where(a => a.Estado)
-                  .Select(a => new ArticuloSimple(a.ArticuloID, a.SKU, a.Nombre, a.PrecioVenta))
-                  .ToList();
-    }
-
     private void AgregarFila() => _filas.Add(new FilaArticulo());
 
-    private async Task OnArticuloCambiadoAsync(FilaArticulo fila, int articuloId)
+    private async Task OnArticuloCambiadoAsync(FilaArticulo fila, ArticuloItem? articulo)
     {
-        fila.ArticuloID = articuloId;
-        var art = _articulosDisponibles.FirstOrDefault(a => a.ArticuloID == articuloId);
-        if (art is not null)
-        {
-            fila.NombreArticulo = $"{art.SKU} — {art.Nombre}";
-            fila.PrecioVenta = art.PrecioVenta;
-        }
+        fila.Articulo = articulo;
+        fila.PrecioVenta = articulo?.PrecioVenta ?? 0;
         await RecalcularPrecioAsync(_descuento);
     }
 

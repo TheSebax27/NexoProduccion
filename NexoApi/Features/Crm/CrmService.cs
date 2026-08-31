@@ -56,12 +56,19 @@ public interface ICrmService
     Task ActualizarEstadoCotizacionAsync(int cotizacionId, ActualizarEstadoCotizacionRequest request);
     Task<int> ConvertirCotizacionAFacturaAsync(int cotizacionId, int usuarioId);
     Task<bool> EnviarEmailCotizacionAsync(int cotizacionId);
+    Task<CotizacionPdfData?> ObtenerCotizacionParaPdfAsync(int cotizacionId);
     Task<(bool Enviado, string? Error)> EnviarWhatsAppCotizacionAsync(int cotizacionId);
 
     // Catálogo de referencia geográfica/tributaria
     Task<IEnumerable<PaisItem>> ListarPaisesAsync();
     Task<IEnumerable<MunicipioItem>> ListarMunicipiosAsync();
     Task<IEnumerable<TipoIdentificacionItem>> ListarTiposIdentificacionAsync();
+
+    // Segmentación y crédito
+    Task<ClienteSegmentoItem> ObtenerSegmentoClienteAsync(int clienteId);
+    Task<LineaCreditoItem?> ObtenerLineaCreditoAsync(int clienteId);
+    Task ActualizarLineaCreditoAsync(int clienteId, ActualizarLineaCreditoRequest request);
+    Task<DisponibilidadCreditoItem> ObtenerDisponibilidadCreditoAsync(int clienteId);
 }
 
 public class CrmService : ICrmService
@@ -917,6 +924,31 @@ public class CrmService : ICrmService
         return facturaId;
     }
 
+    private record CotizacionHeader(string Cliente, DateTime Fecha, DateTime? ValidoHasta, string Estado, string? Notas);
+
+    public async Task<CotizacionPdfData?> ObtenerCotizacionParaPdfAsync(int cotizacionId)
+    {
+        using var connection = _db.CreateConnection();
+
+        var header = await connection.QueryFirstOrDefaultAsync<CotizacionHeader>(@"
+            SELECT cl.Nombre AS Cliente, c.Fecha, c.ValidoHasta, c.Estado, c.Notas
+            FROM Crm.Cotizaciones c
+            JOIN Crm.Clientes cl ON cl.ClienteID = c.ClienteID
+            WHERE c.CotizacionID = @CotizacionId",
+            new { CotizacionId = cotizacionId });
+
+        if (header is null) return null;
+
+        var empresa = await connection.ExecuteScalarAsync<string>(
+            "SELECT TOP 1 NombreEmpresa FROM Organizacion.ConfiguracionEmpresa") ?? "NEXO ERP";
+
+        var lineas = (await ListarLineasCotizacionAsync(cotizacionId)).ToList();
+
+        return new CotizacionPdfData(
+            cotizacionId, header.Cliente, header.Fecha, header.ValidoHasta,
+            header.Estado, header.Notas, empresa, lineas);
+    }
+
     public async Task<bool> EnviarEmailCotizacionAsync(int cotizacionId)
     {
         using var connection = _db.CreateConnection();
@@ -1013,5 +1045,99 @@ public class CrmService : ICrmService
         using var connection = _db.CreateConnection();
         return await connection.QueryAsync<TipoIdentificacionItem>(
             "SELECT Codigo, Detalle FROM Catalogo.TiposIdentificacion ORDER BY TRY_CAST(Codigo AS int), Codigo");
+    }
+
+    // ── Segmentación automática ──────────────────────────────────────────
+
+    public async Task<ClienteSegmentoItem> ObtenerSegmentoClienteAsync(int clienteId)
+    {
+        using var connection = _db.CreateConnection();
+
+        const string sql = @"
+            DECLARE @HoyMenos30  DATE = DATEADD(day, -30,  GETDATE());
+            DECLARE @HoyMenos60  DATE = DATEADD(day, -60,  GETDATE());
+            DECLARE @HoyMenos12m DATE = DATEADD(month, -12, GETDATE());
+
+            -- Total facturado últimos 12 meses
+            DECLARE @TotalCliente DECIMAL(18,2) = (
+                SELECT ISNULL(SUM(ISNULL(fl.Total,0)),0)
+                FROM Facturacion.Facturas f
+                LEFT JOIN (SELECT FacturaID, SUM(Cantidad*PrecioUnitario) AS Total
+                           FROM Facturacion.FacturaLineas GROUP BY FacturaID) fl ON fl.FacturaID = f.FacturaID
+                WHERE f.ClienteID = @ClienteID AND f.Fecha >= @HoyMenos12m
+            );
+            -- Umbral top 10% global
+            DECLARE @UmbralVip DECIMAL(18,2) = (
+                SELECT ISNULL(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY Tot) OVER (), 0)
+                FROM (
+                    SELECT f.ClienteID, SUM(ISNULL(fl.Total,0)) AS Tot
+                    FROM Facturacion.Facturas f
+                    LEFT JOIN (SELECT FacturaID, SUM(Cantidad*PrecioUnitario) AS Total
+                               FROM Facturacion.FacturaLineas GROUP BY FacturaID) fl ON fl.FacturaID = f.FacturaID
+                    WHERE f.Fecha >= @HoyMenos12m
+                    GROUP BY f.ClienteID
+                ) t WHERE t.ClienteID = t.ClienteID
+            );
+            -- Meses distintos con facturas en últimos 6 meses
+            DECLARE @MesesActivo INT = (
+                SELECT COUNT(DISTINCT MONTH(f.Fecha))
+                FROM Facturacion.Facturas f
+                WHERE f.ClienteID = @ClienteID AND f.Fecha >= DATEADD(month,-6,GETDATE())
+            );
+            -- Última factura
+            DECLARE @UltimaFactura DATE = (
+                SELECT MAX(CAST(f.Fecha AS DATE)) FROM Facturacion.Facturas f WHERE f.ClienteID = @ClienteID
+            );
+            -- Registro del cliente
+            DECLARE @FechaRegistro DATE = (SELECT CAST(FechaRegistro AS DATE) FROM Crm.Clientes WHERE ClienteID = @ClienteID);
+
+            SELECT @ClienteID AS ClienteID,
+                CASE
+                    WHEN @FechaRegistro >= @HoyMenos30 AND @UltimaFactura IS NULL THEN 'Nuevo'
+                    WHEN @TotalCliente >= @UmbralVip AND @UmbralVip > 0            THEN 'VIP'
+                    WHEN @MesesActivo >= 3                                          THEN 'Frecuente'
+                    WHEN @UltimaFactura IS NOT NULL AND @UltimaFactura < @HoyMenos60 THEN 'Dormido'
+                    ELSE 'Activo'
+                END AS Segmento";
+
+        return await connection.QuerySingleAsync<ClienteSegmentoItem>(sql, new { ClienteID = clienteId });
+    }
+
+    // ── Línea de crédito ─────────────────────────────────────────────────
+
+    public async Task<LineaCreditoItem?> ObtenerLineaCreditoAsync(int clienteId)
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QuerySingleOrDefaultAsync<LineaCreditoItem>(
+            "SELECT ClienteID, CupoCredito, Observaciones FROM Crm.LineasCredito WHERE ClienteID = @ClienteID",
+            new { ClienteID = clienteId });
+    }
+
+    public async Task ActualizarLineaCreditoAsync(int clienteId, ActualizarLineaCreditoRequest r)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(@"
+            IF EXISTS (SELECT 1 FROM Crm.LineasCredito WHERE ClienteID = @ClienteID)
+                UPDATE Crm.LineasCredito SET CupoCredito = @Cupo, Observaciones = @Obs, FechaActualiza = GETDATE()
+                WHERE ClienteID = @ClienteID
+            ELSE
+                INSERT INTO Crm.LineasCredito (ClienteID, CupoCredito, Observaciones)
+                VALUES (@ClienteID, @Cupo, @Obs)",
+            new { ClienteID = clienteId, Cupo = r.CupoCredito, Obs = r.Observaciones });
+    }
+
+    public async Task<DisponibilidadCreditoItem> ObtenerDisponibilidadCreditoAsync(int clienteId)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            DECLARE @Cupo DECIMAL(18,2) = ISNULL(
+                (SELECT CupoCredito FROM Crm.LineasCredito WHERE ClienteID = @ClienteID), 0);
+            DECLARE @Utilizado DECIMAL(18,2) = ISNULL((
+                SELECT SUM(c.Total) FROM Crm.Cotizaciones c
+                WHERE c.ClienteID = @ClienteID AND c.Estado IN ('BORRADOR','ENVIADA','ACEPTADA')
+            ), 0);
+            SELECT @Cupo AS CupoCredito, @Utilizado AS Utilizado,
+                   CASE WHEN @Cupo = 0 THEN 9999999 ELSE @Cupo - @Utilizado END AS Disponible";
+        return await connection.QuerySingleAsync<DisponibilidadCreditoItem>(sql, new { ClienteID = clienteId });
     }
 }

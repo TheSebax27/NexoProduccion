@@ -134,6 +134,21 @@
                                         </div>
                                     </div>
                                 </MudMenuItem>
+                                @if (item.Categoria is "BajoStock" or "SinStock")
+                                {
+                                    <MudMenuItem OnClick="@(() => Navegacion.NavigateTo("/compras/ordenes"))">
+                                        <div class="nexo-topbar__notif-item" style="padding-left:12px; opacity:0.85;">
+                                            <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart"
+                                                     Color="Color.Warning" Size="Size.Small"
+                                                     Class="nexo-topbar__notif-item-icon" />
+                                            <div>
+                                                <div class="nexo-topbar__notif-item-msg" style="font-size:0.78rem;">
+                                                    Crear orden de compra →
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </MudMenuItem>
+                                }
                             }
                         }
                     </div>
@@ -319,14 +334,9 @@
         {
             var resumen = await ApiClient.GetAsync<ResumenNotificaciones>("api/notificaciones/resumen");
             _notificaciones = resumen ?? new(0, new());
+            await InvokeAsync(StateHasChanged);
         }
-        catch
-        {
-            // Si falla, se queda con lo ultimo que tenia -- no vale la pena
-            // molestar al usuario con un error de una campanita.
-        }
-
-        await InvokeAsync(StateHasChanged);
+        catch { }
     }
 
     private static string IconoSegunSeveridad(string severidad) => severidad switch

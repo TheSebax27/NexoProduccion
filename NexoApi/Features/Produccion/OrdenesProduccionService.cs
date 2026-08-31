@@ -144,9 +144,14 @@ public class OrdenesProduccionService : IOrdenesProduccionService
                    op.TipoProduccionID, op.ProductoTerminadoID, op.RecetaID,
                    op.CantidadProgramada, op.ClienteID, op.CentroCostoDestinoID,
                    op.BodegaOrigenMPID, op.BodegaDestinoPTID, op.CentroTrabajoID,
-                   op.FechaPlanificada, op.Observaciones
+                   op.FechaPlanificada, op.Observaciones,
+                   c.Nombre  AS ClienteNombre,
+                   t.Nombre  AS ProductoNombre,
+                   t.Referencia AS ReferenciaProducto
             FROM Produccion.OrdenesProduccion op
             JOIN Produccion.EstadosOP e ON e.EstadoOPID = op.EstadoOPID
+            LEFT JOIN Crm.Clientes c ON c.ClienteID = op.ClienteID
+            JOIN Catalogo.Tarjetas t ON t.ArticuloID = op.ProductoTerminadoID
             WHERE op.OrdenProduccionID = @OrdenProduccionId";
 
         return await connection.QuerySingleOrDefaultAsync<OrdenProduccionDetalleEdicion>(

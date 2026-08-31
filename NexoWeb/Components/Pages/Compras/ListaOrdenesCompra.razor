@@ -40,9 +40,33 @@
     <MudTabPanel Text="Pendientes" Icon="@Icons.Material.Filled.Schedule">
         @if (_cargando)
         { <MudProgressLinear Indeterminate="true" Class="mt-2" /> }
-        else if (!_pendientes.Any())
+        @if (_enVisions.Any())
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-2 mb-1">
+                Los siguientes pedidos están en proceso en VISIONS. Se recibirán automáticamente en NEXO cuando VISIONS los confirme.
+            </MudAlert>
+            <MudTable Items="_enVisions" Hover="true" Dense="true" Striped="true" Class="mb-3">
+                <HeaderContent>
+                    <MudTh>Código</MudTh>
+                    <MudTh>Proveedor</MudTh>
+                    <MudTh>Emisión</MudTh>
+                    <MudTh Style="text-align:right">Total</MudTh>
+                    <MudTh>Detalle</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Código">@context.Codigo</MudTd>
+                    <MudTd DataLabel="Proveedor">@context.Proveedor</MudTd>
+                    <MudTd DataLabel="Emisión">@context.FechaEmision.ToString("dd/MM/yyyy")</MudTd>
+                    <MudTd DataLabel="Total" Style="text-align:right">@context.Total.ToString("C0")</MudTd>
+                    <MudTd DataLabel="Detalle">
+                        <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(context.OrdenCompraID))">Ver</MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        @if (!_pendientes.Any() && !_enVisions.Any())
         { <MudAlert Severity="Severity.Success" Class="mt-2">No hay pedidos pendientes de recibir.</MudAlert> }
-        else
+        else if (_pendientes.Any())
         {
             <MudTable Items="_pendientes" Hover="true" Dense="true" Striped="true" Class="mt-2">
                 <HeaderContent>
@@ -62,9 +86,17 @@
                     <MudTd DataLabel="Emisión">@context.FechaEmision.ToString("dd/MM/yyyy")</MudTd>
                     <MudTd DataLabel="Total" Style="text-align:right">@context.Total.ToString("C0")</MudTd>
                     <MudTd DataLabel="Detalle">
-                        <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(context.OrdenCompraID))">
-                            Ver / Recibir
-                        </MudButton>
+                        <div class="d-flex" style="gap:4px">
+                            <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(context.OrdenCompraID))">
+                                Ver / Recibir
+                            </MudButton>
+                            @if (!context.ExportadoVisions)
+                            {
+                                <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.DeleteOutline"
+                                               Color="Color.Error" Title="Eliminar pedido"
+                                               OnClick="@(() => EliminarOrdenAsync(context))" />
+                            }
+                        </div>
                     </MudTd>
                 </RowTemplate>
             </MudTable>
@@ -188,6 +220,12 @@
                         <div class="nexo-item-card__row"><span>Total</span><strong>@orden.Total.ToString("C0")</strong></div>
                         <div class="nexo-item-card__actions">
                             <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(orden.OrdenCompraID))">Ver / Recibir</MudButton>
+                            @if (orden.EstadoOC != "RECIBIDA")
+                            {
+                                <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.DeleteOutline"
+                                               Color="Color.Error" Title="Eliminar pedido"
+                                               OnClick="@(() => EliminarOrdenAsync(orden))" />
+                            }
                         </div>
                     </div>
                 }
@@ -217,9 +255,17 @@
                     <MudTd DataLabel="Recepción">@(context.FechaRecepcion?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
                     <MudTd DataLabel="Total" Style="text-align:right">@context.Total.ToString("C0")</MudTd>
                     <MudTd DataLabel="Detalle">
-                        <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(context.OrdenCompraID))">
-                            Ver / Recibir
-                        </MudButton>
+                        <div class="d-flex" style="gap:4px">
+                            <MudButton Size="Size.Small" OnClick="@(() => VerDetalleAsync(context.OrdenCompraID))">
+                                Ver / Recibir
+                            </MudButton>
+                            @if (context.EstadoOC != "RECIBIDA")
+                            {
+                                <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.DeleteOutline"
+                                               Color="Color.Error" Title="Eliminar pedido"
+                                               OnClick="@(() => EliminarOrdenAsync(context))" />
+                            }
+                        </div>
                     </MudTd>
                 </RowTemplate>
             </MudTable>
@@ -231,6 +277,13 @@
 {
     <MudPaper Class="pa-4 mt-4">
         <MudText Typo="Typo.subtitle1" Class="mb-2">Detalle del pedido</MudText>
+        @{ var _ordenDetalle = _ordenes.FirstOrDefault(o => o.OrdenCompraID == _detalleAbierto); }
+        @if (_ordenDetalle?.NroDocVisions is not null)
+        {
+            <MudAlert Severity="Severity.Success" Dense="true" Class="mb-3">
+                Procesado en VISIONS — <strong>@_ordenDetalle.TipDocVisions @_ordenDetalle.NroDocVisions</strong>
+            </MudAlert>
+        }
         <MudTable Items="_detalle" Dense="true">
             <HeaderContent>
                 <MudTh>Artículo</MudTh>
@@ -247,7 +300,11 @@
                 <MudTd DataLabel="Fecha Recibido">@(context.FechaUltimaRecepcion?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
                 <MudTd DataLabel="Costo Unit." Style="text-align:right">@context.CostoUnitario.ToString("C2")</MudTd>
                 <MudTd DataLabel="Acción">
-                    @if (context.CantidadRecibida < context.CantidadSolicitada)
+                    @if (context.CantidadRecibida >= context.CantidadSolicitada)
+                    {
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small">Completo</MudChip>
+                    }
+                    else if (!_ordenDetalleEsVisions)
                     {
                         <MudButton Size="Size.Small" Color="Color.Primary"
                                    OnClick="@(() => AbrirRecepcionAsync(context))">
@@ -256,7 +313,7 @@
                     }
                     else
                     {
-                        <MudChip T="string" Color="Color.Success" Size="Size.Small">Completo</MudChip>
+                        <MudChip T="string" Color="Color.Info" Size="Size.Small">En VISIONS</MudChip>
                     }
                 </MudTd>
             </RowTemplate>
@@ -266,11 +323,12 @@
 
 @code {
     private List<OrdenCompraResumen> _ordenes = new();
-    private IEnumerable<OrdenCompraResumen> _pendientes => _ordenes.Where(o => o.EstadoOC != "RECIBIDA");
+    private IEnumerable<OrdenCompraResumen> _pendientes   => _ordenes.Where(o => o.EstadoOC != "RECIBIDA" && !o.ExportadoVisions);
+    private IEnumerable<OrdenCompraResumen> _enVisions    => _ordenes.Where(o => o.EstadoOC != "RECIBIDA" && o.ExportadoVisions);
+    private bool _ordenDetalleEsVisions => _ordenes.FirstOrDefault(o => o.OrdenCompraID == _detalleAbierto)?.ExportadoVisions ?? false;
     private List<OrdenCompraDetalleItem> _detalle = new();
     private List<ProveedorItem> _proveedores = new();
     private List<BodegaItem> _bodegas = new();
-    private List<ArticuloItem> _articulos = new();
     private List<CentroCostoItem> _centrosCosto = new();
     private int? _detalleAbierto;
     private bool _cargando = true;
@@ -330,16 +388,12 @@
         {
             var tareaProveedores = ApiClient.GetAsync<List<ProveedorItem>>("api/catalogo/proveedores");
             var tareaBodegas = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
-            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
             var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
 
-            await Task.WhenAll(tareaProveedores, tareaBodegas, tareaArticulos, tareaCentrosCosto);
+            await Task.WhenAll(tareaProveedores, tareaBodegas, tareaCentrosCosto);
 
             _proveedores = await tareaProveedores ?? new();
             _bodegas = await tareaBodegas ?? new();
-            _articulos = (await tareaArticulos ?? new())
-                .Where(a => a.TipoArticulo is "Materia Prima" or "Insumo" or "Servicio")
-                .ToList();
             _centrosCosto = await tareaCentrosCosto ?? new();
         }
 
@@ -347,7 +401,6 @@
         {
             { x => x._proveedores, _proveedores },
             { x => x._bodegas, _bodegas },
-            { x => x._articulos, _articulos },
             { x => x._centrosCosto, _centrosCosto },
             { x => x.ArticuloPreseleccionadoID, articuloPreseleccionado }
         };
@@ -394,6 +447,28 @@
         }
         catch (Exception ex) { Snackbar.Add($"Error al cargar comparación: {ex.Message}", Severity.Warning); }
         finally { _cmpCargando = false; }
+    }
+
+    private async Task EliminarOrdenAsync(OrdenCompraResumen orden)
+    {
+        var confirmado = await DialogService.ShowMessageBox(
+            "Eliminar pedido",
+            $"¿Eliminar el pedido {orden.Codigo} ({orden.Proveedor})? Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+
+        if (confirmado != true) return;
+
+        try
+        {
+            await ApiClient.DeleteAsync($"api/compras/ordenes/{orden.OrdenCompraID}");
+            Snackbar.Add("Pedido eliminado correctamente.", Severity.Success);
+            if (_detalleAbierto == orden.OrdenCompraID) _detalleAbierto = null;
+            await CargarAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
     }
 
     private async Task AbrirRecepcionAsync(OrdenCompraDetalleItem linea)

@@ -150,12 +150,9 @@
                     }
                     else if (_tipoCosto == "MATERIAL")
                     {
-                        <MudSelect T="int?" @bind-Value="_articuloIdCosto" Label="Articulo" Clearable="true" Class="mb-2">
-                            @foreach (var a in Articulos)
-                            {
-                                <MudSelectItem T="int?" Value="@a.ArticuloID">@a.SKU - @a.Nombre</MudSelectItem>
-                            }
-                        </MudSelect>
+                        <ArticuloAutocomplete Value="_articuloCostoSeleccionado"
+                                              ValueChanged="@(a => _articuloCostoSeleccionado = a)"
+                                              Label="Articulo" />
                     }
                     <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="AgregarCostoAsync">Registrar Costo</MudButton>
                 </MudForm>
@@ -265,7 +262,6 @@
 
     [Parameter] public ProyectoItem Proyecto { get; set; } = default!;
     [Parameter] public List<EmpleadoItem> Empleados { get; set; } = new();
-    [Parameter] public List<ArticuloItem> Articulos { get; set; } = new();
 
     private record ColumnaKanban(string Estado, string Titulo);
     private readonly List<ColumnaKanban> _columnas = new()
@@ -299,7 +295,7 @@
     private string _descripcionCosto = string.Empty;
     private decimal _valorCosto;
     private int? _empleadoIdCosto;
-    private int? _articuloIdCosto;
+    private ArticuloItem? _articuloCostoSeleccionado;
 
     private string _tipoDocumento = "CONTRATO";
     private string _textoComentario = string.Empty;
@@ -411,12 +407,12 @@
             var request = new CrearCostoRequest(
                 Proyecto.ProyectoID, _tipoCosto, _descripcionCosto.Trim(), _valorCosto,
                 _tipoCosto == "MANO_OBRA" ? _empleadoIdCosto : null,
-                _tipoCosto == "MATERIAL" ? _articuloIdCosto : null);
+                _tipoCosto == "MATERIAL" ? _articuloCostoSeleccionado?.ArticuloID : null);
             await ApiClient.PostAsync<CrearCostoRequest, object?>("api/proyectos/costos", request);
             _descripcionCosto = string.Empty;
             _valorCosto = 0;
             _empleadoIdCosto = null;
-            _articuloIdCosto = null;
+            _articuloCostoSeleccionado = null;
             await CargarAsync();
         }
         catch (HttpRequestException ex)

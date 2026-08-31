@@ -282,8 +282,7 @@
 @code {
     [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
 
-    // Clientes ya no se pasa como lista — se busca por NIT vía API
-    [Parameter] public List<ArticuloItem> Articulos { get; set; } = new();
+    // Clientes y Articulos se buscan por API — no se pasan como listas
     [Parameter] public List<ComboItem> CombosActivos { get; set; } = new();
     [Parameter] public List<CentroCostoBasicoItem> CentrosCosto { get; set; } = new();
     [Parameter] public bool UsaVisions { get; set; } = false;

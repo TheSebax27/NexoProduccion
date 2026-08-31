@@ -376,4 +376,36 @@ public class CrmController : ControllerBase
             return BadRequest(new { error = error ?? "No se pudo enviar el mensaje de WhatsApp." });
         return Ok(new { mensaje = "Mensaje de WhatsApp enviado correctamente." });
     }
+
+    // ---------- Segmentación ----------
+
+    [HttpGet("clientes/{id:int}/segmento")]
+    public async Task<ActionResult<ClienteSegmentoItem>> ObtenerSegmento(int id)
+        => Ok(await _service.ObtenerSegmentoClienteAsync(id));
+
+    // ---------- Línea de crédito ----------
+
+    [HttpGet("clientes/{id:int}/linea-credito")]
+    public async Task<ActionResult<LineaCreditoItem?>> ObtenerLineaCredito(int id)
+        => Ok(await _service.ObtenerLineaCreditoAsync(id));
+
+    [HttpPut("clientes/{id:int}/linea-credito")]
+    public async Task<ActionResult> ActualizarLineaCredito(int id, ActualizarLineaCreditoRequest request)
+    {
+        await _service.ActualizarLineaCreditoAsync(id, request);
+        return NoContent();
+    }
+
+    [HttpGet("clientes/{id:int}/linea-credito/disponible")]
+    public async Task<ActionResult<DisponibilidadCreditoItem>> DisponibilidadCredito(int id)
+        => Ok(await _service.ObtenerDisponibilidadCreditoAsync(id));
+
+    [HttpGet("cotizaciones/{id:int}/pdf")]
+    public async Task<IActionResult> DescargarPdf(int id)
+    {
+        var data = await _service.ObtenerCotizacionParaPdfAsync(id);
+        if (data is null) return NotFound();
+        var bytes = NexoApi.Common.Export.ExportService.GenerarPdfCotizacion(data);
+        return File(bytes, "application/pdf", $"cotizacion_{id}.pdf");
+    }
 }

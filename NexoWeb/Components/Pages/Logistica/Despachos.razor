@@ -16,7 +16,7 @@
 <div class="d-flex align-center flex-wrap mb-4" style="gap: 1rem;">
     <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
                StartIcon="@Icons.Material.Filled.LocalShipping"
-               Disabled="_clientes.Count == 0 || _articulosProductoTerminado.Count == 0 || _creando">
+               Disabled="_creando">
         Nuevo Despacho
     </MudButton>
     <MudSelect T="string" Value="_filtroEstado" ValueChanged="OnFiltroEstadoCambiadoAsync"
@@ -80,10 +80,8 @@ else
 
 @code {
     private List<DespachoItem> _despachos = new();
-    private List<ClienteItem> _clientes = new();
     private List<CentroCostoItem> _centrosCosto = new();
     private List<BodegaItem> _bodegas = new();
-    private List<ArticuloItem> _articulosProductoTerminado = new();
     private bool _cargando = true;
     private bool _creando;
     private string? _errorCarga;
@@ -101,20 +99,14 @@ else
         try
         {
             var tareaDespachos = ApiClient.GetAsync<List<DespachoItem>>("api/logistica/despachos");
-            var tareaClientes = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
             var tareaCentrosCosto = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true");
             var tareaBodegas = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
-            var tareaArticulos = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
 
-            await Task.WhenAll(tareaDespachos, tareaClientes, tareaCentrosCosto, tareaBodegas, tareaArticulos);
+            await Task.WhenAll(tareaDespachos, tareaCentrosCosto, tareaBodegas);
 
             _despachos = await tareaDespachos ?? new();
-            _clientes = (await tareaClientes ?? new()).Where(c => c.Estado).ToList();
             _centrosCosto = await tareaCentrosCosto ?? new();
             _bodegas = await tareaBodegas ?? new();
-            _articulosProductoTerminado = (await tareaArticulos ?? new())
-                .Where(a => a.TipoArticulo == "Producto Terminado" && a.Estado)
-                .ToList();
         }
         catch (Exception ex)
         {
@@ -149,10 +141,8 @@ else
     {
         var parametros = new DialogParameters<CrearDespachoDialog>
         {
-            { x => x.Clientes, _clientes },
             { x => x.CentrosCosto, _centrosCosto },
-            { x => x.Bodegas, _bodegas },
-            { x => x.ArticulosDisponibles, _articulosProductoTerminado }
+            { x => x.Bodegas, _bodegas }
         };
 
         var dialogo = await DialogService.ShowAsync<CrearDespachoDialog>("Nuevo Despacho", parametros);

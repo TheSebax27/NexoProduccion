@@ -52,7 +52,11 @@ public class TareaExportarVentas
         using var connection = _visionsDb.CreateConnection();
 
         const string sqlVentasNuevas = @"
-            SELECT m.CENTROCOSTO, m.TIPDOC, m.NRODOC, m.ORDEN, m.REFERENCIA, m.CANTIDAD, m.FECDOC,
+            SELECT m.CENTROCOSTO, m.TIPDOC, m.NRODOC, m.ORDEN, m.REFERENCIA,
+                   -- Visions separa unidades sueltas (CANTIDAD) y cajas (CANTIDADCAJA).
+                   -- Para ventas por caja, CANTIDAD=0 y CANTIDADCAJA=1; hay que sumarlas.
+                   CAST(m.CANTIDAD + (m.CANTIDADCAJA * ISNULL(NULLIF(t.FRACCIONES, 0), 1)) AS DECIMAL(18,4)) AS CANTIDAD,
+                   m.FECDOC,
                    t.DETALLE                                               AS DetalleTarjeta,
                    t.COSTO                                                 AS CostoTarjeta,
                    t.PPUBLICO                                              AS PPublicoTarjeta,

@@ -26,8 +26,51 @@ public class TareaSincronizarFacturasNexoVisions
 
     public async Task EjecutarAsync(int centroCostoVisions, CancellationToken ct)
     {
+        await LimpiarEliminadasEnVisionsAsync(ct);
         await ExportarFacturasNuevasAsync(ct);
         await SincronizarNumerosDesdeVisionsAsync(ct);
+    }
+
+    // Fase 0: limpiar del staging de Visions las facturas que fueron eliminadas en NEXO
+    private async Task LimpiarEliminadasEnVisionsAsync(CancellationToken ct)
+    {
+        var pendientes = await _apiClient.ListarPendientesLimpiezaVisionsAsync(ct);
+        if (pendientes.Count == 0) return;
+
+        _logger.LogInformation("Limpiando {N} facturas eliminadas del staging de Visions", pendientes.Count);
+        using var connection = _visionsDb.CreateConnection();
+
+        foreach (var p in pendientes)
+        {
+            if (ct.IsCancellationRequested) break;
+            try
+            {
+                if (p.Tipo == "FACTURA")
+                {
+                    await connection.ExecuteAsync(
+                        "DELETE FROM dbo.NEXO_FacturasPendientesLineas WHERE FacturaID = @Id",
+                        new { Id = p.EntidadID });
+                    await connection.ExecuteAsync(
+                        "DELETE FROM dbo.NEXO_FacturasPendientes WHERE FacturaID = @Id",
+                        new { Id = p.EntidadID });
+                }
+                else if (p.Tipo == "PEDIDO")
+                {
+                    await connection.ExecuteAsync(
+                        "DELETE FROM dbo.NEXO_PedidosLineas WHERE PedidoID = @Id",
+                        new { Id = p.EntidadID });
+                    await connection.ExecuteAsync(
+                        "DELETE FROM dbo.NEXO_Pedidos WHERE PedidoID = @Id",
+                        new { Id = p.EntidadID });
+                }
+                await _apiClient.MarcarLimpiezaVisionsCompletadaAsync(p.LimpiezaID, ct);
+                _logger.LogInformation("{Tipo} NEXO {ID} eliminado del staging de Visions", p.Tipo, p.EntidadID);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al limpiar factura NEXO {ID} del staging de Visions", p.EntidadID);
+            }
+        }
     }
 
     // Fase 1: escribir facturas nuevas al staging de Visions

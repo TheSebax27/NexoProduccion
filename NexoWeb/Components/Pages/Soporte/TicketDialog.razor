@@ -52,15 +52,9 @@
                     </MudItem>
                 }
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="ClienteItem?" @bind-Value="_cliente"
-                               Label="Cliente *" Variant="Variant.Outlined"
-                               Required="true" RequiredError="Selecciona el cliente"
-                               ToStringFunc="@(c => c?.Nombre ?? string.Empty)">
-                        @foreach (var c in _clientes)
-                        {
-                            <MudSelectItem T="ClienteItem?" Value="@c">@c.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <ClienteAutocomplete Value="_cliente"
+                                         ValueChanged="@(c => _cliente = c)"
+                                         Label="Cliente *" Required="true" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudAutocomplete T="UsuarioItem?" @bind-Value="_asignado"
@@ -103,7 +97,6 @@
     private UsuarioItem? _asignado;
     private ClienteItem? _cliente;
     private List<UsuarioItem> _usuarios = new();
-    private List<ClienteItem> _clientes = new();
 
     private static readonly string[] _categorias = ["Bug", "Consulta", "Mejora", "Acceso", "Otro"];
 
@@ -111,12 +104,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var tareaUsuarios = Api.GetAsync<List<UsuarioItem>>("api/auth/usuarios");
-        var tareaClientes = Api.GetAsync<List<ClienteItem>>("api/crm/clientes");
-        await Task.WhenAll(tareaUsuarios, tareaClientes);
-
-        _usuarios = (await tareaUsuarios ?? []);
-        _clientes = (await tareaClientes ?? []).Where(c => c.Estado).ToList();
+        _usuarios = await Api.GetAsync<List<UsuarioItem>>("api/auth/usuarios") ?? [];
 
         if (Ticket is not null)
         {
@@ -128,8 +116,8 @@
             _notas = Ticket.Notas;
             if (Ticket.AsignadoA.HasValue)
                 _asignado = _usuarios.FirstOrDefault(u => u.UsuarioID == Ticket.AsignadoA.Value);
-            if (Ticket.ClienteID.HasValue)
-                _cliente = _clientes.FirstOrDefault(c => c.ClienteID == Ticket.ClienteID.Value);
+            if (Ticket.ClienteID.HasValue && Ticket.Cliente is not null)
+                _cliente = new ClienteItem(Ticket.ClienteID.Value, "", Ticket.Cliente, null, null, null, null, null, true, null, null, null, null, null, 0, null, null, null, null, null, null, null, null, null, null, null);
         }
     }
 

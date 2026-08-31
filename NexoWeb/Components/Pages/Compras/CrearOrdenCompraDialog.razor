@@ -62,12 +62,9 @@
         {
             <MudGrid Class="mb-2" AlignItems="Center.Center">
                 <MudItem xs="5">
-                    <MudSelect T="int" @bind-Value="linea.ArticuloID" Label="Articulo" Dense="true">
-                        @foreach (var articulo in _articulos)
-                        {
-                            <MudSelectItem T="int" Value="@articulo.ArticuloID">@articulo.SKU - @articulo.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <ArticuloAutocomplete Value="linea.ArticuloSeleccionado"
+                                          ValueChanged="@((ArticuloItem? v) => OnArticuloCambiado(linea, v))"
+                                          Label="Articulo" />
                 </MudItem>
                 <MudItem xs="3">
                     <MudNumericField @bind-Value="linea.Cantidad" Label="Cantidad" Min="0.01m" Format="N2" Dense="true" />
@@ -104,7 +101,6 @@
     [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public List<ProveedorItem> _proveedores { get; set; } = new();
     [Parameter] public List<BodegaItem> _bodegas { get; set; } = new();
-    [Parameter] public List<ArticuloItem> _articulos { get; set; } = new();
     [Parameter] public List<CentroCostoItem> _centrosCosto { get; set; } = new();
 
     private string _codigo = "";
@@ -117,7 +113,8 @@
 
     private class LineaFormulario
     {
-        public int ArticuloID { get; set; }
+        public ArticuloItem? ArticuloSeleccionado { get; set; }
+        public int ArticuloID => ArticuloSeleccionado?.ArticuloID ?? 0;
         public decimal Cantidad { get; set; }
         public decimal CostoUnitario { get; set; }
     }
@@ -131,8 +128,6 @@
     protected override void OnInitialized()
     {
         AgregarLinea();
-        if (ArticuloPreseleccionadoID.HasValue)
-            _lineas[0].ArticuloID = ArticuloPreseleccionadoID.Value;
     }
 
     private void OnNitBusquedaCambiado()
@@ -166,12 +161,14 @@
 
     private void AgregarLinea() => _lineas.Add(new LineaFormulario());
 
-    // La Cantidad siempre se captura en la unidad base del articulo (la que
-    // ya tiene definida en Catalogo). Si esa unidad es "Caja", esta pista
-    // ayuda a verificar cuantas unidades sueltas representa en total.
+    private void OnArticuloCambiado(LineaFormulario linea, ArticuloItem? articulo)
+    {
+        linea.ArticuloSeleccionado = articulo;
+    }
+
     private string? PistaEmbalaje(LineaFormulario linea)
     {
-        var articulo = _articulos.FirstOrDefault(a => a.ArticuloID == linea.ArticuloID);
+        var articulo = linea.ArticuloSeleccionado;
         if (articulo is null || articulo.Unidad != "cja" || articulo.UnidadesPorEmbalaje is not > 0 || linea.Cantidad <= 0)
             return null;
 

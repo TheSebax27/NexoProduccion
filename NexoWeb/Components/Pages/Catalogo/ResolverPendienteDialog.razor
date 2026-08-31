@@ -15,12 +15,9 @@
 
         @if (_modo == "existente")
         {
-            <MudSelect T="int?" @bind-Value="_articuloIdExistente" Label="Articulo (Producto Terminado)" Class="mb-3">
-                @foreach (var articulo in ArticulosDisponibles)
-                {
-                    <MudSelectItem T="int?" Value="@articulo.ArticuloID">@articulo.Referencia - @articulo.Nombre</MudSelectItem>
-                }
-            </MudSelect>
+            <ArticuloAutocomplete Value="_articuloSeleccionado"
+                                  ValueChanged="@(a => _articuloSeleccionado = a)"
+                                  Label="Articulo (Producto Terminado)" />
         }
         else
         {
@@ -41,10 +38,9 @@
     [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter] public ArticuloPendienteMapeoItem Pendiente { get; set; } = default!;
-    [Parameter] public List<ArticuloItem> ArticulosDisponibles { get; set; } = new();
 
     private string _modo = "existente";
-    private int? _articuloIdExistente;
+    private ArticuloItem? _articuloSeleccionado;
     private string _sku = string.Empty;
     private string _nombre = string.Empty;
     private decimal? _precioVenta;
@@ -63,10 +59,10 @@
 
         if (_modo == "existente")
         {
-            if (_articuloIdExistente is null)
+            if (_articuloSeleccionado is null)
                 return;
 
-            request = new ResolverArticuloPendienteRequest(_articuloIdExistente, null, null, null, null);
+            request = new ResolverArticuloPendienteRequest(_articuloSeleccionado.ArticuloID, null, null, null, null);
         }
         else
         {

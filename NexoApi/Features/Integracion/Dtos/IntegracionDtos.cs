@@ -381,3 +381,5 @@ public record VentaVisionsItem(
 );
 
 public record VentasVisionsPaginadasResponse(List<VentaVisionsItem> Items, int Total, int Pagina, int Tamano);
+
+public record PendienteLimpiezaVisions(int LimpiezaID, string Tipo, int EntidadID);

@@ -33,14 +33,10 @@
 
 @* ── Filtros ─────────────────────────────────────────────────────────── *@
 <div class="prod-filtros">
-    <MudSelect T="int?" Value="_filtroProductoId" ValueChanged="OnFiltroCambiadoAsync"
-               Label="Filtrar por producto terminado" Variant="Variant.Outlined" Clearable="true"
-               Style="flex:2; min-width:220px;">
-        @foreach (var a in _articulos)
-        {
-            <MudSelectItem T="int?" Value="@a.ArticuloID">@a.Nombre</MudSelectItem>
-        }
-    </MudSelect>
+    <ArticuloAutocomplete Value="_filtroArticulo"
+                          ValueChanged="@(async a => { _filtroArticulo = a; await OnFiltroCambiadoAsync(a?.ArticuloID); })"
+                          Label="Filtrar por producto terminado"
+                          FiltroTipo="Producto Terminado" />
     <MudSwitch T="bool" @bind-Value="_soloActivas" Label="Solo versiones activas"
                Color="Color.Primary" @bind-Value:after="CargarAsync" />
 </div>
@@ -170,7 +166,7 @@ else
 
 @code {
     private List<RecetaResumen>  _recetas   = new();
-    private List<ArticuloItem>   _articulos = new();
+    private ArticuloItem? _filtroArticulo;
     private int?  _filtroProductoId;
     private bool  _soloActivas = true;
     private bool  _cargando    = true;
@@ -178,13 +174,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            _articulos = (await ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos") ?? new())
-                .Where(a => a.TipoArticulo == "Producto Terminado")
-                .ToList();
-            await CargarAsync();
-        }
+        try { await CargarAsync(); }
         catch (Exception ex) { _errorCarga = ex.Message; _cargando = false; }
     }
 

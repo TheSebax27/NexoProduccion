@@ -6,12 +6,9 @@
             <MudTextField @bind-Value="_nombre" Label="Nombre del Proyecto" Required="true"
                           RequiredError="El nombre es obligatorio" Class="mb-3" />
 
-            <MudSelect T="int?" @bind-Value="_clienteId" Label="Cliente" Clearable="true" Class="mb-3">
-                @foreach (var c in Clientes)
-                {
-                    <MudSelectItem T="int?" Value="@c.ClienteID">@c.Nombre</MudSelectItem>
-                }
-            </MudSelect>
+            <ClienteAutocomplete Value="_clienteSeleccionado"
+                                 ValueChanged="@(c => { _clienteSeleccionado = c; _clienteId = c?.ClienteID; })"
+                                 Label="Cliente" />
 
             <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Clearable="true" Class="mb-3">
                 @foreach (var cc in CentrosCosto)
@@ -56,13 +53,13 @@
     [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter] public ProyectoItem? Proyecto { get; set; }
-    [Parameter] public List<ClienteItem> Clientes { get; set; } = new();
     [Parameter] public List<CentroCostoItem> CentrosCosto { get; set; } = new();
 
     private bool EsEdicion => Proyecto is not null;
 
     private MudForm _form = default!;
     private string _nombre = string.Empty;
+    private ClienteItem? _clienteSeleccionado;
     private int? _clienteId;
     private int? _centroCostoId;
     private string? _descripcion;
@@ -78,6 +75,8 @@
         {
             _nombre = Proyecto.Nombre;
             _clienteId = Proyecto.ClienteID;
+            if (Proyecto.ClienteID.HasValue && Proyecto.Cliente is not null)
+                _clienteSeleccionado = new ClienteItem(Proyecto.ClienteID.Value, "", Proyecto.Cliente, null, null, null, null, null, true, null, null, null, null, null, 0, null, null, null, null, null, null, null, null, null, null, null);
             _centroCostoId = Proyecto.CentroCostoID;
             _descripcion = Proyecto.Descripcion;
             _fechaInicio = Proyecto.FechaInicio;

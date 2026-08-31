@@ -56,4 +56,16 @@ public class OrdenesCompraController : ControllerBase
         [FromQuery] int? articuloId,
         [FromQuery] int? proveedorId)
         => Ok(await _service.ComparacionPreciosAsync(articuloId, proveedorId));
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Eliminar(int id)
+    {
+        try
+        {
+            await _service.EliminarOrdenCompraAsync(id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
+        catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+    }
 }

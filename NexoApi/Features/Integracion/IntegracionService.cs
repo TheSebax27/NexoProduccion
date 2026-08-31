@@ -74,6 +74,10 @@ public interface IIntegracionService
 
     // Ventas de Visions registradas en EventosEntrantes (solo lectura, sin conexión a Visions)
     Task<VentasVisionsPaginadasResponse> ListarVentasVisionsAsync(int? centroCostoId, string? tipDoc, DateTime? desde, DateTime? hasta, int pagina = 1, int tamano = 50);
+
+    // Limpieza de staging en Visions para entidades eliminadas en NEXO
+    Task<IEnumerable<PendienteLimpiezaVisions>> ListarPendientesLimpiezaVisionsAsync();
+    Task MarcarLimpiezaVisionsCompletadaAsync(int limpiezaId);
 }
 
 public class IntegracionService : IIntegracionService
@@ -1813,5 +1817,20 @@ public class IntegracionService : IIntegracionService
             r.CentroCostoID, r.TipDoc, r.NroDoc, r.Fecha,
             r.NitCliente, r.NombreCliente, r.TotalVenta, r.Lineas)).ToList();
         return new VentasVisionsPaginadasResponse(items, total, pagina, tamano);
+    }
+
+    public async Task<IEnumerable<PendienteLimpiezaVisions>> ListarPendientesLimpiezaVisionsAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<PendienteLimpiezaVisions>(
+            "SELECT LimpiezaID, Tipo, EntidadID FROM Integracion.PendientesLimpiezaVisions ORDER BY LimpiezaID");
+    }
+
+    public async Task MarcarLimpiezaVisionsCompletadaAsync(int limpiezaId)
+    {
+        using var connection = _db.CreateConnection();
+        await connection.ExecuteAsync(
+            "DELETE FROM Integracion.PendientesLimpiezaVisions WHERE LimpiezaID = @LimpiezaID",
+            new { LimpiezaID = limpiezaId });
     }
 }

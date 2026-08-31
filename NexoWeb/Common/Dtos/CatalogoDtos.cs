@@ -122,6 +122,7 @@ public record ArticuloItem(
     decimal? Peso = null,
     string? IvaSiNo = null, short? IvaValor = null, string? IvaDescripcion = null,
     short? Iva2 = null, string? IvaDescripcion2 = null,
+    int TipoArticuloID = 0,
     List<StockPorCC>? StockPorCentros = null
 )
 {
@@ -184,7 +185,8 @@ public record ActualizarArticuloRequest(
     string? MarcaCodigo = null, string? GrupoMenorCodigo = null, string? PresentacionCodigo = null,
     decimal? Peso = null,
     string? IvaSiNo = null, short? IvaValor = null, string? IvaDescripcion = null,
-    short? Iva2 = null, string? IvaDescripcion2 = null
+    short? Iva2 = null, string? IvaDescripcion2 = null,
+    int? TipoArticuloId = null
 );
 
 public record ProveedorItem(
@@ -222,7 +224,20 @@ public record ActualizarProveedorRequest(
 // Informa si un NIT ya está registrado como cliente y/o proveedor en NEXO
 public record DualRolInfo(bool EsCliente, int? ClienteID, bool EsProveedor, int? ProveedorID);
 
+// Auditoría de cambios de precio por artículo
+public record HistorialPrecioItem(
+    int HistorialID, DateTime FechaCambio, string NombreUsuario,
+    string Campo, decimal? ValorAnterior, decimal? ValorNuevo
+);
+
 public record TipoArticuloItem(int TipoArticuloID, string Codigo, string Nombre);
+
+// ---------- Importación masiva por Excel ----------
+public record ImportarExcelResult(int Creados, int Actualizados, int Errores, List<string>? Mensajes);
+
+// ---------- Variantes de artículos ----------
+public record VarianteItem(int ArticuloID, string Referencia, string Nombre, string? NombreVariante, bool Estado, decimal Existencias);
+public record CrearVarianteRequest(string? NombreVariante, string? Referencia, string? Nombre);
 
 public record ArticulosPaginadosResponse(List<ArticuloItem> Items, int Total, int Pagina, int Tamano);
 public record UnidadMedidaItem(int UnidadID, string Nombre, string Abreviatura, string Tipo);

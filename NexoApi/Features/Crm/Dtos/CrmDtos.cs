@@ -152,3 +152,22 @@ public record CrearCotizacionRequest(int ClienteID, int? OportunidadID, DateTime
 public record ActualizarEstadoCotizacionRequest(string Estado);
 public record CotizacionLineaItem(int LineaID, int CotizacionID, int ArticuloID, string SkuArticulo, string NombreArticulo, decimal Cantidad, decimal PrecioUnitario, decimal Subtotal);
 public record ConvertirCotizacionResponse(int FacturaId);
+
+// Datos para generar el PDF de una cotización
+public record CotizacionPdfData(
+    int CotizacionID, string Cliente, DateTime Fecha, DateTime? ValidoHasta,
+    string Estado, string? Notas, string Empresa, List<CotizacionLineaItem> Lineas
+);
+
+// ---------- Segmentación automática de clientes ----------
+// VIP = top 10% en valor facturado últimos 12 meses
+// Frecuente = facturas en al menos 3 de los últimos 6 meses
+// Nuevo = registrado en últimos 30 días
+// Dormido = sin facturas en últimos 60 días (y tiene historial)
+// Activo = el resto
+public record ClienteSegmentoItem(int ClienteID, string Segmento);
+
+// ---------- Línea de crédito ----------
+public record LineaCreditoItem(int ClienteID, decimal CupoCredito, string? Observaciones);
+public record ActualizarLineaCreditoRequest(decimal CupoCredito, string? Observaciones);
+public record DisponibilidadCreditoItem(decimal CupoCredito, decimal Utilizado, decimal Disponible);

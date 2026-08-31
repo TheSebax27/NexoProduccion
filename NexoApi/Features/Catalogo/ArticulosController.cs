@@ -1,6 +1,10 @@
+using System.Security.Claims;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NexoApi.Common.Export;
 using NexoApi.Features.Catalogo.Dtos;
+using NexoApi.Features.Configuracion;
 
 namespace NexoApi.Features.Catalogo;
 
@@ -10,11 +14,18 @@ namespace NexoApi.Features.Catalogo;
 public class ArticulosController : ControllerBase
 {
     private readonly ICatalogoService _service;
+    private readonly IConfiguracionService _config;
 
-    public ArticulosController(ICatalogoService service)
+    public ArticulosController(ICatalogoService service, IConfiguracionService config)
     {
         _service = service;
+        _config  = config;
     }
+
+    private int UsuarioActualId =>
+        int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private string NombreUsuarioActual =>
+        User.FindFirstValue(ClaimTypes.Name) ?? "Desconocido";
 
     [HttpGet]
     public async Task<ActionResult<ArticulosPaginadosResponse>> Listar(
@@ -49,7 +60,7 @@ public class ArticulosController : ControllerBase
     {
         try
         {
-            await _service.ActualizarArticuloAsync(id, request);
+            await _service.ActualizarArticuloAsync(id, request, UsuarioActualId, NombreUsuarioActual);
             return NoContent();
         }
         catch (KeyNotFoundException ex)
@@ -127,6 +138,154 @@ public class ArticulosController : ControllerBase
         {
             await _service.EliminarImagenArticuloAsync(id);
             return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    // ── Historial de precios ─────────────────────────────────────────────────
+    [HttpGet("{id:int}/historial-precios")]
+    public async Task<ActionResult<IEnumerable<HistorialPrecioItem>>> ListarHistorial(int id)
+        => Ok(await _service.ListarHistorialPreciosAsync(id));
+
+    // ── Exportar a Excel ─────────────────────────────────────────────────────
+    [HttpGet("exportar")]
+    public async Task<IActionResult> Exportar()
+    {
+        var articulos = await _service.ListarTodosArticulosAsync();
+        var bytes = ExportService.GenerarExcelArticulos(articulos);
+        return File(bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"articulos_{DateTime.Now:yyyyMMdd}.xlsx");
+    }
+
+    // ── Ficha técnica PDF ────────────────────────────────────────────────────
+
+    [HttpGet("{id:int}/ficha-pdf")]
+    public async Task<IActionResult> FichaTecnica(int id)
+    {
+        var articulo = await _service.ObtenerArticuloAsync(id);
+        if (articulo is null) return NotFound();
+        var imagen  = await _service.ObtenerImagenArticuloAsync(id);
+        var empresa = await _config.ObtenerEmpresaAsync();
+        var bytes   = ExportService.GenerarFichaTecnicaPdf(articulo,
+            imagen?.Datos, imagen?.ContentType, empresa.NombreEmpresa);
+        return File(bytes, "application/pdf", $"ficha_{articulo.Referencia}.pdf");
+    }
+
+    // ── Importación masiva por Excel ──────────────────────────────────────────
+
+    [HttpPost("importar-excel")]
+    [RequestSizeLimit(10_000_000)]
+    public async Task<ActionResult<ImportarExcelResult>> ImportarExcel(IFormFile archivo)
+    {
+        if (archivo is null || archivo.Length == 0)
+            return BadRequest(new { error = "Archivo vacío o no enviado." });
+
+        int creados = 0, actualizados = 0, errores = 0;
+        var mensajes = new List<string>();
+
+        using var stream = archivo.OpenReadStream();
+        using var wb     = new XLWorkbook(stream);
+        var ws = wb.Worksheet(1);
+
+        // Detectar encabezados en fila 1
+        var headers = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var cell in ws.Row(1).CellsUsed())
+            headers[cell.GetString().Trim()] = cell.Address.ColumnNumber;
+
+        string? Col(IXLRow row, string name)
+        {
+            if (!headers.TryGetValue(name, out var c)) return null;
+            var v = row.Cell(c).GetString().Trim();
+            return string.IsNullOrWhiteSpace(v) ? null : v;
+        }
+        decimal? Dec(IXLRow row, string name)
+        {
+            var s = Col(row, name);
+            return decimal.TryParse(s, out var d) ? d : null;
+        }
+
+        for (int r = 2; r <= ws.LastRowUsed()?.RowNumber(); r++)
+        {
+            var row  = ws.Row(r);
+            var ref_ = Col(row, "Referencia");
+            if (string.IsNullOrWhiteSpace(ref_)) continue;
+
+            try
+            {
+                var existente = await _service.BuscarArticulosAsync(ref_, null, 1);
+                var articulo  = existente.FirstOrDefault(a => a.Referencia.Equals(ref_, StringComparison.OrdinalIgnoreCase));
+
+                if (articulo is null)
+                {
+                    var nombre = Col(row, "Nombre") ?? ref_;
+                    var req = new CrearArticuloRequest(
+                        Referencia: ref_, Nombre: nombre,
+                        Descripcion: Col(row, "Descripcion"),
+                        TipoArticuloID: 1,
+                        StockMinimo: Dec(row, "StockMinimo") ?? 0,
+                        PuntoReorden: Dec(row, "PuntoReorden") ?? 0,
+                        DiasVidaUtil: null,
+                        Costo: Dec(row, "Costo"),
+                        PPublico: Dec(row, "PPublico"),
+                        PBodega: Dec(row, "PBodega"),
+                        PCredito: Dec(row, "PCredito"),
+                        MarcaCodigo: Col(row, "MarcaCodigo"),
+                        GrupoMenorCodigo: Col(row, "GrupoMenorCodigo"),
+                        PresentacionCodigo: Col(row, "PresentacionCodigo")
+                    );
+                    await _service.CrearArticuloAsync(req);
+                    creados++;
+                }
+                else
+                {
+                    var req = new ActualizarArticuloRequest(
+                        Nombre: Col(row, "Nombre") ?? articulo.Nombre,
+                        Descripcion: Col(row, "Descripcion") ?? articulo.Descripcion,
+                        StockMinimo: Dec(row, "StockMinimo") ?? articulo.StockMinimo,
+                        PuntoReorden: Dec(row, "PuntoReorden") ?? articulo.PuntoReorden,
+                        DiasVidaUtil: articulo.DiasVidaUtil,
+                        Estado: articulo.Estado,
+                        Costo: Dec(row, "Costo") ?? articulo.Costo,
+                        PPublico: Dec(row, "PPublico") ?? articulo.PPublico,
+                        PBodega: Dec(row, "PBodega") ?? articulo.PBodega,
+                        PCredito: Dec(row, "PCredito") ?? articulo.PCredito,
+                        MarcaCodigo: Col(row, "MarcaCodigo") ?? articulo.MarcaCodigo,
+                        GrupoMenorCodigo: Col(row, "GrupoMenorCodigo") ?? articulo.GrupoMenorCodigo,
+                        PresentacionCodigo: Col(row, "PresentacionCodigo") ?? articulo.PresentacionCodigo,
+                        TipoArticuloId: articulo.TipoArticuloID
+                    );
+                    await _service.ActualizarArticuloAsync(articulo.ArticuloID, req,
+                        UsuarioActualId, NombreUsuarioActual);
+                    actualizados++;
+                }
+            }
+            catch (Exception ex)
+            {
+                errores++;
+                mensajes.Add($"Fila {r} ({ref_}): {ex.Message}");
+            }
+        }
+
+        return Ok(new ImportarExcelResult(creados, actualizados, errores, mensajes));
+    }
+
+    // ── Variantes ────────────────────────────────────────────────────────────
+
+    [HttpGet("{id:int}/variantes")]
+    public async Task<ActionResult<IEnumerable<VarianteItem>>> ListarVariantes(int id)
+        => Ok(await _service.ListarVariantesAsync(id));
+
+    [HttpPost("{id:int}/variantes")]
+    public async Task<ActionResult> CrearVariante(int id, CrearVarianteRequest request)
+    {
+        try
+        {
+            var varianteId = await _service.CrearVarianteAsync(id, request);
+            return Ok(new { varianteId });
         }
         catch (KeyNotFoundException ex)
         {

@@ -447,8 +447,6 @@ else
     private bool EsEdicion => OrdenProduccionId.HasValue;
 
     private List<TipoProduccionItem> _tiposProduccion = new();
-    private List<ClienteItem> _clientes = new();
-    private List<ArticuloItem> _productosTerminados = new();
     private List<RecetaResumen> _recetas = new();
     private List<CentroCostoItem> _centrosCosto = new();
     private List<BodegaItem> _bodegasMateriaPrima = new();
@@ -512,26 +510,22 @@ else
     protected override async Task OnInitializedAsync()
     {
         var tareaTipos      = ApiClient.GetAsync<List<TipoProduccionItem>>("api/produccion/ordenes/tipos-produccion");
-        var tareaClientes   = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
-        var tareaProductos  = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
         var tareaCentros    = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
         var tareaBodegas    = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
         var tareaCtrabajo   = ApiClient.GetAsync<List<CentroTrabajoItem>>("api/catalogo/centros-trabajo");
         var tareaMaquinas   = ApiClient.GetAsync<List<MaquinariaItem>>("api/produccion/maquinaria?estado=Activa");
         var tareaEmpleados  = ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados");
 
-        await Task.WhenAll(tareaTipos, tareaClientes, tareaProductos, tareaCentros, tareaBodegas, tareaCtrabajo, tareaMaquinas, tareaEmpleados);
+        await Task.WhenAll(tareaTipos, tareaCentros, tareaBodegas, tareaCtrabajo, tareaMaquinas, tareaEmpleados);
 
-        _tiposProduccion     = await tareaTipos ?? new();
-        _clientes            = await tareaClientes ?? new();
-        _productosTerminados = (await tareaProductos ?? new()).Where(a => a.TipoArticulo == "Producto Terminado").ToList();
-        _centrosCosto        = await tareaCentros ?? new();
-        _centrosTrabajo      = await tareaCtrabajo ?? new();
-        _maquinasDisponibles = await tareaMaquinas ?? [];
+        _tiposProduccion      = await tareaTipos ?? new();
+        _centrosCosto         = await tareaCentros ?? new();
+        _centrosTrabajo       = await tareaCtrabajo ?? new();
+        _maquinasDisponibles  = await tareaMaquinas ?? [];
         _empleadosDisponibles = (await tareaEmpleados ?? []).Where(e => e.Estado).ToList();
 
-        _todasLasBodegas         = await tareaBodegas ?? new();
-        _bodegasMateriaPrima     = _todasLasBodegas.Where(b => b.TipoBodega == "MATERIA_PRIMA").ToList();
+        _todasLasBodegas          = await tareaBodegas ?? new();
+        _bodegasMateriaPrima      = _todasLasBodegas.Where(b => b.TipoBodega == "MATERIA_PRIMA").ToList();
         _bodegasProductoTerminado = _todasLasBodegas.Where(b => b.TipoBodega == "PRODUCTO_TERMINADO").ToList();
 
         if (!EsEdicion && Preferencias.AutoCodigoOP)
@@ -546,7 +540,7 @@ else
 
         if (!EsEdicion && ArticuloId.HasValue)
         {
-            _productoSeleccionado = _productosTerminados.FirstOrDefault(a => a.ArticuloID == ArticuloId.Value);
+            _productoSeleccionado = await ApiClient.GetAsync<ArticuloItem>($"api/catalogo/articulos/{ArticuloId}");
             if (_productoSeleccionado is not null)
                 await OnProductoTerminadoCambiadoAsync(_productoSeleccionado.ArticuloID);
         }
@@ -570,8 +564,10 @@ else
                 _fechaPlanificada    = detalle.FechaPlanificada;
                 _observaciones       = detalle.Observaciones;
 
-                _clienteSeleccionado = _clientes.FirstOrDefault(c => c.ClienteID == detalle.ClienteID);
-                _productoSeleccionado = _productosTerminados.FirstOrDefault(a => a.ArticuloID == detalle.ProductoTerminadoID);
+                if (detalle.ClienteID.HasValue && detalle.ClienteNombre is not null)
+                    _clienteSeleccionado = ClienteStub(detalle.ClienteID.Value, detalle.ClienteNombre);
+                if (detalle.ProductoTerminadoID > 0)
+                    _productoSeleccionado = ArticuloStub(detalle.ProductoTerminadoID, detalle.ProductoNombre ?? "", detalle.ReferenciaProducto ?? "");
 
                 _recetas = await ApiClient.GetAsync<List<RecetaResumen>>(
                     $"api/produccion/recetas?productoTerminadoId={detalle.ProductoTerminadoID}&soloActivas=false") ?? new();
@@ -654,27 +650,29 @@ else
         return new FilaEmpleadoOrden { EmpleadoID = empleadoId, Horas = h, Minutos = m == 0 ? null : m, Notas = notas };
     }
 
-    private Task<IEnumerable<ClienteItem>> BuscarClienteAsync(string texto, CancellationToken ct)
+    private async Task<IEnumerable<ClienteItem>> BuscarClienteAsync(string texto, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(texto))
-            return Task.FromResult(Enumerable.Empty<ClienteItem>());
-        return Task.FromResult(
-            _clientes.Where(c =>
-                c.Nombre.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
-                (c.NIT != null && c.NIT.Contains(texto, StringComparison.OrdinalIgnoreCase)))
-            .Take(15));
+        var url = string.IsNullOrWhiteSpace(texto)
+            ? "api/crm/clientes/paginados?pagina=1&tamano=15"
+            : $"api/crm/clientes/paginados?texto={Uri.EscapeDataString(texto)}&pagina=1&tamano=15";
+        var resp = await ApiClient.GetAsync<ClientesPaginadosResponse>(url);
+        return resp?.Items ?? [];
     }
 
-    private Task<IEnumerable<ArticuloItem>> BuscarProductoAsync(string texto, CancellationToken ct)
+    private async Task<IEnumerable<ArticuloItem>> BuscarProductoAsync(string texto, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(texto))
-            return Task.FromResult(Enumerable.Empty<ArticuloItem>());
-        return Task.FromResult(
-            _productosTerminados.Where(a =>
-                a.Nombre.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
-                a.Referencia.Contains(texto, StringComparison.OrdinalIgnoreCase))
-            .Take(15));
+        var url = string.IsNullOrWhiteSpace(texto)
+            ? "api/catalogo/articulos?estado=true&pagina=1&tamano=15&tipoArticulo=Producto+Terminado"
+            : $"api/catalogo/articulos?texto={Uri.EscapeDataString(texto)}&estado=true&pagina=1&tamano=15&tipoArticulo=Producto+Terminado";
+        var resp = await ApiClient.GetAsync<ArticulosPaginadosResponse>(url);
+        return resp?.Items ?? [];
     }
+
+    private static ClienteItem ClienteStub(int id, string nombre) =>
+        new(id, "", nombre, null, null, null, null, null, true, null, null, null, null, null, 0, null, null, null, null, null, null, null, null, null, null, null);
+
+    private static ArticuloItem ArticuloStub(int id, string nombre, string referencia) =>
+        new(id, referencia, nombre, null, "Producto Terminado", 0, 0, 0, true, 0, null, null, false, null, null);
 
     private void OnClienteSeleccionadoChanged(ClienteItem? cliente)
     {

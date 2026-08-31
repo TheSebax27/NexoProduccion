@@ -225,17 +225,11 @@
                 <MudNavGroup Title="Planificación"
                              Icon="@Icons.Material.Filled.CalendarMonth"
                              Class="nexo-nav-group">
-                    @if (Modulos.EsVisible("PLANIFICACION.DEMANDA"))
+                    @if (Modulos.EsVisible("PLANIFICACION.DEMANDA") || Modulos.EsVisible("PLANIFICACION.METAS"))
                     {
-                        <MudNavLink Href="/planificacion/demanda"
-                                    Icon="@Icons.Material.Filled.TrendingUp"
-                                    Class="nexo-nav-item">Demanda Proyectada</MudNavLink>
-                    }
-                    @if (Modulos.EsVisible("PLANIFICACION.METAS"))
-                    {
-                        <MudNavLink Href="/planificacion/metas-venta"
-                                    Icon="@Icons.Material.Filled.Flag"
-                                    Class="nexo-nav-item">Metas de Venta</MudNavLink>
+                        <MudNavLink Href="/planificacion"
+                                    Icon="@Icons.Material.Filled.Insights"
+                                    Class="nexo-nav-item">Metas y Demanda</MudNavLink>
                     }
                     @if (Modulos.EsVisible("PLANIFICACION.CALENDARIO"))
                     {

@@ -135,12 +135,32 @@ public class TareaSincronizarPedidos
                     new ActualizarNumeroPedidoVisionsRequest(p.TipDocVisions!, p.NroDocVisions!),
                     ct);
 
+                // Reintentar auto-recibir ante errores transitorios de red (ej.: API reiniciando en VS).
+                Exception? ultimoError = null;
+                for (int intento = 0; intento < 3; intento++)
+                {
+                    try
+                    {
+                        await _apiClient.AutoRecibirDesdeVisionsAsync(p.PedidoID, p.NroDocVisions!, ct);
+                        ultimoError = null;
+                        break;
+                    }
+                    catch (Exception ex) when (!ct.IsCancellationRequested && intento < 2)
+                    {
+                        ultimoError = ex;
+                        _logger.LogWarning("Auto-recibir pedido {ID} intento {N} fallido, reintentando en 5s...",
+                            p.PedidoID, intento + 1);
+                        await Task.Delay(TimeSpan.FromSeconds(5), ct);
+                    }
+                }
+                if (ultimoError is not null) throw ultimoError;
+
                 // Marcar como SINCRONIZADO para no volver a procesar en el siguiente ciclo
                 await connection.ExecuteAsync(
                     "UPDATE dbo.NEXO_Pedidos SET Estado = 'SINCRONIZADO' WHERE PedidoID = @PedidoID",
                     new { p.PedidoID });
 
-                _logger.LogInformation("Pedido NEXO {ID} actualizado con número Visions {NroDoc}",
+                _logger.LogInformation("Pedido NEXO {ID} auto-recibido con número Visions {NroDoc}",
                     p.PedidoID, p.NroDocVisions);
             }
             catch (Exception ex)

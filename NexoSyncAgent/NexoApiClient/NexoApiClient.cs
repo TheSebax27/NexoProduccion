@@ -224,4 +224,24 @@ public class NexoApiClient : INexoApiClient
         var r = await _http.PutAsJsonAsync($"api/integracion/pedidos/{pedidoId}/numero-visions", request, ct);
         r.EnsureSuccessStatusCode();
     }
+
+    public async Task AutoRecibirDesdeVisionsAsync(int pedidoId, string nroDoc, CancellationToken ct)
+    {
+        var url = $"api/integracion/pedidos/{pedidoId}/auto-recibir-visions?nroDoc={Uri.EscapeDataString(nroDoc)}";
+        var r = await _http.PostAsync(url, null, ct);
+        r.EnsureSuccessStatusCode();
+    }
+
+    public async Task<List<PendienteLimpiezaVisionsDto>> ListarPendientesLimpiezaVisionsAsync(CancellationToken ct)
+    {
+        var r = await _http.GetAsync("api/integracion/pendientes-limpieza-visions", ct);
+        r.EnsureSuccessStatusCode();
+        return await r.Content.ReadFromJsonAsync<List<PendienteLimpiezaVisionsDto>>(cancellationToken: ct) ?? [];
+    }
+
+    public async Task MarcarLimpiezaVisionsCompletadaAsync(int limpiezaId, CancellationToken ct)
+    {
+        var r = await _http.PostAsync($"api/integracion/pendientes-limpieza-visions/{limpiezaId}/completar", null, ct);
+        r.EnsureSuccessStatusCode();
+    }
 }

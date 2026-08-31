@@ -29,7 +29,8 @@ public record OrdenProduccionDetalleEdicion(
     int TipoProduccionID, int ProductoTerminadoID, int RecetaID,
     decimal CantidadProgramada, int? ClienteID, int CentroCostoDestinoID,
     int BodegaOrigenMPID, int BodegaDestinoPTID, int? CentroTrabajoID,
-    DateTime? FechaPlanificada, string? Observaciones
+    DateTime? FechaPlanificada, string? Observaciones,
+    string? ClienteNombre = null, string? ProductoNombre = null, string? ReferenciaProducto = null
 );
 
 public record CerrarOrdenProduccionRequest(

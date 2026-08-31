@@ -35,11 +35,17 @@ builder.Services.AddHttpClient<INexoApiClient, NexoApiClient>((sp, client) =>
 .ConfigurePrimaryHttpMessageHandler((sp) =>
 {
     var baseUrl = sp.GetRequiredService<IConfiguration>()["NexoApi:BaseUrl"] ?? "";
-    var handler = new HttpClientHandler();
-    // Solo omite validacion SSL cuando se apunta a localhost (desarrollo).
+    // PooledConnectionLifetime evita que el agente reutilice conexiones TCP que el
+    // servidor (Kestrel en VS) ya cerró al reiniciar, lo que causaba SocketError 995.
+    var handler = new SocketsHttpHandler
+    {
+        PooledConnectionLifetime = TimeSpan.FromMinutes(2)
+    };
     if (baseUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase))
-        handler.ServerCertificateCustomValidationCallback =
-            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+        handler.SslOptions = new System.Net.Security.SslClientAuthenticationOptions
+        {
+            RemoteCertificateValidationCallback = (_, _, _, _) => true
+        };
     return handler;
 });
 

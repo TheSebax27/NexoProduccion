@@ -984,17 +984,9 @@
 
     private async Task AbrirResolverAsync(int agenteSyncId, int centroCostoId, ArticuloPendienteMapeoItem pendiente)
     {
-        List<ArticuloItem> articulos;
-        try
-        {
-            articulos = await ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos") ?? new();
-        }
-        catch { articulos = new(); }
-
         var parameters = new DialogParameters<ResolverPendienteDialog>
         {
-            { x => x.Pendiente, pendiente },
-            { x => x.ArticulosDisponibles, articulos }
+            { x => x.Pendiente, pendiente }
         };
 
         var dialog = await DialogService.ShowAsync<ResolverPendienteDialog>("Resolver artículo pendiente", parameters,

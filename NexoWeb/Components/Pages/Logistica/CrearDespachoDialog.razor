@@ -6,13 +6,11 @@
 <MudDialog>
     <DialogContent>
         <MudForm @ref="_form" Model="@this">
-            <MudSelect T="int?" @bind-Value="_clienteId" Label="Cliente" Required="true"
-                       RequiredError="Selecciona un cliente" Class="mb-3">
-                @foreach (var c in Clientes)
-                {
-                    <MudSelectItem T="int?" Value="@c.ClienteID">@c.Nombre</MudSelectItem>
-                }
-            </MudSelect>
+            <ClienteAutocomplete Value="_clienteSeleccionado"
+                                 ValueChanged="@(c => { _clienteSeleccionado = c; _clienteId = c?.ClienteID; })"
+                                 Label="Cliente" Required="true" />
+
+            <div class="mb-3"></div>
 
             <MudSelect T="int?" Value="_centroCostoId" ValueChanged="OnCentroCostoCambiado" Label="Centro de Costo" Required="true"
                        RequiredError="Selecciona un centro de costo" Class="mb-3">
@@ -33,7 +31,6 @@
             <MudTextField @bind-Value="_direccion" Label="Dirección de Entrega" Class="mb-3" />
             <MudTextField @bind-Value="_observaciones" Label="Observaciones" Lines="2" Class="mb-3" />
 
-            @* Opcion de descuento de stock *@
             <div class="d-flex align-center mb-3" style="gap:1rem;">
                 <MudCheckBox T="bool" @bind-Value="_descuentaStock" Color="Color.Primary"
                              Label="Descontar stock al despachar" />
@@ -50,21 +47,18 @@
 
             @foreach (var linea in _lineas)
             {
-                var art = ArticuloSeleccionado(linea.ArticuloID);
+                var art = linea.Articulo;
                 <MudPaper Elevation="0" Class="mb-3 pa-2" Style="border:1px solid var(--mud-palette-divider); border-radius:8px;">
                     <div class="d-flex align-center mb-2" style="gap: 0.5rem;">
-                        <MudSelect T="int?" Value="linea.ArticuloID" ValueChanged="@((int? v) => OnArticuloCambiado(linea, v))"
-                                   Label="Artículo" Style="flex: 1;">
-                            @foreach (var a in ArticulosDisponibles)
-                            {
-                                <MudSelectItem T="int?" Value="@a.ArticuloID">@a.SKU - @a.Nombre</MudSelectItem>
-                            }
-                        </MudSelect>
+                        <div style="flex:1;">
+                            <ArticuloAutocomplete Value="linea.Articulo"
+                                                  ValueChanged="@((ArticuloItem? v) => OnArticuloCambiado(linea, v))"
+                                                  Label="Artículo" />
+                        </div>
                         <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
                                        OnClick="@(() => _lineas.Remove(linea))" />
                     </div>
 
-                    @* Input de cantidad: se adapta segun el modo de venta del articulo *@
                     @if (art?.EsUnidadCaja == true)
                     {
                         <div class="d-flex align-center mb-1" style="gap:0.5rem;">
@@ -88,7 +82,6 @@
                         <MudNumericField T="decimal" @bind-Value="linea.CantidadSimple" Label="Cantidad" Min="0.01m" Format="N2" />
                     }
 
-                    @* Hint de precio por unidad si el artículo tiene uno definido *@
                     @if (art?.EsUnidadCaja == true && art.PrecioVentaUnidad.HasValue)
                     {
                         <MudText Typo="Typo.caption" Style="color:var(--n-text-3);" Class="mt-1">
@@ -96,7 +89,6 @@
                         </MudText>
                     }
 
-                    @* Precio: estimado (catalogo) o manual *@
                     <div class="d-flex align-center mt-2" style="gap:0.5rem;">
                         <MudCheckBox T="bool" @bind-Value="linea.UsarPrecioEstimado" Color="Color.Primary"
                                      Label="Usar precio catálogo" Dense="true" />
@@ -132,25 +124,22 @@
 @code {
     [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter] public List<ClienteItem> Clientes { get; set; } = new();
     [Parameter] public List<CentroCostoItem> CentrosCosto { get; set; } = new();
     [Parameter] public List<BodegaItem> Bodegas { get; set; } = new();
-    [Parameter] public List<ArticuloItem> ArticulosDisponibles { get; set; } = new();
 
     private class LineaEditable
     {
-        public int? ArticuloID      { get; set; }
-        // Para articulos en caja
-        public int  Cajas           { get; set; } = 0;
-        public int  Unidades        { get; set; } = 0;
-        // Para articulos sin embalaje
-        public decimal CantidadSimple { get; set; } = 1;
-        // Precio
-        public bool    UsarPrecioEstimado  { get; set; } = true;
-        public decimal ValorUnitarioManual { get; set; }
+        public ArticuloItem? Articulo       { get; set; }
+        public int?          ArticuloID     => Articulo?.ArticuloID;
+        public int           Cajas          { get; set; } = 0;
+        public int           Unidades       { get; set; } = 0;
+        public decimal       CantidadSimple { get; set; } = 1;
+        public bool          UsarPrecioEstimado  { get; set; } = true;
+        public decimal       ValorUnitarioManual { get; set; }
     }
 
     private MudForm _form = default!;
+    private ClienteItem? _clienteSeleccionado;
     private int? _clienteId;
     private int? _centroCostoId;
     private int? _bodegaOrigenId;
@@ -162,9 +151,6 @@
     private IEnumerable<BodegaItem> BodegasFiltradas =>
         _centroCostoId is null ? Bodegas : Bodegas.Where(b => b.CentroCostoID == _centroCostoId);
 
-    private ArticuloItem? ArticuloSeleccionado(int? id) =>
-        id is null ? null : ArticulosDisponibles.FirstOrDefault(a => a.ArticuloID == id);
-
     private void OnCentroCostoCambiado(int? nuevoValor)
     {
         _centroCostoId = nuevoValor;
@@ -172,18 +158,18 @@
             _bodegaOrigenId = null;
     }
 
-    private void OnArticuloCambiado(LineaEditable linea, int? articuloId)
+    private void OnArticuloCambiado(LineaEditable linea, ArticuloItem? articulo)
     {
-        linea.ArticuloID = articuloId;
+        linea.Articulo = articulo;
         linea.Cajas = 0;
         linea.Unidades = 0;
         linea.CantidadSimple = 1;
-        linea.ValorUnitarioManual = ArticuloSeleccionado(articuloId)?.PrecioVenta ?? 0;
+        linea.ValorUnitarioManual = articulo?.PrecioVenta ?? 0;
     }
 
     private decimal CantidadFinal(LineaEditable linea)
     {
-        var art = ArticuloSeleccionado(linea.ArticuloID);
+        var art = linea.Articulo;
         if (art?.EsUnidadCaja == true)
             return StockHelper.CajasYUnidadesADecimal(linea.Cajas, linea.Unidades, art.UnidadesPorEmbalaje!.Value);
         return linea.CantidadSimple;
@@ -202,7 +188,6 @@
             .Where(l => l.ArticuloID is not null && CantidadFinal(l) > 0)
             .Select(l =>
             {
-                var art = ArticuloSeleccionado(l.ArticuloID);
                 decimal? valorUnitario = l.UsarPrecioEstimado ? null : l.ValorUnitarioManual;
                 return new LineaDespachoRequest(l.ArticuloID!.Value, CantidadFinal(l), valorUnitario);
             })

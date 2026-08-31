@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Microsoft.Extensions.Caching.Memory;
 using NexoApi.Common.Data;
 using NexoApi.Features.Catalogo.Dtos;
 
@@ -24,7 +25,8 @@ public interface ICatalogoService
     Task<IEnumerable<ArticuloItem>> ListarTodosArticulosAsync(int? tipoArticuloId = null, bool? estado = null);
     Task<IEnumerable<ArticuloItem>> BuscarArticulosAsync(string? q, bool? soloTerminados = null, int max = 30);
     Task<ArticuloItem?> ObtenerArticuloAsync(int articuloId);
-    Task ActualizarArticuloAsync(int articuloId, ActualizarArticuloRequest request);
+    Task ActualizarArticuloAsync(int articuloId, ActualizarArticuloRequest request, int usuarioId, string nombreUsuario);
+    Task<IEnumerable<HistorialPrecioItem>> ListarHistorialPreciosAsync(int articuloId);
     Task<(byte[] Datos, string ContentType)?> ObtenerImagenArticuloAsync(int articuloId);
     Task ActualizarImagenArticuloAsync(int articuloId, ActualizarImagenRequest request);
     Task EliminarImagenArticuloAsync(int articuloId);
@@ -42,6 +44,10 @@ public interface ICatalogoService
 
     Task<IEnumerable<TipoArticuloItem>> ListarTiposArticuloAsync();
     Task<IEnumerable<UnidadMedidaItem>> ListarUnidadesMedidaAsync();
+
+    // Variantes
+    Task<IEnumerable<VarianteItem>> ListarVariantesAsync(int padreId);
+    Task<int> CrearVarianteAsync(int padreId, CrearVarianteRequest request);
 
     // Catalogo: Iva (calca de dbo.IVA de Visions)
     Task<IEnumerable<IvaItem>> ListarIvasAsync();
@@ -74,10 +80,14 @@ public interface ICatalogoService
 public class CatalogoService : ICatalogoService
 {
     private readonly IDbConnectionFactory _db;
+    private readonly IMemoryCache _cache;
 
-    public CatalogoService(IDbConnectionFactory db)
+    private static readonly TimeSpan _ttlCatalogos = TimeSpan.FromMinutes(5);
+
+    public CatalogoService(IDbConnectionFactory db, IMemoryCache cache)
     {
         _db = db;
+        _cache = cache;
     }
 
     // ================= Centros de Costo =================
@@ -312,7 +322,7 @@ public class CatalogoService : ICatalogoService
                    gm.GrupoMayor AS GrupoMayorCodigo, gmay.Nombre AS GrupoMayorNombre,
                    a.PresentacionCodigo, p.Presentacion AS PresentacionNombre,
                    a.Peso, a.IvaSiNo, a.IvaValor, a.IvaDescripcion,
-                   a.Iva2, a.IvaDescripcion2 " + sqlBase + @"
+                   a.Iva2, a.IvaDescripcion2, a.TipoArticuloID " + sqlBase + @"
             ORDER BY a.Nombre
             OFFSET @Offset ROWS FETCH NEXT @Tamano ROWS ONLY",
             new { TipoArticuloId = tipoArticuloId, Texto = texto, Estado = estado, CentroCostoId = centroCostoId, Offset = offset, Tamano = tamano },
@@ -376,7 +386,7 @@ public class CatalogoService : ICatalogoService
                    gm.GrupoMayor AS GrupoMayorCodigo, gmay.Nombre AS GrupoMayorNombre,
                    a.PresentacionCodigo, p.Presentacion AS PresentacionNombre,
                    a.Peso, a.IvaSiNo, a.IvaValor, a.IvaDescripcion,
-                   a.Iva2, a.IvaDescripcion2 " + sqlBase + @"
+                   a.Iva2, a.IvaDescripcion2, a.TipoArticuloID " + sqlBase + @"
             ORDER BY a.Nombre",
             new { TipoArticuloId = tipoArticuloId, Estado = estado },
             commandTimeout: 60);
@@ -398,7 +408,7 @@ public class CatalogoService : ICatalogoService
                    NULL AS GrupoMayorCodigo, NULL AS GrupoMayorNombre,
                    a.PresentacionCodigo, p.Presentacion AS PresentacionNombre,
                    NULL AS Peso, a.IvaSiNo, a.IvaValor, a.IvaDescripcion,
-                   a.Iva2, a.IvaDescripcion2
+                   a.Iva2, a.IvaDescripcion2, a.TipoArticuloID
             FROM Catalogo.Tarjetas a
             JOIN Catalogo.TiposArticulo ta ON ta.TipoArticuloID = a.TipoArticuloID
             LEFT JOIN Catalogo.Presentacion p ON p.Codigo = a.PresentacionCodigo
@@ -430,7 +440,8 @@ public class CatalogoService : ICatalogoService
                    gm.GrupoMayor AS GrupoMayorCodigo, gmay.Nombre AS GrupoMayorNombre,
                    a.PresentacionCodigo, p.Presentacion AS PresentacionNombre,
                    a.Peso, a.IvaSiNo, a.IvaValor, a.IvaDescripcion,
-                   a.Iva2, a.IvaDescripcion2
+                   a.Iva2, a.IvaDescripcion2,
+                   a.TipoArticuloID
             FROM Catalogo.Tarjetas a
             JOIN Catalogo.TiposArticulo ta ON ta.TipoArticuloID = a.TipoArticuloID
             LEFT JOIN Catalogo.Marca m ON m.Codigo = a.MarcaCodigo
@@ -442,9 +453,16 @@ public class CatalogoService : ICatalogoService
         return await connection.QueryFirstOrDefaultAsync<ArticuloItem>(sql, new { ArticuloId = articuloId });
     }
 
-    public async Task ActualizarArticuloAsync(int articuloId, ActualizarArticuloRequest r)
+    private record PreciosActuales(decimal? Costo, decimal? PPublico, decimal? PBodega, decimal? PCredito);
+
+    public async Task ActualizarArticuloAsync(int articuloId, ActualizarArticuloRequest r, int usuarioId, string nombreUsuario)
     {
         using var connection = _db.CreateConnection();
+
+        // Leer precios actuales para detectar cambios
+        var precios = await connection.QuerySingleOrDefaultAsync<PreciosActuales>(
+            "SELECT Costo, PPublico, PBodega, PCredito FROM Catalogo.Tarjetas WHERE ArticuloID = @Id",
+            new { Id = articuloId });
 
         const string sql = @"
             UPDATE Catalogo.Tarjetas
@@ -459,6 +477,7 @@ public class CatalogoService : ICatalogoService
                 PresentacionCodigo = @PresentacionCodigo,
                 Peso = @Peso, IvaSiNo = @IvaSiNo, IvaValor = @IvaValor, IvaDescripcion = @IvaDescripcion,
                 Iva2 = @Iva2, IvaDescripcion2 = @IvaDescripcion2,
+                TipoArticuloID = ISNULL(@TipoArticuloId, TipoArticuloID),
                 FechaModificacion = GETDATE()
             WHERE ArticuloID = @ArticuloId";
 
@@ -472,11 +491,32 @@ public class CatalogoService : ICatalogoService
             r.UPublico,  r.UBodega, r.UCredito,
             r.MarcaCodigo, r.GrupoMenorCodigo, r.PresentacionCodigo,
             r.Peso, r.IvaSiNo, r.IvaValor, r.IvaDescripcion,
-            r.Iva2, r.IvaDescripcion2
+            r.Iva2, r.IvaDescripcion2, r.TipoArticuloId
         });
 
         if (filas == 0)
             throw new KeyNotFoundException($"No existe el articulo {articuloId}.");
+
+        // Registrar cambios de precio en historial
+        if (precios is not null)
+        {
+            var cambios = new List<(string Campo, decimal? Antes, decimal? Despues)>();
+            if (r.Costo     != precios.Costo)    cambios.Add(("Costo",    precios.Costo,    r.Costo));
+            if (r.PPublico  != precios.PPublico)  cambios.Add(("PPublico", precios.PPublico, r.PPublico));
+            if (r.PBodega   != precios.PBodega)   cambios.Add(("PBodega",  precios.PBodega,  r.PBodega));
+            if (r.PCredito  != precios.PCredito)  cambios.Add(("PCredito", precios.PCredito, r.PCredito));
+
+            foreach (var (campo, antes, despues) in cambios)
+            {
+                await connection.ExecuteAsync(
+                    @"INSERT INTO Auditoria.HistorialPrecios
+                        (ArticuloID, UsuarioID, NombreUsuario, Campo, ValorAnterior, ValorNuevo)
+                      VALUES
+                        (@ArticuloID, @UsuarioID, @NombreUsuario, @Campo, @ValorAnterior, @ValorNuevo)",
+                    new { ArticuloID = articuloId, UsuarioID = usuarioId, NombreUsuario = nombreUsuario,
+                          Campo = campo, ValorAnterior = antes, ValorNuevo = despues });
+            }
+        }
 
         await connection.ExecuteAsync(@"
             INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
@@ -485,6 +525,17 @@ public class CatalogoService : ICatalogoService
             JOIN Catalogo.Tarjetas a          ON a.ArticuloID    = ma.ArticuloID
             JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = ma.CentroCostoID
             WHERE ma.ArticuloID = @ArticuloId AND ma.Estado = 1 AND cc.TieneVisions = 1",
+            new { ArticuloId = articuloId });
+    }
+
+    public async Task<IEnumerable<HistorialPrecioItem>> ListarHistorialPreciosAsync(int articuloId)
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<HistorialPrecioItem>(
+            @"SELECT TOP 100 HistorialID, FechaCambio, NombreUsuario, Campo, ValorAnterior, ValorNuevo
+              FROM Auditoria.HistorialPrecios
+              WHERE ArticuloID = @ArticuloId
+              ORDER BY FechaCambio DESC",
             new { ArticuloId = articuloId });
     }
 
@@ -530,16 +581,21 @@ public class CatalogoService : ICatalogoService
 
     public async Task<IEnumerable<IvaItem>> ListarIvasAsync()
     {
+        if (_cache.TryGetValue("cat:ivas", out IEnumerable<IvaItem>? cached)) return cached!;
         using var connection = _db.CreateConnection();
-        return await connection.QueryAsync<IvaItem>(
-            "SELECT IvaID, Iva, Descripcion FROM Catalogo.Iva ORDER BY Iva, Descripcion");
+        var result = (await connection.QueryAsync<IvaItem>(
+            "SELECT IvaID, Iva, Descripcion FROM Catalogo.Iva ORDER BY Iva, Descripcion")).ToList();
+        _cache.Set("cat:ivas", result, _ttlCatalogos);
+        return result;
     }
 
     public async Task<int> CrearIvaAsync(CrearIvaRequest r)
     {
         using var connection = _db.CreateConnection();
-        return await connection.ExecuteScalarAsync<int>(
+        var id = await connection.ExecuteScalarAsync<int>(
             "INSERT INTO Catalogo.Iva (Iva, Descripcion) OUTPUT INSERTED.IvaID VALUES (@Iva, @Descripcion)", r);
+        _cache.Remove("cat:ivas");
+        return id;
     }
 
     public async Task ActualizarIvaAsync(int ivaId, ActualizarIvaRequest r)
@@ -549,6 +605,7 @@ public class CatalogoService : ICatalogoService
             "UPDATE Catalogo.Iva SET Iva = @Iva, Descripcion = @Descripcion WHERE IvaID = @IvaID",
             new { IvaID = ivaId, r.Iva, r.Descripcion });
         if (filas == 0) throw new KeyNotFoundException($"IVA {ivaId} no encontrado.");
+        _cache.Remove("cat:ivas");
     }
 
     public async Task EliminarIvaAsync(int ivaId)
@@ -557,15 +614,19 @@ public class CatalogoService : ICatalogoService
         var filas = await connection.ExecuteAsync(
             "DELETE FROM Catalogo.Iva WHERE IvaID = @IvaID", new { IvaID = ivaId });
         if (filas == 0) throw new KeyNotFoundException($"IVA {ivaId} no encontrado.");
+        _cache.Remove("cat:ivas");
     }
 
     // ================= GruposMayores =================
 
     public async Task<IEnumerable<GrupoMayorItem>> ListarGruposMayoresAsync()
     {
+        if (_cache.TryGetValue("cat:grupos-mayor", out IEnumerable<GrupoMayorItem>? cached)) return cached!;
         using var connection = _db.CreateConnection();
-        return await connection.QueryAsync<GrupoMayorItem>(
-            "SELECT Codigo, Nombre FROM Catalogo.GrupoMayor ORDER BY Nombre");
+        var result = (await connection.QueryAsync<GrupoMayorItem>(
+            "SELECT Codigo, Nombre FROM Catalogo.GrupoMayor ORDER BY Nombre")).ToList();
+        _cache.Set("cat:grupos-mayor", result, _ttlCatalogos);
+        return result;
     }
 
     public async Task CrearGrupoMayorAsync(CrearGrupoMayorRequest r)
@@ -573,6 +634,7 @@ public class CatalogoService : ICatalogoService
         using var connection = _db.CreateConnection();
         await connection.ExecuteAsync(
             "INSERT INTO Catalogo.GrupoMayor (Codigo, Nombre) VALUES (@Codigo, @Nombre)", r);
+        _cache.Remove("cat:grupos-mayor"); _cache.Remove("cat:grupos-menor");
     }
 
     public async Task ActualizarGrupoMayorAsync(string codigo, ActualizarGrupoMayorRequest r)
@@ -582,6 +644,7 @@ public class CatalogoService : ICatalogoService
             "UPDATE Catalogo.GrupoMayor SET Nombre = @Nombre WHERE Codigo = @Codigo",
             new { Codigo = codigo, r.Nombre });
         if (filas == 0) throw new KeyNotFoundException($"GrupoMayor '{codigo}' no encontrado.");
+        _cache.Remove("cat:grupos-mayor"); _cache.Remove("cat:grupos-menor");
     }
 
     public async Task EliminarGrupoMayorAsync(string codigo)
@@ -590,12 +653,15 @@ public class CatalogoService : ICatalogoService
         var filas = await connection.ExecuteAsync(
             "DELETE FROM Catalogo.GrupoMayor WHERE Codigo = @Codigo", new { Codigo = codigo });
         if (filas == 0) throw new KeyNotFoundException($"GrupoMayor '{codigo}' no encontrado.");
+        _cache.Remove("cat:grupos-mayor"); _cache.Remove("cat:grupos-menor");
     }
 
     // ================= GruposMenores =================
 
     public async Task<IEnumerable<GrupoMenorItem>> ListarGruposMenoresAsync(string? grupoMayor)
     {
+        var key = $"cat:grupos-menor:{grupoMayor ?? "all"}";
+        if (_cache.TryGetValue(key, out IEnumerable<GrupoMenorItem>? cached)) return cached!;
         using var connection = _db.CreateConnection();
         const string sql = @"
             SELECT gm.Codigo, gm.Nombre, gm.GrupoMayor, gmay.Nombre AS GrupoMayorNombre
@@ -603,7 +669,9 @@ public class CatalogoService : ICatalogoService
             JOIN Catalogo.GrupoMayor gmay ON gmay.Codigo = gm.GrupoMayor
             WHERE (@GrupoMayor IS NULL OR gm.GrupoMayor = @GrupoMayor)
             ORDER BY gmay.Nombre, gm.Nombre";
-        return await connection.QueryAsync<GrupoMenorItem>(sql, new { GrupoMayor = grupoMayor });
+        var result = (await connection.QueryAsync<GrupoMenorItem>(sql, new { GrupoMayor = grupoMayor })).ToList();
+        _cache.Set(key, result, _ttlCatalogos);
+        return result;
     }
 
     public async Task CrearGrupoMenorAsync(CrearGrupoMenorRequest r)
@@ -611,6 +679,7 @@ public class CatalogoService : ICatalogoService
         using var connection = _db.CreateConnection();
         await connection.ExecuteAsync(
             "INSERT INTO Catalogo.GrupoMenor (Codigo, Nombre, GrupoMayor) VALUES (@Codigo, @Nombre, @GrupoMayor)", r);
+        _cache.Remove("cat:grupos-menor:all"); _cache.Remove($"cat:grupos-menor:{r.GrupoMayor}");
     }
 
     public async Task ActualizarGrupoMenorAsync(string codigo, string grupoMayor, ActualizarGrupoMenorRequest r)
@@ -620,6 +689,7 @@ public class CatalogoService : ICatalogoService
             "UPDATE Catalogo.GrupoMenor SET Nombre = @Nombre WHERE Codigo = @Codigo AND GrupoMayor = @GrupoMayor",
             new { Codigo = codigo, GrupoMayor = grupoMayor, r.Nombre });
         if (filas == 0) throw new KeyNotFoundException($"GrupoMenor '{codigo}' / '{grupoMayor}' no encontrado.");
+        _cache.Remove("cat:grupos-menor:all"); _cache.Remove($"cat:grupos-menor:{grupoMayor}");
     }
 
     public async Task EliminarGrupoMenorAsync(string codigo, string grupoMayor)
@@ -629,15 +699,19 @@ public class CatalogoService : ICatalogoService
             "DELETE FROM Catalogo.GrupoMenor WHERE Codigo = @Codigo AND GrupoMayor = @GrupoMayor",
             new { Codigo = codigo, GrupoMayor = grupoMayor });
         if (filas == 0) throw new KeyNotFoundException($"GrupoMenor '{codigo}' / '{grupoMayor}' no encontrado.");
+        _cache.Remove("cat:grupos-menor:all"); _cache.Remove($"cat:grupos-menor:{grupoMayor}");
     }
 
     // ================= Marcas =================
 
     public async Task<IEnumerable<MarcaItem>> ListarMarcasAsync()
     {
+        if (_cache.TryGetValue("cat:marcas", out IEnumerable<MarcaItem>? cached)) return cached!;
         using var connection = _db.CreateConnection();
-        return await connection.QueryAsync<MarcaItem>(
-            "SELECT Codigo, Marca AS Nombre FROM Catalogo.Marca ORDER BY Marca");
+        var result = (await connection.QueryAsync<MarcaItem>(
+            "SELECT Codigo, Marca AS Nombre FROM Catalogo.Marca ORDER BY Marca")).ToList();
+        _cache.Set("cat:marcas", result, _ttlCatalogos);
+        return result;
     }
 
     public async Task CrearMarcaAsync(CrearMarcaRequest r)
@@ -645,6 +719,7 @@ public class CatalogoService : ICatalogoService
         using var connection = _db.CreateConnection();
         await connection.ExecuteAsync(
             "INSERT INTO Catalogo.Marca (Codigo, Marca) VALUES (@Codigo, @Nombre)", r);
+        _cache.Remove("cat:marcas");
     }
 
     public async Task ActualizarMarcaAsync(string codigo, ActualizarMarcaRequest r)
@@ -654,6 +729,7 @@ public class CatalogoService : ICatalogoService
             "UPDATE Catalogo.Marca SET Marca = @Nombre WHERE Codigo = @Codigo",
             new { Codigo = codigo, r.Nombre });
         if (filas == 0) throw new KeyNotFoundException($"Marca '{codigo}' no encontrada.");
+        _cache.Remove("cat:marcas");
     }
 
     public async Task EliminarMarcaAsync(string codigo)
@@ -662,15 +738,19 @@ public class CatalogoService : ICatalogoService
         var filas = await connection.ExecuteAsync(
             "DELETE FROM Catalogo.Marca WHERE Codigo = @Codigo", new { Codigo = codigo });
         if (filas == 0) throw new KeyNotFoundException($"Marca '{codigo}' no encontrada.");
+        _cache.Remove("cat:marcas");
     }
 
     // ================= Presentaciones =================
 
     public async Task<IEnumerable<PresentacionItem>> ListarPresentacionesAsync()
     {
+        if (_cache.TryGetValue("cat:presentaciones", out IEnumerable<PresentacionItem>? cached)) return cached!;
         using var connection = _db.CreateConnection();
-        return await connection.QueryAsync<PresentacionItem>(
-            "SELECT Codigo, Presentacion, Fracciones, Tipo FROM Catalogo.Presentacion ORDER BY Presentacion");
+        var result = (await connection.QueryAsync<PresentacionItem>(
+            "SELECT Codigo, Presentacion, Fracciones, Tipo FROM Catalogo.Presentacion ORDER BY Presentacion")).ToList();
+        _cache.Set("cat:presentaciones", result, _ttlCatalogos);
+        return result;
     }
 
     public async Task CrearPresentacionAsync(CrearPresentacionRequest r)
@@ -678,6 +758,7 @@ public class CatalogoService : ICatalogoService
         using var connection = _db.CreateConnection();
         await connection.ExecuteAsync(
             "INSERT INTO Catalogo.Presentacion (Codigo, Presentacion, Fracciones, Tipo) VALUES (@Codigo, @Presentacion, @Fracciones, @Tipo)", r);
+        _cache.Remove("cat:presentaciones");
     }
 
     public async Task ActualizarPresentacionAsync(string codigo, ActualizarPresentacionRequest r)
@@ -687,6 +768,7 @@ public class CatalogoService : ICatalogoService
             "UPDATE Catalogo.Presentacion SET Presentacion = @Presentacion, Fracciones = @Fracciones, Tipo = @Tipo WHERE Codigo = @Codigo",
             new { Codigo = codigo, r.Presentacion, r.Fracciones, r.Tipo });
         if (filas == 0) throw new KeyNotFoundException($"Presentacion '{codigo}' no encontrada.");
+        _cache.Remove("cat:presentaciones");
     }
 
     public async Task EliminarPresentacionAsync(string codigo)
@@ -695,6 +777,7 @@ public class CatalogoService : ICatalogoService
         var filas = await connection.ExecuteAsync(
             "DELETE FROM Catalogo.Presentacion WHERE Codigo = @Codigo", new { Codigo = codigo });
         if (filas == 0) throw new KeyNotFoundException($"Presentacion '{codigo}' no encontrada.");
+        _cache.Remove("cat:presentaciones");
     }
 
     public async Task<IEnumerable<CentroTrabajoItem>> ListarCentrosTrabajoAsync(bool soloActivos)
@@ -919,5 +1002,80 @@ public class CatalogoService : ICatalogoService
         using var connection = _db.CreateConnection();
         return await connection.QueryAsync<UnidadMedidaItem>(
             "SELECT UnidadID, Nombre, Abreviatura, Tipo FROM Catalogo.UnidadesMedida ORDER BY Nombre");
+    }
+
+    // ================= Variantes =================
+
+    public async Task<IEnumerable<VarianteItem>> ListarVariantesAsync(int padreId)
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<VarianteItem>(
+            @"SELECT t.ArticuloID, t.Referencia, t.Nombre, t.NombreVariante, t.Estado,
+                     ISNULL(SUM(s.CantidadActual), 0) AS Existencias
+              FROM Catalogo.Tarjetas t
+              LEFT JOIN Inventario.vw_StockConsolidado s ON s.ArticuloID = t.ArticuloID
+              WHERE t.ArticuloPadreID = @PadreId
+              GROUP BY t.ArticuloID, t.Referencia, t.Nombre, t.NombreVariante, t.Estado
+              ORDER BY t.NombreVariante, t.Nombre",
+            new { PadreId = padreId });
+    }
+
+    public async Task<int> CrearVarianteAsync(int padreId, CrearVarianteRequest r)
+    {
+        using var connection = _db.CreateConnection();
+
+        var padre = await connection.QuerySingleOrDefaultAsync<dynamic>(
+            "SELECT Referencia, Nombre, Descripcion, TipoArticuloID, StockMinimo, PuntoReorden, " +
+            "DiasVidaUtil, Fracciona, PrecioVentaUnidad, Costo, PPublico, PBodega, PCredito, " +
+            "UPublico, UBodega, UCredito, MarcaCodigo, GrupoMenorCodigo, PresentacionCodigo, " +
+            "Peso, IvaSiNo, IvaValor, IvaDescripcion, Iva2, IvaDescripcion2 " +
+            "FROM Catalogo.Tarjetas WHERE ArticuloID = @PadreId",
+            new { PadreId = padreId })
+            ?? throw new KeyNotFoundException($"Artículo padre {padreId} no encontrado.");
+
+        var referencia = r.Referencia ?? ($"{padre.Referencia}-V{DateTime.Now:MMddHHmm}");
+        var nombre     = r.Nombre     ?? (string)padre.Nombre;
+
+        return await connection.ExecuteScalarAsync<int>(@"
+            INSERT INTO Catalogo.Tarjetas
+                (Referencia, Nombre, Descripcion, TipoArticuloID, StockMinimo, PuntoReorden,
+                 DiasVidaUtil, Fracciona, PrecioVentaUnidad, Costo, PPublico, PBodega, PCredito,
+                 UPublico, UBodega, UCredito, MarcaCodigo, GrupoMenorCodigo, PresentacionCodigo,
+                 Peso, IvaSiNo, IvaValor, IvaDescripcion, Iva2, IvaDescripcion2,
+                 ArticuloPadreID, NombreVariante)
+            OUTPUT INSERTED.ArticuloID
+            VALUES
+                (@Referencia, @Nombre, @Descripcion, @TipoArticuloID, @StockMinimo, @PuntoReorden,
+                 @DiasVidaUtil, @Fracciona, @PrecioVentaUnidad, @Costo, @PPublico, @PBodega, @PCredito,
+                 @UPublico, @UBodega, @UCredito, @MarcaCodigo, @GrupoMenorCodigo, @PresentacionCodigo,
+                 @Peso, @IvaSiNo, @IvaValor, @IvaDescripcion, @Iva2, @IvaDescripcion2,
+                 @ArticuloPadreID, @NombreVariante)",
+            new
+            {
+                Referencia = referencia, Nombre = nombre,
+                Descripcion = (object?)padre.Descripcion ?? DBNull.Value,
+                padre.TipoArticuloID, padre.StockMinimo, padre.PuntoReorden,
+                DiasVidaUtil = (object?)padre.DiasVidaUtil ?? DBNull.Value,
+                Fracciona = (object?)padre.Fracciona ?? "SI",
+                PrecioVentaUnidad = (object?)padre.PrecioVentaUnidad ?? DBNull.Value,
+                Costo = (object?)padre.Costo ?? DBNull.Value,
+                PPublico = (object?)padre.PPublico ?? DBNull.Value,
+                PBodega = (object?)padre.PBodega ?? DBNull.Value,
+                PCredito = (object?)padre.PCredito ?? DBNull.Value,
+                UPublico = (object?)padre.UPublico ?? DBNull.Value,
+                UBodega = (object?)padre.UBodega ?? DBNull.Value,
+                UCredito = (object?)padre.UCredito ?? DBNull.Value,
+                MarcaCodigo = (object?)padre.MarcaCodigo ?? DBNull.Value,
+                GrupoMenorCodigo = (object?)padre.GrupoMenorCodigo ?? DBNull.Value,
+                PresentacionCodigo = (object?)padre.PresentacionCodigo ?? DBNull.Value,
+                Peso = (object?)padre.Peso ?? DBNull.Value,
+                IvaSiNo = (object?)padre.IvaSiNo ?? DBNull.Value,
+                IvaValor = (object?)padre.IvaValor ?? DBNull.Value,
+                IvaDescripcion = (object?)padre.IvaDescripcion ?? DBNull.Value,
+                Iva2 = (object?)padre.Iva2 ?? DBNull.Value,
+                IvaDescripcion2 = (object?)padre.IvaDescripcion2 ?? DBNull.Value,
+                ArticuloPadreID = padreId,
+                NombreVariante = (object?)r.NombreVariante ?? DBNull.Value
+            });
     }
 }

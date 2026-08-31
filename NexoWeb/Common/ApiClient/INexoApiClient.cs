@@ -23,4 +23,5 @@ public interface INexoApiClient
     Task DeleteAsync(string ruta);
     Task<TResponse?> PatchAsync<TRequest, TResponse>(string ruta, TRequest body);
     Task PatchAsync(string ruta);
+    Task<TResponse?> PostMultipartAsync<TResponse>(string ruta, MultipartFormDataContent content);
 }

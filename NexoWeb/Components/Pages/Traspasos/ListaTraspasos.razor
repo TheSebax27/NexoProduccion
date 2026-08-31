@@ -176,7 +176,6 @@ else
 @code {
     private List<TraspasoResumen> _traspasos = new();
     private List<BodegaItem>      _bodegas   = new();
-    private List<ArticuloItem>    _articulos = new();
     private bool    _cargando   = true;
     private string? _errorCarga;
 
@@ -197,17 +196,12 @@ else
     {
         if (_bodegas.Count == 0)
         {
-            var t1 = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
-            var t2 = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
-            await Task.WhenAll(t1, t2);
-            _bodegas   = await t1 ?? new();
-            _articulos = await t2 ?? new();
+            _bodegas = await ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas") ?? new();
         }
 
         var parametros = new DialogParameters<CrearTraspasoDialog>
         {
-            { x => x.Bodegas,   _bodegas   },
-            { x => x.Articulos, _articulos }
+            { x => x.Bodegas, _bodegas }
         };
 
         var dialogo = await DialogService.ShowAsync<CrearTraspasoDialog>("Nuevo Traspaso", parametros);

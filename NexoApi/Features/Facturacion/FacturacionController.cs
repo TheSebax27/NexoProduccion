@@ -55,6 +55,18 @@ public class FacturacionController : ControllerBase
         catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
+    [HttpDelete("facturas/{id:int}")]
+    public async Task<ActionResult> EliminarFactura(int id)
+    {
+        try
+        {
+            await _service.EliminarFacturaAsync(id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
+    }
+
     [HttpGet("facturas/{id:int}/lineas")]
     public async Task<ActionResult<IEnumerable<FacturaLineaItem>>> ListarLineas(int id)
         => Ok(await _service.ListarLineasAsync(id));

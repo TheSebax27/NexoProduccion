@@ -241,3 +241,4 @@ public record LineaFacturaParaVisionsDto(
     decimal PrecioUnitario,
     decimal Costo
 );
+public record PendienteLimpiezaVisionsDto(int LimpiezaID, string Tipo, int EntidadID);

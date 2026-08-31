@@ -44,6 +44,7 @@ public class BusquedaService : IBusquedaService
                 WHERE s.Articulo LIKE @Patron OR s.SKU LIKE @Patron
                 ORDER BY s.Articulo";
             var stock = await connection.QueryAsync<(string SKU, string Articulo, string Bodega)>(
+
                 sqlStock, new { Patron = patron, Max = MaxPorCategoria });
             resultados.AddRange(stock.Select(s => new ResultadoBusqueda(
                 "Stock", s.Articulo, $"SKU {s.SKU} · {s.Bodega}",
@@ -57,7 +58,7 @@ public class BusquedaService : IBusquedaService
                 FROM Inventario.TraspasosBodega t
                 JOIN Inventario.Bodegas bo ON bo.BodegaID = t.BodegaOrigenID
                 JOIN Inventario.Bodegas bd ON bd.BodegaID = t.BodegaDestinoID
-                WHERE t.Codigo LIKE @Patron
+                WHERE t.Codigo LIKE @Patron 
                 ORDER BY t.TraspasoID DESC";
             var traspasos = await connection.QueryAsync<(string Codigo, string Origen, string Destino, string EstadoTraspaso)>(
                 sqlTraspasos, new { Patron = patron, Max = MaxPorCategoria });

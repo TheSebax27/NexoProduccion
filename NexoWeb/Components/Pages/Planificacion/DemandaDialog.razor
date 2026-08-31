@@ -6,13 +6,10 @@
         <MudForm @ref="_form" Model="@this">
             @if (!EsEdicion)
             {
-                <MudSelect T="int?" @bind-Value="_articuloId" Label="Articulo (Producto Terminado)" Required="true"
-                           RequiredError="Selecciona un articulo" Class="mb-3">
-                    @foreach (var a in ArticulosDisponibles)
-                    {
-                        <MudSelectItem T="int?" Value="@a.ArticuloID">@a.SKU - @a.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
+                <ArticuloAutocomplete Value="_articuloSeleccionado"
+                                      ValueChanged="@(a => { _articuloSeleccionado = a; _articuloId = a?.ArticuloID; })"
+                                      Label="Articulo (Producto Terminado)" Required="true"
+                                      FiltroTipo="Producto Terminado" />
 
                 <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Required="true"
                            RequiredError="Selecciona un centro de costo" Class="mb-3">
@@ -53,12 +50,12 @@
     [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter] public DemandaProyectadaItem? Demanda { get; set; }
-    [Parameter] public List<ArticuloItem> ArticulosDisponibles { get; set; } = new();
     [Parameter] public List<CentroCostoItem> CentrosCosto { get; set; } = new();
 
     private bool EsEdicion => Demanda is not null;
 
     private MudForm _form = default!;
+    private ArticuloItem? _articuloSeleccionado;
     private int? _articuloId;
     private int? _centroCostoId;
     private DateTime? _periodo = DateTime.Today;

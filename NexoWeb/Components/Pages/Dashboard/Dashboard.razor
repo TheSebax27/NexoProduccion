@@ -1031,7 +1031,7 @@ else
         @* ═══════════════════════════════════════════════════ TAB CRM ══ *@
         <MudTabPanel Text="CRM" Icon="@Icons.Material.Outlined.People">
             <MudGrid>
-                <MudItem xs="12" md="4">
+                <MudItem xs="12" md="3">
                     <div class="nexo-kpi nexo-kpi--indigo mb-4">
                         <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" /></div>
                         <div class="nexo-kpi__value">@_resumenCrm.ClientesNuevos</div>
@@ -1039,7 +1039,7 @@ else
                         <div class="nexo-kpi__sub">Últimos 30 días</div>
                     </div>
                 </MudItem>
-                <MudItem xs="12" md="4">
+                <MudItem xs="12" md="3">
                     <div class="nexo-kpi nexo-kpi--teal mb-4">
                         <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.Chat" Size="Size.Small" /></div>
                         <div class="nexo-kpi__value">@_resumenCrm.Interacciones</div>
@@ -1047,12 +1047,24 @@ else
                         <div class="nexo-kpi__sub">Últimos 30 días</div>
                     </div>
                 </MudItem>
-                <MudItem xs="12" md="4">
+                <MudItem xs="12" md="3">
                     <div class="nexo-kpi nexo-kpi--red mb-4">
                         <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.AcUnit" Size="Size.Small" /></div>
                         <div class="nexo-kpi__value">@_clientesFrios.Count</div>
                         <div class="nexo-kpi__label">Clientes Fríos</div>
                         <div class="nexo-kpi__sub">Sin contacto hace +30 días</div>
+                    </div>
+                </MudItem>
+                <MudItem xs="12" md="3">
+                    @{
+                        var tasa = _resumenCrm.TasaConversion;
+                        var tasaColor = tasa >= 50 ? "green" : tasa >= 25 ? "primary" : "red";
+                    }
+                    <div class="nexo-kpi nexo-kpi--@tasaColor mb-4">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value">@tasa.ToString("0.#")%</div>
+                        <div class="nexo-kpi__label">Tasa de conversión</div>
+                        <div class="nexo-kpi__sub">@_resumenCrm.Convertidas de @_resumenCrm.CotizacionesTotal cot. → factura</div>
                     </div>
                 </MudItem>
 
@@ -1151,6 +1163,49 @@ else
                         </div>
                     </MudPaper>
                 </MudItem>
+
+                @* ── Ventas por departamento ─────────────────────────────── *@
+                <MudItem xs="12">
+                    <MudPaper Class="pa-5 nexo-chart-card">
+                        <div class="nexo-chart-header nexo-chart-card__header mb-3">
+                            <MudIcon Icon="@Icons.Material.Outlined.Map" Size="Size.Small" Class="nexo-chart-header__icon" />
+                            <div>
+                                <div class="nexo-chart-header__title">Ventas por departamento</div>
+                                <div class="nexo-chart-header__sub">Últimos 12 meses · por ubicación de cliente</div>
+                            </div>
+                        </div>
+                        @if (_ventasDept.Count == 0)
+                        {
+                            <div class="nexo-empty-state">
+                                <MudIcon Icon="@Icons.Material.Outlined.Inbox" Class="nexo-empty-state__icon" />
+                                <p class="nexo-empty-state__text">Sin datos de ventas por departamento.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            var maxVentasDept = (double)_ventasDept.Max(d => d.TotalVentas);
+                            <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+                                @foreach (var dept in _ventasDept.Take(10))
+                                {
+                                    var pctD = maxVentasDept > 0 ? (double)dept.TotalVentas / maxVentasDept * 100 : 0;
+                                    var hue = (int)(220 + (_ventasDept.IndexOf(dept) * 15) % 120);
+                                    <div>
+                                        <div class="d-flex justify-space-between mb-1">
+                                            <span style="font-size:0.85rem;font-weight:500">@dept.Departamento</span>
+                                            <span style="font-size:0.82rem;color:var(--mud-palette-text-secondary)">
+                                                @dept.TotalVentas.ToString("C0") · @dept.CantidadClientes cliente(s)
+                                            </span>
+                                        </div>
+                                        <div style="height:8px;border-radius:4px;background:var(--mud-palette-background-grey);overflow:hidden">
+                                            <div style="height:100%;border-radius:4px;width:@pctD.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%;background:hsl(@hue,60%,55%);transition:width .4s ease"></div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </MudPaper>
+                </MudItem>
+
             </MudGrid>
         </MudTabPanel>
 
@@ -1469,6 +1524,7 @@ else
 
     // ── General / Resumen ────────────────────────────────────────────
     private ResumenCrmItem _resumenCrm = new(0, 0);
+    private List<VentasPorDepartamentoItem> _ventasDept = new();
     private List<ClienteFrioItem> _clientesFrios = new();
     private int _paginaFrios = 1;
     private const int TamanoFrios = 20;
@@ -1629,6 +1685,7 @@ else
             _resumenCrm = await ApiClient.GetAsync<ResumenCrmItem>(
                 $"api/dashboard/resumen-crm?desde={DateTime.Today.AddDays(-30):yyyy-MM-dd}&hasta={DateTime.Today:yyyy-MM-dd}") ?? new(0, 0);
             _clientesFrios = await ApiClient.GetAsync<List<ClienteFrioItem>>("api/crm/clientes-frios?diasSinContacto=30") ?? new();
+            _ventasDept = await ApiClient.GetAsync<List<VentasPorDepartamentoItem>>("api/dashboard/ventas-por-departamento") ?? new();
             _empleadosPorCentroCosto = await ApiClient.GetAsync<List<EmpleadosPorCentroCostoItem>>("api/dashboard/empleados-por-centro-costo") ?? new();
             _totalEmpleadosActivos = _empleadosPorCentroCosto.Sum(e => e.TotalEmpleados);
 

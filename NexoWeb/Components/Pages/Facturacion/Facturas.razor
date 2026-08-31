@@ -90,8 +90,14 @@
                         else
                         { <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Color="Color.Default" Size="Size.Small" /> }
                     </MudTd>
-                    <MudTd DataLabel="Accion">
+                    <MudTd DataLabel="Accion" Style="display:flex;gap:4px;align-items:center">
                         <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
+                        @if (!context.StockDescontado && !context.VisionsConfirmado)
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error"
+                                           Size="Size.Small" Title="Eliminar factura"
+                                           OnClick="@(() => EliminarFacturaAsync(context))" />
+                        }
                     </MudTd>
                 </RowTemplate>
             </MudTable>
@@ -198,8 +204,14 @@
                         else
                         { <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Color="Color.Default" Size="Size.Small" /> }
                     </MudTd>
-                    <MudTd DataLabel="Accion">
+                    <MudTd DataLabel="Accion" Style="display:flex;gap:4px;align-items:center">
                         <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
+                        @if (!context.StockDescontado && !context.VisionsConfirmado)
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error"
+                                           Size="Size.Small" Title="Eliminar factura"
+                                           OnClick="@(() => EliminarFacturaAsync(context))" />
+                        }
                     </MudTd>
                 </RowTemplate>
             </MudTable>
@@ -585,5 +597,27 @@
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
         await dialogo.Result;
         await Task.WhenAll(CargarPendientesAsync(), CargarHistorialAsync());
+    }
+
+    private async Task EliminarFacturaAsync(FacturaItem factura)
+    {
+        var etiqueta = factura.NroDoc is not null ? $"#{factura.NroDoc}" : $"ID {factura.FacturaID}";
+        var confirmado = await DialogService.ShowMessageBox(
+            "Eliminar factura",
+            $"¿Eliminar la factura {etiqueta} de {factura.Cliente}? Esta acción no se puede deshacer y eliminará el registro del staging de Visions.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+
+        if (confirmado != true) return;
+
+        try
+        {
+            await ApiClient.DeleteAsync($"api/facturacion/facturas/{factura.FacturaID}");
+            Snackbar.Add("Factura eliminada correctamente.", Severity.Success);
+            await Task.WhenAll(CargarPendientesAsync(), CargarHistorialAsync());
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add($"No se pudo eliminar: {ex.Message}", Severity.Error);
+        }
     }
 }

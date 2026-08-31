@@ -150,10 +150,8 @@ else
 
 @code {
     private List<ProyectoItem> _proyectos  = new();
-    private List<ClienteItem>  _clientes   = new();
     private List<CentroCostoItem> _centrosCosto = new();
     private List<EmpleadoItem> _empleados  = new();
-    private List<ArticuloItem> _articulos  = new();
     private bool _cargando = true;
     private string? _errorCarga;
     private string? _filtroEstado;
@@ -208,16 +206,12 @@ else
         try
         {
             var t1 = ApiClient.GetAsync<List<ProyectoItem>>("api/proyectos");
-            var t2 = ApiClient.GetAsync<List<ClienteItem>>("api/crm/clientes");
             var t3 = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo?soloActivos=true");
             var t4 = ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados?soloActivos=true");
-            var t5 = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
-            await Task.WhenAll(t1, t2, t3, t4, t5);
+            await Task.WhenAll(t1, t3, t4);
             _proyectos    = await t1 ?? new();
-            _clientes     = (await t2 ?? new()).Where(c => c.Estado).ToList();
             _centrosCosto = await t3 ?? new();
             _empleados    = await t4 ?? new();
-            _articulos    = await t5 ?? new();
         }
         catch (Exception ex) { _errorCarga = ex.Message; }
         finally { _cargando = false; }
@@ -233,7 +227,6 @@ else
     {
         var p = new DialogParameters<ProyectoDialog>
         {
-            { x => x.Clientes, _clientes },
             { x => x.CentrosCosto, _centrosCosto }
         };
         var d = await DialogService.ShowAsync<ProyectoDialog>("Nuevo Proyecto", p);
@@ -253,7 +246,6 @@ else
         var p = new DialogParameters<ProyectoDialog>
         {
             { x => x.Proyecto, proyecto },
-            { x => x.Clientes, _clientes },
             { x => x.CentrosCosto, _centrosCosto }
         };
         var d = await DialogService.ShowAsync<ProyectoDialog>("Editar Proyecto", p);
@@ -273,8 +265,7 @@ else
         var p = new DialogParameters<GestionProyectoDialog>
         {
             { x => x.Proyecto, proyecto },
-            { x => x.Empleados, _empleados },
-            { x => x.Articulos, _articulos }
+            { x => x.Empleados, _empleados }
         };
         var d = await DialogService.ShowAsync<GestionProyectoDialog>("Gestionar Proyecto", p,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });

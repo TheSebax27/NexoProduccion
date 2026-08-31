@@ -27,7 +27,10 @@ public record OrdenCompraResumen(
     string EstadoOC,
     DateTime FechaEmision,
     decimal Total,
-    DateTime? FechaRecepcion
+    DateTime? FechaRecepcion,
+    bool ExportadoVisions = false,
+    string? NroDocVisions = null,
+    string? TipDocVisions = null
 );
 
 public record PedidoParaVisionsDto(

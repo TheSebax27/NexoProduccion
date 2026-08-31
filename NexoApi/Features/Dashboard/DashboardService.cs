@@ -18,6 +18,7 @@ public interface IDashboardService
     Task<IEnumerable<EmpleadosPorCentroCostoItem>> ObtenerEmpleadosPorCentroCostoAsync();
     Task<ResumenPlanificacionItem> ObtenerResumenPlanificacionAsync();
     Task<ResumenInventarioItem> ObtenerResumenInventarioAsync();
+    Task<IEnumerable<VentasPorDepartamentoItem>> ObtenerVentasPorDepartamentoAsync();
 
     // Tab Facturacion BI
     Task<ResumenFacturacionItem> ObtenerResumenFacturacionAsync(DateTime desde, DateTime hasta);
@@ -114,8 +115,11 @@ public class DashboardService : IDashboardService
 
         const string sql = @"
             SELECT
-                (SELECT COUNT(*) FROM Crm.Clientes WHERE FechaCreacion >= @Desde AND FechaCreacion <= @Hasta) AS ClientesNuevos,
-                (SELECT COUNT(*) FROM Crm.Interacciones WHERE Fecha >= @Desde AND Fecha <= @Hasta) AS Interacciones";
+                (SELECT COUNT(*) FROM Crm.Clientes    WHERE FechaCreacion >= @Desde AND FechaCreacion <= @Hasta) AS ClientesNuevos,
+                (SELECT COUNT(*) FROM Crm.Interacciones WHERE Fecha >= @Desde AND Fecha <= @Hasta)               AS Interacciones,
+                (SELECT COUNT(*) FROM Crm.Cotizaciones WHERE Fecha >= @Desde AND Fecha <= @Hasta)                AS CotizacionesTotal,
+                (SELECT COUNT(*) FROM Crm.Cotizaciones WHERE Fecha >= @Desde AND Fecha <= @Hasta
+                                                        AND Estado = 'CONVERTIDA')                               AS Convertidas";
 
         return await connection.QuerySingleAsync<ResumenCrmItem>(sql, new { Desde = desde.Date, Hasta = hasta.Date });
     }
@@ -445,5 +449,22 @@ public class DashboardService : IDashboardService
             ORDER BY CAST(Fecha AS DATE)");
 
         return new SparklinesDashboard(facturas, ordenes, cotizaciones);
+    }
+
+    public async Task<IEnumerable<VentasPorDepartamentoItem>> ObtenerVentasPorDepartamentoAsync()
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT ISNULL(c.Departamento, 'Sin departamento') AS Departamento,
+                   ISNULL(SUM(ISNULL(fl.Total,0)), 0)         AS TotalVentas,
+                   COUNT(DISTINCT f.ClienteID)                 AS CantidadClientes
+            FROM Facturacion.Facturas f
+            JOIN Crm.Clientes c ON c.ClienteID = f.ClienteID
+            LEFT JOIN (SELECT FacturaID, SUM(Cantidad * PrecioUnitario) AS Total
+                       FROM Facturacion.FacturaLineas GROUP BY FacturaID) fl ON fl.FacturaID = f.FacturaID
+            WHERE f.Fecha >= DATEADD(month, -12, GETDATE())
+            GROUP BY c.Departamento
+            ORDER BY TotalVentas DESC";
+        return await connection.QueryAsync<VentasPorDepartamentoItem>(sql);
     }
 }

@@ -50,6 +50,19 @@ else
                 Próximo contacto: @_cliente.ProximoContacto.Value.ToString("dd/MM/yyyy")
             </MudChip>
         }
+        @if (_segmento is not null)
+        {
+            var segColor = _segmento.Segmento switch {
+                "VIP"       => Color.Warning,
+                "Frecuente" => Color.Success,
+                "Dormido"   => Color.Error,
+                "Nuevo"     => Color.Info,
+                _           => Color.Default
+            };
+            <MudChip T="string" Size="Size.Small" Color="@segColor" Icon="@Icons.Material.Filled.Star">
+                @_segmento.Segmento
+            </MudChip>
+        }
     </div>
 
     <MudPaper Class="pa-4">
@@ -204,6 +217,44 @@ else
                     </MudTable>
                 }
             </MudTabPanel>
+
+            <MudTabPanel Text="Crédito" Icon="@Icons.Material.Outlined.CreditCard">
+                @if (_disponibilidad is not null && _disponibilidad.CupoCredito > 0)
+                {
+                    var pct = (double)(_disponibilidad.Utilizado / _disponibilidad.CupoCredito * 100);
+                    <div class="d-flex flex-wrap mb-4" style="gap:1rem;">
+                        <div style="min-width:140px;">
+                            <div style="font-size:0.75rem;color:var(--n-text-3)">Cupo total</div>
+                            <div style="font-size:1.4rem;font-weight:700">@_disponibilidad.CupoCredito.ToString("C0")</div>
+                        </div>
+                        <div style="min-width:140px;">
+                            <div style="font-size:0.75rem;color:var(--n-text-3)">Utilizado (cot. abiertas)</div>
+                            <div style="font-size:1.4rem;font-weight:700;color:@(pct > 80 ? "var(--mud-palette-error)" : "inherit")">@_disponibilidad.Utilizado.ToString("C0")</div>
+                        </div>
+                        <div style="min-width:140px;">
+                            <div style="font-size:0.75rem;color:var(--n-text-3)">Disponible</div>
+                            <div style="font-size:1.4rem;font-weight:700;color:var(--mud-palette-success)">@_disponibilidad.Disponible.ToString("C0")</div>
+                        </div>
+                    </div>
+                    <MudProgressLinear Value="@pct" Color="@(pct > 80 ? Color.Error : Color.Primary)" Rounded="true" Class="mb-4" Style="height:10px;" />
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">Sin línea de crédito configurada. Cualquier monto está permitido.</MudAlert>
+                }
+
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Configurar línea de crédito</MudText>
+                <div class="d-flex align-center flex-wrap" style="gap:8px;">
+                    <MudNumericField T="decimal" @bind-Value="_nuevoCupo" Label="Cupo máximo ($)" Variant="Variant.Outlined"
+                                     Margin="Margin.Dense" Style="max-width:200px;" Min="0" />
+                    <MudTextField @bind-Value="_nuevaObsCredito" Label="Observaciones" Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" Style="max-width:280px;" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                               OnClick="GuardarLineaCreditoAsync" Disabled="_guardandoCredito">
+                        @(_guardandoCredito ? "Guardando…" : "Guardar")
+                    </MudButton>
+                </div>
+            </MudTabPanel>
         </MudTabs>
     </MudPaper>
 }
@@ -272,6 +323,7 @@ else
                 await CargarInteraccionesAsync();
                 await CargarHistorialAsync();
                 await CargarDocumentosAsync();
+                await CargarSegmentoYCreditoAsync();
             }
         }
         catch (HttpRequestException ex)
@@ -422,5 +474,47 @@ else
         {
             Snackbar.Add(ex.Message, Severity.Error);
         }
+    }
+
+    // ── Segmento y crédito ────────────────────────────────────────────────
+    private ClienteSegmentoItem? _segmento;
+    private DisponibilidadCreditoItem? _disponibilidad;
+    private LineaCreditoItem? _lineaCredito;
+    private decimal _nuevoCupo;
+    private string? _nuevaObsCredito;
+    private bool _guardandoCredito;
+
+    private async Task CargarSegmentoYCreditoAsync()
+    {
+        if (_cliente is null) return;
+        try
+        {
+            var id = _cliente.ClienteID;
+            var ts = ApiClient.GetAsync<ClienteSegmentoItem>($"api/crm/clientes/{id}/segmento");
+            var td = ApiClient.GetAsync<DisponibilidadCreditoItem>($"api/crm/clientes/{id}/linea-credito/disponible");
+            var tl = ApiClient.GetAsync<LineaCreditoItem>($"api/crm/clientes/{id}/linea-credito");
+            await Task.WhenAll(ts, td, tl);
+            _segmento      = await ts;
+            _disponibilidad = await td;
+            _lineaCredito  = await tl;
+            if (_lineaCredito is not null) { _nuevoCupo = _lineaCredito.CupoCredito; _nuevaObsCredito = _lineaCredito.Observaciones; }
+        }
+        catch { }
+    }
+
+    private async Task GuardarLineaCreditoAsync()
+    {
+        if (_cliente is null) return;
+        _guardandoCredito = true;
+        try
+        {
+            await ApiClient.PutAsync($"api/crm/clientes/{_cliente.ClienteID}/linea-credito",
+                new ActualizarLineaCreditoRequest(_nuevoCupo, _nuevaObsCredito));
+            _disponibilidad = await ApiClient.GetAsync<DisponibilidadCreditoItem>(
+                $"api/crm/clientes/{_cliente.ClienteID}/linea-credito/disponible");
+            Snackbar.Add("Línea de crédito actualizada.", Severity.Success);
+        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _guardandoCredito = false; }
     }
 }

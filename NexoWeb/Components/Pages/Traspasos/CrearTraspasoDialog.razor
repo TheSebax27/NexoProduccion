@@ -1,4 +1,5 @@
-﻿@using NexoWeb.Common.Dtos
+@using NexoWeb.Common.Dtos
+@inject INexoApiClient ApiClient
 
 <MudDialog>
     <DialogContent>
@@ -22,12 +23,9 @@
         {
             <MudGrid Class="mb-2" AlignItems="Center.Center">
                 <MudItem xs="7">
-                    <MudSelect T="int" @bind-Value="linea.ArticuloID" Label="Articulo" Dense="true">
-                        @foreach (var articulo in Articulos)
-                        {
-                            <MudSelectItem T="int" Value="@articulo.ArticuloID">@articulo.SKU - @articulo.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <ArticuloAutocomplete Value="linea.ArticuloSeleccionado"
+                                          ValueChanged="@((ArticuloItem? v) => linea.ArticuloSeleccionado = v)"
+                                          Label="Articulo" />
                 </MudItem>
                 <MudItem xs="4">
                     <MudNumericField @bind-Value="linea.Cantidad" Label="Cantidad" Min="0.01m" Format="N2" Dense="true" />
@@ -54,7 +52,6 @@
 @code {
     [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public List<BodegaItem> Bodegas { get; set; } = new();
-    [Parameter] public List<ArticuloItem> Articulos { get; set; } = new();
 
     private int _bodegaOrigenId;
     private int _bodegaDestinoId;
@@ -62,7 +59,8 @@
 
     private class LineaFormulario
     {
-        public int ArticuloID { get; set; }
+        public ArticuloItem? ArticuloSeleccionado { get; set; }
+        public int ArticuloID => ArticuloSeleccionado?.ArticuloID ?? 0;
         public decimal Cantidad { get; set; }
     }
 

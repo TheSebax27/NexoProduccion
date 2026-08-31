@@ -16,11 +16,20 @@ CultureInfo.DefaultThreadCurrentUICulture = culturaCO;
 
 // Blazor Server: los componentes .razor + la conexion en tiempo real (SignalR)
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents()
+    .AddInteractiveServerComponents(o =>
+    {
+        // Retiene el circuito 10 min en lugar de los 3 min por defecto,
+        // para que una pausa breve no corte la sesión.
+        o.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(10);
+    })
     .AddHubOptions(o =>
     {
         // Permite subir imágenes base64 (~5 MB) a través del canal SignalR
         o.MaximumReceiveMessageSize = 10 * 1024 * 1024;
+        // Keepalive más agresivo para detectar desconexiones antes (default 15s)
+        o.KeepAliveInterval = TimeSpan.FromSeconds(10);
+        // Si en 30 s no hay respuesta del cliente, cierra el circuito
+        o.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
     });
 
 // MudBlazor

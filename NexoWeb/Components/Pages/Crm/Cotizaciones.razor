@@ -3,6 +3,7 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Cotizaciones - NEXO</PageTitle>
@@ -60,23 +61,48 @@ else
     <MudTable Items="_cotizaciones" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
             <MudTh>Fecha</MudTh>
+            <MudTh>Válido hasta</MudTh>
             <MudTh>Cliente</MudTh>
             <MudTh Style="text-align:right">Total</MudTh>
             <MudTh>Estado</MudTh>
             <MudTh>Factura</MudTh>
-            <MudTh>Accion</MudTh>
+            <MudTh>Acción</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Fecha">@context.Fecha.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="Válido hasta">
+                @if (context.ValidoHasta is null)
+                {
+                    <span style="color:var(--n-text-3); font-style:italic;">Sin límite</span>
+                }
+                else
+                {
+                    var vencida = context.ValidoHasta.Value.Date < DateTime.Today
+                                  && context.Estado is not ("ACEPTADA" or "RECHAZADA" or "CONVERTIDA");
+                    @if (vencida)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Error" Icon="@Icons.Material.Filled.Warning">
+                            @context.ValidoHasta.Value.ToString("dd/MM/yy")
+                        </MudChip>
+                    }
+                    else
+                    {
+                        <span>@context.ValidoHasta.Value.ToString("dd/MM/yyyy")</span>
+                    }
+                }
+            </MudTd>
             <MudTd DataLabel="Cliente">@context.Cliente</MudTd>
             <MudTd DataLabel="Total" Style="text-align:right">@context.Total.ToString("C0")</MudTd>
             <MudTd DataLabel="Estado">
                 <MudChip T="string" Size="Size.Small" Color="@ColorEstado(context.Estado)">@context.Estado</MudChip>
             </MudTd>
             <MudTd DataLabel="Factura">@(context.FacturaID is not null ? $"#{context.FacturaID}" : "-")</MudTd>
-            <MudTd DataLabel="Accion">
+            <MudTd DataLabel="Acción">
                 <div class="d-flex align-center" style="gap:4px;">
                     <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
+                    <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.PictureAsPdf"
+                                   Color="Color.Error" Title="Descargar PDF"
+                                   OnClick="@(() => DescargarPdfAsync(context.CotizacionID))" />
                     @if (context.Estado is "BORRADOR" or "ENVIADA" or "PENDIENTE")
                     {
                         <MudIconButton Size="Size.Small" Icon="@Icons.Material.Outlined.Send"
@@ -89,7 +115,7 @@ else
                                    StartIcon="@Icons.Material.Filled.Receipt"
                                    OnClick="@(() => ConvertirAFacturaAsync(context.CotizacionID))">
                             → Factura
-                        </MudButton>
+        </MudButton>
                     }
                 </div>
             </MudTd>
@@ -143,11 +169,26 @@ else
 
     private Color ColorEstado(string estado) => estado switch
     {
-        "ACEPTADA" => Color.Success,
+        "ACEPTADA"           => Color.Success,
         "RECHAZADA" or "VENCIDA" => Color.Error,
-        "ENVIADA" => Color.Info,
-        _ => Color.Default
+        "ENVIADA"            => Color.Info,
+        _                    => Color.Default
     };
+
+    async Task DescargarPdfAsync(int cotizacionId)
+    {
+        try
+        {
+            var bytes = await ApiClient.GetBytesAsync($"api/crm/cotizaciones/{cotizacionId}/pdf");
+            var base64 = Convert.ToBase64String(bytes);
+            await JS.InvokeVoidAsync("nexoDescargarArchivo",
+                $"cotizacion_{cotizacionId}.pdf", "application/pdf", base64);
+        }
+        catch
+        {
+            Snackbar.Add("No se pudo generar el PDF.", Severity.Error);
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -258,7 +299,7 @@ else
     private void AbrirDialogoEnvio(CotizacionItem cotizacion)
     {
         _envioContexto  = cotizacion;
-        _envioCliente   = new ClienteItem { ClienteID = cotizacion.ClienteID, Nombre = cotizacion.Cliente };
+        _envioCliente   = new ClienteItem(cotizacion.ClienteID, "", cotizacion.Cliente, null, null, null, null, null, true, null, null, null, null, null, 0, null, null, null, null, null, null, null, null, null, null, null);
         _envioEmail     = true;
         _envioWhatsApp  = false;
         _envioDialogVisible = true;

@@ -417,4 +417,27 @@ public class IntegracionController : ControllerBase
         await _compras.ActualizarNumeroPedidoVisionsAsync(id, request);
         return Ok(new { mensaje = "Número de pedido actualizado desde Visions." });
     }
+
+    [HttpPost("pedidos/{id:int}/auto-recibir-visions")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> AutoRecibirPedidoVisions(int id, [FromQuery] string nroDoc)
+    {
+        await _compras.AutoRecibirDesdeVisionsAsync(id, nroDoc);
+        return Ok(new { mensaje = "Pedido auto-recibido desde Visions." });
+    }
+
+    // ──────────── Limpieza staging Visions (facturas/pedidos eliminados en NEXO) ────────────
+
+    [HttpGet("pendientes-limpieza-visions")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult<IEnumerable<PendienteLimpiezaVisions>>> ListarPendientesLimpiezaVisions()
+        => Ok(await _service.ListarPendientesLimpiezaVisionsAsync());
+
+    [HttpPost("pendientes-limpieza-visions/{id:int}/completar")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> CompletarLimpiezaVisions(int id)
+    {
+        await _service.MarcarLimpiezaVisionsCompletadaAsync(id);
+        return Ok(new { mensaje = "Limpieza completada." });
+    }
 }

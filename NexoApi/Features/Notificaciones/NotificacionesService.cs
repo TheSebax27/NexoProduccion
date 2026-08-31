@@ -139,6 +139,26 @@ public class NotificacionesService : INotificacionesService
             }
         }
 
+        // Cotizaciones que vencen en los próximos 3 días (sin límite de fecha no aplica)
+        const string sqlProximasVencer = @"
+            SELECT cl.Nombre
+            FROM Crm.Cotizaciones c
+            JOIN Crm.Clientes cl ON cl.ClienteID = c.ClienteID
+            WHERE c.ValidoHasta IS NOT NULL
+              AND c.ValidoHasta >= CAST(GETDATE() AS DATE)
+              AND c.ValidoHasta <= DATEADD(day, 3, CAST(GETDATE() AS DATE))
+              AND c.Estado NOT IN ('ACEPTADA','RECHAZADA','CONVERTIDA','VENCIDA')
+            ORDER BY c.ValidoHasta";
+        var proximasVencer = (await connection.QueryAsync<string>(sqlProximasVencer)).ToList();
+        if (proximasVencer.Count > 0)
+        {
+            items.Add(new NotificacionItem(
+                "ProximaVencer", "warning",
+                $"{proximasVencer.Count} cotización{(proximasVencer.Count == 1 ? "" : "es")} por vencer en 3 días",
+                ResumirNombres(proximasVencer),
+                "/crm/cotizaciones"));
+        }
+
         return new ResumenNotificaciones(items.Count, items);
     }
 

@@ -9,7 +9,7 @@ public record CrearOrdenCompraRequest(
 
 public record RecibirLineaOrdenCompraRequest(decimal CantidadRecibida, string NumeroLote, DateTime? FechaVencimiento);
 
-public record OrdenCompraResumen(int OrdenCompraID, string Codigo, string Proveedor, string EstadoOC, DateTime FechaEmision, decimal Total, DateTime? FechaRecepcion);
+public record OrdenCompraResumen(int OrdenCompraID, string Codigo, string Proveedor, string EstadoOC, DateTime FechaEmision, decimal Total, DateTime? FechaRecepcion, bool ExportadoVisions = false, string? NroDocVisions = null, string? TipDocVisions = null);
 
 public record OrdenCompraDetalleItem(
     int OrdenCompraDetalleID, int ArticuloID, string Articulo,

@@ -48,4 +48,9 @@ public interface INexoApiClient
     Task<List<PedidoParaVisionsDto>> ListarPedidosParaVisionsAsync(CancellationToken ct);
     Task MarcarPedidoExportadoVisionsAsync(int pedidoId, CancellationToken ct);
     Task ActualizarNumeroPedidoVisionsAsync(int pedidoId, ActualizarNumeroPedidoVisionsRequest request, CancellationToken ct);
+    Task AutoRecibirDesdeVisionsAsync(int pedidoId, string nroDoc, CancellationToken ct);
+
+    // Limpieza staging Visions para entidades eliminadas en NEXO
+    Task<List<PendienteLimpiezaVisionsDto>> ListarPendientesLimpiezaVisionsAsync(CancellationToken ct);
+    Task MarcarLimpiezaVisionsCompletadaAsync(int limpiezaId, CancellationToken ct);
 }
