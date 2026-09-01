@@ -51,18 +51,19 @@
         @if (ArticuloSeleccionado is { } art && !_modoManual && art.EsFraccionado)
         {
             @* Modo caja/fraccionado: inputs separados *@
+            var labelEmbalaje = art.PresentacionNombre ?? art.PresentacionCodigo?.ToUpper() ?? "Embalaje";
             <div class="inv-cant-frac">
                 <MudNumericField @bind-Value="_cajas" @bind-Value:after="RecalcularDesdeCajas"
-                                 Label="Cajas" Min="0m" Format="N0" Variant="Variant.Outlined" />
+                                 Label="@labelEmbalaje" Min="0m" Format="N0" Variant="Variant.Outlined" />
                 <MudNumericField @bind-Value="_unidades" @bind-Value:after="RecalcularDesdeCajas"
                                  Label="Unidades sueltas" Min="0m"
-                                 HelperText="@($"máx {art.Fracciones!.Value - 1:N0} por caja")"
+                                 HelperText="@($"máx {art.Fracciones!.Value - 1:N0} por {labelEmbalaje.ToLower()}")"
                                  Max="@(art.Fracciones!.Value - 1)"
                                  Format="N0" Variant="Variant.Outlined" />
             </div>
             <div class="inv-cant-total">
-                Total: <strong>@(_cantidad.ToString("N5"))</strong> cajas =
-                <strong>@((_cantidad * art.Fracciones!.Value).ToString("N0"))</strong> unidades
+                Total: <strong>@(_cantidad.ToString("N5"))</strong> @labelEmbalaje =
+                <strong>@((_cantidad * art.Fracciones!.Value).ToString("N0"))</strong> und
             </div>
             <button class="inv-modo-link" @onclick="@(() => _modoManual = true)">
                 Cambiar a valor manual →
@@ -181,8 +182,9 @@
         var art         = ArticuloSeleccionado;
         var bodegaNombre = _bodegas.FirstOrDefault(b => b.BodegaID == _bodegaId)?.Nombre ?? "?";
         // EsFraccionado en lugar de Unidad == "cja"
+        var embRes = art?.PresentacionNombre ?? art?.PresentacionCodigo?.ToUpper() ?? "embalajes";
         var resumenCantidad = art?.EsFraccionado == true
-            ? $"{_cantidad:N5} cajas ({_cantidad * art.Fracciones!.Value:N0} und)"
+            ? $"{_cantidad:N5} {embRes.ToLower()} ({_cantidad * art.Fracciones!.Value:N0} und)"
             : $"{_cantidad:N3} {art?.PresentacionCodigo ?? "und"}";
 
         var confirmacion = await DialogService.ShowMessageBox(

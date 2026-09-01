@@ -119,7 +119,10 @@ else
                         <td><span class="prod-codigo">@o.CodigoOP</span></td>
                         <td class="prod-table__nombre">
                             <div class="prod-table__prod">@o.Producto</div>
-                            <div class="prod-table__centro inv-muted">@o.CentroCosto</div>
+                            @if (o.TipoProduccion is not null)
+                            {
+                                <div class="inv-muted" style="font-size:.72rem; margin-top:1px;">@o.TipoProduccion</div>
+                            }
                         </td>
                         <td class="inv-muted" style="font-size:.8rem;">@o.CentroCosto</td>
                         <td>

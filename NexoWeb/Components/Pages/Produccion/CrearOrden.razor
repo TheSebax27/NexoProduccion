@@ -138,6 +138,23 @@ else
             <MudItem xs="12" sm="4">
                 <MudNumericField @bind-Value="_cantidadProgramada" Label="Cantidad programada" Min="0.01m"
                                  Format="N2" Required="true" Variant="Variant.Outlined" />
+                @if (_productoSeleccionado is { EsFraccionado: true } pt && pt.Fracciones is > 0 && _cantidadProgramada > 0)
+                {
+                    var cajasEnt  = (int)Math.Floor(_cantidadProgramada);
+                    var undSueltas = (int)Math.Round((_cantidadProgramada - cajasEnt) * pt.Fracciones!.Value);
+                    var undTotales = (long)Math.Round(_cantidadProgramada * pt.Fracciones!.Value);
+                    <div class="inv-cant-total" style="margin-top:.35rem; font-size:.75rem;">
+                        @if (undSueltas > 0)
+                        {
+                            @($"{cajasEnt} cajas + {undSueltas} und = {undTotales} unidades totales")
+                        }
+                        else
+                        {
+                            @($"{cajasEnt} cajas = {undTotales} unidades totales")
+                        }
+                        <span class="inv-muted"> (@pt.Fracciones und/caja)</span>
+                    </div>
+                }
             </MudItem>
 
             <MudItem xs="12" sm="4">

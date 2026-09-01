@@ -29,6 +29,21 @@ public class AsistenciaController(IAsistenciaService service) : ControllerBase
     [AllowAnonymous]
     public async Task<TokenQrResponse> Token() => await service.ObtenerTokenActualAsync();
 
+    // ---- Configuración del modo QR (solo admin) ----
+
+    [HttpGet("config-qr")]
+    [Authorize]
+    public async Task<ActionResult<ConfigQrResponse>> ObtenerConfigQr()
+        => Ok(await service.ObtenerModoQrAsync());
+
+    [HttpPut("config-qr")]
+    [Authorize]
+    public async Task<ActionResult> ActualizarConfigQr(ActualizarModoQrRequest request)
+    {
+        try { await service.ActualizarModoQrAsync(request.Modo); return NoContent(); }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
     // ---- Empleado: marcar con QR (requiere login para identificar al empleado) ----
 
     [HttpGet("estado-hoy")]

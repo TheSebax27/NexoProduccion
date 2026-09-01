@@ -1134,11 +1134,12 @@
         if (_configAgente is null) return;
         try
         {
-            var contenido = await ApiClient.GetAsync<string>(
+            var bytes = await ApiClient.GetBytesAsync(
                 $"api/integracion/agentes/{_configAgente.AgenteSyncID}/appsettings-json");
-            if (contenido is null) return;
+            if (bytes.Length == 0) return;
+            var contenido = System.Text.Encoding.UTF8.GetString(bytes);
 
-            var base64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(contenido));
+            var base64 = Convert.ToBase64String(bytes);
             await JS.InvokeVoidAsync("nexoDescargarArchivo", "appsettings.json", "application/json", base64);
         }
         catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }

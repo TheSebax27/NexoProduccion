@@ -213,15 +213,22 @@ else
                             }
                         </td>
                         <td><span class="inv-sku">@g.SKU</span></td>
-                        <td class="inv-table__nombre">@g.Articulo</td>
+                        <td class="inv-table__nombre">
+                            <div>@g.Articulo</div>
+                            <div class="inv-muted" style="font-size:.72rem; margin-top:1px;">@g.TipoArticulo</div>
+                        </td>
                         <td>
-                            @if (g.Unidad is not null)
+                            @if (g.UnidadesPorEmbalaje is > 0)
                             {
-                                <span class="inv-pres">@g.Unidad</span>
-                                @if (g.UnidadesPorEmbalaje is > 0)
-                                {
-                                    <span class="inv-pres-sub"> @g.UnidadesPorEmbalaje.Value.ToString("N0") und</span>
-                                }
+                                <div class="inv-pres">Caja · @g.UnidadesPorEmbalaje.Value.ToString("N0") und</div>
+                                <div class="inv-pres-sub" style="color:var(--n-text-3); font-size:.72rem;">
+                                    @(g.Unidad?.ToUpper() ?? "CJA")
+                                </div>
+                            }
+                            else if (g.Unidad is not null)
+                            {
+                                <span class="inv-pres">@g.Unidad.ToUpper()</span>
+                                <div class="inv-pres-sub" style="color:var(--n-text-3); font-size:.72rem;">Suelto</div>
                             }
                             else { <span class="inv-muted">—</span> }
                         </td>

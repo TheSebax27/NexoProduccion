@@ -390,7 +390,7 @@ public class IntegracionController : ControllerBase
         try
         {
             var contenido = await _service.PrepararAppsettingsConKeyFrescaAsync(id);
-            return Ok(contenido);
+            return Content(contenido, "application/json");
         }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
     }

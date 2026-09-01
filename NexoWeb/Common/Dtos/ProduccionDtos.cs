@@ -11,7 +11,8 @@ public record OrdenProduccionResumen(
     DateTime? FechaPlanificada,
     DateTime? FechaInicio,
     DateTime? FechaFin,
-    decimal? CostoUnitarioReal
+    decimal? CostoUnitarioReal,
+    string? TipoProduccion = null
 );
 
 public record CerrarOrdenProduccionRequest(

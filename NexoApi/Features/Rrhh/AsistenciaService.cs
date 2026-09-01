@@ -10,6 +10,8 @@ public interface IAsistenciaService
 {
     Task<TokenQrResponse> ObtenerTokenActualAsync();
     Task<bool> ValidarTokenAsync(string token);
+    Task<ConfigQrResponse> ObtenerModoQrAsync();
+    Task ActualizarModoQrAsync(string modo);
 
     Task<IEnumerable<HorarioItem>> ListarHorariosAsync();
     Task<int> CrearHorarioAsync(CrearHorarioRequest request);
@@ -30,13 +32,16 @@ public interface IAsistenciaService
 
 public class AsistenciaService(IDbConnectionFactory db) : IAsistenciaService
 {
-    // ---- Token TOTP-style (ventana de 5 minutos) ----
+    // ---- Config QR ----
 
-    private async Task<string> ObtenerSecretoAsync()
+    private record QrConfig(string Secreto, string ModoQr, string? TokenActual);
+
+    private async Task<QrConfig> ObtenerConfigAsync()
     {
         using var conn = db.CreateConnection();
-        return await conn.QueryFirstOrDefaultAsync<string>(
-            "SELECT TOP 1 Secreto FROM Rrhh.QrAsistenciaConfig") ?? "nexo-fallback";
+        return await conn.QueryFirstOrDefaultAsync<QrConfig>(
+            "SELECT TOP 1 Secreto, ModoQr, TokenActual FROM Rrhh.QrAsistenciaConfig")
+            ?? new QrConfig("nexo-fallback", "TTL", null);
     }
 
     private static string Computar(string secreto, long ventana)
@@ -45,20 +50,57 @@ public class AsistenciaService(IDbConnectionFactory db) : IAsistenciaService
         return Convert.ToHexString(SHA256.HashData(input))[..16].ToLower();
     }
 
+    private static string GenerarTokenAleatorio()
+        => Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(8)).ToLower();
+
     public async Task<TokenQrResponse> ObtenerTokenActualAsync()
     {
-        var secreto = await ObtenerSecretoAsync();
+        var cfg = await ObtenerConfigAsync();
+
+        if (cfg.ModoQr == "SINGLE_USE")
+        {
+            var token = cfg.TokenActual;
+            if (string.IsNullOrEmpty(token))
+            {
+                token = GenerarTokenAleatorio();
+                using var conn = db.CreateConnection();
+                await conn.ExecuteAsync(
+                    "UPDATE Rrhh.QrAsistenciaConfig SET TokenActual = @token", new { token });
+            }
+            return new TokenQrResponse(token, 0, "SINGLE_USE");
+        }
+
         var ahora = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var token = Computar(secreto, ahora / 300);
-        return new TokenQrResponse(token, (int)(300 - ahora % 300));
+        var tokenTtl = Computar(cfg.Secreto, ahora / 300);
+        return new TokenQrResponse(tokenTtl, (int)(300 - ahora % 300), "TTL");
     }
 
     public async Task<bool> ValidarTokenAsync(string token)
     {
-        var secreto = await ObtenerSecretoAsync();
+        var cfg = await ObtenerConfigAsync();
+
+        if (cfg.ModoQr == "SINGLE_USE")
+            return cfg.TokenActual == token;
+
         var ventana = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 300;
-        // Acepta ventana actual y anterior (periodo de gracia al rotar)
-        return Computar(secreto, ventana) == token || Computar(secreto, ventana - 1) == token;
+        return Computar(cfg.Secreto, ventana) == token || Computar(cfg.Secreto, ventana - 1) == token;
+    }
+
+    public async Task<ConfigQrResponse> ObtenerModoQrAsync()
+    {
+        var cfg = await ObtenerConfigAsync();
+        return new ConfigQrResponse(cfg.ModoQr);
+    }
+
+    public async Task ActualizarModoQrAsync(string modo)
+    {
+        if (modo != "TTL" && modo != "SINGLE_USE")
+            throw new ArgumentException("Modo invalido. Usa TTL o SINGLE_USE.");
+
+        using var conn = db.CreateConnection();
+        await conn.ExecuteAsync(
+            "UPDATE Rrhh.QrAsistenciaConfig SET ModoQr = @modo, TokenActual = NULL",
+            new { modo });
     }
 
     // ---- Horarios ----
@@ -194,6 +236,16 @@ public class AsistenciaService(IDbConnectionFactory db) : IAsistenciaService
             ?? throw new InvalidOperationException("Tu usuario no esta vinculado a ningun empleado.");
 
         await MarcarInternoAsync(empleadoId, request.Tipo, DateTime.Now, "QR", adminId: null, nota: null);
+
+        // SINGLE_USE: rotar token inmediatamente tras el marcaje exitoso
+        var cfg = await ObtenerConfigAsync();
+        if (cfg.ModoQr == "SINGLE_USE")
+        {
+            var nuevoToken = GenerarTokenAleatorio();
+            using var conn = db.CreateConnection();
+            await conn.ExecuteAsync(
+                "UPDATE Rrhh.QrAsistenciaConfig SET TokenActual = @nuevoToken", new { nuevoToken });
+        }
     }
 
     public async Task MarcarManualAsync(int registradorId, MarcarManualRequest request)

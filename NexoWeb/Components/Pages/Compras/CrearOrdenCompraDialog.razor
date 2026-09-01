@@ -169,11 +169,11 @@
     private string? PistaEmbalaje(LineaFormulario linea)
     {
         var articulo = linea.ArticuloSeleccionado;
-        if (articulo is null || articulo.Unidad != "cja" || articulo.UnidadesPorEmbalaje is not > 0 || linea.Cantidad <= 0)
+        if (articulo is null || articulo.UnidadesPorEmbalaje is not > 0 || linea.Cantidad <= 0)
             return null;
 
         var totalUnidades = linea.Cantidad * articulo.UnidadesPorEmbalaje.Value;
-        return $"{linea.Cantidad:N2} cajas x {articulo.UnidadesPorEmbalaje:N0} und/caja = {totalUnidades:N0} unidades";
+        return $"{linea.Cantidad:N2} cajas × {articulo.UnidadesPorEmbalaje:N0} und/caja = {totalUnidades:N0} unidades totales";
     }
 
     private void Confirmar()

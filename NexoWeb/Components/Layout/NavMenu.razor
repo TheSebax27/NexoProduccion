@@ -116,9 +116,12 @@
                                     Icon="@Icons.Material.Filled.ConfirmationNumber"
                                     Class="nexo-nav-item">Tickets de Soporte</MudNavLink>
                     }
-                    <MudNavLink Href="/conocimiento"
-                                Icon="@Icons.Material.Filled.MenuBook"
-                                Class="nexo-nav-item">Base de Conocimiento</MudNavLink>
+                    @if (Modulos.EsVisible("CRM.CONOCIMIENTO"))
+                    {
+                        <MudNavLink Href="/conocimiento"
+                                    Icon="@Icons.Material.Filled.MenuBook"
+                                    Class="nexo-nav-item">Base de Conocimiento</MudNavLink>
+                    }
                 </MudNavGroup>
             }
         }
@@ -135,9 +138,12 @@
                                     Icon="@Icons.Material.Filled.ViewInAr"
                                     Class="nexo-nav-item">Artículos</MudNavLink>
                     }
-                    <MudNavLink Href="/catalogo/maestros"
-                                Icon="@Icons.Material.Filled.LibraryBooks"
-                                Class="nexo-nav-item">Catálogos Maestros</MudNavLink>
+                    @if (Modulos.EsVisible("CATALOGO.MAESTROS"))
+                    {
+                        <MudNavLink Href="/catalogo/maestros"
+                                    Icon="@Icons.Material.Filled.LibraryBooks"
+                                    Class="nexo-nav-item">Catálogos Maestros</MudNavLink>
+                    }
                     @if (Modulos.EsVisible("CATALOGO.PROVEEDORES"))
                     {
                         <MudNavLink Href="/catalogo/proveedores"
@@ -172,9 +178,12 @@
                                     Icon="@Icons.Material.Filled.PrecisionManufacturing"
                                     Class="nexo-nav-item">Maquinaria</MudNavLink>
                     }
-                    <MudNavLink Href="/catalogo/centros"
-                                Icon="@Icons.Material.Filled.Business"
-                                Class="nexo-nav-item">Centros</MudNavLink>
+                    @if (Modulos.EsVisible("PRODUCCION.CENTROS"))
+                    {
+                        <MudNavLink Href="/catalogo/centros"
+                                    Icon="@Icons.Material.Filled.Business"
+                                    Class="nexo-nav-item">Centros</MudNavLink>
+                    }
                 </MudNavGroup>
             }
         }

@@ -2,6 +2,7 @@
 @attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
 @inject NavigationManager Nav
 @inject IConfiguration Config
+@inject IHttpClientFactory HttpFactory
 @implements IDisposable
 @layout NexoWeb.Components.Layout.EmptyLayout
 
@@ -18,6 +19,9 @@
     .k-hint { font-size:.9rem; color:#64748b; margin-top:.5rem; }
     .k-counter { display:inline-flex; align-items:center; gap:6px; margin-top:1rem;
                  background:#1e293b; border-radius:20px; padding:4px 14px; font-size:.85rem; color:#94a3b8; }
+    .k-badge-uso { display:inline-flex; align-items:center; gap:6px; margin-top:1rem;
+                   background:#1e293b; border-radius:20px; padding:4px 14px; font-size:.85rem;
+                   color:#38bdf8; border:1px solid #0ea5e9; }
 </style>
 
 <div class="kiosco">
@@ -38,29 +42,50 @@
     <MudText Typo="Typo.caption" Style="color:#64748b">
         Debes tener sesión iniciada en NEXO para marcar asistencia
     </MudText>
-    <div class="k-counter">
-        <MudIcon Icon="@Icons.Material.Filled.Refresh" Style="font-size:14px" />
-        Código nuevo en @_segsRestantes s
-    </div>
+
+    @if (_modoQr == "SINGLE_USE")
+    {
+        <div class="k-badge-uso">
+            <MudIcon Icon="@Icons.Material.Filled.Security" Style="font-size:14px" />
+            Código de un solo uso — se renueva al escanear
+        </div>
+    }
+    else
+    {
+        <div class="k-counter">
+            <MudIcon Icon="@Icons.Material.Filled.Refresh" Style="font-size:14px" />
+            Código nuevo en @_segsRestantes s
+        </div>
+    }
 </div>
 
 @code {
     string _hora = "", _fecha = "", _qrSrc = "";
     int _segsRestantes = 300;
-    System.Timers.Timer? _timerReloj, _timerQr;
+    string _modoQr = "TTL";
+    string _tokenActual = "";
+    int _pollTick = 0;
 
-    protected override void OnInitialized()
+    System.Timers.Timer? _timer;
+
+    protected override async Task OnInitializedAsync()
     {
         RefrescarReloj();
-        RefrescarQr();
+        await PollTokenAsync(); // carga inicial: obtiene token y modo
 
-        _timerReloj = new(1000);
-        _timerReloj.Elapsed += (_, _) => InvokeAsync(() => { RefrescarReloj(); StateHasChanged(); });
-        _timerReloj.Start();
-
-        _timerQr = new(30_000);
-        _timerQr.Elapsed += (_, _) => InvokeAsync(() => { RefrescarQr(); StateHasChanged(); });
-        _timerQr.Start();
+        _timer = new(1000);
+        _timer.Elapsed += (_, _) => InvokeAsync(async () =>
+        {
+            RefrescarReloj();
+            _pollTick++;
+            if (_pollTick >= 5) // poll cada 5 segundos
+            {
+                _pollTick = 0;
+                await PollTokenAsync();
+            }
+            StateHasChanged();
+        });
+        _timer.Start();
     }
 
     void RefrescarReloj()
@@ -69,7 +94,34 @@
         _hora = now.ToString("HH:mm:ss");
         _fecha = now.ToString("dddd, dd 'de' MMMM 'de' yyyy",
             new System.Globalization.CultureInfo("es-CO"));
-        _segsRestantes = (int)(300 - DateTimeOffset.UtcNow.ToUnixTimeSeconds() % 300);
+        if (_modoQr == "TTL" && _segsRestantes > 0)
+            _segsRestantes--;
+    }
+
+    async Task PollTokenAsync()
+    {
+        try
+        {
+            var apiBase = (Config["NexoApi:BaseUrl"] ?? "").TrimEnd('/');
+            var http = HttpFactory.CreateClient("img-proxy");
+            var resp = await http.GetFromJsonAsync<TokenQrResponse>($"{apiBase}/api/rrhh/asistencia/token");
+            if (resp is null) return;
+
+            _modoQr = resp.Modo;
+
+            if (resp.Token != _tokenActual)
+            {
+                _tokenActual = resp.Token;
+                if (resp.SegundosRestantes > 0)
+                    _segsRestantes = resp.SegundosRestantes;
+                RefrescarQr();
+            }
+            else if (_modoQr == "TTL" && resp.SegundosRestantes > 0)
+            {
+                _segsRestantes = resp.SegundosRestantes;
+            }
+        }
+        catch { /* ignorar errores de polling — kiosco sigue mostrando el último QR */ }
     }
 
     void RefrescarQr()
@@ -82,7 +134,9 @@
 
     public void Dispose()
     {
-        _timerReloj?.Stop(); _timerReloj?.Dispose();
-        _timerQr?.Stop(); _timerQr?.Dispose();
+        _timer?.Stop();
+        _timer?.Dispose();
     }
+
+    private record TokenQrResponse(string Token, int SegundosRestantes, string Modo = "TTL");
 }

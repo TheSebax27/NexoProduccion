@@ -480,4 +480,40 @@ CORRECCIONES APLICADAS (agosto 2026)
    Los métodos de escritura (Crear/Actualizar/Eliminar) invalidan el cache.
    Reduce carga en DB cuando múltiples usuarios cargan formularios de artículos.
 
+7. QR Asistencia - modo configurable (septiembre 2026) - migration_qr_modo_v1.sql
+   Se agregaron columnas ModoQr NVARCHAR(20) DEFAULT 'TTL' y TokenActual NVARCHAR(64) NULL
+   a Rrhh.QrAsistenciaConfig.
+   Modos:
+     TTL (default): TOTP-style con ventana de 5 min. El QR cambia solo al rotar la ventana.
+     SINGLE_USE: Token aleatorio (16 hex chars). Se invalida INMEDIATAMENTE al ser escaneado
+                 y se genera uno nuevo. Impide reutilizar capturas de pantalla.
+   Kiosco (Kiosco.razor): hace polling al endpoint /token cada 5 segundos.
+   Cuando detecta cambio de token (nuevo vs último conocido), refresca la imagen del QR.
+   En modo SINGLE_USE muestra "Código de un solo uso - se renueva al escanear".
+   Config permanente en Horarios.razor (sección admin) - se guarda una sola vez en DB.
+
+8. Stock: validación fracciones/cajas/unidades (verificado septiembre 2026)
+   El sistema de stock NEXO maneja correctamente todos los casos:
+   - FacturaLineas.Cantidad: SIEMPRE en unidades (la UI convierte Cajas+Unidades→decimal antes de guardar)
+   - sp_DescontarStockFactura: descuenta exactamente esa cantidad de InventarioStock por FIFO
+   - InventarioStock.CantidadActual: DECIMAL(18,4) → soporta fracciones (ej: 0.3 de botella para bar)
+   - Visions → NEXO (ventas): fix CANTIDADCAJA cubre el caso bar (CANTIDADCAJA=0, CANTIDAD=0.30 → 0.30)
+   - NEXO → Visions (entradas): EventosSalientes.Cantidad en unidades; TARJETA.EXISTENCIAS también en unidades
+   No se encontraron bugs adicionales — el stack es correcto en todos los ángulos.
+
+9. Fixes UI/UX (septiembre 2026)
+   a) appsettings.json download (IntegracionVisions): error "JSON value could not be converted to System.String"
+      Causa: Ok(string) con contenido JSON retorna raw JSON; ReadFromJsonAsync<string> esperaba JSON-string literal.
+      Fix: Controller -> Content(contenido, "application/json"); Cliente -> GetBytesAsync + UTF8.GetString.
+   b) ConsultaStock: columna Presentación muestra "Caja · 18 und" con código debajo; Artículo muestra TipoArticulo.
+   c) Producción (ListaOrdenes): SQL agrega TipoProduccion vía JOIN TiposProduccion; tabla muestra tipo debajo del producto.
+      DTOs OrdenProduccionResumen (Api + Web) agregan string? TipoProduccion = null.
+   d) Compras (CrearOrdenCompraDialog): PistaEmbalaje ahora muestra ayuda para cualquier artículo con Fracciones>0,
+      no solo cuando Unidad=="cja".
+   e) RegistrarBaja.razor: modo caja/fraccionado igual a AjustarInventario. Si EsFraccionado → inputs separados
+      Cajas + Unidades sueltas con RecalcularDesdeCajas(). Bodega selector y bloque info muestran stock en "X cajas + Y und".
+      Confirmación muestra "2.27778 cajas (41 und)". CSS copiado de AjustarInventario.razor.css al scoped de Baja.
+   f) CrearOrden.razor: pista de presentación bajo "Cantidad programada". Cuando producto es fraccionado y cantidad > 0
+      muestra "X cajas = Y unidades totales" (o "X cajas + Z und = Y totales").
+
 ==============================================================

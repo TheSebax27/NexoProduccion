@@ -28,7 +28,11 @@ public record CrearHorarioRequest(
 
 public record AsignarHorarioRequest(int HorarioID, DateTime Desde);
 
-public record TokenQrResponse(string Token, int SegundosRestantes);
+// Modo: 'TTL' = rota cada 5 min | 'SINGLE_USE' = rota al ser escaneado (SegundosRestantes=0)
+public record TokenQrResponse(string Token, int SegundosRestantes, string Modo = "TTL");
+
+public record ConfigQrResponse(string Modo);
+public record ActualizarModoQrRequest(string Modo);
 
 public record EstadoAsistenciaHoy(
     int EmpleadoID, string Empleado,

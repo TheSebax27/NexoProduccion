@@ -106,11 +106,13 @@ public class OrdenesProduccionService : IOrdenesProduccionService
         const string sql = @"
             SELECT op.OrdenProduccionID, op.CodigoOP, e.Nombre AS Estado, a.Nombre AS Producto,
                    cc.Nombre AS CentroCosto, op.CantidadProgramada, op.CantidadProducidaReal,
-                   op.FechaPlanificada, op.FechaInicio, op.FechaFin, op.CostoUnitarioReal
+                   op.FechaPlanificada, op.FechaInicio, op.FechaFin, op.CostoUnitarioReal,
+                   tp.Nombre AS TipoProduccion
             FROM Produccion.OrdenesProduccion op
             JOIN Produccion.EstadosOP e ON e.EstadoOPID = op.EstadoOPID
             JOIN Catalogo.Tarjetas a ON a.ArticuloID = op.ProductoTerminadoID
             JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = op.CentroCostoDestinoID
+            JOIN Produccion.TiposProduccion tp ON tp.TipoProduccionID = op.TipoProduccionID
             WHERE (@CentroCostoId IS NULL OR op.CentroCostoDestinoID = @CentroCostoId)
               AND (@Estado IS NULL OR e.Nombre = @Estado)
             ORDER BY op.FechaCreacion DESC";
@@ -125,11 +127,13 @@ public class OrdenesProduccionService : IOrdenesProduccionService
         const string sql = @"
             SELECT op.OrdenProduccionID, op.CodigoOP, e.Nombre AS Estado, a.Nombre AS Producto,
                    cc.Nombre AS CentroCosto, op.CantidadProgramada, op.CantidadProducidaReal,
-                   op.FechaPlanificada, op.FechaInicio, op.FechaFin, op.CostoUnitarioReal
+                   op.FechaPlanificada, op.FechaInicio, op.FechaFin, op.CostoUnitarioReal,
+                   tp.Nombre AS TipoProduccion
             FROM Produccion.OrdenesProduccion op
             JOIN Produccion.EstadosOP e ON e.EstadoOPID = op.EstadoOPID
             JOIN Catalogo.Tarjetas a ON a.ArticuloID = op.ProductoTerminadoID
             JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = op.CentroCostoDestinoID
+            JOIN Produccion.TiposProduccion tp ON tp.TipoProduccionID = op.TipoProduccionID
             WHERE op.OrdenProduccionID = @OrdenProduccionId";
 
         return await connection.QuerySingleOrDefaultAsync<OrdenProduccionResumen>(sql, new { OrdenProduccionId = ordenProduccionId });

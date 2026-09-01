@@ -45,7 +45,8 @@ public record AjustarConsumoRealRequest(
 public record OrdenProduccionResumen(
     int OrdenProduccionID, string CodigoOP, string Estado, string Producto,
     string CentroCosto, decimal CantidadProgramada, decimal? CantidadProducidaReal,
-    DateTime? FechaPlanificada, DateTime? FechaInicio, DateTime? FechaFin, decimal? CostoUnitarioReal
+    DateTime? FechaPlanificada, DateTime? FechaInicio, DateTime? FechaFin, decimal? CostoUnitarioReal,
+    string? TipoProduccion = null
 );
 
 public record TipoProduccionItem(int TipoProduccionID, string Codigo, string Nombre);
