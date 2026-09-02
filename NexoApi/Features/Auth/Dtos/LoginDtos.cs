@@ -22,7 +22,6 @@ public record RegistrarUsuarioRequest(
     string Email,
     string Username,
     string Password,
-    int RolID,
     int? CentroCostoID
 );
 

@@ -104,6 +104,14 @@ public class AuthService : IAuthService
             throw new InvalidOperationException(
                 "Ya existe al menos un usuario. Este endpoint de arranque queda deshabilitado; los usuarios nuevos se crean autenticado como Administracion.");
 
+        // Resolver el RolID por nombre para no depender del ID generado por migraciones
+        var rolId = await connection.ExecuteScalarAsync<int?>(
+            "SELECT RolID FROM Seguridad.Roles WHERE Nombre = 'Administracion'");
+
+        if (rolId is null)
+            throw new InvalidOperationException(
+                "No se encontró el rol 'Administracion' en la base de datos. Verifica que las migraciones se aplicaron correctamente.");
+
         var (hash, salt) = PasswordHasher.HashPassword(r.Password);
 
         const string sql = @"
@@ -119,7 +127,7 @@ public class AuthService : IAuthService
             r.Username,
             Hash = hash,
             Salt = salt,
-            r.RolID,
+            RolID = rolId.Value,
             r.CentroCostoID
         });
     }

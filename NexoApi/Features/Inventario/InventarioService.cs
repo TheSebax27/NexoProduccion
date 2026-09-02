@@ -12,6 +12,7 @@ public interface IInventarioService
     Task<AjustarInventarioResponse> AjustarInventarioAsync(AjustarInventarioRequest request, int usuarioId);
     Task<IEnumerable<MotivoPerdidaItem>> ListarMotivosPerdidaAsync();
     Task<IEnumerable<KardexMovimientoItem>> ConsultarKardexAsync(int? articuloId, int? bodegaId, DateTime? desde, DateTime? hasta);
+    Task<IEnumerable<LoteProximoVencerItem>> ListarLotesPorVencerAsync(int diasAlerta);
 }
 
 public class InventarioService : IInventarioService
@@ -130,12 +131,14 @@ public class InventarioService : IInventarioService
                 tm.Nombre AS TipoMovimiento,
                 k.Cantidad, k.CostoUnitario, k.CantidadSaldo,
                 ABS(k.Cantidad) * k.CostoUnitario AS ValorMovimiento,
-                k.ObservacionDetallada
+                k.ObservacionDetallada,
+                l.NumeroLote, l.FechaVencimiento
             FROM Kardex.KardexMovimientos k
             JOIN Catalogo.Tarjetas a ON a.ArticuloID = k.ArticuloID
             LEFT JOIN Catalogo.Presentacion p ON p.Codigo = a.PresentacionCodigo
             JOIN Inventario.Bodegas b ON b.BodegaID = k.BodegaID
             JOIN Kardex.TiposMovimientoKardex tm ON tm.TipoMovID = k.TipoMovID
+            LEFT JOIN Inventario.Lotes l ON l.LoteID = k.LoteID
             WHERE (@ArticuloId IS NULL OR k.ArticuloID = @ArticuloId)
               AND (@BodegaId IS NULL OR k.BodegaID = @BodegaId)
               AND (@Desde IS NULL OR k.Fecha >= @Desde)
@@ -143,5 +146,24 @@ public class InventarioService : IInventarioService
             ORDER BY k.Fecha DESC, k.KardexID DESC";
         return await connection.QueryAsync<KardexMovimientoItem>(sql,
             new { ArticuloId = articuloId, BodegaId = bodegaId, Desde = desde, Hasta = hasta });
+    }
+
+    public async Task<IEnumerable<LoteProximoVencerItem>> ListarLotesPorVencerAsync(int diasAlerta)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT a.Referencia AS SKU, a.Nombre AS Articulo, b.Nombre AS Bodega,
+                   l.NumeroLote, l.FechaVencimiento,
+                   s.CantidadActual,
+                   DATEDIFF(DAY, GETDATE(), l.FechaVencimiento) AS DiasParaVencer
+            FROM Inventario.vw_StockConsolidado s
+            JOIN Catalogo.Tarjetas a ON a.ArticuloID = s.ArticuloID
+            JOIN Inventario.Bodegas b ON b.BodegaID = s.BodegaID
+            JOIN Inventario.Lotes l ON l.LoteID = s.LoteID
+            WHERE s.CantidadActual > 0
+              AND l.FechaVencimiento IS NOT NULL
+              AND l.FechaVencimiento <= DATEADD(DAY, @DiasAlerta, GETDATE())
+            ORDER BY l.FechaVencimiento ASC";
+        return await connection.QueryAsync<LoteProximoVencerItem>(sql, new { DiasAlerta = diasAlerta });
     }
 }

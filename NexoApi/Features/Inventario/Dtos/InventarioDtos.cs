@@ -60,5 +60,17 @@ public record KardexMovimientoItem(
     decimal CostoUnitario,
     decimal CantidadSaldo,
     decimal ValorMovimiento,
-    string? ObservacionDetallada
+    string? ObservacionDetallada,
+    string? NumeroLote,
+    DateTime? FechaVencimiento
+);
+
+public record LoteProximoVencerItem(
+    string SKU,
+    string Articulo,
+    string Bodega,
+    string? NumeroLote,
+    DateTime FechaVencimiento,
+    decimal CantidadActual,
+    int DiasParaVencer
 );

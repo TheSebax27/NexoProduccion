@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
+@inject NexoWeb.Common.Auth.ConfiguracionEmpresaState ConfiguracionEmpresa
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Common.Helpers
 
@@ -123,6 +124,24 @@ else if (_movimientos.Count > 0)
                     {
                         <div class="kx-card__obs">@mov.ObservacionDetallada</div>
                     }
+                    @if (ConfiguracionEmpresa.ManejarVencimientos && mov.NumeroLote is not null)
+                    {
+                        var diasVenc = mov.FechaVencimiento.HasValue
+                            ? (mov.FechaVencimiento.Value.Date - DateTime.Today).Days
+                            : (int?)null;
+                        var colorLote = diasVenc < 0 ? "color:var(--mud-palette-error)"
+                            : diasVenc <= ConfiguracionEmpresa.DiasAlertaVencimiento ? "color:var(--mud-palette-warning-darken)"
+                            : "color:var(--n-text-2)";
+                        <div class="kx-card__obs" style="@colorLote; font-size:.76rem;">
+                            Lote: @mov.NumeroLote
+                            @if (mov.FechaVencimiento.HasValue)
+                            {
+                                @($" · Vence: {mov.FechaVencimiento.Value:dd/MM/yyyy}")
+                                if (diasVenc < 0) { @(" ⚠ Vencido") }
+                                else if (diasVenc <= ConfiguracionEmpresa.DiasAlertaVencimiento) { @(" ⚡ Próximo") }
+                            }
+                        </div>
+                    }
                 </div>
             }
         </div>
@@ -141,6 +160,10 @@ else if (_movimientos.Count > 0)
                         <th class="inv-table__num">Costo unit.</th>
                         <th class="inv-table__num">Valor</th>
                         <th class="inv-table__num">Saldo</th>
+                        @if (ConfiguracionEmpresa.ManejarVencimientos)
+                        {
+                            <th>Lote / Vence</th>
+                        }
                         <th>Detalle</th>
                     </tr>
                 </thead>
@@ -171,6 +194,26 @@ else if (_movimientos.Count > 0)
                                 </strong>
                             </td>
                             <td class="inv-table__num">@FormatearCantidad(mov.CantidadSaldo, mov.Unidad, mov.UnidadesPorEmbalaje)</td>
+                            @if (ConfiguracionEmpresa.ManejarVencimientos)
+                            {
+                                var diasVencT = mov.FechaVencimiento.HasValue
+                                    ? (mov.FechaVencimiento.Value.Date - DateTime.Today).Days
+                                    : (int?)null;
+                                var colorLoteT = diasVencT < 0 ? "color:var(--mud-palette-error)"
+                                    : diasVencT <= ConfiguracionEmpresa.DiasAlertaVencimiento ? "color:var(--mud-palette-warning-darken)"
+                                    : "";
+                                <td style="font-size:0.78rem; @colorLoteT">
+                                    @if (mov.NumeroLote is not null)
+                                    {
+                                        @mov.NumeroLote
+                                        if (mov.FechaVencimiento.HasValue)
+                                        {
+                                            <div class="inv-muted">@mov.FechaVencimiento.Value.ToString("dd/MM/yy")</div>
+                                        }
+                                    }
+                                    else { @("—") }
+                                </td>
+                            }
                             <td class="inv-muted" style="max-width:160px; white-space:normal; font-size:0.78rem;">
                                 @(mov.ObservacionDetallada ?? "—")
                             </td>

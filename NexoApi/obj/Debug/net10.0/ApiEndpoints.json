@@ -5253,6 +5253,32 @@
   },
   {
     "ContainingType": "NexoApi.Features.Inventario.InventarioController",
+    "Method": "ListarLotesPorVencer",
+    "RelativePath": "api/inventario/lotes-por-vencer",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "diasAlerta",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[NexoApi.Features.Inventario.Dtos.LoteProximoVencerItem, NexoApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Inventario.InventarioController",
     "Method": "ListarMotivosPerdida",
     "RelativePath": "api/inventario/motivos-perdida",
     "HttpMethod": "GET",
@@ -7408,6 +7434,42 @@
       {
         "Name": "req",
         "Type": "NexoApi.Features.Reportes.Dtos.ReporteRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NexoApi.Features.Rrhh.AsistenciaController",
+    "Method": "ObtenerConfigQr",
+    "RelativePath": "api/rrhh/asistencia/config-qr",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "NexoApi.Features.Rrhh.Dtos.ConfigQrResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "NexoApi.Features.Rrhh.AsistenciaController",
+    "Method": "ActualizarConfigQr",
+    "RelativePath": "api/rrhh/asistencia/config-qr",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "NexoApi.Features.Rrhh.Dtos.ActualizarModoQrRequest",
         "IsRequired": true
       }
     ],

@@ -3,6 +3,7 @@
 @implements IDisposable
 @inject NexoWeb.Common.ApiClient.INexoApiClient ApiClient
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
+@inject NexoWeb.Common.Auth.ConfiguracionEmpresaState ConfiguracionEmpresa
 @inject NavigationManager Navegacion
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Common.Helpers
@@ -148,8 +149,23 @@ else if (Preferencias.VistaListado == "tarjetas")
                         {
                             @foreach (var lote in g.Lotes)
                             {
+                                var estadoCard = ObtenerEstadoLote(lote.FechaVencimiento);
+                                var colorCard  = estadoCard == EstadoLote.Vencido ? "rgb(244,67,54)"
+                                              : estadoCard == EstadoLote.Proximo  ? "rgb(255,152,0)"
+                                              : null;
                                 <div class="inv-lote-row">
-                                    <span>@(lote.NumeroLote ?? "Sin lote")@(lote.FechaVencimiento.HasValue ? " · Vence " + lote.FechaVencimiento.Value.ToString("dd/MM/yy") : "")</span>
+                                    <span>
+                                        @(lote.NumeroLote ?? "Sin lote")
+                                        @if (lote.FechaVencimiento.HasValue)
+                                        {
+                                            var prefCard = estadoCard == EstadoLote.Vencido ? " · ⚠ Venció "
+                                                         : estadoCard == EstadoLote.Proximo  ? " · ⚡ Vence "
+                                                         : " · Vence ";
+                                            <span style="@(colorCard is not null ? $"color:{colorCard};" : "")">
+                                                @prefCard@lote.FechaVencimiento.Value.ToString("dd/MM/yy")
+                                            </span>
+                                        }
+                                    </span>
                                     <span>@FormatearCantidad(lote.CantidadActual, lote.Unidad, lote.UnidadesPorEmbalaje)</span>
                                 </div>
                             }
@@ -165,6 +181,18 @@ else if (Preferencias.VistaListado == "tarjetas")
                                      OnClick="@(() => IrAlertaAsync(g.ArticuloID, g.TipoArticulo))"
                                      Style="cursor:pointer;">
                                 @AlertaLabel(g)
+                            </MudChip>
+                        </div>
+                    }
+                    @if (GrupoTieneVencimientoAlerta(g))
+                    {
+                        var hayVencidos = g.Lotes.Any(l => ObtenerEstadoLote(l.FechaVencimiento) == EstadoLote.Vencido);
+                        <div class="inv-card__alerta">
+                            <MudChip T="string"
+                                     Color="@(hayVencidos ? Color.Error : Color.Warning)"
+                                     Size="Size.Small"
+                                     Icon="@Icons.Material.Filled.Warning">
+                                @(hayVencidos ? "Lote vencido" : "Lote por vencer")
                             </MudChip>
                         </div>
                     }
@@ -246,7 +274,7 @@ else
                         <td class="inv-table__num">@g.ValorTotal.ToString("C0")</td>
                         <td class="inv-table__num inv-muted">@g.CostoPromedio.ToString("C0")</td>
                         <td class="inv-table__num inv-valor--verde">@g.PrecioVenta.ToString("C0")</td>
-                        <td>
+                        <td style="white-space:nowrap;">
                             @if (g.CantidadTotal <= 0 || g.RequierePedido)
                             {
                                 <MudChip T="string"
@@ -258,12 +286,27 @@ else
                                     @AlertaLabel(g)
                                 </MudChip>
                             }
+                            @if (GrupoTieneVencimientoAlerta(g))
+                            {
+                                var hayVencidosTbl = g.Lotes.Any(l => ObtenerEstadoLote(l.FechaVencimiento) == EstadoLote.Vencido);
+                                <MudChip T="string"
+                                         Color="@(hayVencidosTbl ? Color.Error : Color.Warning)"
+                                         Size="Size.Small"
+                                         Icon="@Icons.Material.Filled.Warning"
+                                         Style="white-space:nowrap; margin-top:2px;">
+                                    @(hayVencidosTbl ? "Lote vencido" : "Por vencer")
+                                </MudChip>
+                            }
                         </td>
                     </tr>
                     @if (_expandidos.Contains(g.Key) && g.Lotes.Count > 1)
                     {
                         @foreach (var lote in g.Lotes)
                         {
+                            var estadoTbl = ObtenerEstadoLote(lote.FechaVencimiento);
+                            var colorTbl  = estadoTbl == EstadoLote.Vencido ? "rgb(244,67,54)"
+                                          : estadoTbl == EstadoLote.Proximo  ? "rgb(255,152,0)"
+                                          : null;
                             <tr class="inv-table__lote">
                                 <td colspan="2"></td>
                                 <td colspan="2">
@@ -271,7 +314,12 @@ else
                                     <strong>@(lote.NumeroLote ?? "Sin nro.")</strong>
                                     @if (lote.FechaVencimiento.HasValue)
                                     {
-                                        <span class="inv-muted"> · Vence @lote.FechaVencimiento.Value.ToString("dd/MM/yyyy")</span>
+                                        var prefTbl = estadoTbl == EstadoLote.Vencido ? " · ⚠ Venció "
+                                                    : estadoTbl == EstadoLote.Proximo  ? " · ⚡ Vence "
+                                                    : " · Vence ";
+                                        <span style="@(colorTbl is not null ? $"color:{colorTbl}; font-weight:600;" : "color:var(--n-text-3);")">
+                                            @prefTbl@lote.FechaVencimiento.Value.ToString("dd/MM/yyyy")
+                                        </span>
                                     }
                                 </td>
                                 <td></td>
@@ -403,4 +451,21 @@ else
             return StockHelper.FormatearCajaUnidades(cantidad, unidadesPorEmbalaje.Value);
         return $"{cantidad:N2} {unidad}".Trim();
     }
+
+    // Estado de vencimiento de un lote (solo aplica si ManejarVencimientos está activo)
+    private enum EstadoLote { Ok, Proximo, Vencido }
+
+    private EstadoLote ObtenerEstadoLote(DateTime? fechaVencimiento)
+    {
+        if (!ConfiguracionEmpresa.ManejarVencimientos || !fechaVencimiento.HasValue)
+            return EstadoLote.Ok;
+        var diasRestantes = (fechaVencimiento.Value.Date - DateTime.Today).Days;
+        if (diasRestantes < 0) return EstadoLote.Vencido;
+        if (diasRestantes <= ConfiguracionEmpresa.DiasAlertaVencimiento) return EstadoLote.Proximo;
+        return EstadoLote.Ok;
+    }
+
+    private bool GrupoTieneVencimientoAlerta(GrupoStock g)
+        => ConfiguracionEmpresa.ManejarVencimientos &&
+           g.Lotes.Any(l => ObtenerEstadoLote(l.FechaVencimiento) != EstadoLote.Ok);
 }

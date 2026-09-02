@@ -129,3 +129,4 @@ C:\Produccion\NexoApi\bin\Release\net10.0\publish\NexoApi.staticwebassets.endpoi
 C:\Produccion\NexoApi\bin\Release\net10.0\publish\obj2\Debug\net10.0\rpswa.dswa.cache.json
 C:\Produccion\NexoApi\bin\Release\net10.0\publish\obj2\NexoApi.csproj.nuget.dgspec.json
 C:\Produccion\NexoApi\bin\Release\net10.0\publish\obj2\project.assets.json
+C:\Produccion\NexoApi\bin\Release\net10.0\appsettings.Production.json

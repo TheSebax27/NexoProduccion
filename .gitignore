@@ -24,5 +24,10 @@ tailwindcss.exe
 # SQL Server backups
 *.bak
 
-# Publicaciones/compilados
+# Publicaciones/compilados — ejecutables pesados, generados con deploy.ps1
 NexoSyncAgent/publish/
+Publish/
+
+# Configuración de producción — contiene credenciales reales por cliente, nunca al repo
+appsettings.Production.json
+**/appsettings.Production.json

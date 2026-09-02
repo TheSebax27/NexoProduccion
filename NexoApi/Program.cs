@@ -130,6 +130,18 @@ builder.Services.AddHttpClient<NexoApi.Features.WhatsApp.IWhatsAppService, NexoA
 // ----------------------------------------------------------------------------
 var jwtSection = builder.Configuration.GetSection("Jwt");
 
+// Bloqueo de arranque: la clave JWT de desarrollo no debe usarse en producción.
+// Si el sistema de clientes no sobreescribió la clave, la API no arranca.
+if (builder.Environment.IsProduction())
+{
+    const string claveDesarrollo = "NexoERP_ClaveSecretaSuperSegura2026_SistemaIntegrado#99";
+    var jwtKey = jwtSection["Key"] ?? "";
+    if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey == claveDesarrollo || jwtKey.Length < 32)
+        throw new InvalidOperationException(
+            "La clave JWT no está configurada para producción. " +
+            "Establece Jwt:Key en appsettings.Production.json (mínimo 32 caracteres, distinta a la clave de desarrollo).");
+}
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

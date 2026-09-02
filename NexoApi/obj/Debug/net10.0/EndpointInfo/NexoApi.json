@@ -743,6 +743,64 @@
         }
       }
     },
+    "/api/rrhh/asistencia/config-qr": {
+      "get": {
+        "tags": [
+          "Asistencia"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Rrhh.Dtos.ConfigQrResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Rrhh.Dtos.ConfigQrResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NexoApi.Features.Rrhh.Dtos.ConfigQrResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Asistencia"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Rrhh.Dtos.ActualizarModoQrRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Rrhh.Dtos.ActualizarModoQrRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/NexoApi.Features.Rrhh.Dtos.ActualizarModoQrRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/rrhh/asistencia/estado-hoy": {
       "get": {
         "tags": [
@@ -9626,6 +9684,55 @@
         }
       }
     },
+    "/api/inventario/lotes-por-vencer": {
+      "get": {
+        "tags": [
+          "Inventario"
+        ],
+        "parameters": [
+          {
+            "name": "diasAlerta",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Inventario.Dtos.LoteProximoVencerItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Inventario.Dtos.LoteProximoVencerItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NexoApi.Features.Inventario.Dtos.LoteProximoVencerItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/logistica/despachos": {
       "get": {
         "tags": [
@@ -15298,10 +15405,6 @@
           "password": {
             "type": "string",
             "nullable": true
-          },
-          "rolID": {
-            "type": "integer",
-            "format": "int32"
           },
           "centroCostoID": {
             "type": "integer",
@@ -22004,6 +22107,49 @@
           "observacionDetallada": {
             "type": "string",
             "nullable": true
+          },
+          "numeroLote": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaVencimiento": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Inventario.Dtos.LoteProximoVencerItem": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "articulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "bodega": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroLote": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaVencimiento": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cantidadActual": {
+            "type": "number",
+            "format": "double"
+          },
+          "diasParaVencer": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -23436,6 +23582,10 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "tipoProduccion": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -24348,6 +24498,16 @@
         },
         "additionalProperties": false
       },
+      "NexoApi.Features.Rrhh.Dtos.ActualizarModoQrRequest": {
+        "type": "object",
+        "properties": {
+          "modo": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "NexoApi.Features.Rrhh.Dtos.AsignarHorarioRequest": {
         "type": "object",
         "properties": {
@@ -24464,6 +24624,16 @@
             "nullable": true
           },
           "rolPredeterminado": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NexoApi.Features.Rrhh.Dtos.ConfigQrResponse": {
+        "type": "object",
+        "properties": {
+          "modo": {
             "type": "string",
             "nullable": true
           }
@@ -25197,6 +25367,10 @@
           "segundosRestantes": {
             "type": "integer",
             "format": "int32"
+          },
+          "modo": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

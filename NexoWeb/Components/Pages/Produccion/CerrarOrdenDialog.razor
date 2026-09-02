@@ -1,5 +1,6 @@
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @inject NexoWeb.Common.ApiClient.INexoApiClient ApiClient
+@inject NexoWeb.Common.Auth.ConfiguracionEmpresaState ConfiguracionEmpresa
 @using NexoWeb.Common.Dtos
 
 <MudDialog>
@@ -9,7 +10,10 @@
         <MudHorasField @bind-Value="_horasCif" Label="Horas de CIF" Class="mb-3" />
         <MudTextField @bind-Value="_numeroLotePt" Label="Numero de lote (producto terminado)" Class="mb-3"
                       HelperText="@(Preferencias.AutoNumeroLote ? "Generado automáticamente — puedes editarlo si lo necesitas." : "")" />
-        <MudDatePicker @bind-Date="_fechaVencimiento" Label="Fecha de vencimiento (opcional)" PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy" />
+        @if (ConfiguracionEmpresa.ManejarVencimientos)
+        {
+            <MudDatePicker @bind-Date="_fechaVencimiento" Label="Fecha de vencimiento (opcional)" PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy" />
+        }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancelar">Cancelar</MudButton>

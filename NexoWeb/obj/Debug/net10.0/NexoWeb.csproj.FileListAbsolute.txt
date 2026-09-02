@@ -1,5 +1,6 @@
 C:\Produccion\NexoWeb\bin\Debug\net10.0\appsettings.Development.json
 C:\Produccion\NexoWeb\bin\Debug\net10.0\appsettings.json
+C:\Produccion\NexoWeb\bin\Debug\net10.0\appsettings.Production.json
 C:\Produccion\NexoWeb\bin\Debug\net10.0\NexoWeb.staticwebassets.runtime.json
 C:\Produccion\NexoWeb\bin\Debug\net10.0\NexoWeb.staticwebassets.endpoints.json
 C:\Produccion\NexoWeb\bin\Debug\net10.0\NexoWeb.exe

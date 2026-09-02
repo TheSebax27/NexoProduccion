@@ -57,4 +57,9 @@ public class InventarioController : ControllerBase
         [FromQuery] int? articuloId, [FromQuery] int? bodegaId,
         [FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
         => Ok(await _service.ConsultarKardexAsync(articuloId, bodegaId, desde, hasta));
+
+    [HttpGet("lotes-por-vencer")]
+    public async Task<ActionResult<IEnumerable<LoteProximoVencerItem>>> ListarLotesPorVencer(
+        [FromQuery] int diasAlerta = 30)
+        => Ok(await _service.ListarLotesPorVencerAsync(diasAlerta));
 }

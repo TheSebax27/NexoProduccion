@@ -1266,6 +1266,55 @@ else
                         <p class="nexo-empty-state__text">Todos los artículos están sobre el stock mínimo.</p>
                     </div>
                 }
+
+                @if (ConfiguracionEmpresa.ManejarVencimientos)
+                {
+                    <div class="nexo-section mt-4">
+                        <div class="nexo-section__dot" style="background:#F59E0B"></div>
+                        <span class="nexo-section__label">Lotes por vencer (próximos @ConfiguracionEmpresa.DiasAlertaVencimiento días)</span>
+                        <div class="nexo-section__line"></div>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                   OnClick="@(() => Navigation.NavigateTo("/inventario/stock"))">Ver stock</MudButton>
+                    </div>
+                    @if (_lotesVencer.Count == 0)
+                    {
+                        <div class="nexo-empty-state mb-4">
+                            <MudIcon Icon="@Icons.Material.Outlined.CheckCircle" Class="nexo-empty-state__icon nexo-empty-state__icon--success" />
+                            <p class="nexo-empty-state__text">Sin lotes por vencer en los próximos @ConfiguracionEmpresa.DiasAlertaVencimiento días.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <MudPaper Class="pa-4 mb-4">
+                            <MudTable Items="_lotesVencer" Dense="true" Hover="true" Elevation="0">
+                                <HeaderContent>
+                                    <MudTh>SKU</MudTh>
+                                    <MudTh>Artículo</MudTh>
+                                    <MudTh>Bodega</MudTh>
+                                    <MudTh>Lote</MudTh>
+                                    <MudTh Style="text-align:right">Vence</MudTh>
+                                    <MudTh Style="text-align:right">Días</MudTh>
+                                    <MudTh Style="text-align:right">Cantidad</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    @{
+                                        var esVencido  = context.DiasParaVencer < 0;
+                                        var color = esVencido ? "color:#EF4444" : "color:#F59E0B";
+                                    }
+                                    <MudTd Style="font-size:0.78rem;color:#9B9BB4;font-weight:600">@context.SKU</MudTd>
+                                    <MudTd Style="font-size:0.85rem;font-weight:500">@context.Articulo</MudTd>
+                                    <MudTd Style="font-size:0.78rem">@context.Bodega</MudTd>
+                                    <MudTd Style="font-size:0.78rem">@(context.NumeroLote ?? "—")</MudTd>
+                                    <MudTd Style="@($"text-align:right;font-size:0.82rem;{color}")">@context.FechaVencimiento.ToString("dd/MM/yyyy")</MudTd>
+                                    <MudTd Style="@($"text-align:right;font-weight:700;{color}")">
+                                        @(esVencido ? $"⚠ {Math.Abs(context.DiasParaVencer)} días" : $"⚡ {context.DiasParaVencer} días")
+                                    </MudTd>
+                                    <MudTd Style="text-align:right">@context.CantidadActual.ToString("N2")</MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </MudPaper>
+                    }
+                }
             }
         </MudTabPanel>
 
@@ -1561,6 +1610,7 @@ else
     private bool _tabInvCargando;
     private bool _tabInvCargado;
     private List<AlertaStockItem> _alertasStock = new();
+    private List<LoteProximoVencerItem> _lotesVencer = new();
 
     // ── Tab Financiero (lazy) ────────────────────────────────────────
     private bool _tabFinCargando;
@@ -1967,7 +2017,13 @@ else
         StateHasChanged();
         try
         {
-            _alertasStock = await ApiClient.GetAsync<List<AlertaStockItem>>("api/dashboard/alertas-stock") ?? new();
+            var t1 = ApiClient.GetAsync<List<AlertaStockItem>>("api/dashboard/alertas-stock");
+            var t2 = ConfiguracionEmpresa.ManejarVencimientos
+                ? ApiClient.GetAsync<List<LoteProximoVencerItem>>($"api/inventario/lotes-por-vencer?diasAlerta={ConfiguracionEmpresa.DiasAlertaVencimiento}")
+                : Task.FromResult<List<LoteProximoVencerItem>?>(new());
+            await Task.WhenAll(t1, t2);
+            _alertasStock = await t1 ?? new();
+            _lotesVencer  = await t2 ?? new();
             _tabInvCargado = true;
         }
         catch (Exception ex) { Snackbar.Add($"Error al cargar alertas: {ex.Message}", Severity.Warning); }

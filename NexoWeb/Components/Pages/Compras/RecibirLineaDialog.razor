@@ -1,4 +1,5 @@
 ﻿@using NexoWeb.Common.Dtos
+@inject NexoWeb.Common.Auth.ConfiguracionEmpresaState ConfiguracionEmpresa
 
 <MudDialog>
     <DialogContent>
@@ -6,11 +7,12 @@
         <MudText Class="mb-3">Pendiente por recibir: <b>@Pendiente.ToString("N2")</b></MudText>
 
         <MudNumericField @bind-Value="_cantidadRecibida" Label="Cantidad recibida" Min="0.01m" Max="@Pendiente" Format="N2" Class="mb-1" />
-        @if (Unidad == "cja" && UnidadesPorEmbalaje is > 0 && _cantidadRecibida > 0)
+        @if (UnidadesPorEmbalaje is > 0 && _cantidadRecibida > 0)
         {
+            var embRecibo = string.IsNullOrWhiteSpace(Unidad) ? "cajas" : Unidad.ToLower();
             <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
-                @_cantidadRecibida.ToString("N2") cajas x @UnidadesPorEmbalaje.Value.ToString("N0") und/caja
-                = @((_cantidadRecibida * UnidadesPorEmbalaje.Value).ToString("N0")) unidades
+                @_cantidadRecibida.ToString("N2") @embRecibo × @UnidadesPorEmbalaje.Value.ToString("N0") und/@embRecibo
+                = @((_cantidadRecibida * UnidadesPorEmbalaje.Value).ToString("N0")) unidades totales
             </MudText>
         }
         else
@@ -18,7 +20,10 @@
             <div class="mb-3"></div>
         }
         <MudTextField @bind-Value="_numeroLote" Label="Numero de lote" Class="mb-3" />
-        <MudDatePicker @bind-Date="_fechaVencimiento" Label="Fecha de vencimiento (opcional)" PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy" />
+        @if (ConfiguracionEmpresa.ManejarVencimientos)
+        {
+            <MudDatePicker @bind-Date="_fechaVencimiento" Label="Fecha de vencimiento (opcional)" PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy" />
+        }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancelar">Cancelar</MudButton>

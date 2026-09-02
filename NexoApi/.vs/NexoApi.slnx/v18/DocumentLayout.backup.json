@@ -3,6 +3,18 @@
   "WorkspaceRootPath": "C:\\Produccion\\NexoApi\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\catalogo\\catalogoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\catalogo\\catalogoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\busqueda\\busquedacontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\busqueda\\busquedacontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\common\\security\\ijwtservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:common\\security\\ijwtservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\catalogo\\tarjetascatalogoscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\catalogo\\tarjetascatalogoscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -13,10 +25,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\catalogo\\clientesycentrostrabajocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\catalogo\\clientesycentrostrabajocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\catalogo\\catalogoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\catalogo\\catalogoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\integracion\\integracioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -63,10 +71,6 @@
       "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\crm\\automacioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\common\\security\\ijwtservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:common\\security\\ijwtservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\nexoapi.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
       "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:nexoapi.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     },
@@ -85,10 +89,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\catalogo\\articuloscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\catalogo\\articuloscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\busqueda\\busquedacontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|solutionrelative:features\\busqueda\\busquedacontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{9E2123F4-0E20-A4D5-99C8-5E18355CCFEC}|NexoApi.csproj|c:\\produccion\\nexoapi\\features\\email\\gmailemailservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -257,7 +257,44 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 5,
+              "Title": "ClientesYCentrosTrabajoController.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\ClientesYCentrosTrabajoController.cs",
+              "RelativeDocumentMoniker": "Features\\Catalogo\\ClientesYCentrosTrabajoController.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\ClientesYCentrosTrabajoController.cs",
+              "RelativeToolTip": "Features\\Catalogo\\ClientesYCentrosTrabajoController.cs",
+              "ViewState": "AgIAADYAAAAAAAAAAAAswFIAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T21:18:50.918Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "PasswordHasher.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Common\\Security\\PasswordHasher.cs",
+              "RelativeDocumentMoniker": "Common\\Security\\PasswordHasher.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Common\\Security\\PasswordHasher.cs",
+              "RelativeToolTip": "Common\\Security\\PasswordHasher.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-11T16:30:29.584Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "TarjetasCatalogosController.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\TarjetasCatalogosController.cs",
+              "RelativeDocumentMoniker": "Features\\Catalogo\\TarjetasCatalogosController.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\TarjetasCatalogosController.cs",
+              "RelativeToolTip": "Features\\Catalogo\\TarjetasCatalogosController.cs",
+              "ViewState": "AgIAABAAAAAAAAAAAAAAABEAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-14T14:30:38.017Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
               "Title": "EmailController.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Email\\EmailController.cs",
               "RelativeDocumentMoniker": "Features\\Email\\EmailController.cs",
@@ -268,32 +305,51 @@
               "WhenOpened": "2026-08-11T22:06:43.049Z"
             },
             {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "JwtService.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Common\\Security\\JwtService.cs",
-              "RelativeDocumentMoniker": "Common\\Security\\JwtService.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Common\\Security\\JwtService.cs",
-              "RelativeToolTip": "Common\\Security\\JwtService.cs",
-              "ViewState": "AgIAAAQAAAAAAAAAAAAiwBsAAABTAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-11T16:30:28.504Z"
+              "$type": "Bookmark",
+              "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "BusquedaService.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Busqueda\\BusquedaService.cs",
-              "RelativeDocumentMoniker": "Features\\Busqueda\\BusquedaService.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Busqueda\\BusquedaService.cs",
-              "RelativeToolTip": "Features\\Busqueda\\BusquedaService.cs",
-              "ViewState": "AgIAACEAAAAAAAAAAAAmwDoAAAAeAAAAAAAAAA==",
+              "DocumentIndex": 2,
+              "Title": "IJwtService.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Common\\Security\\IJwtService.cs",
+              "RelativeDocumentMoniker": "Common\\Security\\IJwtService.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Common\\Security\\IJwtService.cs",
+              "RelativeToolTip": "Common\\Security\\IJwtService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-11T16:29:00.508Z"
+              "WhenOpened": "2026-08-11T16:30:26.766Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 1,
+              "Title": "BusquedaController.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Busqueda\\BusquedaController.cs",
+              "RelativeDocumentMoniker": "Features\\Busqueda\\BusquedaController.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Busqueda\\BusquedaController.cs",
+              "RelativeToolTip": "Features\\Busqueda\\BusquedaController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-11T16:28:57.388Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "CatalogoService.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\CatalogoService.cs",
+              "RelativeDocumentMoniker": "Features\\Catalogo\\CatalogoService.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\CatalogoService.cs",
+              "RelativeToolTip": "Features\\Catalogo\\CatalogoService.cs",
+              "ViewState": "AgIAANwBAAAAAAAAAAAawOwBAAA8AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T21:17:53.016Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
               "Title": "ApiKeyAuthenticationHandler.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Common\\Security\\ApiKeyAuthenticationHandler.cs",
               "RelativeDocumentMoniker": "Common\\Security\\ApiKeyAuthenticationHandler.cs",
@@ -305,50 +361,31 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "ClientesYCentrosTrabajoController.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\ClientesYCentrosTrabajoController.cs",
-              "RelativeDocumentMoniker": "Features\\Catalogo\\ClientesYCentrosTrabajoController.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\ClientesYCentrosTrabajoController.cs",
-              "RelativeToolTip": "Features\\Catalogo\\ClientesYCentrosTrabajoController.cs",
-              "ViewState": "AgIAADYAAAAAAAAAAAAswFIAAAAEAAAAAAAAAA==",
+              "DocumentIndex": 7,
+              "Title": "BusquedaService.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Busqueda\\BusquedaService.cs",
+              "RelativeDocumentMoniker": "Features\\Busqueda\\BusquedaService.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Busqueda\\BusquedaService.cs",
+              "RelativeToolTip": "Features\\Busqueda\\BusquedaService.cs",
+              "ViewState": "AgIAACEAAAAAAAAAAAAmwDoAAAAeAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-30T21:18:50.918Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+              "WhenOpened": "2026-08-11T16:29:00.508Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "PasswordHasher.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Common\\Security\\PasswordHasher.cs",
-              "RelativeDocumentMoniker": "Common\\Security\\PasswordHasher.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Common\\Security\\PasswordHasher.cs",
-              "RelativeToolTip": "Common\\Security\\PasswordHasher.cs",
-              "ViewState": "AgIAAAUAAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 9,
+              "Title": "JwtService.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Common\\Security\\JwtService.cs",
+              "RelativeDocumentMoniker": "Common\\Security\\JwtService.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Common\\Security\\JwtService.cs",
+              "RelativeToolTip": "Common\\Security\\JwtService.cs",
+              "ViewState": "AgIAAAQAAAAAAAAAAAAiwBsAAABTAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-11T16:30:29.584Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-11T16:30:28.504Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "TarjetasCatalogosController.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\TarjetasCatalogosController.cs",
-              "RelativeDocumentMoniker": "Features\\Catalogo\\TarjetasCatalogosController.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\TarjetasCatalogosController.cs",
-              "RelativeToolTip": "Features\\Catalogo\\TarjetasCatalogosController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-14T14:30:38.017Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 16,
               "Title": "AutomacionController.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Crm\\AutomacionController.cs",
               "RelativeDocumentMoniker": "Features\\Crm\\AutomacionController.cs",
@@ -360,31 +397,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
-              "Title": "IJwtService.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Common\\Security\\IJwtService.cs",
-              "RelativeDocumentMoniker": "Common\\Security\\IJwtService.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Common\\Security\\IJwtService.cs",
-              "RelativeToolTip": "Common\\Security\\IJwtService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-11T16:30:26.766Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "CatalogoService.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\CatalogoService.cs",
-              "RelativeDocumentMoniker": "Features\\Catalogo\\CatalogoService.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\CatalogoService.cs",
-              "RelativeToolTip": "Features\\Catalogo\\CatalogoService.cs",
-              "ViewState": "AgIAAKUBAAAAAAAAAAAnwLYBAABFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-30T21:17:53.016Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 17,
               "Title": "NexoApi.csproj",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\NexoApi.csproj",
               "RelativeDocumentMoniker": "NexoApi.csproj",
@@ -396,7 +409,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 18,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Program.cs",
               "RelativeDocumentMoniker": "Program.cs",
@@ -408,7 +421,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "IntegracionController.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Integracion\\IntegracionController.cs",
               "RelativeDocumentMoniker": "Features\\Integracion\\IntegracionController.cs",
@@ -420,7 +433,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 20,
               "Title": "AuthService.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Auth\\AuthService.cs",
               "RelativeDocumentMoniker": "Features\\Auth\\AuthService.cs",
@@ -432,7 +445,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 10,
               "Title": "FacturacionController.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Facturacion\\FacturacionController.cs",
               "RelativeDocumentMoniker": "Features\\Facturacion\\FacturacionController.cs",
@@ -444,7 +457,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 13,
               "Title": "FinanzasController.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Finanzas\\FinanzasController.cs",
               "RelativeDocumentMoniker": "Features\\Finanzas\\FinanzasController.cs",
@@ -456,7 +469,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 12,
               "Title": "DashboardService.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Dashboard\\DashboardService.cs",
               "RelativeDocumentMoniker": "Features\\Dashboard\\DashboardService.cs",
@@ -468,7 +481,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 11,
               "Title": "FormulariosController.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Formularios\\FormulariosController.cs",
               "RelativeDocumentMoniker": "Features\\Formularios\\FormulariosController.cs",
@@ -480,7 +493,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 14,
               "Title": "CrmService.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Crm\\CrmService.cs",
               "RelativeDocumentMoniker": "Features\\Crm\\CrmService.cs",
@@ -504,7 +517,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 21,
               "Title": "ArticulosController.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\ArticulosController.cs",
               "RelativeDocumentMoniker": "Features\\Catalogo\\ArticulosController.cs",
@@ -516,7 +529,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 19,
               "Title": "AsistenciaController.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Rrhh\\AsistenciaController.cs",
               "RelativeDocumentMoniker": "Features\\Rrhh\\AsistenciaController.cs",
@@ -561,18 +574,6 @@
               "ViewState": "AgIAADwBAAAAAAAAAAAIwGMBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-08-11T16:31:22.396Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 21,
-              "Title": "BusquedaController.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Busqueda\\BusquedaController.cs",
-              "RelativeDocumentMoniker": "Features\\Busqueda\\BusquedaController.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Busqueda\\BusquedaController.cs",
-              "RelativeToolTip": "Features\\Busqueda\\BusquedaController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-11T16:28:57.388Z"
             },
             {
               "$type": "Document",

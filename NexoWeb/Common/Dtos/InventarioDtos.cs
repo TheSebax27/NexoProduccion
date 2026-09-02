@@ -31,13 +31,12 @@ public record KardexMovimientoItem(
     string SKU, string Articulo, string? Unidad, decimal? UnidadesPorEmbalaje,
     string Bodega, string TipoMovimiento,
     decimal Cantidad, decimal CostoUnitario, decimal CantidadSaldo, decimal ValorMovimiento,
-    string? ObservacionDetallada
+    string? ObservacionDetallada,
+    string? NumeroLote,
+    DateTime? FechaVencimiento
 )
 {
-    // EsCaja: usa UnidadesPorEmbalaje en lugar de Unidad == "cja" porque Unidad
-    // ahora viene de PresentacionCodigo y el código puede variar por cliente.
     public bool EsCaja => UnidadesPorEmbalaje is > 0;
-    // La BD almacena cantidades siempre positivas; la dirección sale del nombre del tipo.
     public bool EsEntrada => !(
         TipoMovimiento.Contains("Salida")  ||
         TipoMovimiento.Contains("Baja")    ||
@@ -46,6 +45,16 @@ public record KardexMovimientoItem(
         TipoMovimiento.Contains("Consumo")
     );
 };
+
+public record LoteProximoVencerItem(
+    string SKU,
+    string Articulo,
+    string Bodega,
+    string? NumeroLote,
+    DateTime FechaVencimiento,
+    decimal CantidadActual,
+    int DiasParaVencer
+);
 
 public record RegistrarBajaRequest(
     int ArticuloID,

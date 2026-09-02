@@ -515,5 +515,15 @@ CORRECCIONES APLICADAS (agosto 2026)
       Confirmación muestra "2.27778 cajas (41 und)". CSS copiado de AjustarInventario.razor.css al scoped de Baja.
    f) CrearOrden.razor: pista de presentación bajo "Cantidad programada". Cuando producto es fraccionado y cantidad > 0
       muestra "X cajas = Y unidades totales" (o "X cajas + Z und = Y totales").
+   g) ManejarVencimientos — toggle de Settings ahora controla todas las UIs de vencimiento en NEXO. No afecta Visions.
+      - CerrarOrdenDialog.razor: FechaVencimiento oculto cuando toggle=OFF. NumeroLote siempre visible.
+      - RecibirLineaDialog.razor: ídem.
+      - KardexMovimientoItem (Api+Web DTOs): nuevos campos NumeroLote? y FechaVencimiento?.
+      - ConsultarKardexAsync SQL: LEFT JOIN Inventario.Lotes ON l.LoteID = k.LoteID para traer info de lote.
+      - ConsultaKardex.razor: muestra NumeroLote y FechaVencimiento (con color naranja/rojo) cuando toggle=ON.
+      - LoteProximoVencerItem DTO nuevo (Api+Web): SKU, Articulo, Bodega, NumeroLote, FechaVencimiento, CantidadActual, DiasParaVencer.
+      - GET api/inventario/lotes-por-vencer?diasAlerta=N: consulta vw_StockConsolidado+Lotes, solo lotes con stock>0.
+      - Dashboard BI tab Inventario: sección "Lotes por vencer" visible solo cuando toggle=ON, llama endpoint nuevo.
+      IMPORTANTE: FechaVencimiento NUNCA se envía a Visions. Solo existe en NEXO (Inventario.Lotes.FechaVencimiento).
 
 ==============================================================
