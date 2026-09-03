@@ -49,7 +49,7 @@
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
 }
-else if (_empleados.Count == 0)
+else if (_empleados.Count == 0 && _errorCarga is null)
 {
     <NexoEmptyState
         Icono="@Icons.Material.Outlined.PeopleAlt"
@@ -166,6 +166,10 @@ else
             _empleados = await tareaEmpleados ?? new();
             _cargos = await tareaCargos ?? new();
             _roles = await tareaRoles ?? new();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            _errorCarga = "No tienes permisos para ver esta sección. Contacta al Administrador.";
         }
         catch (Exception ex)
         {

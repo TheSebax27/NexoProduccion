@@ -49,10 +49,10 @@
             }
         </MudSelect>
 
-        <MudSelect T="int" @bind-Value="_bodegaDestinoId" Label="Bodega Destino" Class="mb-4">
+        <MudSelect T="int?" @bind-Value="_bodegaDestinoId" Label="Bodega Destino" Placeholder="Seleccionar..." Class="mb-4">
             @foreach (var bodega in _bodegas)
             {
-                <MudSelectItem T="int" Value="@bodega.BodegaID">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
+                <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
             }
         </MudSelect>
 
@@ -108,7 +108,7 @@
     private ProveedorItem? _proveedorEncontrado;
     private bool _nitNoEncontrado;
     private int? _centroCostoId;
-    private int _bodegaDestinoId;
+    private int? _bodegaDestinoId;
     private List<LineaFormulario> _lineas = new();
 
     private class LineaFormulario
@@ -179,7 +179,7 @@
     private void Confirmar()
     {
         var request = new CrearOrdenCompraRequest(
-            _codigo, _proveedorEncontrado!.ProveedorID, _bodegaDestinoId,
+            _codigo, _proveedorEncontrado!.ProveedorID, _bodegaDestinoId ?? 0,
             _lineas.Select(l => new DetalleOrdenCompraRequest(l.ArticuloID, l.Cantidad, l.CostoUnitario)).ToList(),
             _centroCostoId);
 

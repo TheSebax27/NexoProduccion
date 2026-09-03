@@ -35,13 +35,18 @@ builder.Services.AddRazorComponents()
 // MudBlazor
 builder.Services.AddMudServices();
 
+// Reenvía el Host del request del usuario al API para resolución multi-tenant
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<TenantHostForwardingHandler>();
+
 // El cliente HTTP hacia NexoApi, con su URL base ya configurada
 builder.Services.AddHttpClient<INexoApiClient, NexoApiClient>((sp, client) =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
     client.BaseAddress = new Uri(config["NexoApi:BaseUrl"]!);
     client.Timeout = TimeSpan.FromMinutes(5);
-});
+})
+.AddHttpMessageHandler<TenantHostForwardingHandler>();
 
 // Cliente sin-auth para proxy de imágenes (los endpoints de imagen son AllowAnonymous en la API)
 builder.Services.AddHttpClient("img-proxy").ConfigurePrimaryHttpMessageHandler(() =>
@@ -104,6 +109,10 @@ app.UseAntiforgery();
 
     app.MapGet("api/produccion/maquinaria/{id:int}/foto",
         (int id, IHttpClientFactory hf) => ProxyImagen($"{apiBase}/api/produccion/maquinaria/{id}/foto", hf));
+
+    app.MapGet("api/rrhh/asistencia/qr-imagen",
+        (string wb, long ts, IHttpClientFactory hf) =>
+            ProxyImagen($"{apiBase}/api/rrhh/asistencia/qr-imagen?wb={Uri.EscapeDataString(wb)}&ts={ts}", hf));
 }
 
 app.MapRazorComponents<App>()

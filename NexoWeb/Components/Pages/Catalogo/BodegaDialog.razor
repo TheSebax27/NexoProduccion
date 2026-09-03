@@ -8,11 +8,11 @@
 
             @if (!EsEdicion)
             {
-                <MudSelect T="int" @bind-Value="_centroCostoId" Label="Centro de Costo" Required="true"
-                           RequiredError="Selecciona un centro de costo" Class="mb-3">
+                <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Required="true"
+                           RequiredError="Selecciona un centro de costo" Placeholder="Seleccionar..." Class="mb-3">
                     @foreach (var centro in CentrosCosto)
                     {
-                        <MudSelectItem Value="@centro.CentroCostoID">@centro.Nombre</MudSelectItem>
+                        <MudSelectItem T="int?" Value="@((int?)centro.CentroCostoID)">@centro.Nombre</MudSelectItem>
                     }
                 </MudSelect>
             }
@@ -56,7 +56,7 @@
 
     private MudForm _form = default!;
     private string _nombre = string.Empty;
-    private int _centroCostoId;
+    private int? _centroCostoId;
     private string _tipoBodega = "MATERIA_PRIMA";
     private bool _esVirtual;
     private bool _estado = true;
@@ -85,10 +85,10 @@
         }
         else
         {
-            if (_centroCostoId == 0)
+            if (_centroCostoId is null or 0)
                 return;
 
-            var request = new CrearBodegaRequest(_nombre, _centroCostoId, _tipoBodega, _esVirtual);
+            var request = new CrearBodegaRequest(_nombre, _centroCostoId.Value, _tipoBodega, _esVirtual);
             MudDialog.Close(DialogResult.Ok(request));
         }
     }

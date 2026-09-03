@@ -1122,8 +1122,8 @@
                 return;
             }
 
-            var apiBase = Config["NexoApi:BaseUrl"]!.TrimEnd('/');
-            await JS.InvokeVoidAsync("nexoDescargarUrl", $"{apiBase}/api/integracion/descargar-agente/{resultado.Token}");
+            var apiPublic = (Config["NexoApi:PublicUrl"] ?? Config["NexoApi:BaseUrl"])!.TrimEnd('/');
+            await JS.InvokeVoidAsync("nexoDescargarUrl", $"{apiPublic}/api/integracion/descargar-agente/{resultado.Token}");
         }
         catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
         finally { _descargando = false; }

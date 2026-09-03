@@ -98,62 +98,67 @@
         {
             @* Notificaciones -- resumen real (sin stock / bajo stock / produccion
                en proceso), se refresca solo cada 2 minutos para no ser invasivo. *@
-            <MudMenu Class="nexo-topbar__notif" PositionAtCursor="false" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                <ActivatorContent>
-                    <div style="position:relative; display:inline-flex;">
-                        <MudIconButton Icon="@Icons.Material.Outlined.Notifications"
-                                       Color="Color.Inherit"
-                                       Class="nexo-topbar__notif-btn" />
-                        @if (_notificaciones.Total > 0)
-                        {
-                            <span class="nexo-topbar__notif-dot" aria-hidden="true"></span>
-                        }
-                    </div>
-                </ActivatorContent>
-                <ChildContent>
-                    <div class="nexo-topbar__notif-panel">
+            <div class="nexo-topbar__notif" style="position:relative; z-index:1001;">
+                <div style="position:relative; display:inline-flex;">
+                    <MudIconButton Icon="@Icons.Material.Outlined.Notifications"
+                                   Color="Color.Inherit"
+                                   Class="nexo-topbar__notif-btn"
+                                   OnClick="@(() => _notifAbierta = !_notifAbierta)" />
+                    @if (_notificaciones.Total > 0)
+                    {
+                        <span class="nexo-topbar__notif-dot" aria-hidden="true"></span>
+                    }
+                </div>
+                @if (_notifAbierta)
+                {
+                    <div style="position:fixed; inset:0; z-index:1000;"
+                         @onclick="() => _notifAbierta = false"></div>
+                    <div class="nexo-topbar__notif-panel"
+                         style="position:absolute; top:calc(100% + 8px); right:0; z-index:1002; min-width:320px;">
                         <div class="nexo-topbar__notif-panel-title">Notificaciones</div>
                         @if (_notificaciones.Items.Count == 0)
                         {
-                            <MudMenuItem Disabled="true">
+                            <div style="padding:12px 16px;">
                                 <span class="nexo-topbar__notif-empty">Sin novedades por ahora ✓</span>
-                            </MudMenuItem>
+                            </div>
                         }
                         else
                         {
                             @foreach (var item in _notificaciones.Items)
                             {
-                                <MudMenuItem OnClick="@(() => Navegacion.NavigateTo(item.Link))">
-                                    <div class="nexo-topbar__notif-item">
-                                        <MudIcon Icon="@IconoSegunSeveridad(item.Severidad)"
-                                                 Color="@ColorSegunSeveridad(item.Severidad)"
-                                                 Size="Size.Small" Class="nexo-topbar__notif-item-icon" />
-                                        <div>
-                                            <div class="nexo-topbar__notif-item-msg">@item.Mensaje</div>
-                                            <div class="nexo-topbar__notif-item-detalle">@item.Detalle</div>
-                                        </div>
+                                <div class="nexo-topbar__notif-item"
+                                     style="cursor:pointer; padding:10px 16px;"
+                                     @onclick="@(() => { _notifAbierta = false; Navegacion.NavigateTo(item.Link); })"
+                                     @onclick:stopPropagation="true">
+                                    <MudIcon Icon="@IconoSegunSeveridad(item.Severidad)"
+                                             Color="@ColorSegunSeveridad(item.Severidad)"
+                                             Size="Size.Small" Class="nexo-topbar__notif-item-icon" />
+                                    <div>
+                                        <div class="nexo-topbar__notif-item-msg">@item.Mensaje</div>
+                                        <div class="nexo-topbar__notif-item-detalle">@item.Detalle</div>
                                     </div>
-                                </MudMenuItem>
+                                </div>
                                 @if (item.Categoria is "BajoStock" or "SinStock")
                                 {
-                                    <MudMenuItem OnClick="@(() => Navegacion.NavigateTo("/compras/ordenes"))">
-                                        <div class="nexo-topbar__notif-item" style="padding-left:12px; opacity:0.85;">
-                                            <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart"
-                                                     Color="Color.Warning" Size="Size.Small"
-                                                     Class="nexo-topbar__notif-item-icon" />
-                                            <div>
-                                                <div class="nexo-topbar__notif-item-msg" style="font-size:0.78rem;">
-                                                    Crear orden de compra →
-                                                </div>
+                                    <div class="nexo-topbar__notif-item"
+                                         style="cursor:pointer; padding:8px 16px 8px 28px; opacity:0.85;"
+                                         @onclick="@(() => { _notifAbierta = false; Navegacion.NavigateTo("/compras/ordenes"); })"
+                                         @onclick:stopPropagation="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart"
+                                                 Color="Color.Warning" Size="Size.Small"
+                                                 Class="nexo-topbar__notif-item-icon" />
+                                        <div>
+                                            <div class="nexo-topbar__notif-item-msg" style="font-size:0.78rem;">
+                                                Crear orden de compra →
                                             </div>
                                         </div>
-                                    </MudMenuItem>
+                                    </div>
                                 }
                             }
                         }
                     </div>
-                </ChildContent>
-            </MudMenu>
+                }
+            </div>
 
             @* Avatar + nombre + rol -- ahora es un menu con mini-ajustes (cambiar
                nombre/foto), ver Components/Shared/PerfilMenu.razor *@
@@ -236,6 +241,7 @@
 
 @code {
     private bool _menuAbierto = true;
+    private bool _notifAbierta = false;
     private ErrorBoundary? _errorBoundary;
     private string _tituloPagina = "Dashboard";
 

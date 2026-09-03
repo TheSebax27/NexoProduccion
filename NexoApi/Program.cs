@@ -83,7 +83,9 @@ builder.Services.AddSwaggerGen(options =>
 // ----------------------------------------------------------------------------
 // INFRAESTRUCTURA Y MÓDULOS DE NEGOCIO
 // ----------------------------------------------------------------------------
-builder.Services.AddSingleton<IDbConnectionFactory, SqlConnectionFactory>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<TenantConnectionService>();
+builder.Services.AddScoped<IDbConnectionFactory, TenantSqlConnectionFactory>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -130,17 +132,11 @@ builder.Services.AddHttpClient<NexoApi.Features.WhatsApp.IWhatsAppService, NexoA
 // ----------------------------------------------------------------------------
 var jwtSection = builder.Configuration.GetSection("Jwt");
 
-// Bloqueo de arranque: la clave JWT de desarrollo no debe usarse en producción.
-// Si el sistema de clientes no sobreescribió la clave, la API no arranca.
-if (builder.Environment.IsProduction())
-{
-    const string claveDesarrollo = "NexoERP_ClaveSecretaSuperSegura2026_SistemaIntegrado#99";
-    var jwtKey = jwtSection["Key"] ?? "";
-    if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey == claveDesarrollo || jwtKey.Length < 32)
-        throw new InvalidOperationException(
-            "La clave JWT no está configurada para producción. " +
-            "Establece Jwt:Key en appsettings.Production.json (mínimo 32 caracteres, distinta a la clave de desarrollo).");
-}
+// Verificacion minima: la clave JWT debe tener al menos 32 caracteres.
+// La misma clave se usa para todos los clientes (multi-tenant, clave compartida).
+if (string.IsNullOrWhiteSpace(jwtSection["Key"]) || jwtSection["Key"]!.Length < 32)
+    throw new InvalidOperationException(
+        "Jwt:Key debe tener al menos 32 caracteres. Revisa appsettings.json o appsettings.Production.json.");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -180,12 +176,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseForwardedHeaders(new Microsoft.AspNetCore.HttpOverrides.ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+                     | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
 app.UseMiddleware<ExceptionHandlingMiddleware>();
-app.UseHttpsRedirection();
+// TenantMiddleware debe ir ANTES de UseAuthentication porque ApiKeyAuthenticationHandler
+// (usado por el agente) tambien necesita la conexion al tenant para validar la ApiKey
+// contra Integracion.AgentesSync. Si va despues, CreateConnection() falla sin connStr.
+app.UseMiddleware<TenantMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
-// Despues de Authorization: para este punto ya se conoce el usuario (JWT
-// validado) y la request ya paso el chequeo de rol -- ver AuditoriaMiddleware.cs.
 app.UseMiddleware<AuditoriaMiddleware>();
 app.MapControllers();
 

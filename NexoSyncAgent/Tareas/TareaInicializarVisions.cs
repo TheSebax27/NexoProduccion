@@ -78,16 +78,19 @@ public class TareaInicializarVisions
                     ALTER TABLE dbo.NEXO_TarjetasCambios ADD VV3 SMALLINT NULL;");
 
             // Trigger: captura cambios de precio/nombre en TARJETA originados en Visions POS.
-            // SESSION_CONTEXT 'nexo_agente'='1' marca las conexiones del agente para que el
-            // trigger las ignore y evitar el eco NEXO→Visions→NEXO_TarjetasCambios→NEXO.
+            // APP_NAME()='NexoSyncAgent' identifica conexiones del agente (VisionsConnectionFactory
+            // fuerza este nombre). Compatible con SQL Server 2008+.
             // MERGE upserta para que si hay un cambio sin procesar no acumule filas duplicadas.
+            // CREATE OR ALTER requiere SQL 2016+; usamos stub+ALTER para compatibilidad.
             await connection.ExecuteAsync(@"
-                CREATE OR ALTER TRIGGER dbo.TR_TARJETA_NexoCambios ON dbo.TARJETA AFTER UPDATE
+                IF OBJECT_ID('dbo.TR_TARJETA_NexoCambios', 'TR') IS NULL
+                    EXEC('CREATE TRIGGER dbo.TR_TARJETA_NexoCambios ON dbo.TARJETA AFTER UPDATE AS SELECT 1')");
+            await connection.ExecuteAsync(@"
+                ALTER TRIGGER dbo.TR_TARJETA_NexoCambios ON dbo.TARJETA AFTER UPDATE
                 AS
                 BEGIN
                     SET NOCOUNT ON;
-                    -- Ignorar updates hechos por el agente NEXO (SESSION_CONTEXT marcado)
-                    IF CAST(SESSION_CONTEXT(N'nexo_agente') AS NVARCHAR(5)) = '1' RETURN;
+                    IF APP_NAME() = 'NexoSyncAgent' RETURN;
                     MERGE dbo.NEXO_TarjetasCambios AS destino
                     USING (
                         SELECT i.CENTROCOSTO, i.REFERENCIA, i.DETALLE, i.COSTO, i.PPUBLICO,
@@ -142,7 +145,10 @@ public class TareaInicializarVisions
             // SP ACTUALIZARTARJETA: asegura que el WHERE use parámetros (@CENTROCOSTO, @REFERENCIA)
             // y no columnas sin prefijo (bug original que sobreescribía TODA la tabla en cada sync).
             await connection.ExecuteAsync(@"
-                CREATE OR ALTER PROCEDURE [dbo].ACTUALIZARTARJETA
+                IF OBJECT_ID('dbo.ACTUALIZARTARJETA', 'P') IS NULL
+                    EXEC('CREATE PROCEDURE dbo.ACTUALIZARTARJETA AS SELECT 1')");
+            await connection.ExecuteAsync(@"
+                ALTER PROCEDURE [dbo].ACTUALIZARTARJETA
                 (
                     @CENTROCOSTO smallint, @REFERENCIA nchar(30), @DETALLE nchar(255), @MARCA nchar(10),
                     @COSTO numeric(18,0), @GRUPOMENOR nchar(10), @BARRAS nchar(30),
@@ -236,7 +242,10 @@ public class TareaInicializarVisions
 
             // SP: lista facturas PENDIENTE con dos resultsets (cabeceras + líneas).
             await connection.ExecuteAsync(@"
-                CREATE OR ALTER PROCEDURE dbo.NEXO_SP_FacturasPendientes
+                IF OBJECT_ID('dbo.NEXO_SP_FacturasPendientes', 'P') IS NULL
+                    EXEC('CREATE PROCEDURE dbo.NEXO_SP_FacturasPendientes AS SELECT 1')");
+            await connection.ExecuteAsync(@"
+                ALTER PROCEDURE dbo.NEXO_SP_FacturasPendientes
                 AS
                 BEGIN
                     SET NOCOUNT ON;
@@ -254,7 +263,10 @@ public class TareaInicializarVisions
 
             // SP: Visions llama este SP al confirmar una factura con su número real.
             await connection.ExecuteAsync(@"
-                CREATE OR ALTER PROCEDURE dbo.NEXO_SP_ConfirmarFactura
+                IF OBJECT_ID('dbo.NEXO_SP_ConfirmarFactura', 'P') IS NULL
+                    EXEC('CREATE PROCEDURE dbo.NEXO_SP_ConfirmarFactura @FacturaID INT, @NroDocVisions NVARCHAR(50), @TipDocVisions NVARCHAR(20) AS SELECT 1')");
+            await connection.ExecuteAsync(@"
+                ALTER PROCEDURE dbo.NEXO_SP_ConfirmarFactura
                     @FacturaID     INT,
                     @NroDocVisions NVARCHAR(50),
                     @TipDocVisions NVARCHAR(20)
@@ -302,7 +314,10 @@ public class TareaInicializarVisions
 
             // SP: lista pedidos PENDIENTE con dos resultsets (cabeceras + líneas).
             await connection.ExecuteAsync(@"
-                CREATE OR ALTER PROCEDURE dbo.NEXO_SP_PedidosPendientes
+                IF OBJECT_ID('dbo.NEXO_SP_PedidosPendientes', 'P') IS NULL
+                    EXEC('CREATE PROCEDURE dbo.NEXO_SP_PedidosPendientes AS SELECT 1')");
+            await connection.ExecuteAsync(@"
+                ALTER PROCEDURE dbo.NEXO_SP_PedidosPendientes
                 AS
                 BEGIN
                     SET NOCOUNT ON;
@@ -320,7 +335,10 @@ public class TareaInicializarVisions
 
             // SP: Visions llama este SP al confirmar un pedido con su número de Entrada asignado.
             await connection.ExecuteAsync(@"
-                CREATE OR ALTER PROCEDURE dbo.NEXO_SP_ConfirmarPedido
+                IF OBJECT_ID('dbo.NEXO_SP_ConfirmarPedido', 'P') IS NULL
+                    EXEC('CREATE PROCEDURE dbo.NEXO_SP_ConfirmarPedido @PedidoID INT, @NroDocVisions NVARCHAR(50), @TipDocVisions NVARCHAR(20) AS SELECT 1')");
+            await connection.ExecuteAsync(@"
+                ALTER PROCEDURE dbo.NEXO_SP_ConfirmarPedido
                     @PedidoID      INT,
                     @NroDocVisions NVARCHAR(50),
                     @TipDocVisions NVARCHAR(20)

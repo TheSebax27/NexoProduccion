@@ -27,6 +27,7 @@ tailwindcss.exe
 # Publicaciones/compilados — ejecutables pesados, generados con deploy.ps1
 NexoSyncAgent/publish/
 Publish/
+Publish.zip
 
 # Configuración de producción — contiene credenciales reales por cliente, nunca al repo
 appsettings.Production.json

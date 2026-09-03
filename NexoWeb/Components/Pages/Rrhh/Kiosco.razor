@@ -128,8 +128,7 @@
     {
         var ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var wb = Uri.EscapeDataString(Nav.BaseUri);
-        var apiBase = (Config["NexoApi:BaseUrl"] ?? "").TrimEnd('/');
-        _qrSrc = $"{apiBase}/api/rrhh/asistencia/qr-imagen?wb={wb}&ts={ts}";
+        _qrSrc = $"/api/rrhh/asistencia/qr-imagen?wb={wb}&ts={ts}";
     }
 
     public void Dispose()

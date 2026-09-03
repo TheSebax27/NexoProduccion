@@ -28,7 +28,15 @@ builder.Services.AddScoped<TareaSincronizarPedidos>();
 builder.Services.AddHttpClient<INexoApiClient, NexoApiClient>((sp, client) =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
-    client.BaseAddress = new Uri(config["NexoApi:BaseUrl"]!);
+
+    // Si hay Subdomain configurado, construir la URL automaticamente.
+    // En desarrollo (Subdomain vacio) se usa BaseUrl directo (localhost).
+    var subdomain = config["NexoApi:Subdomain"];
+    var baseUrl = !string.IsNullOrWhiteSpace(subdomain)
+        ? $"https://{subdomain}.{config["NexoApi:Domain"]}/"
+        : config["NexoApi:BaseUrl"]!;
+
+    client.BaseAddress = new Uri(baseUrl);
     client.DefaultRequestHeaders.Add("X-Api-Key", config["NexoApi:ApiKey"]);
     client.Timeout = TimeSpan.FromMinutes(15);
 })

@@ -15,11 +15,11 @@
                           RequiredError="El nombre es obligatorio" Class="mb-3" />
             <MudTextField @bind-Value="_descripcion" Label="Descripcion" Lines="2" Class="mb-3" />
 
-            <MudSelect T="int" @bind-Value="_tipoArticuloId" Label="Tipo de Articulo" Required="true"
-                       RequiredError="Selecciona un tipo" Class="mb-3">
+            <MudSelect T="int?" @bind-Value="_tipoArticuloId" Label="Tipo de Articulo" Required="true"
+                       RequiredError="Selecciona un tipo" Placeholder="Seleccionar..." Class="mb-3">
                 @foreach (var tipo in TiposArticulo)
                 {
-                    <MudSelectItem Value="@tipo.TipoArticuloID">@tipo.Nombre</MudSelectItem>
+                    <MudSelectItem T="int?" Value="@((int?)tipo.TipoArticuloID)">@tipo.Nombre</MudSelectItem>
                 }
             </MudSelect>
 
@@ -323,7 +323,7 @@
     private string _sku = string.Empty;
     private string _nombre = string.Empty;
     private string? _descripcion;
-    private int _tipoArticuloId;
+    private int? _tipoArticuloId;
     private decimal _stockMinimo;
     private decimal _puntoReorden;
     private int? _diasVidaUtil;
@@ -369,7 +369,7 @@
     {
         if (Articulo is not null)
         {
-            _tipoArticuloId     = TiposArticulo.FirstOrDefault(t => t.Nombre == Articulo.TipoArticulo)?.TipoArticuloID ?? 0;
+            _tipoArticuloId     = TiposArticulo.FirstOrDefault(t => t.Nombre == Articulo.TipoArticulo)?.TipoArticuloID;
             _nombre             = Articulo.Nombre;
             _descripcion        = Articulo.Descripcion;
             _stockMinimo        = Articulo.StockMinimo;
@@ -559,14 +559,14 @@
                 _costo, _ppPublico, _pBodega, _pCredito, _uPublico, _uBodega, _uCredito,
                 _marcaCodigo, _grupoMenorCodigo, _presentacionCodigo,
                 pesoAEnviar, _ivaSiNo, _ivaValor, _ivaDescripcion, _iva2, _ivaDescripcion2,
-                _tipoArticuloId > 0 ? _tipoArticuloId : null);
+                _tipoArticuloId > 0 ? _tipoArticuloId : (int?)null);
             MudDialog.Close(DialogResult.Ok(new ArticuloDialogResultado(request, _imagenBase64, _imagenContentType)));
         }
         else
         {
-            if (_tipoArticuloId == 0) return;
+            if (_tipoArticuloId is null or 0) return;
             var request = new CrearArticuloRequest(
-                _sku, _nombre, _descripcion, _tipoArticuloId,
+                _sku, _nombre, _descripcion, _tipoArticuloId.Value,
                 _stockMinimo, _puntoReorden, _diasVidaUtil, fraccionaAEnviar, precioUnidadAEnviar,
                 _costo, _ppPublico, _pBodega, _pCredito, _uPublico, _uBodega, _uCredito,
                 _marcaCodigo, _grupoMenorCodigo, _presentacionCodigo,

@@ -52,6 +52,33 @@ Tres proyectos en `C:\Produccion\`:
 | `NexoWeb` | https://localhost:7089 | Blazor Server, UI interactiva |
 | `NexoSyncAgent` | Worker (sin HTTP expuesto) | Agente de sincronización con Visions |
 
+### Arquitectura multi-tenant (producción)
+
+En producción la API es **una sola instancia** que sirve a todos los clientes. La BD de cada cliente se resuelve por subdominio:
+
+```
+vecco.insumar.com.co  →  Host: vecco.insumar.com.co
+                         TenantMiddleware extrae "vecco"
+                         Consulta admin_services (45.171.180.181):
+                           Companie_Services WHERE service_id=13 AND subdomain_name='vecco'
+                         Resuelve conexion → BD "vecco" en 45.171.180.181
+                         IDbConnectionFactory ya conecta al "vecco" de ese request
+```
+
+**Archivos clave del multi-tenant:**
+| Archivo | Rol |
+|---|---|
+| `Common/Data/TenantConnectionService.cs` | Singleton. Consulta `admin_services`, cachea `subdomain → connStr` |
+| `Common/Middleware/TenantMiddleware.cs` | Extrae subdominio, resuelve connStr, la guarda en `HttpContext.Items` |
+| `Common/Data/TenantSqlConnectionFactory.cs` | Lee de `HttpContext.Items`, crea `SqlConnection`. Dev: usa `NexoDb` local |
+
+**Constantes importantes:**
+- `NexoServiceId = 13` en `TenantConnectionService` (id del servicio NEXO en `admin_services`)
+- `AdminDb` connection string: `Server=45.171.180.181;Database=admin_services;User Id=protected_sas;...`
+- En desarrollo (`localhost`): sigue usando `NexoDb` local de `appsettings.json` — sin cambios en el flujo de dev
+
+**NexoSyncAgent:** no conecta directo a NEXO, llama a la API via HTTP. Su `NexoApi:BaseUrl` ya contiene el subdominio del cliente (`https://vecco.insumar.com.co`). El agente no necesita cambios para multi-tenant.
+
 ---
 
 ## 3. Stack Tecnológico
@@ -624,15 +651,33 @@ Sin errores esperados. Hay 8 advertencias `MUD0002` de MudBlazor (comportamiento
 
 ## 16. Cómo Publicar
 
-```bash
-# API
-dotnet publish C:\Produccion\NexoApi\NexoApi.csproj -c Release -o C:\Deploy\NexoApi
+Usar siempre el script maestro en `C:\Produccion\deploy.ps1`:
 
-# Web
-dotnet publish C:\Produccion\NexoWeb\NexoWeb.csproj -c Release -o C:\Deploy\NexoWeb
+```powershell
+# Publicar todo (Api + Web + Agente bundled automáticamente via MSBuild)
+.\deploy.ps1
+
+# Solo un componente
+.\deploy.ps1 -Solo Api
+.\deploy.ps1 -Solo Web
+.\deploy.ps1 -Solo Agentes
 ```
 
-En producción actualizar `appsettings.json` de cada proyecto con las URLs y connection strings del servidor de producción.
+La salida queda en `C:\Produccion\Publish\`. El script imprime al final qué valores hay que editar en `appsettings.Production.json` de cada proyecto antes de desplegar al cliente.
+
+**Configuración por cliente** — solo UN valor que cambiar en `Publish\Api\appsettings.Production.json`:
+- `ApiBaseUrl` — URL pública de la API (ej: `https://api.insumar.com.co`)
+
+`ConnectionStrings.NexoDb` ya **no se configura** — la API resuelve la BD de cada cliente dinámicamente desde `admin_services` usando el subdominio del Host header (ver sección 2 — Arquitectura multi-tenant).
+
+**`Jwt.Key` ya NO es por cliente** (decisión sept-2026): la clave JWT es una sola fija para todos los clientes, ya embebida en `appsettings.Production.json`. No generar ni configurar una clave distinta por cliente.
+
+**NexoSyncAgent**: publicado automáticamente dentro del paso `Api` via MSBuild `PublicarAgentes` target — queda en `Publish\Api\Agent\`. El cliente debe reinstalar el `.exe` del agente para recibir nuevas versiones del SQL de sync.
+
+Para actualizar solo el agente en local (sin tocar Api/Web):
+```powershell
+.\deploy-agente.ps1
+```
 
 ---
 
@@ -764,6 +809,21 @@ Los IDs de `Catalogo.TiposArticulo`, `Kardex.TiposMovimientoKardex`, `Produccion
 **Trampa peligrosa**: el `COMMIT TRANSACTION` del SP ya ocurrió **antes** de que Dapper intente materializar el resultado — así que el INSERT/UPDATE ya se aplicó en la BD aunque la UI muestre una excepción. Si un usuario reporta un error pero dice "aun así parece que funcionó", verificar el estado real en la BD antes de asumir que no pasó nada.
 
 **Regla**: el `SELECT` final del SP debe tener exactamente las mismas columnas (incluyendo `Resultado` si el DTO lo tiene) que el record de respuesta en C#.
+
+### 20.3b — Dapper: CAST explícito obligatorio en NULLs y literales numéricos
+
+`NULL AS Campo` sin CAST defaultea a `int` en SQL Server. Si el `record` receptor tiene `string?`, `decimal?`, `bit`, etc., Dapper lanza `System.InvalidOperationException` al materializar. **Afectó `BuscarArticulosAsync`** en Catálogo (crasheaba al buscar artículos, bloqueaba la carga completa del módulo).
+
+**Regla**: en cualquier `SELECT` que no venga de una tabla real (UNION ALL stub, subquery inventada, columnas vacías para completar un record), escribir siempre:
+
+```sql
+CAST(NULL AS NVARCHAR(MAX)) AS Descripcion,
+CAST(0 AS DECIMAL(18,2)) AS CostoPromedio,
+CAST(NULL AS INT) AS DiasVidaUtil,
+CAST(0 AS BIT) AS TieneImagen
+```
+
+Nunca `NULL AS Campo`, nunca `0 AS Campo` sin el CAST explícito al tipo exacto del constructor.
 
 ### 20.4 — MudTable `SelectedItemChanged` puede recibir `null`
 
