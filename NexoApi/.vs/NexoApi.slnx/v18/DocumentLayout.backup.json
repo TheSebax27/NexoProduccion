@@ -257,7 +257,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 7,
+          "SelectedChildIndex": 6,
           "Children": [
             {
               "$type": "Document",
@@ -269,8 +269,7 @@
               "RelativeToolTip": "Properties\\launchSettings.json",
               "ViewState": "AgIAABUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-09-02T20:57:07.048Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-02T20:57:07.048Z"
             },
             {
               "$type": "Document",
@@ -334,18 +333,6 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "BusquedaController.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Busqueda\\BusquedaController.cs",
-              "RelativeDocumentMoniker": "Features\\Busqueda\\BusquedaController.cs",
-              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Busqueda\\BusquedaController.cs",
-              "RelativeToolTip": "Features\\Busqueda\\BusquedaController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-11T16:28:57.388Z"
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 0,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\appsettings.json",
@@ -363,6 +350,18 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "BusquedaController.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Busqueda\\BusquedaController.cs",
+              "RelativeDocumentMoniker": "Features\\Busqueda\\BusquedaController.cs",
+              "ToolTip": "C:\\Produccion\\NexoApi\\Features\\Busqueda\\BusquedaController.cs",
+              "RelativeToolTip": "Features\\Busqueda\\BusquedaController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-11T16:28:57.388Z"
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 2,
               "Title": "CatalogoService.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoApi\\Features\\Catalogo\\CatalogoService.cs",
@@ -371,8 +370,7 @@
               "RelativeToolTip": "Features\\Catalogo\\CatalogoService.cs",
               "ViewState": "AgIAAKgBAAAAAAAAAAAewL0BAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-30T21:17:53.016Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-30T21:17:53.016Z"
             },
             {
               "$type": "Document",
