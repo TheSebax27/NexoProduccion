@@ -114,7 +114,7 @@ function Resumen {
         Write-Host "  NEXO API" -ForegroundColor White
         Write-Host "  Carpeta : $PublishApi" -ForegroundColor Gray
         Write-Host "  Editar  : $PublishApi\appsettings.Production.json" -ForegroundColor Yellow
-        Write-Host "            -> ApiBaseUrl  (URL publica de la API, ej: https://api.insumar.com.co)" -ForegroundColor Yellow
+        Write-Host "            -> ApiBaseUrl  (URL publica de la API, ej: https://apinexo.colombiasis.com)" -ForegroundColor Yellow
         Write-Host "  NOTA    : La BD de cada cliente se resuelve automaticamente desde admin_services" -ForegroundColor DarkCyan
         Write-Host "            segun el subdominio del Host header. No es necesario configurar NexoDb." -ForegroundColor DarkCyan
     }

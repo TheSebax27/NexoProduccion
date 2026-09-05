@@ -24,7 +24,10 @@ public class TenantHostForwardingHandler : DelegatingHandler
             && host != "127.0.0.1"
             && !System.Net.IPAddress.TryParse(host, out _))
         {
-            request.Headers.Host = host;
+            // X-Nexo-Host en vez de Host para que IIS en el servidor API
+            // acepte el request (su binding usa apinexo.colombiasis.com),
+            // mientras TenantMiddleware lee este header para resolver el tenant.
+            request.Headers.TryAddWithoutValidation("X-Nexo-Host", host);
         }
 
         return base.SendAsync(request, cancellationToken);

@@ -65,11 +65,15 @@
     string _modoQr = "TTL";
     string _tokenActual = "";
     int _pollTick = 0;
+    string _tenantHost = "";
 
     System.Timers.Timer? _timer;
 
     protected override async Task OnInitializedAsync()
     {
+        // Capturar el host del tenant aquí (durante el render inicial, HttpContext disponible).
+        // Se usará en los callbacks del timer donde HttpContext ya no está disponible.
+        _tenantHost = new Uri(Nav.BaseUri).Host;
         RefrescarReloj();
         await PollTokenAsync(); // carga inicial: obtiene token y modo
 
@@ -103,8 +107,13 @@
         try
         {
             var apiBase = (Config["NexoApi:BaseUrl"] ?? "").TrimEnd('/');
-            var http = HttpFactory.CreateClient("img-proxy");
-            var resp = await http.GetFromJsonAsync<TokenQrResponse>($"{apiBase}/api/rrhh/asistencia/token");
+            var http    = HttpFactory.CreateClient("img-proxy");
+            var req     = new HttpRequestMessage(HttpMethod.Get, $"{apiBase}/api/rrhh/asistencia/token");
+            if (!string.IsNullOrEmpty(_tenantHost))
+                req.Headers.TryAddWithoutValidation("X-Nexo-Host", _tenantHost);
+            using var response = await http.SendAsync(req);
+            if (!response.IsSuccessStatusCode) return;
+            var resp = await response.Content.ReadFromJsonAsync<TokenQrResponse>();
             if (resp is null) return;
 
             _modoQr = resp.Modo;

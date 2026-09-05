@@ -86,10 +86,6 @@
             <MudIcon Icon="@Icons.Material.Outlined.Schedule" Size="Size.Small" Class="mr-1" Style="vertical-align: middle; font-size: 14px;" />
             Actualizado @DateTime.Now.ToString("dd MMM, HH:mm")
         </span>
-        <MudButton Variant="Variant.Outlined" Color="Color.Success" Size="Size.Small" StartIcon="@Icons.Material.Filled.GridOn"
-                   OnClick="ExportarExcelAsync" Disabled="_exportando">Excel</MudButton>
-        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.PictureAsPdf"
-                   OnClick="ExportarPdfAsync" Disabled="_exportando">PDF</MudButton>
     </div>
 </div>
 <InfoAyuda Texto="Workspace BI: navega entre pestañas para análisis de Facturación, Producción, CRM e Inventario. Usa los selectores de fecha dentro de cada gráfico para ajustar el período." />

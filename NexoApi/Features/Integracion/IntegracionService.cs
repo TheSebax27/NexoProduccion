@@ -87,14 +87,16 @@ public class IntegracionService : IIntegracionService
     private readonly IMemoryCache _cache;
     private readonly IConfiguration _config;
     private readonly ILogger<IntegracionService> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public IntegracionService(IDbConnectionFactory db, ICatalogoService catalogoService, IMemoryCache cache, IConfiguration config, ILogger<IntegracionService> logger)
+    public IntegracionService(IDbConnectionFactory db, ICatalogoService catalogoService, IMemoryCache cache, IConfiguration config, ILogger<IntegracionService> logger, IHttpContextAccessor httpContextAccessor)
     {
         _db = db;
         _catalogoService = catalogoService;
         _cache = cache;
         _config = config;
         _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<IEnumerable<EventoPendienteItem>> ObtenerEventosPendientesAsync(int centroCostoId)
@@ -1100,11 +1102,19 @@ public class IntegracionService : IIntegracionService
         var minutos    = config.IntervalMinutes > 0 ? config.IntervalMinutes : 5;
         var segundos   = config.IntervalSeconds > 0 ? config.IntervalSeconds : 0;
 
+        // Captura el host del tenant desde la petición entrante (X-Nexo-Host o Request.Host).
+        // El agente lo enviará como X-Nexo-Host para que TenantMiddleware resuelva
+        // el tenant correcto aunque la URL de la API sea un dominio compartido.
+        var tenantHost = _httpContextAccessor.HttpContext?.Request.Headers["X-Nexo-Host"].FirstOrDefault()
+                      ?? _httpContextAccessor.HttpContext?.Request.Host.Host
+                      ?? "";
+
         // JsonSerializer.Serialize incluye las comillas y escapa correctamente \, ", etc.
         // Necesario porque serverName puede contener SERVIDOR\INSTANCIA (barra invertida).
-        var dbJson     = System.Text.Json.JsonSerializer.Serialize(db);
-        var urlJson    = System.Text.Json.JsonSerializer.Serialize(url);
-        var apiKeyJson = System.Text.Json.JsonSerializer.Serialize(apiKey);
+        var dbJson          = System.Text.Json.JsonSerializer.Serialize(db);
+        var urlJson         = System.Text.Json.JsonSerializer.Serialize(url);
+        var apiKeyJson      = System.Text.Json.JsonSerializer.Serialize(apiKey);
+        var tenantHostJson  = System.Text.Json.JsonSerializer.Serialize(tenantHost);
 
         return $$"""
 {
@@ -1119,7 +1129,8 @@ public class IntegracionService : IIntegracionService
   },
   "NexoApi": {
     "BaseUrl": {{urlJson}},
-    "ApiKey": {{apiKeyJson}}
+    "ApiKey": {{apiKeyJson}},
+    "TenantHost": {{tenantHostJson}}
   },
   "Sync": {
     "IntervalMinutes": {{(segundos > 0 ? 0 : minutos)}},

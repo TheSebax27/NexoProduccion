@@ -9,7 +9,19 @@ namespace NexoApi.Features.Marketing;
 [Authorize]
 public class MarketingController(IMarketingService svc, IConfiguration config) : ControllerBase
 {
-    private string ApiBaseUrl => config["ApiBaseUrl"] ?? "";
+    // El tracking URL debe apuntar al Web del tenant (que lo proxea al API con X-Nexo-Host).
+    // X-Nexo-Host contiene el host del browser (p.ej. veccox.insumar.com.co);
+    // como fallback usa ApiBaseUrl del appsettings (solo válido si la API tiene dominio propio por tenant).
+    private string TrackingBaseUrl
+    {
+        get
+        {
+            var tenantHost = Request.Headers["X-Nexo-Host"].FirstOrDefault();
+            return !string.IsNullOrEmpty(tenantHost)
+                ? $"https://{tenantHost}"
+                : config["ApiBaseUrl"] ?? "";
+        }
+    }
 
     // ── Campañas ──────────────────────────────────────────────────────────────
 
@@ -84,7 +96,7 @@ public class MarketingController(IMarketingService svc, IConfiguration config) :
     {
         try
         {
-            await svc.IniciarEnvioAsync(id, ApiBaseUrl);
+            await svc.IniciarEnvioAsync(id, TrackingBaseUrl);
             return Ok(new { Mensaje = "Envío iniciado en segundo plano." });
         }
         catch (KeyNotFoundException ex)         { return NotFound(ex.Message); }

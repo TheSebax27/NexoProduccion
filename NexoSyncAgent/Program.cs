@@ -38,6 +38,14 @@ builder.Services.AddHttpClient<INexoApiClient, NexoApiClient>((sp, client) =>
 
     client.BaseAddress = new Uri(baseUrl);
     client.DefaultRequestHeaders.Add("X-Api-Key", config["NexoApi:ApiKey"]);
+
+    // TenantHost lo genera la API al crear el instalador e identifica al cliente.
+    // Se envía como X-Nexo-Host para que TenantMiddleware resuelva el tenant correcto
+    // aunque la URL de la API sea un dominio compartido (apinexo.colombiasis.com).
+    var tenantHost = config["NexoApi:TenantHost"];
+    if (!string.IsNullOrWhiteSpace(tenantHost))
+        client.DefaultRequestHeaders.Add("X-Nexo-Host", tenantHost);
+
     client.Timeout = TimeSpan.FromMinutes(15);
 })
 .ConfigurePrimaryHttpMessageHandler((sp) =>

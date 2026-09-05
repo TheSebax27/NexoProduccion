@@ -26,7 +26,11 @@ public class TenantMiddleware
         TenantConnectionService tenantService,
         IConfiguration configuration)
     {
-        var host = context.Request.Host.Host;
+        // X-Nexo-Host lo inyecta TenantHostForwardingHandler de NexoWeb cuando
+        // Web y API están en servidores distintos, para no pisar el Host header
+        // que IIS necesita para enrutar al binding correcto.
+        var host = context.Request.Headers["X-Nexo-Host"].FirstOrDefault()
+                ?? context.Request.Host.Host;
 
         if (EsLocalhost(host))
         {

@@ -1,10 +1,12 @@
 # NEXO ERP — Guía de cambio de servidor o dominio
 Actualizado: Sep 2026
 
+> **Dominio API actual:** `https://apinexo.colombiasis.com` (servidor `45.171.180.181`)
+
 ---
 
 ## CAMBIO DE DOMINIO DE LA API
-(ej: de api.insumar.com.co a api.nuevocliente.com)
+(ej: de apinexo.colombiasis.com a api.nuevocliente.com)
 
 Solo 2 archivos fuente. El deploy regenera todo lo demás.
 
@@ -103,7 +105,7 @@ Uploads de imagen: son server-side (JSON base64) — el browser nunca ve localho
 - ASPNETCORE_ENVIRONMENT=Production está fijado en NexoApi/web.config — no tocar.
   Si no está, el instalador del agente genera config apuntando a localhost:7144.
 
-- El agente instalado en el cliente apunta a la URL pública (https://api.insumar.com.co).
+- El agente instalado en el cliente apunta a la URL pública (https://apinexo.colombiasis.com).
   Si se cambia el dominio de la API, los clientes con agente instalado deben REINSTALARLO.
   (El agente no depende del SQL Server directamente, solo de la API pública.)
 

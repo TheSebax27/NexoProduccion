@@ -666,7 +666,7 @@ Usar siempre el script maestro en `C:\Produccion\deploy.ps1`:
 La salida queda en `C:\Produccion\Publish\`. El script imprime al final qué valores hay que editar en `appsettings.Production.json` de cada proyecto antes de desplegar al cliente.
 
 **Configuración por cliente** — solo UN valor que cambiar en `Publish\Api\appsettings.Production.json`:
-- `ApiBaseUrl` — URL pública de la API (ej: `https://api.insumar.com.co`)
+- `ApiBaseUrl` — URL pública de la API (ej: `https://apinexo.colombiasis.com`)
 
 `ConnectionStrings.NexoDb` ya **no se configura** — la API resuelve la BD de cada cliente dinámicamente desde `admin_services` usando el subdominio del Host header (ver sección 2 — Arquitectura multi-tenant).
 

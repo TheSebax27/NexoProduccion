@@ -52,6 +52,15 @@ builder.Services.AddHttpClient<INexoApiClient, NexoApiClient>((sp, client) =>
 builder.Services.AddHttpClient("img-proxy").ConfigurePrimaryHttpMessageHandler(() =>
     new HttpClientHandler { ServerCertificateCustomValidationCallback = (_, _, _, _) => true });
 
+// Cliente para proxear el track/click de marketing: NO sigue redirects para poder
+// devolverlos al browser del destinatario del email.
+builder.Services.AddHttpClient("no-redirect-proxy").ConfigurePrimaryHttpMessageHandler(() =>
+    new HttpClientHandler
+    {
+        ServerCertificateCustomValidationCallback = (_, _, _, _) => true,
+        AllowAutoRedirect = false
+    });
+
 builder.Services.AddAuthorizationCore(); // el "motor" de autorizacion de Blazor (distinto al AddAuthorization de la API)
 builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
@@ -86,11 +95,14 @@ app.UseAntiforgery();
 {
     var apiBase = app.Configuration["NexoApi:BaseUrl"]!.TrimEnd('/');
 
-    static async Task<IResult> ProxyImagen(string apiUrl, IHttpClientFactory hf)
+    static async Task<IResult> ProxyImagen(string apiUrl, IHttpClientFactory hf, string? tenantHost = null)
     {
         var client = hf.CreateClient("img-proxy");
+        var req = new HttpRequestMessage(HttpMethod.Get, apiUrl);
+        if (!string.IsNullOrEmpty(tenantHost))
+            req.Headers.TryAddWithoutValidation("X-Nexo-Host", tenantHost);
         HttpResponseMessage resp;
-        try { resp = await client.GetAsync(apiUrl); }
+        try { resp = await client.SendAsync(req); }
         catch { return Results.NotFound(); }
         if (!resp.IsSuccessStatusCode) return Results.NotFound();
         var bytes = await resp.Content.ReadAsByteArrayAsync();
@@ -99,20 +111,70 @@ app.UseAntiforgery();
     }
 
     app.MapGet("api/catalogo/articulos/{id:int}/imagen",
-        (int id, IHttpClientFactory hf) => ProxyImagen($"{apiBase}/api/catalogo/articulos/{id}/imagen", hf));
+        (int id, HttpContext ctx, IHttpClientFactory hf) =>
+            ProxyImagen($"{apiBase}/api/catalogo/articulos/{id}/imagen", hf, ctx.Request.Host.Host));
 
     app.MapGet("api/rrhh/empleados/{id:int}/foto",
-        (int id, IHttpClientFactory hf) => ProxyImagen($"{apiBase}/api/rrhh/empleados/{id}/foto", hf));
+        (int id, HttpContext ctx, IHttpClientFactory hf) =>
+            ProxyImagen($"{apiBase}/api/rrhh/empleados/{id}/foto", hf, ctx.Request.Host.Host));
 
     app.MapGet("api/marketing/combos/{id:int}/imagen",
-        (int id, IHttpClientFactory hf) => ProxyImagen($"{apiBase}/api/marketing/combos/{id}/imagen", hf));
+        (int id, HttpContext ctx, IHttpClientFactory hf) =>
+            ProxyImagen($"{apiBase}/api/marketing/combos/{id}/imagen", hf, ctx.Request.Host.Host));
 
     app.MapGet("api/produccion/maquinaria/{id:int}/foto",
-        (int id, IHttpClientFactory hf) => ProxyImagen($"{apiBase}/api/produccion/maquinaria/{id}/foto", hf));
+        (int id, HttpContext ctx, IHttpClientFactory hf) =>
+            ProxyImagen($"{apiBase}/api/produccion/maquinaria/{id}/foto", hf, ctx.Request.Host.Host));
 
     app.MapGet("api/rrhh/asistencia/qr-imagen",
-        (string wb, long ts, IHttpClientFactory hf) =>
-            ProxyImagen($"{apiBase}/api/rrhh/asistencia/qr-imagen?wb={Uri.EscapeDataString(wb)}&ts={ts}", hf));
+        async (HttpContext ctx, IHttpClientFactory hf) =>
+            await ProxyImagen($"{apiBase}/api/rrhh/asistencia/qr-imagen{ctx.Request.QueryString}", hf, ctx.Request.Host.Host));
+
+    // ── Proxy de tracking de marketing (los links van en emails → deben pasar por el Web del tenant)
+    app.MapGet("api/marketing/track/open/{token}",
+        async (string token, HttpContext ctx, IHttpClientFactory hf) =>
+            await ProxyImagen($"{apiBase}/api/marketing/track/open/{token}", hf, ctx.Request.Host.Host));
+
+    app.MapGet("api/marketing/track/click/{token}",
+        async (string token, HttpContext ctx, IHttpClientFactory hf) =>
+        {
+            var client = hf.CreateClient("no-redirect-proxy");
+            var req = new HttpRequestMessage(HttpMethod.Get,
+                $"{apiBase}/api/marketing/track/click/{token}{ctx.Request.QueryString}");
+            req.Headers.TryAddWithoutValidation("X-Nexo-Host", ctx.Request.Host.Host);
+            HttpResponseMessage resp;
+            try { resp = await client.SendAsync(req); }
+            catch { return Results.NotFound(); }
+            var location = resp.Headers.Location?.ToString();
+            return !string.IsNullOrEmpty(location) ? Results.Redirect(location) : Results.NotFound();
+        });
+
+    app.MapGet("api/marketing/unsub/{token}",
+        async (string token, HttpContext ctx, IHttpClientFactory hf) =>
+        {
+            var client = hf.CreateClient("img-proxy");
+            var req = new HttpRequestMessage(HttpMethod.Get, $"{apiBase}/api/marketing/unsub/{token}");
+            req.Headers.TryAddWithoutValidation("X-Nexo-Host", ctx.Request.Host.Host);
+            HttpResponseMessage resp;
+            try { resp = await client.SendAsync(req); }
+            catch { return Results.StatusCode(502); }
+            var html = await resp.Content.ReadAsStringAsync();
+            return Results.Content(html, "text/html");
+        });
+
+    app.MapGet("api/integracion/descargar-agente/{token}",
+        async (string token, HttpContext ctx, IHttpClientFactory hf) =>
+        {
+            var client = hf.CreateClient("img-proxy");
+            var req = new HttpRequestMessage(HttpMethod.Get, $"{apiBase}/api/integracion/descargar-agente/{token}");
+            req.Headers.TryAddWithoutValidation("X-Nexo-Host", ctx.Request.Host.Host);
+            HttpResponseMessage resp;
+            try { resp = await client.SendAsync(req); }
+            catch { return Results.NotFound(); }
+            if (!resp.IsSuccessStatusCode) return Results.NotFound();
+            var bytes = await resp.Content.ReadAsByteArrayAsync();
+            return Results.File(bytes, "application/octet-stream", "NexoAgente-Setup.exe");
+        });
 }
 
 app.MapRazorComponents<App>()
