@@ -493,7 +493,7 @@ public class IntegracionService : IIntegracionService
                   WHERE AgenteSyncID = @AgenteSyncID",
                 new { ApiKeyHash = apiKeyHash, ApiKeyPlain = apiKey, r.Descripcion, AgenteSyncID = existingId.Value });
             await connection.ExecuteAsync(
-                "UPDATE Organizacion.CentrosCosto SET TieneVisions = 1, IdentificadorClienteVisions = '1' WHERE CentroCostoID = @CentroCostoID",
+                "UPDATE Organizacion.CentrosCosto SET TieneVisions = 1, IdentificadorClienteVisions = CASE WHEN NULLIF(IdentificadorClienteVisions,'') IS NULL THEN '1' ELSE IdentificadorClienteVisions END WHERE CentroCostoID = @CentroCostoID",
                 new { r.CentroCostoID });
             return new GenerarApiKeyResponse(existingId.Value, apiKey);
         }
@@ -1102,11 +1102,10 @@ public class IntegracionService : IIntegracionService
         var minutos    = config.IntervalMinutes > 0 ? config.IntervalMinutes : 5;
         var segundos   = config.IntervalSeconds > 0 ? config.IntervalSeconds : 0;
 
-        // Captura el host del tenant desde la petición entrante (X-Nexo-Host o Request.Host).
-        // El agente lo enviará como X-Nexo-Host para que TenantMiddleware resuelva
-        // el tenant correcto aunque la URL de la API sea un dominio compartido.
-        var tenantHost = _httpContextAccessor.HttpContext?.Request.Headers["X-Nexo-Host"].FirstOrDefault()
-                      ?? _httpContextAccessor.HttpContext?.Request.Host.Host
+        // TenantMiddleware ya resolvió el host y lo guardó en Items["Nexo_TenantHost"].
+        // Es más confiable que releer el header porque el middleware ya validó el tenant.
+        var tenantHost = (_httpContextAccessor.HttpContext?.Items["Nexo_TenantHost"] as string)
+                      ?? _httpContextAccessor.HttpContext?.Request.Headers["X-Nexo-Host"].FirstOrDefault()
                       ?? "";
 
         // JsonSerializer.Serialize incluye las comillas y escapa correctamente \, ", etc.

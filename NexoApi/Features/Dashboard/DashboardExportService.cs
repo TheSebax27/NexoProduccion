@@ -84,7 +84,7 @@ public class DashboardExportService : IDashboardExportService
     private async Task<DatosReporte> RecolectarDatosAsync(DateTime desde, DateTime hasta)
     {
         using var connection = _db.CreateConnection();
-        var (nombreEmpresa, nombrePropietario) = await connection.QuerySingleAsync<(string, string?)>(
+        var (nombreEmpresa, nombrePropietario) = await connection.QueryFirstOrDefaultAsync<(string, string?)>(
             "SELECT NombreEmpresa, NombrePropietario FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
         if (string.IsNullOrEmpty(nombreEmpresa)) nombreEmpresa = "NEXO ERP";
 

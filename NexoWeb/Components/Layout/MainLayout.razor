@@ -161,8 +161,16 @@
             </div>
 
             @* Avatar + nombre + rol -- ahora es un menu con mini-ajustes (cambiar
-               nombre/foto), ver Components/Shared/PerfilMenu.razor *@
-            <PerfilMenu />
+               nombre/foto), ver Components/Shared/PerfilMenu.razor.
+               z-index:1003 coloca el activador por encima del backdrop de
+               notificaciones (z-index:1000 dentro del stacking-context 1001),
+               de modo que el primer clic siempre aterriza en el perfil y no
+               en el backdrop. El onclick adicional garantiza que el panel de
+               notificaciones se cierre antes de que el MudMenu abra. *@
+            <div style="position:relative; z-index:1003; display:inline-flex; align-items:center;"
+                 @onclick="() => _notifAbierta = false">
+                <PerfilMenu />
+            </div>
         }
 
     </MudAppBar>
@@ -362,7 +370,14 @@
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         _tituloPagina = ObtenerTituloPagina();
-        InvokeAsync(StateHasChanged);
+        InvokeAsync(async () =>
+        {
+            // Reintenta cargar la config de empresa si el primer intento falló
+            // (p.ej. API no disponible durante OnInitializedAsync).
+            if (AuthState.EstaLogueado && !ConfiguracionEmpresa.Cargado)
+                await ConfiguracionEmpresa.CargarAsync();
+            StateHasChanged();
+        });
     }
 
     private string ObtenerTituloPagina()

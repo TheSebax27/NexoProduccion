@@ -106,7 +106,7 @@ public class TareaDetectarArticulosFaltantes
                     INSERT INTO dbo.NEXO_TarjetasCambios
                         (CENTROCOSTO, REFERENCIA, DETALLE, COSTO, PPUBLICO, FechaCambio, Procesado)
                     VALUES (@CC, @Ref, @Detalle, @Costo, @PPub, GETDATE(), 1)",
-                    new { CC = centroCostoVisions, Ref = a.REFERENCIA, Detalle = a.DETALLE, Costo = a.COSTO, PPub = a.PPUBLICO });
+                    new { CC = centroCostoVisions, Ref = a.REFERENCIA, Detalle = a.DETALLE ?? "", Costo = a.COSTO ?? 0m, PPub = a.PPUBLICO ?? 0m });
             }
             catch (Exception ex)
             {

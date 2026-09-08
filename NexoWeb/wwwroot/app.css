@@ -2730,12 +2730,24 @@ a, .btn-link { color: var(--n-purple); }
   :root:not([data-theme="light"]) .nexo-bi-alert--amber { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.3); }
   :root:not([data-theme="light"]) .nexo-bi-alert--green { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
   :root:not([data-theme="light"]) .nexo-bi-alert--blue  { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.3); }
+  :root:not([data-theme="light"]) .nexo-bi-alert__title { color: rgba(255,255,255,0.92); }
+  :root:not([data-theme="light"]) .nexo-bi-alert__desc  { color: rgba(255,255,255,0.65); }
+  :root:not([data-theme="light"]) .nexo-bi-alert__icon  { color: rgba(255,255,255,0.80); }
   :root:not([data-theme="light"]) .nexo-bi-stat { background: rgba(124,92,255,0.1); }
   :root:not([data-theme="light"]) .nexo-bi-hbar__track { background: rgba(124,92,255,0.2); }
+  :root:not([data-theme="light"]) .nexo-kpi-delta--up   { background: rgba(16,185,129,0.20); color: #34D399; }
+  :root:not([data-theme="light"]) .nexo-kpi-delta--down { background: rgba(239,68,68,0.20);  color: #F87171; }
+  :root:not([data-theme="light"]) .nexo-bi-stat__val    { color: #A78BFA; }
 }
 :root[data-theme="dark"] .nexo-bi-alert--red   { background: rgba(239,68,68,0.12);  border-color: rgba(239,68,68,0.3); }
 :root[data-theme="dark"] .nexo-bi-alert--amber { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.3); }
 :root[data-theme="dark"] .nexo-bi-alert--green { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
 :root[data-theme="dark"] .nexo-bi-alert--blue  { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.3); }
+:root[data-theme="dark"] .nexo-bi-alert__title { color: rgba(255,255,255,0.92); }
+:root[data-theme="dark"] .nexo-bi-alert__desc  { color: rgba(255,255,255,0.65); }
+:root[data-theme="dark"] .nexo-bi-alert__icon  { color: rgba(255,255,255,0.80); }
 :root[data-theme="dark"] .nexo-bi-stat { background: rgba(124,92,255,0.1); }
 :root[data-theme="dark"] .nexo-bi-hbar__track { background: rgba(124,92,255,0.2); }
+:root[data-theme="dark"] .nexo-kpi-delta--up   { background: rgba(16,185,129,0.20); color: #34D399; }
+:root[data-theme="dark"] .nexo-kpi-delta--down { background: rgba(239,68,68,0.20);  color: #F87171; }
+:root[data-theme="dark"] .nexo-bi-stat__val    { color: #A78BFA; }

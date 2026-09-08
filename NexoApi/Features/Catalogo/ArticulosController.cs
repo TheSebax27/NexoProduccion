@@ -15,11 +15,13 @@ public class ArticulosController : ControllerBase
 {
     private readonly ICatalogoService _service;
     private readonly IConfiguracionService _config;
+    private readonly IAdicionalesService _adicionales;
 
-    public ArticulosController(ICatalogoService service, IConfiguracionService config)
+    public ArticulosController(ICatalogoService service, IConfiguracionService config, IAdicionalesService adicionales)
     {
-        _service = service;
-        _config  = config;
+        _service    = service;
+        _config     = config;
+        _adicionales = adicionales;
     }
 
     private int UsuarioActualId =>
@@ -271,6 +273,53 @@ public class ArticulosController : ControllerBase
         }
 
         return Ok(new ImportarExcelResult(creados, actualizados, errores, mensajes));
+    }
+
+    // ── Adicionales (toppings/extras) ────────────────────────────────────────
+
+    [HttpGet("{id:int}/es-adicional")]
+    public async Task<ActionResult<bool>> EsAdicional(int id)
+        => Ok(await _adicionales.EsAdicionalAsync(id));
+
+    [HttpPost("{id:int}/es-adicional")]
+    public async Task<ActionResult> MarcarEsAdicional(int id, MarcarEsAdicionalRequest request)
+    {
+        await _adicionales.MarcarEsAdicionalAsync(id, request.EsAdicional);
+        return NoContent();
+    }
+
+    [HttpGet("{id:int}/adicionales")]
+    public async Task<ActionResult<IEnumerable<ArticuloAdicionalItem>>> ListarAdicionales(int id)
+        => Ok(await _adicionales.ListarAsignadosAsync(id));
+
+    [HttpGet("{id:int}/adicionales/disponibles")]
+    public async Task<ActionResult<IEnumerable<ArticuloAdicionalItem>>> ListarAdicionalesDisponibles(int id)
+        => Ok(await _adicionales.ListarDisponiblesAsync(id));
+
+    [HttpPost("{id:int}/adicionales")]
+    public async Task<ActionResult> AgregarAdicional(int id, AgregarAdicionalRequest request)
+    {
+        await _adicionales.AgregarAsync(id, request.AdicionalID);
+        return NoContent();
+    }
+
+    [HttpDelete("{id:int}/adicionales/{adicionalId:int}")]
+    public async Task<ActionResult> QuitarAdicional(int id, int adicionalId)
+    {
+        await _adicionales.QuitarAsync(id, adicionalId);
+        return NoContent();
+    }
+
+    [HttpGet("adicionales/sync")]
+    public async Task<ActionResult<AdicionalesSyncResponse>> SyncData()
+        => Ok(await _adicionales.ObtenerDatosSyncAsync());
+
+    // El agente llama aquí para subir lo que Visions tiene (upsert; no elimina en NEXO).
+    [HttpPost("adicionales/sync-desde-visions")]
+    public async Task<ActionResult> SyncDesdeVisions([FromBody] AdicionalesSyncDesdeVisionsRequest request)
+    {
+        await _adicionales.SincronizarDesdeVisionsAsync(request);
+        return NoContent();
     }
 
     // ── Variantes ────────────────────────────────────────────────────────────

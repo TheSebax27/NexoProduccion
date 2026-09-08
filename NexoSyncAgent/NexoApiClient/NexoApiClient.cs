@@ -244,4 +244,20 @@ public class NexoApiClient : INexoApiClient
         var r = await _http.PostAsync($"api/integracion/pendientes-limpieza-visions/{limpiezaId}/completar", null, ct);
         r.EnsureSuccessStatusCode();
     }
+
+    // ──────────── Adicionales NEXO → Visions ────────────
+
+    public async Task<AdicionalesSyncResponse> ListarAdicionalesSyncAsync(CancellationToken ct)
+    {
+        var r = await _http.GetAsync("api/catalogo/articulos/adicionales/sync", ct);
+        r.EnsureSuccessStatusCode();
+        return await r.Content.ReadFromJsonAsync<AdicionalesSyncResponse>(cancellationToken: ct)
+               ?? new AdicionalesSyncResponse([], []);
+    }
+
+    public async Task SincronizarAdicionalesDesdeVisionsAsync(AdicionalesSyncDesdeVisionsRequest request, CancellationToken ct)
+    {
+        var r = await _http.PostAsJsonAsync("api/catalogo/articulos/adicionales/sync-desde-visions", request, ct);
+        r.EnsureSuccessStatusCode();
+    }
 }

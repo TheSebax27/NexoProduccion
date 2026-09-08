@@ -242,6 +242,11 @@ public record CrearVarianteRequest(string? NombreVariante, string? Referencia, s
 public record ArticulosPaginadosResponse(List<ArticuloItem> Items, int Total, int Pagina, int Tamano);
 public record UnidadMedidaItem(int UnidadID, string Nombre, string Abreviatura, string Tipo);
 
+// ── Adicionales (toppings/extras) ───────────────────────────────────────
+public record ArticuloAdicionalItem(int AdicionalID, string Referencia, string Nombre);
+public record MarcarEsAdicionalRequest(bool EsAdicional);
+public record AgregarAdicionalRequest(int AdicionalID);
+
 // ── Catalogo: Iva (calca de dbo.IVA de Visions) ────────────────────────
 // TARJETA no tiene FK a IVA; almacena valores directamente (copia plana).
 public record IvaItem(int IvaID, int Iva, string? Descripcion);

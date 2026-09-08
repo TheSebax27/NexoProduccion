@@ -640,6 +640,35 @@ else
     </div>
 }
 
+@* ── Adicionales (toppings / extras) ─────────────────────────────────── *@
+@if (_articulo is not null)
+{
+    <div class="nexo-section mt-4 mb-2">
+        <div class="nexo-section__header">
+            <div class="nexo-section__icon" style="background:rgba(245,158,11,0.10);">
+                <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Style="color:#F59E0B; font-size:1.25rem;" />
+            </div>
+            <div style="flex:1;">
+                <div class="nexo-section__title">Adicionales</div>
+                <div class="nexo-section__sub">Artículos opcionales o extras que se pueden agregar a este artículo</div>
+            </div>
+        </div>
+        <div class="nexo-section__body">
+            <div class="d-flex align-center" style="gap:16px; flex-wrap:wrap;">
+                <MudSwitch T="bool" Value="_esAdicional"
+                           Label="Este artículo puede ser adicional de otros"
+                           Color="Color.Primary"
+                           ValueChanged="OnEsAdicionalChangedAsync" />
+                <MudButton Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Tune"
+                           OnClick="AbrirAdicionalesDialogAsync">
+                    Gestionar adicionales (@_cantidadAdicionales)
+                </MudButton>
+            </div>
+        </div>
+    </div>
+}
+
 @* ── Barra de acciones fija ───────────────────────────────────────────── *@
 <div class="nexo-action-bar">
     <div class="nexo-action-bar__inner">
@@ -773,6 +802,7 @@ else
             }
 
             PopularCampos(_articulo);
+            await CargarEstadoAdicionalesAsync();
         }
         catch (Exception ex)
         {
@@ -1092,5 +1122,52 @@ else
             Snackbar.Add(ex.Message, Severity.Error);
         }
         finally { _guardandoVariante = false; }
+    }
+
+    // ── Adicionales ───────────────────────────────────────────────────────
+    private bool _esAdicional;
+    private int  _cantidadAdicionales;
+
+    private async Task CargarEstadoAdicionalesAsync()
+    {
+        try
+        {
+            var tEsAdicional = ApiClient.GetAsync<bool>($"api/catalogo/articulos/{ArticuloId}/es-adicional");
+            var tAsignados   = ApiClient.GetAsync<List<ArticuloAdicionalItem>>($"api/catalogo/articulos/{ArticuloId}/adicionales");
+            await Task.WhenAll(tEsAdicional, tAsignados);
+            _esAdicional         = tEsAdicional.Result;
+            _cantidadAdicionales = (tAsignados.Result ?? new()).Count;
+        }
+        catch { }
+    }
+
+    private async Task OnEsAdicionalChangedAsync(bool valor)
+    {
+        _esAdicional = valor;
+        try
+        {
+            await ApiClient.PostAsync<MarcarEsAdicionalRequest>(
+                $"api/catalogo/articulos/{ArticuloId}/es-adicional",
+                new MarcarEsAdicionalRequest(valor));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al guardar: {ex.Message}", Severity.Error);
+            _esAdicional = !valor;
+        }
+    }
+
+    private async Task AbrirAdicionalesDialogAsync()
+    {
+        var params_ = new DialogParameters<AdicionalesDialog>
+        {
+            { x => x.ArticuloID, ArticuloId }
+        };
+        var dialogo = await DialogService.ShowAsync<AdicionalesDialog>("Adicionales",
+            params_,
+            new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true });
+        var result = await dialogo.Result;
+        if (result is not null && !result.Canceled && result.Data is int count)
+            _cantidadAdicionales = count;
     }
 }

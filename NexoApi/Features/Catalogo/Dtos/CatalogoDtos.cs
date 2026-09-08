@@ -150,6 +150,23 @@ public record CrearVarianteRequest(string? NombreVariante, string? Referencia, s
 public record ArticulosPaginadosResponse(List<ArticuloItem> Items, int Total, int Pagina, int Tamano);
 public record UnidadMedidaItem(int UnidadID, string Nombre, string Abreviatura, string Tipo);
 
+// ---------- Adicionales (toppings/extras — se sincronizan con Visions) ----------
+// ArticuloEsAdicional: marca que este artículo puede ser adicional de otro.
+// ArticuloAdicionales: relación principal → adicional.
+public record ArticuloAdicionalItem(int AdicionalID, string Referencia, string Nombre);
+public record MarcarEsAdicionalRequest(bool EsAdicional);
+public record AgregarAdicionalRequest(int AdicionalID);
+
+// Payload completo para el agente: snapshot de todo lo que debe quedar en Visions.
+public record EsAdicionalSyncItem(string Referencia);
+public record AdicionalRelacionSyncItem(string Referencia, string RefAdicional, int Orden);
+public record AdicionalesSyncResponse(List<EsAdicionalSyncItem> EsAdicional, List<AdicionalRelacionSyncItem> Adicionales);
+
+// Payload que el agente envía desde Visions → NEXO (solo upsert, sin eliminaciones).
+public record AdicionalesSyncDesdeVisionsRequest(
+    List<EsAdicionalSyncItem> EsAdicional,
+    List<AdicionalRelacionSyncItem> Adicionales);
+
 // ---------- Catalogo: Iva (= dbo.IVA en Visions) ----------
 // TARJETA no tiene FK a IVA; almacena IVAVALOR e IVADESCRIPCION como copia plana.
 // NEXO sigue el mismo patron: IvaValor e IvaDescripcion en Tarjetas son copias planas.

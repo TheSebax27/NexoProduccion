@@ -95,6 +95,7 @@ builder.Services.AddScoped<IInventarioService, InventarioService>();
 builder.Services.AddScoped<IOrdenesCompraService, OrdenesCompraService>();
 builder.Services.AddScoped<ITraspasosService, TraspasosService>();
 builder.Services.AddScoped<ICatalogoService, CatalogoService>();
+builder.Services.AddScoped<IAdicionalesService, AdicionalesService>();
 builder.Services.AddScoped<IRecetasService, RecetasService>();
 builder.Services.AddScoped<IIntegracionService, IntegracionService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();

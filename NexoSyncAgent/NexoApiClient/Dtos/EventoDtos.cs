@@ -242,3 +242,10 @@ public record LineaFacturaParaVisionsDto(
     decimal Costo
 );
 public record PendienteLimpiezaVisionsDto(int LimpiezaID, string Tipo, int EntidadID);
+
+// ──────────── Adicionales (toppings) bidireccional ────────────
+public record EsAdicionalSyncItem(string Referencia);
+public record AdicionalRelacionSyncItem(string Referencia, string RefAdicional, int Orden);
+public record AdicionalesSyncResponse(List<EsAdicionalSyncItem> EsAdicional, List<AdicionalRelacionSyncItem> Adicionales);
+// Payload Visions → NEXO (upsert sin eliminaciones).
+public record AdicionalesSyncDesdeVisionsRequest(List<EsAdicionalSyncItem> EsAdicional, List<AdicionalRelacionSyncItem> Adicionales);

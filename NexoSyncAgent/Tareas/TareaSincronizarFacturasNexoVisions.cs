@@ -184,7 +184,7 @@ public class TareaSincronizarFacturasNexoVisions
                         VALUES (@FacturaID, 'NEXO-'+CAST(@FacturaID AS nvarchar), @TipDoc, @NroDoc, GETDATE(), GETDATE())
                       ELSE
                         UPDATE dbo.NEXO_FacturasSalientes SET FechaSyncBack=GETDATE() WHERE FacturaID=@FacturaID",
-                    new { f.FacturaID, TipDoc = f.TipDocVisions, NroDoc = f.NroDocVisions });
+                    new { f.FacturaID, TipDoc = f.TipDocVisions ?? "", NroDoc = f.NroDocVisions ?? "" });
 
                 _logger.LogInformation("Factura NEXO {ID} actualizada con número Visions {NroDoc}",
                     f.FacturaID, f.NroDocVisions);

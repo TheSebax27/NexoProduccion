@@ -98,9 +98,13 @@ public class AsistenciaService(IDbConnectionFactory db) : IAsistenciaService
             throw new ArgumentException("Modo invalido. Usa TTL o SINGLE_USE.");
 
         using var conn = db.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE Rrhh.QrAsistenciaConfig SET ModoQr = @modo, TokenActual = NULL",
-            new { modo });
+        await conn.ExecuteAsync("""
+            IF EXISTS (SELECT 1 FROM Rrhh.QrAsistenciaConfig)
+                UPDATE Rrhh.QrAsistenciaConfig SET ModoQr = @modo, TokenActual = NULL
+            ELSE
+                INSERT INTO Rrhh.QrAsistenciaConfig (Secreto, ModoQr, TokenActual)
+                VALUES (CONVERT(varchar(64), NEWID()), @modo, NULL)
+            """, new { modo });
     }
 
     // ---- Horarios ----

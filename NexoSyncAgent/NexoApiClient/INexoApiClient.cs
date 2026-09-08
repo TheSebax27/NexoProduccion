@@ -53,4 +53,8 @@ public interface INexoApiClient
     // Limpieza staging Visions para entidades eliminadas en NEXO
     Task<List<PendienteLimpiezaVisionsDto>> ListarPendientesLimpiezaVisionsAsync(CancellationToken ct);
     Task MarcarLimpiezaVisionsCompletadaAsync(int limpiezaId, CancellationToken ct);
+
+    // Adicionales (toppings) bidireccional
+    Task<AdicionalesSyncResponse> ListarAdicionalesSyncAsync(CancellationToken ct);
+    Task SincronizarAdicionalesDesdeVisionsAsync(AdicionalesSyncDesdeVisionsRequest request, CancellationToken ct);
 }

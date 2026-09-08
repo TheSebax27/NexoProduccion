@@ -23,6 +23,11 @@ public class GmailEmailService(IDbConnectionFactory db) : IEmailService
     {
         using var conn = _db.CreateConnection();
         await conn.ExecuteAsync("""
+            IF NOT EXISTS (SELECT 1 FROM Organizacion.ConfiguracionEmail WHERE ConfiguracionID = 1)
+                INSERT INTO Organizacion.ConfiguracionEmail (ConfiguracionID, Proveedor, ApiKey, EmailFrom, NombreFrom, Activo, EmailsHoy, FechaModificacion)
+                VALUES (1, 'Sin configurar', NULL, NULL, NULL, 0, 0, SYSUTCDATETIME())
+            """);
+        await conn.ExecuteAsync("""
             UPDATE Organizacion.ConfiguracionEmail
             SET Proveedor = @Proveedor, ApiKey = @ApiKey, EmailFrom = @EmailFrom,
                 NombreFrom = @NombreFrom, Activo = @Activo, FechaModificacion = SYSUTCDATETIME()
@@ -77,6 +82,11 @@ public class GmailEmailService(IDbConnectionFactory db) : IEmailService
     public async Task IncrementarContadorAsync()
     {
         using var conn = _db.CreateConnection();
+        await conn.ExecuteAsync("""
+            IF NOT EXISTS (SELECT 1 FROM Organizacion.ConfiguracionEmail WHERE ConfiguracionID = 1)
+                INSERT INTO Organizacion.ConfiguracionEmail (ConfiguracionID, Proveedor, ApiKey, EmailFrom, NombreFrom, Activo, EmailsHoy, FechaModificacion)
+                VALUES (1, 'Sin configurar', NULL, NULL, NULL, 0, 0, SYSUTCDATETIME())
+            """);
         await conn.ExecuteAsync("""
             UPDATE Organizacion.ConfiguracionEmail
             SET EmailsHoy   = CASE WHEN FechaContador = CAST(GETDATE() AS DATE) THEN EmailsHoy + 1 ELSE 1 END,

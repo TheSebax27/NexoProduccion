@@ -192,7 +192,11 @@ else
                                 <div class="nexo-chart-header__sub">Facturas y OPs de producción</div>
                             </div>
                         </div>
-                        @if (_sparklines is not null && _sparklines.Facturas.Count > 0)
+                        @if (_sparklines is null)
+                        {
+                            <div class="nexo-empty-state"><MudProgressCircular Indeterminate="true" /></div>
+                        }
+                        else if (_sparklines.Facturas.Count > 0)
                         {
                             <MudChart ChartType="ChartType.Line"
                                       ChartSeries="@_seriesGeneralLinea"
@@ -202,7 +206,10 @@ else
                         }
                         else
                         {
-                            <div class="nexo-empty-state"><MudProgressCircular Indeterminate="true" /></div>
+                            <div class="nexo-empty-state">
+                                <MudIcon Icon="@Icons.Material.Outlined.BarChart" Class="nexo-empty-state__icon" />
+                                <p class="nexo-empty-state__text">Sin facturación ni órdenes en los últimos 7 días.</p>
+                            </div>
                         }
                     </MudPaper>
                 </MudItem>
@@ -215,13 +222,24 @@ else
                                 <div class="nexo-chart-header__sub">Distribución por tipo</div>
                             </div>
                         </div>
-                        @if (_sparklines is not null)
+                        @if (_sparklines is null)
+                        {
+                            <div class="nexo-empty-state"><MudProgressCircular Indeterminate="true" /></div>
+                        }
+                        else if (_dataGeneralDonut.Length > 0 && _dataGeneralDonut.Any(v => v > 0))
                         {
                             <MudChart ChartType="ChartType.Donut"
                                       InputData="@_dataGeneralDonut"
                                       InputLabels="@_labelsGeneralDonut"
                                       ChartOptions="@_opcionesGrafico"
                                       Width="100%" Height="180px" />
+                        }
+                        else
+                        {
+                            <div class="nexo-empty-state">
+                                <MudIcon Icon="@Icons.Material.Outlined.DonutSmall" Class="nexo-empty-state__icon" />
+                                <p class="nexo-empty-state__text">Sin documentos en los últimos 7 días.</p>
+                            </div>
                         }
                     </MudPaper>
                 </MudItem>

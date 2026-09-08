@@ -22,6 +22,7 @@ builder.Services.AddScoped<TareaDetectarArticulosFaltantes>();
 builder.Services.AddScoped<TareaSincronizarClientes>();
 builder.Services.AddScoped<TareaSincronizarProveedores>();
 builder.Services.AddScoped<TareaSincronizarPedidos>();
+builder.Services.AddScoped<TareaSincronizarAdicionales>();
 
 // HttpClient tipado: cada vez que alguien pida INexoApiClient, le dan un
 // NexoApiClient ya configurado con la URL base y el header de autenticacion.
@@ -50,7 +51,11 @@ builder.Services.AddHttpClient<INexoApiClient, NexoApiClient>((sp, client) =>
 })
 .ConfigurePrimaryHttpMessageHandler((sp) =>
 {
-    var baseUrl = sp.GetRequiredService<IConfiguration>()["NexoApi:BaseUrl"] ?? "";
+    var cfg = sp.GetRequiredService<IConfiguration>();
+    var subdomain = cfg["NexoApi:Subdomain"];
+    var baseUrl = !string.IsNullOrWhiteSpace(subdomain)
+        ? $"https://{subdomain}.{cfg["NexoApi:Domain"]}/"
+        : cfg["NexoApi:BaseUrl"] ?? "";
     // PooledConnectionLifetime evita que el agente reutilice conexiones TCP que el
     // servidor (Kestrel en VS) ya cerró al reiniciar, lo que causaba SocketError 995.
     var handler = new SocketsHttpHandler

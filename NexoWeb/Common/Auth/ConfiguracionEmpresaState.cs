@@ -13,6 +13,8 @@ public class ConfiguracionEmpresaState
     private readonly INexoApiClient _apiClient;
     private bool _cargado;
 
+    public bool Cargado => _cargado;
+
     public string NombreEmpresa { get; private set; } = "NEXO ERP";
     public string? NombrePropietario { get; private set; }
     public string? LogoBase64 { get; private set; }
@@ -53,14 +55,13 @@ public class ConfiguracionEmpresaState
                 ModoLotes = respuesta.ModoLotes;
                 ModoNroDoc = respuesta.ModoNroDoc;
                 UltimoNroDocSecuencial = respuesta.UltimoNroDocSecuencial;
+                _cargado = true;
             }
         }
         catch
         {
-            // Se queda con los valores por defecto si aun no hay sesion/API disponible.
+            // No se marca _cargado para permitir reintento si la API no estaba lista aun.
         }
-
-        _cargado = true;
     }
 
     public async Task ActualizarNombreAsync(string nombreEmpresa, string? nombrePropietario = null)

@@ -24,6 +24,11 @@ public class BrevoEmailService(IDbConnectionFactory db, IHttpClientFactory http)
     {
         using var conn = _db.CreateConnection();
         await conn.ExecuteAsync("""
+            IF NOT EXISTS (SELECT 1 FROM Organizacion.ConfiguracionEmail WHERE ConfiguracionID = 1)
+                INSERT INTO Organizacion.ConfiguracionEmail (ConfiguracionID, Proveedor, ApiKey, EmailFrom, NombreFrom, Activo, EmailsHoy, FechaModificacion)
+                VALUES (1, 'Sin configurar', NULL, NULL, NULL, 0, 0, SYSUTCDATETIME())
+            """);
+        await conn.ExecuteAsync("""
             UPDATE Organizacion.ConfiguracionEmail
             SET Proveedor = @Proveedor, ApiKey = @ApiKey, EmailFrom = @EmailFrom,
                 NombreFrom = @NombreFrom, Activo = @Activo, FechaModificacion = SYSUTCDATETIME()

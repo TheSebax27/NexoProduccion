@@ -350,13 +350,15 @@
 
     protected override async Task OnInitializedAsync()
     {
-        ConfiguracionEmpresa.OnCambio += StateHasChanged;
-        Modulos.OnCambio += StateHasChanged;
-        Preferencias.OnCambio += StateHasChanged;
+        ConfiguracionEmpresa.OnCambio += OnEstadoCambio;
+        Modulos.OnCambio += OnEstadoCambio;
+        Preferencias.OnCambio += OnEstadoCambio;
         Auth.OnChange += RecargarModulos;
 
         await Modulos.CargarAsync(Auth.Rol, Auth.UsuarioId);
     }
+
+    private void OnEstadoCambio() => InvokeAsync(StateHasChanged);
 
     private async void RecargarModulos()
     {

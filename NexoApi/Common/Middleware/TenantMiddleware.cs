@@ -32,6 +32,8 @@ public class TenantMiddleware
         var host = context.Request.Headers["X-Nexo-Host"].FirstOrDefault()
                 ?? context.Request.Host.Host;
 
+        context.Items["Nexo_TenantHost"] = host;
+
         if (EsLocalhost(host))
         {
             // Busca la primera ConnectionString de NEXO no vacía (ignora NexoDb="" de producción).

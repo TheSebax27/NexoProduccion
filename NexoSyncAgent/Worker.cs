@@ -124,6 +124,21 @@ public class Worker : BackgroundService
                     var tareaImportarTarjeta = scope.ServiceProvider.GetRequiredService<TareaImportarCambiosTarjeta>();
                     await tareaImportarTarjeta.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
 
+                    // 5b. Adicionales (toppings) NEXO → Visions.
+                    //     Va despues de cambios de TARJETA: los articulos referenciados
+                    //     ya existen en Visions. Unidireccional, NEXO es la fuente de verdad.
+                    //     Aislado en su propio try/catch: si las tablas aun no existen en NEXO
+                    //     (migracion SQL pendiente), el fallo no interrumpe ventas ni facturas.
+                    try
+                    {
+                        var tareaAdicionales = scope.ServiceProvider.GetRequiredService<TareaSincronizarAdicionales>();
+                        await tareaAdicionales.EjecutarAsync(stoppingToken);
+                    }
+                    catch (Exception exAd)
+                    {
+                        _logger.LogWarning(exAd, "Sync adicionales omitido (tablas aun no creadas?)");
+                    }
+
                     // 6. Clientes Visions → NEXO y NEXO → Visions.
                     //    Va ANTES de ventas: cuando se exporta una venta, el cliente ya existe
                     //    en NEXO con todos sus datos (nombre, telefono, municipio, departamento).

@@ -29,9 +29,27 @@ public class ConfiguracionService : IConfiguracionService
         _db = db;
     }
 
+    // Garantiza que ConfiguracionID = 1 exista para el tenant actual.
+    // Todos los UPDATE dependen de esta fila; sin ella afectan 0 rows sin error.
+    private static async Task EnsureConfigRowAsync(System.Data.IDbConnection connection)
+    {
+        await connection.ExecuteAsync("""
+            IF NOT EXISTS (SELECT 1 FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1)
+                INSERT INTO Organizacion.ConfiguracionEmpresa
+                    (ConfiguracionID, NombreEmpresa, NombrePropietario, Logo, LogoContentType,
+                     UsaVisions, ManejarVencimientos, DiasAlertaVencimiento, ModoLotes,
+                     ModoNroDoc, UltimoNroDocSecuencial)
+                VALUES
+                    (1, 'NEXO ERP', NULL, NULL, NULL,
+                     1, 0, 7, 'FIFO',
+                     'Manual', 0)
+            """);
+    }
+
     public async Task<ConfiguracionEmpresaResponse> ObtenerEmpresaAsync()
     {
         using var connection = _db.CreateConnection();
+        await EnsureConfigRowAsync(connection);
 
         var fila = await connection.QuerySingleAsync<(
             string NombreEmpresa, string? NombrePropietario,
@@ -54,6 +72,7 @@ public class ConfiguracionService : IConfiguracionService
     public async Task ActualizarNombreEmpresaAsync(string nombreEmpresa, string? nombrePropietario)
     {
         using var connection = _db.CreateConnection();
+        await EnsureConfigRowAsync(connection);
         await connection.ExecuteAsync(
             "UPDATE Organizacion.ConfiguracionEmpresa SET NombreEmpresa = @NombreEmpresa, NombrePropietario = @NombrePropietario WHERE ConfiguracionID = 1",
             new { NombreEmpresa = nombreEmpresa, NombrePropietario = nombrePropietario });
@@ -64,6 +83,7 @@ public class ConfiguracionService : IConfiguracionService
     public async Task ActualizarLogoEmpresaAsync(string base64, string contentType)
     {
         using var connection = _db.CreateConnection();
+        await EnsureConfigRowAsync(connection);
         var datos = Convert.FromBase64String(base64);
 
         await connection.ExecuteAsync(
@@ -74,6 +94,7 @@ public class ConfiguracionService : IConfiguracionService
     public async Task EliminarLogoEmpresaAsync()
     {
         using var connection = _db.CreateConnection();
+        await EnsureConfigRowAsync(connection);
         await connection.ExecuteAsync(
             "UPDATE Organizacion.ConfiguracionEmpresa SET Logo = NULL, LogoContentType = NULL WHERE ConfiguracionID = 1");
     }
@@ -81,6 +102,7 @@ public class ConfiguracionService : IConfiguracionService
     public async Task ActualizarUsaVisionsAsync(bool usaVisions)
     {
         using var connection = _db.CreateConnection();
+        await EnsureConfigRowAsync(connection);
         await connection.ExecuteAsync(
             "UPDATE Organizacion.ConfiguracionEmpresa SET UsaVisions = @UsaVisions WHERE ConfiguracionID = 1",
             new { UsaVisions = usaVisions });

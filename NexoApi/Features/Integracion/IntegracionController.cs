@@ -372,6 +372,7 @@ public class IntegracionController : ControllerBase
         => Ok(await _service.ObtenerSaludCatalogoAsync());
 
     /// <summary>Ventas registradas desde Visions en EventosEntrantes, agrupadas por documento.</summary>
+    [Authorize(Roles = "Administracion")]
     [HttpGet("ventas-visions")]
     public async Task<ActionResult<VentasVisionsPaginadasResponse>> ListarVentasVisions(
         [FromQuery] int? centroCostoId,

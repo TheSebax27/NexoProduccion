@@ -53,6 +53,15 @@ public class FacturacionService : IFacturacionService
     {
         using var connection = _db.CreateConnection();
 
+        await connection.ExecuteAsync("""
+            IF NOT EXISTS (SELECT 1 FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1)
+                INSERT INTO Organizacion.ConfiguracionEmpresa
+                    (ConfiguracionID, NombreEmpresa, NombrePropietario, Logo, LogoContentType,
+                     UsaVisions, ManejarVencimientos, DiasAlertaVencimiento, ModoLotes,
+                     ModoNroDoc, UltimoNroDocSecuencial)
+                VALUES
+                    (1, 'NEXO ERP', NULL, NULL, NULL, 1, 0, 7, 'FIFO', 'Manual', 0)
+            """);
         var modo = await connection.ExecuteScalarAsync<string>(
             "SELECT ModoNroDoc FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
 

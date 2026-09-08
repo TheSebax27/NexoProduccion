@@ -29,6 +29,11 @@ public class WhatsAppService(HttpClient http, IDbConnectionFactory db) : IWhatsA
     {
         using var conn = db.CreateConnection();
         await conn.ExecuteAsync("""
+            IF NOT EXISTS (SELECT 1 FROM Organizacion.ConfiguracionWhatsApp WHERE ConfiguracionID = 1)
+                INSERT INTO Organizacion.ConfiguracionWhatsApp (ConfiguracionID, AccountSid, AuthToken, FromNumber, Activo, FechaModificacion)
+                VALUES (1, NULL, NULL, 'whatsapp:+14155238886', 0, SYSUTCDATETIME())
+            """);
+        await conn.ExecuteAsync("""
             UPDATE Organizacion.ConfiguracionWhatsApp
             SET AccountSid = @AccountSid, AuthToken = @AuthToken,
                 FromNumber = @FromNumber, Activo = @Activo,

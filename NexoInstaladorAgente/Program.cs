@@ -90,7 +90,12 @@ if (svcActual is not null)
     Sc("stop",   NombreServicio);
     Thread.Sleep(3000);
     Sc("delete", NombreServicio);
-    Thread.Sleep(1500);
+    // Esperar hasta que el SCM elimine el servicio (puede tardar si el proceso aún tiene handles abiertos)
+    for (int i = 0; i < 20; i++)
+    {
+        if (ObtenerEstadoServicio(NombreServicio) is null) break;
+        Thread.Sleep(500);
+    }
     Verde("[OK]");
 }
 

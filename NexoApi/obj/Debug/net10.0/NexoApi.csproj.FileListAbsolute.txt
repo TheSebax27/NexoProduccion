@@ -124,10 +124,10 @@ C:\Produccion\NexoApi\obj\Debug\net10.0\staticwebassets.build.json.cache
 C:\Produccion\NexoApi\obj\Debug\net10.0\staticwebassets.development.json
 C:\Produccion\NexoApi\obj\Debug\net10.0\staticwebassets.build.endpoints.json
 C:\Produccion\NexoApi\obj\Debug\net10.0\swae.build.ex.cache
-C:\Produccion\NexoApi\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
 C:\Produccion\NexoApi\obj\Debug\net10.0\NexoApi.csproj.Up2Date
 C:\Produccion\NexoApi\obj\Debug\net10.0\NexoApi.dll
 C:\Produccion\NexoApi\obj\Debug\net10.0\refint\NexoApi.dll
 C:\Produccion\NexoApi\obj\Debug\net10.0\NexoApi.pdb
 C:\Produccion\NexoApi\obj\Debug\net10.0\NexoApi.genruntimeconfig.cache
 C:\Produccion\NexoApi\obj\Debug\net10.0\ref\NexoApi.dll
+C:\Produccion\NexoApi\bin\Debug\net10.0\web.config
