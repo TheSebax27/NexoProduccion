@@ -1,10 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "NduECnuz8wY=",
+  "dgSpecHash": "MZYiE72DEm0=",
   "success": true,
   "projectFilePath": "C:\\Produccion\\NexoWeb\\NexoWeb.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\ASROCK\\.nuget\\packages\\microsoft.aspnetcore.app.internal.assets\\10.0.11\\microsoft.aspnetcore.app.internal.assets.10.0.11.nupkg.sha512",
+    "C:\\Users\\ASROCK\\.nuget\\packages\\microsoft.aspnetcore.app.internal.assets\\10.0.12\\microsoft.aspnetcore.app.internal.assets.10.0.12.nupkg.sha512",
     "C:\\Users\\ASROCK\\.nuget\\packages\\mudblazor\\7.15.0\\mudblazor.7.15.0.nupkg.sha512"
   ],
   "logs": []
