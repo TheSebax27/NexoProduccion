@@ -1,4 +1,4 @@
-@page "/proyectos"
+﻿@page "/proyectos"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -268,7 +268,7 @@ else
             { x => x.Empleados, _empleados }
         };
         var d = await DialogService.ShowAsync<GestionProyectoDialog>("Gestionar Proyecto", p,
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
         await d.Result;
         await CargarProyectosAsync();
     }

@@ -1,4 +1,4 @@
-@using NexoWeb.Common.Dtos
+﻿@using NexoWeb.Common.Dtos
 @using NexoWeb.Common.Helpers
 @using NexoWeb.Components.Pages.Crm
 @inject ISnackbar Snackbar
@@ -375,7 +375,7 @@
             { x => x.NitInicial, _nitBusqueda }
         };
         var dialogo = await DialogService.ShowAsync<ClienteDialog>("Nuevo Cliente", parametros,
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
         var resultado = await dialogo.Result;
         if (resultado is null || resultado.Canceled) return;
 

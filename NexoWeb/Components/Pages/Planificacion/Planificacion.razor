@@ -1,4 +1,4 @@
-@page "/planificacion"
+﻿@page "/planificacion"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -15,8 +15,8 @@
             <h1 class="nexo-page-hero__title">Planificacion</h1>
         </div>
     </div>
-    <BotonFavorito Href="/planificacion" Etiqueta="Planificacion" />
 </div>
+<InfoAyuda Texto="Define metas de venta por centro de costo y demanda proyectada de producción, y compáralas contra los resultados reales del mes." />
 
 @* ── Info explicativa ── *@
 <MudPaper Elevation="0" Class="pa-4 mb-4"
@@ -433,7 +433,7 @@
         var t3 = ApiClient.GetAsync<List<DemandaProyectadaItem>>("api/planificacion/demanda");
         var t4 = ApiClient.GetAsync<List<HistoricoCumplimientoItem>>("api/planificacion/historico-cumplimiento?meses=12");
 
-        await Task.WhenAll(t1, t2, t3, t4);
+        try { await Task.WhenAll(t1, t2, t3, t4); } catch { }
 
         try { _centrosCosto = await t1 ?? new(); } catch { }
 

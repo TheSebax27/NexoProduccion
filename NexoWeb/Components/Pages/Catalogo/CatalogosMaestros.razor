@@ -1,4 +1,4 @@
-@page "/catalogo/maestros"
+﻿@page "/catalogo/maestros"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -16,6 +16,7 @@
         <div class="nexo-page-hero__sub">Marcas, Grupos Mayores, Grupos Menores y Presentaciones (calca de Visions).</div>
     </div>
 </div>
+<InfoAyuda Texto="Gestiona los catálogos base del sistema: marcas, grupos mayores, grupos menores y presentaciones sincronizados con Visions." />
 
 <MudTabs Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4">
 
@@ -140,12 +141,12 @@
         }
     </MudTabPanel>
 
-    @* ── IVA ─────────────────────────────────────────────────────────── *@
-    <MudTabPanel Text="IVA" Icon="@Icons.Material.Filled.Percent">
+    @* ── Impuestos ───────────────────────────────────────────────────── *@
+    <MudTabPanel Text="Impuestos" Icon="@Icons.Material.Filled.Percent">
         <div class="d-flex align-center justify-space-between mb-3">
-            <MudText Typo="Typo.subtitle1">Tipos de IVA</MudText>
+            <MudText Typo="Typo.subtitle1">Impuestos</MudText>
             <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Add"
-                       OnClick="AbrirCrearIvaAsync" Size="Size.Small">Nuevo IVA</MudButton>
+                       OnClick="AbrirCrearIvaAsync" Size="Size.Small">Nuevo Impuesto</MudButton>
         </div>
 
         @if (_cargandoIvas)
@@ -154,18 +155,24 @@
         }
         else if (_ivas.Count == 0)
         {
-            <MudText Style="color: var(--n-text-3);">No hay tipos de IVA registrados.</MudText>
+            <MudText Style="color: var(--n-text-3);">No hay impuestos registrados.</MudText>
         }
         else
         {
             <MudTable Items="_ivas" Hover="true" Dense="true" Striped="true">
                 <HeaderContent>
-                    <MudTh>IVA %</MudTh>
+                    <MudTh>Tipo</MudTh>
+                    <MudTh>%</MudTh>
                     <MudTh>Descripcion</MudTh>
                     <MudTh>Acciones</MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="IVA %">@context.Iva%</MudTd>
+                    <MudTd DataLabel="Tipo">
+                        <MudChip T="string" Size="Size.Small"
+                                 Color="@(context.TipoImpuesto == "ICO" ? Color.Secondary : Color.Default)"
+                                 Variant="Variant.Filled">@context.TipoImpuesto</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="%">@context.Iva%</MudTd>
                     <MudTd DataLabel="Descripcion">@(context.Descripcion ?? "-")</MudTd>
                     <MudTd>
                         <MudButton Size="Size.Small" OnClick="@(() => AbrirEditarIvaAsync(context))">Editar</MudButton>
@@ -241,13 +248,20 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(
-            CargarMarcasAsync(),
-            CargarGruposMayoresAsync(),
-            CargarGruposMenoresAsync(),
-            CargarPresentacionesAsync(),
-            CargarIvasAsync()
-        );
+        try
+        {
+            await Task.WhenAll(
+                CargarMarcasAsync(),
+                CargarGruposMayoresAsync(),
+                CargarGruposMenoresAsync(),
+                CargarPresentacionesAsync(),
+                CargarIvasAsync()
+            );
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar catálogos: {ex.Message}", Severity.Error);
+        }
     }
 
     // ── Carga ─────────────────────────────────────────────────────────────
@@ -423,7 +437,7 @@
     private async Task AbrirCrearPresentacionAsync()
     {
         var dialogo = await DialogService.ShowAsync<PresentacionDialog>("Nueva Presentacion",
-            new DialogParameters<PresentacionDialog>(), new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+            new DialogParameters<PresentacionDialog>(), new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
         var resultado = await dialogo.Result;
         if (resultado is null || resultado.Canceled || resultado.Data is not PresentacionDialog.Result data) return;
         try
@@ -440,7 +454,7 @@
     {
         var parametros = new DialogParameters<PresentacionDialog> { { x => x.Presentacion, p } };
         var dialogo = await DialogService.ShowAsync<PresentacionDialog>($"Editar: {p.Codigo}", parametros,
-            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
         var resultado = await dialogo.Result;
         if (resultado is null || resultado.Canceled || resultado.Data is not PresentacionDialog.Result data) return;
         try
@@ -473,18 +487,20 @@
         _cargandoIvas = false;
     }
 
-    // ── IVA CRUD ─────────────────────────────────────────────────────────
+    // ── Impuestos CRUD ────────────────────────────────────────────────────
 
     private async Task AbrirCrearIvaAsync()
     {
-        var result = await MostrarDialogCatalogo("Nuevo IVA", codigoLabel: "IVA %", nombreLabel: "Descripcion");
-        if (result is null) return;
-        if (!int.TryParse(result.Codigo, out var ivaValor)) { Snackbar.Add("El valor IVA % debe ser un numero.", Severity.Error); return; }
+        var dialogo = await DialogService.ShowAsync<ImpuestoDialog>("Nuevo Impuesto",
+            new DialogParameters<ImpuestoDialog>(),
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled || resultado.Data is not ImpuestoDialog.Result data) return;
         try
         {
             await ApiClient.PostAsync<CrearIvaRequest, object?>("api/catalogo/ivas",
-                new CrearIvaRequest(ivaValor, result.Nombre));
-            Snackbar.Add("Tipo de IVA creado.", Severity.Success);
+                new CrearIvaRequest(data.Valor, data.Descripcion, data.TipoImpuesto));
+            Snackbar.Add("Impuesto creado.", Severity.Success);
             await CargarIvasAsync();
         }
         catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
@@ -492,16 +508,16 @@
 
     private async Task AbrirEditarIvaAsync(IvaItem iva)
     {
-        var result = await MostrarDialogCatalogo($"Editar IVA: {iva.Descripcion}",
-            codigoLabel: "IVA %", nombreLabel: "Descripcion",
-            mostrarCodigo: true, nombreInicial: iva.Descripcion);
-        if (result is null) return;
-        if (!int.TryParse(result.Codigo, out var ivaValor)) { Snackbar.Add("El valor IVA % debe ser un numero.", Severity.Error); return; }
+        var parametros = new DialogParameters<ImpuestoDialog> { { x => x.Impuesto, iva } };
+        var dialogo = await DialogService.ShowAsync<ImpuestoDialog>($"Editar: {iva.Descripcion}", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled || resultado.Data is not ImpuestoDialog.Result data) return;
         try
         {
-            await ApiClient.PutAsync<ActualizarIvaRequest, object?>($"api/catalogo/ivas/{iva.IvaID}",
-                new ActualizarIvaRequest(ivaValor, result.Nombre));
-            Snackbar.Add("Tipo de IVA actualizado.", Severity.Success);
+            await ApiClient.PutAsync<CrearIvaRequest, object?>($"api/catalogo/ivas/{iva.IvaID}",
+                new CrearIvaRequest(data.Valor, data.Descripcion, data.TipoImpuesto));
+            Snackbar.Add("Impuesto actualizado.", Severity.Success);
             await CargarIvasAsync();
         }
         catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
@@ -509,12 +525,12 @@
 
     private async Task EliminarIvaAsync(IvaItem iva)
     {
-        var ok = await Confirmar($"Eliminar el tipo de IVA '{iva.Descripcion}'?");
+        var ok = await Confirmar($"Eliminar el impuesto '{iva.Descripcion}'?");
         if (!ok) return;
         try
         {
             await ApiClient.DeleteAsync($"api/catalogo/ivas/{iva.IvaID}");
-            Snackbar.Add("Tipo de IVA eliminado.", Severity.Success);
+            Snackbar.Add("Impuesto eliminado.", Severity.Success);
             await CargarIvasAsync();
         }
         catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }

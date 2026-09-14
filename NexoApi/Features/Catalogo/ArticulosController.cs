@@ -50,10 +50,14 @@ public class ArticulosController : ControllerBase
     [Authorize]
     public async Task<ActionResult> Crear(CrearArticuloRequest request)
     {
-        var id = await _service.CrearArticuloAsync(request);
-        // El body devuelve el ID (no solo el header Location) para que el
-        // frontend pueda encadenar la subida de imagen opcional justo despues.
-        return CreatedAtAction(nameof(Listar), new { ArticuloID = id }, new { articuloId = id });
+        try
+        {
+            var id = await _service.CrearArticuloAsync(request);
+            // El body devuelve el ID (no solo el header Location) para que el
+            // frontend pueda encadenar la subida de imagen opcional justo despues.
+            return CreatedAtAction(nameof(Listar), new { ArticuloID = id }, new { articuloId = id });
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
     [HttpPut("{id:int}")]
@@ -65,10 +69,8 @@ public class ArticulosController : ControllerBase
             await _service.ActualizarArticuloAsync(id, request, UsuarioActualId, NombreUsuarioActual);
             return NoContent();
         }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
     [HttpGet("todos")]

@@ -17,15 +17,14 @@
         <p class="inv-header__sub">El stock se descuenta de la bodega origen al enviar y se suma en destino al confirmar la recepción.</p>
     </div>
     <div class="inv-header__actions">
-        <BotonFavorito Href="/inventario/traspasos" Etiqueta="Traspasos" />
         <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
                    StartIcon="@Icons.Material.Filled.Add">
             Nuevo Traspaso
         </MudButton>
     </div>
 </div>
+<InfoAyuda Texto="Mueve stock entre bodegas: se descuenta en origen al enviar y se acredita en destino al confirmar la recepción del traspaso." />
 
-<InventarioNav />
 
 @* ── Resumen ─────────────────────────────────────────────────────────── *@
 @if (!_cargando && _traspasos.Count > 0)
@@ -230,7 +229,7 @@ else
             { x => x.SoloLectura, true    }
         };
         await DialogService.ShowAsync<TraspasoDetalleDialog>("Detalle del Traspaso", p,
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
     }
 
     private async Task RecibirAsync(int traspasoId)
@@ -242,7 +241,7 @@ else
         var p = new DialogParameters<TraspasoDetalleDialog> { { x => x.Detalle, detalle } };
         var dialogo = await DialogService.ShowAsync<TraspasoDetalleDialog>(
             "Confirmar Recepción de Traspaso", p,
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
         var resultado = await dialogo.Result;
         if (resultado is null || resultado.Canceled) return;
 
@@ -264,3 +263,4 @@ else
         _            => estado
     };
 }
+

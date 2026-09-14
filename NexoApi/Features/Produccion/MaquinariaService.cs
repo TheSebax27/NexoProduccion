@@ -220,7 +220,7 @@ public class MaquinariaService(IDbConnectionFactory db) : IMaquinariaService
                    mm.TipoMantenimiento, mm.FechaRealizado, mm.Descripcion,
                    mm.Costo, mm.HorasFueraServicio, mm.Tecnico,
                    mm.ProximoMantenimiento, mm.Observaciones,
-                   u.Nombres+' '+u.Apellidos AS Usuario, mm.FechaRegistro
+                   CONCAT(u.Nombres, ' ', u.Apellidos) AS Usuario, mm.FechaRegistro
             FROM Produccion.MantenimientoMaquinaria mm
             JOIN Produccion.Maquinaria m ON m.MaquinariaID=mm.MaquinariaID
             LEFT JOIN Seguridad.Usuarios u ON u.UsuarioID=mm.UsuarioID

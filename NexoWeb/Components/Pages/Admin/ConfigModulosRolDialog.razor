@@ -1,10 +1,10 @@
-@using NexoWeb.Common.Dtos
+﻿@using NexoWeb.Common.Dtos
 @using NexoWeb.Common.ApiClient
 @inject INexoApiClient Api
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
-<MudDialog Style="min-width:540px; max-width:660px">
+<MudDialog Style="min-width:min(540px,90vw); max-width:min(660px,95vw)">
     <TitleContent>
         <div class="d-flex align-center" style="gap:8px">
             <MudIcon Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" />
@@ -110,7 +110,7 @@
     private bool _cargando = true;
     private bool _guardando;
 
-    // ── Definición de secciones alineadas al nav lateral ────────
+    // â”€â”€ Definición de secciones alineadas al nav lateral â”€â”€â”€â”€â”€â”€â”€â”€
     private record SeccionNav(string Key, string Label, string Icon, Func<string, bool> Match);
 
     private static readonly List<SeccionNav> _secciones =
@@ -156,11 +156,11 @@
             ? _modulos.Where(m => sec.Match(m.Codigo)).ToList()
             : [];
 
-    // ── Módulos hijos directos (en DB) de un módulo padre ───────
+    // â”€â”€ Módulos hijos directos (en DB) de un módulo padre â”€â”€â”€â”€â”€â”€â”€
     private List<ModuloVisibilidadItem> HijosDB(ModuloVisibilidadItem padre) =>
         _modulos.Where(m => m.Codigo.StartsWith(padre.Codigo + ".")).ToList();
 
-    // ── Toggle individual con cascade a hijos DB ─────────────────
+    // â”€â”€ Toggle individual con cascade a hijos DB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private async Task CambiarModuloAsync(ModuloVisibilidadItem m, bool valor)
     {
         if (valor && m.Codigo.StartsWith("RRHH"))
@@ -182,7 +182,7 @@
         StateHasChanged();
     }
 
-    // ── Toggle de todos los módulos de una sección ────────────────
+    // â”€â”€ Toggle de todos los módulos de una sección â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private async Task ToggleSeccionAsync(string key, bool valor, List<ModuloVisibilidadItem> modulos)
     {
         var tieneRrhh = modulos.Any(m => m.Codigo.StartsWith("RRHH") && valor);
@@ -232,3 +232,4 @@
 
     private void Cancelar() => MudDialog.Cancel();
 }
+

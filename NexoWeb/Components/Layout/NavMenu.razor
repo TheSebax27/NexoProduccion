@@ -237,6 +237,7 @@
                     @if (Modulos.EsVisible("PLANIFICACION.DEMANDA") || Modulos.EsVisible("PLANIFICACION.METAS"))
                     {
                         <MudNavLink Href="/planificacion"
+                                    Match="NavLinkMatch.All"
                                     Icon="@Icons.Material.Filled.Insights"
                                     Class="nexo-nav-item">Metas y Demanda</MudNavLink>
                     }

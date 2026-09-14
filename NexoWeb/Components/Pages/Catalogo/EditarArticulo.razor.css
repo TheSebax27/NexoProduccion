@@ -23,11 +23,11 @@
     align-items: center;
     padding: 0.1rem 0.55rem;
     border-radius: 6px;
-    background: rgba(239,68,68,0.10);
-    border: 1px solid rgba(239,68,68,0.18);
+    background: var(--n-error-bg);
+    border: 1px solid var(--n-error-border);
     font-size: 0.72rem;
     font-weight: 700;
-    color: #EF4444;
+    color: var(--n-error);
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }

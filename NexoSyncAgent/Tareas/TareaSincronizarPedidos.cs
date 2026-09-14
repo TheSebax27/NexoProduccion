@@ -102,7 +102,7 @@ public class TareaSincronizarPedidos
                     pedido.PedidoID,
                     Orden         = orden,
                     Referencia    = linea.ReferenciaVisions,
-                    Detalle       = linea.NombreArticulo,
+                    Detalle       = linea.NombreArticulo ?? "",
                     linea.Cantidad,
                     PrecioUnitario = linea.CostoUnitario,
                     Total         = subtotal
@@ -119,7 +119,7 @@ public class TareaSincronizarPedidos
         var confirmados = (await connection.QueryAsync<PedidoConfirmado>(
             @"SELECT PedidoID, TipDocVisions, NroDocVisions
               FROM dbo.NEXO_Pedidos
-              WHERE Estado = 'PROCESADA' AND NroDocVisions IS NOT NULL")).ToList();
+              WHERE Estado = 'PROCESADA' AND NroDocVisions IS NOT NULL AND TipDocVisions IS NOT NULL")).ToList();
 
         if (confirmados.Count == 0) return;
 
@@ -135,32 +135,34 @@ public class TareaSincronizarPedidos
                     new ActualizarNumeroPedidoVisionsRequest(p.TipDocVisions!, p.NroDocVisions!),
                     ct);
 
+                // Marcar SINCRONIZADO antes de AutoRecibir: NroDoc ya fue escrito en NEXO.
+                // AutoRecibir es best-effort; si falla, el pedido no vuelve a reprocesar ActualizarNumeroPedido.
+                await connection.ExecuteAsync(
+                    "UPDATE dbo.NEXO_Pedidos SET Estado = 'SINCRONIZADO' WHERE PedidoID = @PedidoID",
+                    new { p.PedidoID });
+
                 // Reintentar auto-recibir ante errores transitorios de red (ej.: API reiniciando en VS).
-                Exception? ultimoError = null;
                 for (int intento = 0; intento < 3; intento++)
                 {
                     try
                     {
                         await _apiClient.AutoRecibirDesdeVisionsAsync(p.PedidoID, p.NroDocVisions!, ct);
-                        ultimoError = null;
                         break;
                     }
                     catch (Exception ex) when (!ct.IsCancellationRequested && intento < 2)
                     {
-                        ultimoError = ex;
                         _logger.LogWarning("Auto-recibir pedido {ID} intento {N} fallido, reintentando en 5s...",
                             p.PedidoID, intento + 1);
                         await Task.Delay(TimeSpan.FromSeconds(5), ct);
                     }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Auto-recibir pedido {ID} fallido definitivamente; NroDoc ya guardado en NEXO", p.PedidoID);
+                        break;
+                    }
                 }
-                if (ultimoError is not null) throw ultimoError;
 
-                // Marcar como SINCRONIZADO para no volver a procesar en el siguiente ciclo
-                await connection.ExecuteAsync(
-                    "UPDATE dbo.NEXO_Pedidos SET Estado = 'SINCRONIZADO' WHERE PedidoID = @PedidoID",
-                    new { p.PedidoID });
-
-                _logger.LogInformation("Pedido NEXO {ID} auto-recibido con número Visions {NroDoc}",
+                _logger.LogInformation("Pedido NEXO {ID} sincronizado con número Visions {NroDoc}",
                     p.PedidoID, p.NroDocVisions);
             }
             catch (Exception ex)

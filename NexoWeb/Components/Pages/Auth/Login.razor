@@ -62,6 +62,7 @@
                 <button type="button"
                         class="lf__eye"
                         title="@(_mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña")"
+                        aria-label="@(_mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña")"
                         @onclick="() => _mostrarPassword = !_mostrarPassword">
                     @if (_mostrarPassword)
                     {

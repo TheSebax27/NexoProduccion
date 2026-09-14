@@ -176,15 +176,29 @@ public class Worker : BackgroundService
                     // 9. Facturas NEXO → Visions: solo cuando articulos Y clientes ya existen
                     //    en ambos sistemas. Va al final para garantizar que no haya FKs rotas
                     //    ni referencias a NITs o referencias desconocidas en Visions.
-                    var tareaFacturasVisions = scope.ServiceProvider.GetRequiredService<TareaSincronizarFacturasNexoVisions>();
-                    await tareaFacturasVisions.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
+                    try
+                    {
+                        var tareaFacturasVisions = scope.ServiceProvider.GetRequiredService<TareaSincronizarFacturasNexoVisions>();
+                        await tareaFacturasVisions.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
+                    }
+                    catch (Exception exFact)
+                    {
+                        _logger.LogError(exFact, "Fallo en sync facturas NEXO→Visions; pedidos continuan");
+                    }
 
                     // 10. Pedidos NEXO → Visions Entradas: órdenes de compra pendientes de procesar
                     //     en Visions como Entrada de Mercancía. Va después de facturas para
                     //     respetar el mismo orden de procesamiento (primero salidas, luego entradas).
                     //     TipoMovimiento distingue COMPRA (entrada) de DEVOLUCION (salida inversa).
-                    var tareaPedidosVisions = scope.ServiceProvider.GetRequiredService<TareaSincronizarPedidos>();
-                    await tareaPedidosVisions.EjecutarAsync(stoppingToken);
+                    try
+                    {
+                        var tareaPedidosVisions = scope.ServiceProvider.GetRequiredService<TareaSincronizarPedidos>();
+                        await tareaPedidosVisions.EjecutarAsync(stoppingToken);
+                    }
+                    catch (Exception exPed)
+                    {
+                        _logger.LogError(exPed, "Fallo en sync pedidos NEXO→Visions");
+                    }
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

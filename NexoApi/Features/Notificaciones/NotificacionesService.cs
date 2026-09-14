@@ -82,6 +82,34 @@ public class NotificacionesService : INotificacionesService
         }
         catch { }
 
+        // Bajo stock sin OC abierta
+        try
+        {
+            const string sqlBajoSinOC = @"
+                SELECT a.Nombre
+                FROM Catalogo.Tarjetas a
+                JOIN (
+                    SELECT s.ArticuloID, SUM(s.CantidadActual) AS TotalStock
+                    FROM Inventario.vw_StockConsolidado s
+                    GROUP BY s.ArticuloID
+                ) stock ON stock.ArticuloID = a.ArticuloID
+                WHERE a.StockMinimo > 0
+                  AND stock.TotalStock <= a.StockMinimo
+                  AND NOT EXISTS (
+                      SELECT 1 FROM Compras.OrdenesCompraDetalle ocl
+                      JOIN Compras.OrdenesCompra oc ON oc.OrdenCompraID = ocl.OrdenCompraID
+                      WHERE ocl.ArticuloID = a.ArticuloID
+                        AND oc.EstadoOC NOT IN ('RECIBIDA','CERRADA','CANCELADA','ANULADA')
+                  )
+                ORDER BY a.Nombre";
+            var bajoSinOC = (await connection.QueryAsync<string>(sqlBajoSinOC)).ToList();
+            if (bajoSinOC.Count > 0)
+                items.Add(new NotificacionItem("BajoSinOC", "error",
+                    $"{bajoSinOC.Count} artículo{(bajoSinOC.Count == 1 ? "" : "s")} bajo mínimo sin orden de compra",
+                    ResumirNombres(bajoSinOC), "/compras/ordenes"));
+        }
+        catch { }
+
         try
         {
             const string sqlEnProceso = @"
@@ -133,6 +161,107 @@ public class NotificacionesService : INotificacionesService
             }
             catch { }
         }
+
+        // A1 — Maquinaria con mantenimiento vencido
+        try
+        {
+            const string sqlMantVencido = @"
+                SELECT m.Nombre + ' (' + m.Codigo + ')'
+                FROM Produccion.Maquinaria m
+                WHERE m.Estado NOT IN ('Inactiva', 'BajaDefinitiva')
+                  AND (
+                      SELECT TOP 1 mm.ProximoMantenimiento
+                      FROM Produccion.MantenimientoMaquinaria mm
+                      WHERE mm.MaquinariaID = m.MaquinariaID AND mm.ProximoMantenimiento IS NOT NULL
+                      ORDER BY mm.FechaRealizado DESC
+                  ) < CAST(GETDATE() AS DATE)
+                ORDER BY m.Nombre";
+            var mantVencido = (await connection.QueryAsync<string>(sqlMantVencido)).ToList();
+            if (mantVencido.Count > 0)
+                items.Add(new NotificacionItem("MantVencido", "error",
+                    $"{mantVencido.Count} máquina{(mantVencido.Count == 1 ? "" : "s")} con mantenimiento vencido",
+                    ResumirNombres(mantVencido), "/produccion/maquinaria"));
+        }
+        catch { }
+
+        // A2 — Maquinaria con mantenimiento próximo (≤7 días)
+        try
+        {
+            const string sqlMantProximo = @"
+                SELECT m.Nombre + ' (' + m.Codigo + ')'
+                FROM Produccion.Maquinaria m
+                WHERE m.Estado NOT IN ('Inactiva', 'BajaDefinitiva')
+                  AND (
+                      SELECT TOP 1 mm.ProximoMantenimiento
+                      FROM Produccion.MantenimientoMaquinaria mm
+                      WHERE mm.MaquinariaID = m.MaquinariaID AND mm.ProximoMantenimiento IS NOT NULL
+                      ORDER BY mm.FechaRealizado DESC
+                  ) BETWEEN CAST(GETDATE() AS DATE) AND DATEADD(day, 7, CAST(GETDATE() AS DATE))
+                ORDER BY m.Nombre";
+            var mantProximo = (await connection.QueryAsync<string>(sqlMantProximo)).ToList();
+            if (mantProximo.Count > 0)
+                items.Add(new NotificacionItem("MantProximo", "warning",
+                    $"{mantProximo.Count} máquina{(mantProximo.Count == 1 ? "" : "s")} con mantenimiento en los próximos 7 días",
+                    ResumirNombres(mantProximo), "/produccion/maquinaria"));
+        }
+        catch { }
+
+        // B — Lotes próximos a vencer (≤30 días, con stock > 0)
+        try
+        {
+            const string sqlLotesVencer = @"
+                SELECT DISTINCT a.Nombre + ' (Lote: ' + l.NumeroLote + ')'
+                FROM Inventario.vw_StockConsolidado s
+                JOIN Inventario.Lotes l ON l.LoteID = s.LoteID
+                JOIN Catalogo.Tarjetas a ON a.ArticuloID = s.ArticuloID
+                WHERE l.FechaVencimiento IS NOT NULL
+                  AND l.FechaVencimiento >= CAST(GETDATE() AS DATE)
+                  AND l.FechaVencimiento <= DATEADD(day, 30, CAST(GETDATE() AS DATE))
+                  AND s.CantidadActual > 0
+                ORDER BY a.Nombre + ' (Lote: ' + l.NumeroLote + ')'";
+            var lotesVencer = (await connection.QueryAsync<string>(sqlLotesVencer)).ToList();
+            if (lotesVencer.Count > 0)
+                items.Add(new NotificacionItem("LotesVencer", "warning",
+                    $"{lotesVencer.Count} lote{(lotesVencer.Count == 1 ? "" : "s")} próximo{(lotesVencer.Count == 1 ? "" : "s")} a vencer (30 días)",
+                    ResumirNombres(lotesVencer), "/inventario/stock"));
+        }
+        catch { }
+
+        // C — Órdenes de producción retrasadas (FechaPlanificada vencida, aún abiertas)
+        try
+        {
+            const string sqlOPRetrasadas = @"
+                SELECT op.CodigoOP
+                FROM Produccion.OrdenesProduccion op
+                JOIN Produccion.EstadosOP e ON e.EstadoOPID = op.EstadoOPID
+                WHERE e.Nombre IN ('En Proceso', 'Planificada', 'Retrasada')
+                  AND op.FechaPlanificada < CAST(GETDATE() AS DATE)
+                ORDER BY op.FechaPlanificada";
+            var opRetrasadas = (await connection.QueryAsync<string>(sqlOPRetrasadas)).ToList();
+            if (opRetrasadas.Count > 0)
+                items.Add(new NotificacionItem("OPRetrasada", "error",
+                    $"{opRetrasadas.Count} orden{(opRetrasadas.Count == 1 ? "" : "es")} de producción retrasada{(opRetrasadas.Count == 1 ? "" : "s")}",
+                    ResumirNombres(opRetrasadas), "/produccion/ordenes"));
+        }
+        catch { }
+
+        // D — Facturas DIAN sin NroDoc (pendientes de numeración)
+        try
+        {
+            const string sqlDianPendientes = @"
+                SELECT c.Nombre + ' (F#' + CAST(f.FacturaID AS NVARCHAR) + ')'
+                FROM Facturacion.Facturas f
+                JOIN Crm.Clientes c ON c.ClienteID = f.ClienteID
+                WHERE f.TipDoc = 'FACTURA'
+                  AND f.NroDoc IS NULL
+                ORDER BY f.Fecha DESC";
+            var dianPendientes = (await connection.QueryAsync<string>(sqlDianPendientes)).ToList();
+            if (dianPendientes.Count > 0)
+                items.Add(new NotificacionItem("DianPendiente", "warning",
+                    $"{dianPendientes.Count} factura{(dianPendientes.Count == 1 ? "" : "s")} sin número DIAN",
+                    ResumirNombres(dianPendientes), "/facturacion/facturas"));
+        }
+        catch { }
 
         try
         {

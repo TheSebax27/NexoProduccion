@@ -74,10 +74,15 @@ public interface IIntegracionService
 
     // Ventas de Visions registradas en EventosEntrantes (solo lectura, sin conexión a Visions)
     Task<VentasVisionsPaginadasResponse> ListarVentasVisionsAsync(int? centroCostoId, string? tipDoc, DateTime? desde, DateTime? hasta, int pagina = 1, int tamano = 50);
+    Task<IEnumerable<VentaVisionsLineaItem>> ListarLineasVentaVisionsAsync(int centroCostoId, string tipDoc, string nroDoc);
 
     // Limpieza de staging en Visions para entidades eliminadas en NEXO
     Task<IEnumerable<PendienteLimpiezaVisions>> ListarPendientesLimpiezaVisionsAsync();
     Task MarcarLimpiezaVisionsCompletadaAsync(int limpiezaId);
+
+    // SINCANTSA en Visions: bloquear ventas sin inventario
+    Task<bool> ObtenerSincAntsaAsync(int agenteSyncId);
+    Task SetSincAntsaAsync(int agenteSyncId, bool activo);
 }
 
 public class IntegracionService : IIntegracionService
@@ -493,7 +498,7 @@ public class IntegracionService : IIntegracionService
                   WHERE AgenteSyncID = @AgenteSyncID",
                 new { ApiKeyHash = apiKeyHash, ApiKeyPlain = apiKey, r.Descripcion, AgenteSyncID = existingId.Value });
             await connection.ExecuteAsync(
-                "UPDATE Organizacion.CentrosCosto SET TieneVisions = 1, IdentificadorClienteVisions = CASE WHEN NULLIF(IdentificadorClienteVisions,'') IS NULL THEN '1' ELSE IdentificadorClienteVisions END WHERE CentroCostoID = @CentroCostoID",
+                "UPDATE Organizacion.CentrosCosto SET TieneVisions = 1, IdentificadorClienteVisions = CASE WHEN NULLIF(IdentificadorClienteVisions,'') IS NULL THEN CAST(@CentroCostoID AS NVARCHAR(20)) ELSE IdentificadorClienteVisions END WHERE CentroCostoID = @CentroCostoID",
                 new { r.CentroCostoID });
             return new GenerarApiKeyResponse(existingId.Value, apiKey);
         }
@@ -524,7 +529,8 @@ public class IntegracionService : IIntegracionService
                    cc.Estado AS Activo,
                    cc.PrefijosDocumentoVentaVisions AS PrefijosDocumentoVenta,
                    ISNULL(a.IntervalMinutes, 5) AS IntervalMinutes,
-                   a.FechaInicioSyncVentas
+                   a.FechaInicioSyncVentas,
+                   ISNULL(a.SincAntsaActivo, 0) AS SincAntsaActivo
             FROM Organizacion.CentrosCosto cc
             LEFT JOIN Integracion.AgentesSync a
                    ON a.CentroCostoID = cc.CentroCostoID AND a.Activo = 1
@@ -1097,10 +1103,10 @@ public class IntegracionService : IIntegracionService
     public string GenerarAppsettingsJson(ConfiguracionAgenteCompletaResponse config, string apiKey)
     {
         var serverName = config.VisionsDbConexion ?? "SERVIDOR\\INSTANCIA";
-        var db         = $"Server={serverName};Database=VISIONSDBL1;Trusted_Connection=True;TrustServerCertificate=True;";
+        var db         = $"Server={serverName};Database=VISIONSDBL1;User Id=sas;Password=admin12345;TrustServerCertificate=True;";
         var url        = (config.NexoApiBaseUrl ?? _config["ApiBaseUrl"] ?? _config["NexoApi:BaseUrl"] ?? "https://nexo.mi-empresa.com/").TrimEnd('/') + "/";
-        var minutos    = config.IntervalMinutes > 0 ? config.IntervalMinutes : 5;
-        var segundos   = config.IntervalSeconds > 0 ? config.IntervalSeconds : 0;
+        var minutos  = config.IntervalMinutes > 0 ? config.IntervalMinutes : 5;
+        var segundos = config.IntervalSeconds > 0 ? config.IntervalSeconds : 0;
 
         // TenantMiddleware ya resolvió el host y lo guardó en Items["Nexo_TenantHost"].
         // Es más confiable que releer el header porque el middleware ya validó el tenant.
@@ -1758,7 +1764,7 @@ public class IntegracionService : IIntegracionService
                 }
             }
         }
-        catch { /* mejor esfuerzo: no bloquear la confirmación si falla el pago */ }
+        catch (Exception exPago) { _logger.LogError(exPago, "NEXO: pago automático falló para FacturaID={FacturaId}; confirmación Visions ya registrada", facturaId); }
 
         // Descontar stock automáticamente ahora que Visions confirmó.
         try
@@ -1829,6 +1835,26 @@ public class IntegracionService : IIntegracionService
         return new VentasVisionsPaginadasResponse(items, total, pagina, tamano);
     }
 
+    public async Task<IEnumerable<VentaVisionsLineaItem>> ListarLineasVentaVisionsAsync(
+        int centroCostoId, string tipDoc, string nroDoc)
+    {
+        using var conn = _db.CreateConnection();
+        const string sql = @"
+            SELECT
+                ee.CodigoArticuloVisions AS CodigoArticulo,
+                ee.NombreArticuloVisions AS NombreArticulo,
+                ISNULL(ee.Cantidad, 0) AS Cantidad,
+                ISNULL(ee.PrecioArticuloVisions, 0) AS PrecioUnitario,
+                CAST(ISNULL(ee.Cantidad, 0) * ISNULL(ee.PrecioArticuloVisions, 0) AS DECIMAL(18,0)) AS Subtotal
+            FROM Integracion.EventosEntrantes ee
+            WHERE ee.CentroCostoID = @CentroCostoID
+              AND ee.TipDoc       = @TipDoc
+              AND ee.NroDoc       = @NroDoc
+            ORDER BY ee.EventoEntranteID";
+        return await conn.QueryAsync<VentaVisionsLineaItem>(sql,
+            new { CentroCostoID = centroCostoId, TipDoc = tipDoc, NroDoc = nroDoc });
+    }
+
     public async Task<IEnumerable<PendienteLimpiezaVisions>> ListarPendientesLimpiezaVisionsAsync()
     {
         using var connection = _db.CreateConnection();
@@ -1842,5 +1868,23 @@ public class IntegracionService : IIntegracionService
         await connection.ExecuteAsync(
             "DELETE FROM Integracion.PendientesLimpiezaVisions WHERE LimpiezaID = @LimpiezaID",
             new { LimpiezaID = limpiezaId });
+    }
+
+    public async Task<bool> ObtenerSincAntsaAsync(int agenteSyncId)
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QuerySingleOrDefaultAsync<bool>(
+            "SELECT ISNULL(SincAntsaActivo, 0) FROM Integracion.AgentesSync WHERE AgenteSyncID = @AgenteSyncId",
+            new { AgenteSyncId = agenteSyncId });
+    }
+
+    public async Task SetSincAntsaAsync(int agenteSyncId, bool activo)
+    {
+        using var connection = _db.CreateConnection();
+        var filas = await connection.ExecuteAsync(
+            "UPDATE Integracion.AgentesSync SET SincAntsaActivo = @Activo WHERE AgenteSyncID = @AgenteSyncId",
+            new { Activo = activo, AgenteSyncId = agenteSyncId });
+        if (filas == 0)
+            throw new KeyNotFoundException($"No existe el agente {agenteSyncId}.");
     }
 }

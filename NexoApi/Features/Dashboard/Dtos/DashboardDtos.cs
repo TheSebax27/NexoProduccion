@@ -31,6 +31,13 @@ public record ResumenPlanificacionItem(decimal CumplimientoDemandaPromedio, deci
 
 public record ResumenInventarioItem(decimal ValorTotalStock, int ArticulosConAlerta);
 
+public record ResumenMaquinariaItem(
+    int TotalMaquinas,
+    int EnMantenimiento,
+    int MantenimientoVencido,
+    decimal CostoMantenimientoMes
+);
+
 public record VentasPorDepartamentoItem(string Departamento, decimal TotalVentas, int CantidadClientes);
 
 // ---------- Analisis de Facturacion (BI workspace, agosto 2026) ----------

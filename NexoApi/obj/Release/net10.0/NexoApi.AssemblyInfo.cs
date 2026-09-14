@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NexoApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+298d7f6e94793fd8cfcd4f2fc817fb64afe00222")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ce90b80f7095e18b5509b2c9fcdad75f6824a165")]
 [assembly: System.Reflection.AssemblyProductAttribute("NexoApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NexoApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

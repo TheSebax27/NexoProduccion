@@ -59,7 +59,10 @@
                    placeholder="Buscar articulos, ordenes, clientes..."
                    class="nexo-topbar__search-input"
                    autocomplete="off"
-                   aria-label="Buscar" />
+                   aria-label="Buscar"
+                   role="combobox"
+                   aria-expanded="@(_mostrarResultados ? "true" : "false")"
+                   aria-haspopup="listbox" />
 
             @if (_mostrarResultados)
             {
@@ -98,23 +101,23 @@
         {
             @* Notificaciones -- resumen real (sin stock / bajo stock / produccion
                en proceso), se refresca solo cada 2 minutos para no ser invasivo. *@
-            <div class="nexo-topbar__notif" style="position:relative; z-index:1001;">
+            <div class="nexo-topbar__notif" style="position:relative; z-index:var(--nexo-z-notif-container);">
                 <div style="position:relative; display:inline-flex;">
-                    <MudIconButton Icon="@Icons.Material.Outlined.Notifications"
-                                   Color="Color.Inherit"
-                                   Class="nexo-topbar__notif-btn"
-                                   OnClick="@(() => _notifAbierta = !_notifAbierta)" />
-                    @if (_notificaciones.Total > 0)
-                    {
-                        <span class="nexo-topbar__notif-dot" aria-hidden="true"></span>
-                    }
+                    <MudBadge Content="@(_notificaciones.Total > 0 ? (object)_notificaciones.Total : null)"
+                              Color="Color.Error" Overlap="true" Bordered="true"
+                              Visible="@(_notificaciones.Total > 0)">
+                        <MudIconButton Icon="@Icons.Material.Outlined.Notifications"
+                                       Color="Color.Inherit"
+                                       Class="nexo-topbar__notif-btn"
+                                       OnClick="@(() => _notifAbierta = !_notifAbierta)" />
+                    </MudBadge>
                 </div>
                 @if (_notifAbierta)
                 {
-                    <div style="position:fixed; inset:0; z-index:1000;"
+                    <div style="position:fixed; inset:0; z-index:var(--nexo-z-notif-overlay);"
                          @onclick="() => _notifAbierta = false"></div>
                     <div class="nexo-topbar__notif-panel"
-                         style="position:absolute; top:calc(100% + 8px); right:0; z-index:1002; min-width:320px;">
+                         style="position:fixed; top:60px; right:8px; z-index:var(--nexo-z-notif-panel); width:min(320px,calc(100vw - 16px));">
                         <div class="nexo-topbar__notif-panel-title">Notificaciones</div>
                         @if (_notificaciones.Items.Count == 0)
                         {
@@ -167,7 +170,7 @@
                de modo que el primer clic siempre aterriza en el perfil y no
                en el backdrop. El onclick adicional garantiza que el panel de
                notificaciones se cierre antes de que el MudMenu abra. *@
-            <div style="position:relative; z-index:1003; display:inline-flex; align-items:center;"
+            <div style="position:relative; z-index:var(--nexo-z-avatar); display:inline-flex; align-items:center;"
                  @onclick="() => _notifAbierta = false">
                 <PerfilMenu />
             </div>
@@ -176,19 +179,23 @@
     </MudAppBar>
 
     @* ══ SIDEBAR ════════════════════════════════════════════════ *@
+    @* Persistent: empuja el contenido en lugar de sobreponerlo y nunca
+       se cierra solo al navegar. El toggle se controla únicamente con
+       _menuAbierto desde el botón hamburguesa del TopBar y el botón
+       de cierre dentro del header del sidebar. *@
     <MudDrawer @bind-Open="_menuAbierto"
                Elevation="0"
                Variant="DrawerVariant.Responsive"
                Class="nexo-sidebar">
 
-        @* Logo -- nombre/imagen editables por un Administracion en Settings >
-           Mi Negocio (ConfiguracionEmpresaState). Se mantiene el mismo alto
-           (34px, ver .nexo-sidebar__logo-img) sin importar el tamano real de
-           la imagen subida, para que el logo nuevo respete "las mismas
-           dimensiones" que el original. *@
         <div class="nexo-sidebar__logo">
             <img src="@(ConfiguracionEmpresa.LogoDataUri ?? "/images/LogoV.png")" alt="@ConfiguracionEmpresa.NombreEmpresa" class="nexo-sidebar__logo-img" />
             <span class="nexo-sidebar__logo-text">@ConfiguracionEmpresa.NombreEmpresa</span>
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                           Size="Size.Small"
+                           Class="nexo-sidebar__close-btn"
+                           OnClick="@(() => _menuAbierto = false)"
+                           title="Cerrar menú" />
         </div>
 
         @* Navegación principal *@

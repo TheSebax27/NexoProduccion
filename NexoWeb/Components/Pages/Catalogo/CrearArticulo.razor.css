@@ -53,9 +53,9 @@
     gap: 0.25rem;
     padding: 0.2rem 0.6rem;
     border-radius: 20px;
-    background: rgba(16,185,129,0.10);
+    background: var(--n-success-bg-2);
     font-size: 0.75rem;
-    color: #10B981;
+    color: var(--n-success);
 }
 
 /* ── Embalaje ─────────────────────────────────────────────────────── */
@@ -78,10 +78,10 @@
     gap: 0.35rem;
     padding: 0.25rem 0.65rem;
     border-radius: 20px;
-    background: rgba(14,165,233,0.10);
-    border: 1px solid rgba(14,165,233,0.18);
+    background: var(--n-info-bg);
+    border: 1px solid var(--n-info-border);
     font-size: 0.75rem;
-    color: #0EA5E9;
+    color: var(--n-info);
 }
 
 /* ── IVA vacío ────────────────────────────────────────────────────── */

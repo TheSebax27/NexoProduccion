@@ -62,6 +62,13 @@ public class TareaSincronizarConfiguracion
             TiposDocumentoVenta = configuracion.PrefijosDocumentoVenta
         });
 
+        // Aplica SINCANTSA (1518) segun lo que el admin configuro en NEXO Web.
+        // Solo actualiza si ya existe la fila (TareaInicializarVisions la crea al arrancar).
+        await connection.ExecuteAsync(@"
+            IF EXISTS (SELECT 1 FROM dbo.PARAMETROS WHERE CONSECUTIVO = 1518)
+                UPDATE dbo.PARAMETROS SET VALOR = @Valor WHERE CONSECUTIVO = 1518",
+            new { Valor = configuracion.SincAntsaActivo ? "1" : "0" });
+
         _logger.LogInformation(
             "Configuracion sincronizada para CENTROCOSTO {CentroCosto}: Activo={Activo}, Prefijos={Prefijos}, Intervalo={Intervalo}min",
             configuracion.CentroCostoVisions, configuracion.Activo,

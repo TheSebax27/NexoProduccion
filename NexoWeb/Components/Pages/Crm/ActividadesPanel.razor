@@ -1,6 +1,7 @@
 @* Panel reutilizable de actividades CRM. Se embebe en OportunidadDialog y ClienteWorkspace. *@
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Common.ApiClient
 
@@ -166,6 +167,12 @@ else
 
     private async Task EliminarAsync(ActividadItem a)
     {
+        var ok = await DialogService.ShowMessageBox(
+            "Eliminar actividad",
+            $"¿Eliminar \"{a.Tipo}\"? Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+        if (ok != true) return;
+
         try
         {
             await ApiClient.DeleteAsync($"api/crm/actividades/{a.ActividadID}");

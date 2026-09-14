@@ -132,7 +132,7 @@ else
             <MudTd DataLabel="Presentación">
                 @if (context.ArticuloSeleccionado is not null)
                 {
-                    <MudText Typo="Typo.body2">@(context.ArticuloSeleccionado.PresentacionCodigo ?? "-")</MudText>
+                    <MudText Typo="Typo.body2">@(context.ArticuloSeleccionado.PresentacionNombre ?? context.ArticuloSeleccionado.PresentacionCodigo ?? "-")</MudText>
                 }
                 else
                 {
@@ -160,83 +160,6 @@ else
         </NoRecordsContent>
     </MudTable>
 
-        </div>
-    </div>
-
-    @* ── Maquinaria (opcional) ── *@
-    <div class="nexo-section">
-        <div class="nexo-section__header">
-            <div class="nexo-section__icon" style="background:rgba(16,185,129,0.10);">
-                <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Style="color:#10B981; font-size:1.25rem;" />
-            </div>
-            <div>
-                <div class="nexo-section__title">
-                    Maquinaria utilizada
-                    <MudChip T="string" Size="Size.Small" Class="ml-1">Opcional</MudChip>
-                </div>
-                <div class="nexo-section__sub">Se pre-cargará automáticamente al crear una orden con esta receta.</div>
-            </div>
-        </div>
-        <div class="nexo-section__body">
-
-    @if (_maquinasDisponibles.Count > 0)
-    {
-        @if (_maquinasReceta.Count > 0)
-        {
-            <div style="overflow-x:auto" class="mb-3">
-                <table style="width:100%; border-collapse:collapse; font-size:0.85rem">
-                    <thead>
-                        <tr style="background:var(--mud-palette-background-grey)">
-                            <th style="padding:6px 8px; text-align:left">Máquina</th>
-                            <th style="padding:6px 8px; min-width:130px">Horas est. / lote</th>
-                            <th style="padding:6px 8px; min-width:180px">Notas</th>
-                            <th style="padding:6px 8px; width:48px"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var fila in _maquinasReceta)
-                        {
-                            <tr style="border-bottom:1px solid var(--mud-palette-lines-default)">
-                                <td style="padding:4px 8px">
-                                    <MudSelect T="int?" Value="@((int?)fila.MaquinariaID)"
-                                               ValueChanged="@((int? v) => fila.MaquinariaID = v ?? 0)"
-                                               Placeholder="Selecciona máquina" Margin="Margin.Dense">
-                                        @foreach (var m in _maquinasDisponibles)
-                                        {
-                                            <MudSelectItem T="int?" Value="@((int?)m.MaquinariaID)">
-                                                @m.Nombre <small style="opacity:.6">(@m.TipoMaquinaria)</small>
-                                            </MudSelectItem>
-                                        }
-                                    </MudSelect>
-                                </td>
-                                <td style="padding:4px 8px">
-                                    <MudNumericField @bind-Value="fila.HorasEstimadasPorLote" T="decimal?"
-                                                     Placeholder="—" Format="0.##" Min="0" Margin="Margin.Dense" />
-                                </td>
-                                <td style="padding:4px 8px">
-                                    <MudTextField @bind-Value="fila.Notas" Placeholder="Opcional" Margin="Margin.Dense" />
-                                </td>
-                                <td style="padding:4px 8px">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
-                                                   Size="Size.Small" OnClick="@(() => _maquinasReceta.Remove(fila))" />
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
-        <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="@(() => _maquinasReceta.Add(new FilaMaquinaReceta()))" Class="mb-4">
-            Agregar máquina
-        </MudButton>
-    }
-    else
-    {
-        <MudAlert Severity="Severity.Info" Class="mb-4">
-            No hay máquinas registradas aún. Ve a <MudLink Href="/produccion/maquinaria">Maquinaria</MudLink> para agregar.
-        </MudAlert>
-    }
         </div>
     </div>
 
@@ -280,15 +203,6 @@ else
 
     private List<LineaRecetaEditable> _lineas = new();
 
-    private class FilaMaquinaReceta
-    {
-        public int MaquinariaID { get; set; }
-        public decimal? HorasEstimadasPorLote { get; set; }
-        public string? Notas { get; set; }
-    }
-
-    private List<MaquinariaItem> _maquinasDisponibles = [];
-    private List<FilaMaquinaReceta> _maquinasReceta = [];
 
     private bool _cargandoCatalogos = true;
     private bool _guardando;
@@ -300,21 +214,11 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var tareaCentrosTrabajo = ApiClient.GetAsync<List<CentroTrabajoItem>>("api/catalogo/centros-trabajo");
-        var tareaMaquinas = ApiClient.GetAsync<List<MaquinariaItem>>("api/produccion/maquinaria?estado=Activa");
-
-        await Task.WhenAll(tareaCentrosTrabajo, tareaMaquinas);
-
-        _centrosTrabajo = await tareaCentrosTrabajo ?? new();
-        _maquinasDisponibles = await tareaMaquinas ?? [];
+        _centrosTrabajo = await ApiClient.GetAsync<List<CentroTrabajoItem>>("api/catalogo/centros-trabajo") ?? new();
 
         if (EsNuevaVersion)
         {
-            var tDetalle   = ApiClient.GetAsync<List<RecetaDetalleItem>>($"api/produccion/recetas/{RecetaBaseId}/detalle");
-            var tMaqReceta = ApiClient.GetAsync<List<RecetaMaquinariaItem>>($"api/produccion/recetas/{RecetaBaseId}/maquinaria");
-            await Task.WhenAll(tDetalle, tMaqReceta);
-
-            var detalleActual = await tDetalle ?? new();
+            var detalleActual = await ApiClient.GetAsync<List<RecetaDetalleItem>>($"api/produccion/recetas/{RecetaBaseId}/detalle") ?? new();
 
             // Para cada insumo de la receta existente, cargar el artículo desde la API
             var idsInsumos = detalleActual.Select(d => d.InsumoID).Distinct().ToList();
@@ -337,13 +241,6 @@ else
                 })
                 .ToList();
 
-            _maquinasReceta = (await tMaqReceta ?? [])
-                .Select(m => new FilaMaquinaReceta
-                {
-                    MaquinariaID = m.MaquinariaID,
-                    HorasEstimadasPorLote = m.HorasEstimadasPorLote,
-                    Notas = m.Notas
-                }).ToList();
         }
         else
         {
@@ -367,17 +264,18 @@ else
     private async Task<IEnumerable<ArticuloItem>> BuscarInsumos(string texto, CancellationToken ct)
     {
         var resultado = await ApiClient.GetAsync<List<ArticuloItem>>(
-            $"api/catalogo/articulos/buscar?q={Uri.EscapeDataString(texto ?? "")}&soloTerminados=false&max=30");
+            $"api/catalogo/articulos/buscar?q={Uri.EscapeDataString(texto ?? "")}&max=30");
         return resultado ?? [];
     }
 
     private static string FormatearInsumo(ArticuloItem a)
     {
+        var base_ = $"{a.Referencia} — {a.Nombre}";
         if (a.EsUnidadCaja)
-            return $"{a.Nombre} ({a.UnidadesPorEmbalaje?.ToString("N0")} u/cja)";
+            return $"{base_} ({a.UnidadesPorEmbalaje?.ToString("N0")} u/cja)";
         if (a.TipoArticulo == "Producto Terminado")
-            return $"{a.Nombre} [PT]";
-        return a.Nombre;
+            return $"{base_} [PT]";
+        return base_;
     }
 
     private void AgregarLinea() => _lineas.Add(new LineaRecetaEditable());
@@ -402,15 +300,10 @@ else
                     linea.PorcentajeMermaEstandar, linea.CentroTrabajoID, indice + 1))
                 .ToList();
 
-            var maquinas = _maquinasReceta
-                .Where(m => m.MaquinariaID > 0)
-                .Select(m => new MaquinariaRecetaInput(m.MaquinariaID, m.HorasEstimadasPorLote, m.Notas))
-                .ToList();
-
             if (EsNuevaVersion)
             {
                 var request = new CrearNuevaVersionRequest(
-                    _nombreReceta, _cantidadRendimientoBase, detalle, maquinas);
+                    _nombreReceta, _cantidadRendimientoBase, detalle);
 
                 await ApiClient.PostAsync<CrearNuevaVersionRequest, object?>(
                     $"api/produccion/recetas/{RecetaBaseId}/nueva-version", request);
@@ -418,7 +311,7 @@ else
             else
             {
                 var request = new CrearRecetaRequest(
-                    _productoTerminado!.ArticuloID, _nombreReceta, _cantidadRendimientoBase, detalle, maquinas);
+                    _productoTerminado!.ArticuloID, _nombreReceta, _cantidadRendimientoBase, detalle);
 
                 await ApiClient.PostAsync<CrearRecetaRequest, object?>("api/produccion/recetas", request);
             }

@@ -63,7 +63,10 @@ public record KardexMovimientoItem(
     string? ObservacionDetallada,
     string? NumeroLote,
     DateTime? FechaVencimiento
-);
+)
+{
+    public bool EsEntrada => Cantidad >= 0;
+}
 
 public record LoteProximoVencerItem(
     string SKU,

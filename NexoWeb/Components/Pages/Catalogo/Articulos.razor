@@ -1,4 +1,4 @@
-@page "/catalogo/articulos"
+﻿@page "/catalogo/articulos"
 @attribute [Authorize]
 @implements IDisposable
 @inject INexoApiClient ApiClient
@@ -19,7 +19,6 @@
         <p class="art-header__sub">Catálogo maestro: materias primas, insumos y productos terminados.</p>
     </div>
     <div class="art-header__actions">
-        <BotonFavorito Href="/catalogo/articulos" Etiqueta="Artículos" />
         <ExportButton Endpoint="api/catalogo/articulos/exportar" NombreArchivo="articulos" />
         <MudFileUpload T="IBrowserFile" FilesChanged="ImportarExcelAsync" Accept=".xlsx,.xls" MaximumFileCount="1">
             <ActivatorContent>
@@ -37,6 +36,7 @@
         </MudButton>
     </div>
 </div>
+<InfoAyuda Texto="Catálogo maestro de artículos: materias primas, insumos y productos terminados con SKU, precio de costo e historial de precios." />
 
 @* ── Filtros ─────────────────────────────────────────────────────────── *@
 <div class="art-filtros">
@@ -160,8 +160,7 @@ else if (Preferencias.VistaListado == "tarjetas")
                         <div class="art-card__row">
                             <span>Presentación</span>
                             <strong>
-                                @a.PresentacionCodigo
-                                @if (a.PresentacionNombre is not null) { <span class="art-muted"> — @a.PresentacionNombre</span> }
+                                @(a.PresentacionNombre ?? a.PresentacionCodigo)
                                 @if (a.EsFraccionado) { <span class="art-muted"> (@a.Fracciones!.Value.ToString("N0") und)</span> }
                             </strong>
                         </div>
@@ -240,11 +239,7 @@ else
                         <td>
                             @if (a.PresentacionCodigo is not null)
                             {
-                                <span class="art-pres">@a.PresentacionCodigo</span>
-                                @if (a.PresentacionNombre is not null)
-                                {
-                                    <span class="art-muted"> @a.PresentacionNombre</span>
-                                }
+                                <span class="art-pres">@(a.PresentacionNombre ?? a.PresentacionCodigo)</span>
                                 @if (a.EsFraccionado)
                                 {
                                     <span class="art-pres-fra"> · @a.Fracciones!.Value.ToString("N0") und</span>

@@ -21,16 +21,14 @@
     [Parameter] public string Label { get; set; } = "Artículo";
     [Parameter] public bool Required { get; set; }
     [Parameter] public bool Disabled { get; set; }
-    [Parameter] public string? FiltroTipo { get; set; }
+    [Parameter] public bool? SoloTerminados { get; set; }
 
     private async Task<IEnumerable<ArticuloItem?>> BuscarAsync(string? texto, CancellationToken ct)
     {
-        var url = string.IsNullOrWhiteSpace(texto)
-            ? $"api/catalogo/articulos?estado=true&pagina=1&tamano=15{(FiltroTipo is not null ? $"&tipoArticuloId={FiltroTipo}" : "")}"
-            : $"api/catalogo/articulos?texto={Uri.EscapeDataString(texto)}&estado=true&pagina=1&tamano=15{(FiltroTipo is not null ? $"&tipoArticuloId={FiltroTipo}" : "")}";
-
-        var resp = await ApiClient.GetAsync<ArticulosPaginadosResponse>(url);
-        return resp?.Items?.Cast<ArticuloItem?>() ?? [];
+        var soloParam = SoloTerminados.HasValue ? $"&soloTerminados={SoloTerminados.Value.ToString().ToLower()}" : "";
+        var url = $"api/catalogo/articulos/buscar?q={Uri.EscapeDataString(texto ?? "")}&max=15{soloParam}";
+        var resp = await ApiClient.GetAsync<List<ArticuloItem>>(url);
+        return resp?.Cast<ArticuloItem?>() ?? [];
     }
 
     private async Task OnValueChanged(ArticuloItem? value)

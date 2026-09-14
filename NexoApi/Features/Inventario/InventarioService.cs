@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using Dapper;
+using Microsoft.Extensions.Logging;
 using NexoApi.Common.Data;
 using NexoApi.Features.Inventario.Dtos;
 
@@ -18,10 +19,12 @@ public interface IInventarioService
 public class InventarioService : IInventarioService
 {
     private readonly IDbConnectionFactory _db;
+    private readonly ILogger<InventarioService> _logger;
 
-    public InventarioService(IDbConnectionFactory db)
+    public InventarioService(IDbConnectionFactory db, ILogger<InventarioService> logger)
     {
         _db = db;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<StockConsolidadoItem>> ConsultarStockAsync(int? centroCostoId, int? bodegaId, string? sku)
@@ -70,14 +73,21 @@ public class InventarioService : IInventarioService
             commandType: CommandType.StoredProcedure);
 
         // Replicar baja en Visions para todos los CC mapeados (Cantidad negativa = descuento).
-        await connection.ExecuteAsync(@"
-            INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
-            SELECT 'BAJA_INVENTARIO', ma.CentroCostoID, ma.ArticuloID, -@Cantidad, ISNULL(a.CostoPromedio, 0)
-            FROM Integracion.MapeoArticulos ma
-            JOIN Catalogo.Tarjetas a          ON a.ArticuloID    = ma.ArticuloID
-            JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = ma.CentroCostoID
-            WHERE ma.ArticuloID = @ArticuloId AND ma.Estado = 1 AND cc.TieneVisions = 1",
-            new { ArticuloId = r.ArticuloID, Cantidad = r.CantidadPerdida });
+        try
+        {
+            await connection.ExecuteAsync(@"
+                INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
+                SELECT 'BAJA_INVENTARIO', ma.CentroCostoID, ma.ArticuloID, -@Cantidad, ISNULL(a.CostoPromedio, 0)
+                FROM Integracion.MapeoArticulos ma
+                JOIN Catalogo.Tarjetas a          ON a.ArticuloID    = ma.ArticuloID
+                JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = ma.CentroCostoID
+                WHERE ma.ArticuloID = @ArticuloId AND ma.Estado = 1 AND cc.TieneVisions = 1",
+                new { ArticuloId = r.ArticuloID, Cantidad = r.CantidadPerdida });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SYNC_DRIFT: EventosSalientes BAJA_INVENTARIO falló para ArticuloID={ArticuloId} Cantidad={Cantidad}. Stock en Kardex ya descontado.", r.ArticuloID, r.CantidadPerdida);
+        }
 
         return resultado;
     }
@@ -100,13 +110,20 @@ public class InventarioService : IInventarioService
             commandType: CommandType.StoredProcedure);
 
         // Replicar ajuste en Visions para todos los CC mapeados.
-        await connection.ExecuteAsync(@"
-            INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
-            SELECT 'AJUSTE_INVENTARIO', ma.CentroCostoID, ma.ArticuloID, @Cantidad, @CostoUnitario
-            FROM Integracion.MapeoArticulos ma
-            JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = ma.CentroCostoID
-            WHERE ma.ArticuloID = @ArticuloId AND ma.Estado = 1 AND cc.TieneVisions = 1",
-            new { ArticuloId = r.ArticuloID, r.Cantidad, CostoUnitario = r.CostoUnitario });
+        try
+        {
+            await connection.ExecuteAsync(@"
+                INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
+                SELECT 'AJUSTE_INVENTARIO', ma.CentroCostoID, ma.ArticuloID, @Cantidad, @CostoUnitario
+                FROM Integracion.MapeoArticulos ma
+                JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = ma.CentroCostoID
+                WHERE ma.ArticuloID = @ArticuloId AND ma.Estado = 1 AND cc.TieneVisions = 1",
+                new { ArticuloId = r.ArticuloID, r.Cantidad, CostoUnitario = r.CostoUnitario });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SYNC_DRIFT: EventosSalientes AJUSTE_INVENTARIO falló para ArticuloID={ArticuloId} Cantidad={Cantidad}. Stock en Kardex ya ajustado.", r.ArticuloID, r.Cantidad);
+        }
 
         return resultado;
     }

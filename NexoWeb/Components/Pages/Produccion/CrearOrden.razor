@@ -110,30 +110,31 @@ else
             }
 
             <MudItem xs="12" sm="6">
-                <MudAutocomplete T="ArticuloItem" Label="Producto Terminado" Required="true" Variant="Variant.Outlined"
-                                 Value="_productoSeleccionado" ValueChanged="OnProductoTerminadoSeleccionadoAsync"
-                                 SearchFunc="BuscarProductoAsync"
-                                 ToStringFunc="@(a => a is null ? "" : $"{a.Referencia} — {a.Nombre}")"
-                                 MinCharacters="1" Clearable="true" NoItemsText="Sin resultados"
-                                 HelperText="Escribe referencia o nombre para buscar" />
-            </MudItem>
-
-            <MudItem xs="12" sm="6">
                 <MudSelect T="int?" Value="_recetaId" ValueChanged="@((int? v) => OnRecetaCambiadaAsync(v))"
-                           Label="Receta (BOM)" Placeholder="Selecciona una receta" Required="true" Variant="Variant.Outlined"
-                           Disabled="@(!_productoTerminadoId.HasValue)">
+                           Label="Receta (BOM)" Placeholder="Selecciona una receta" Required="true" Variant="Variant.Outlined">
                     @foreach (var receta in _recetas)
                     {
-                        <MudSelectItem T="int?" Value="@((int?)receta.RecetaID)">@receta.NombreReceta (v@(receta.Version))</MudSelectItem>
+                        <MudSelectItem T="int?" Value="@((int?)receta.RecetaID)">
+                            @receta.ProductoTerminado — @receta.NombreReceta (v@(receta.Version))
+                        </MudSelectItem>
                     }
                 </MudSelect>
-                @if (_productoTerminadoId.HasValue && _recetas.Count == 0)
+                @if (_recetas.Count == 0)
                 {
                     <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2">
-                        Este producto no tiene receta activa. Crea una receta antes de continuar.
+                        No hay recetas activas. Crea una receta antes de continuar.
                     </MudAlert>
                 }
             </MudItem>
+
+            @if (_recetaSeleccionada is not null)
+            {
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@_recetaSeleccionada.ProductoTerminado" Label="Producto Terminado"
+                                  Disabled="true" Variant="Variant.Outlined"
+                                  HelperText="Se determina automáticamente desde la receta" />
+                </MudItem>
+            }
 
             <MudItem xs="12" sm="4">
                 <MudNumericField @bind-Value="_cantidadProgramada" Label="Cantidad programada" Min="0.01m"
@@ -264,17 +265,9 @@ else
                         Maquinaria utilizada
                         <MudChip T="string" Size="Size.Small" Class="ml-1">Opcional</MudChip>
                     </div>
-                    <div class="nexo-section__sub">Se pre-carga desde la receta. Podés agregar, quitar o ajustar horas.</div>
+                    <div class="nexo-section__sub">Agrega la maquinaria utilizada en esta orden y las horas estimadas.</div>
                 </div>
             </div>
-            @if (_recetaId.HasValue && _maquinasDisponibles.Count > 0)
-            {
-                <MudButton Variant="Variant.Outlined" Size="Size.Small"
-                           StartIcon="@Icons.Material.Filled.Sync"
-                           OnClick="RecargarMaquinariaDesdeRecetaAsync">
-                    Agregar desde receta
-                </MudButton>
-            }
         </div>
         <div class="nexo-section__body">
 
@@ -498,6 +491,7 @@ else
 
     private ClienteItem? _clienteSeleccionado;
     private ArticuloItem? _productoSeleccionado;
+    private RecetaResumen? _recetaSeleccionada;
 
     private string _codigoOp = "";
     private int? _tipoProduccionId;
@@ -532,14 +526,16 @@ else
         var tareaCtrabajo   = ApiClient.GetAsync<List<CentroTrabajoItem>>("api/catalogo/centros-trabajo");
         var tareaMaquinas   = ApiClient.GetAsync<List<MaquinariaItem>>("api/produccion/maquinaria?estado=Activa");
         var tareaEmpleados  = ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados");
+        var tareaRecetas    = ApiClient.GetAsync<List<RecetaResumen>>("api/produccion/recetas?soloActivas=true");
 
-        await Task.WhenAll(tareaTipos, tareaCentros, tareaBodegas, tareaCtrabajo, tareaMaquinas, tareaEmpleados);
+        await Task.WhenAll(tareaTipos, tareaCentros, tareaBodegas, tareaCtrabajo, tareaMaquinas, tareaEmpleados, tareaRecetas);
 
         _tiposProduccion      = await tareaTipos ?? new();
         _centrosCosto         = await tareaCentros ?? new();
         _centrosTrabajo       = await tareaCtrabajo ?? new();
         _maquinasDisponibles  = await tareaMaquinas ?? [];
         _empleadosDisponibles = (await tareaEmpleados ?? []).Where(e => e.Estado).ToList();
+        _recetas              = await tareaRecetas ?? new();
 
         _todasLasBodegas          = await tareaBodegas ?? new();
         _bodegasMateriaPrima      = _todasLasBodegas.Where(b => b.TipoBodega == "MATERIA_PRIMA").ToList();
@@ -557,9 +553,14 @@ else
 
         if (!EsEdicion && ArticuloId.HasValue)
         {
-            _productoSeleccionado = await ApiClient.GetAsync<ArticuloItem>($"api/catalogo/articulos/{ArticuloId}");
-            if (_productoSeleccionado is not null)
-                await OnProductoTerminadoCambiadoAsync(_productoSeleccionado.ArticuloID);
+            // Pre-seleccionar receta para el PT dado (si viene desde un enlace externo)
+            _recetaSeleccionada = _recetas.FirstOrDefault(r => r.ProductoTerminadoID == ArticuloId.Value);
+            if (_recetaSeleccionada is not null)
+            {
+                _recetaId = _recetaSeleccionada.RecetaID;
+                _productoTerminadoId = _recetaSeleccionada.ProductoTerminadoID;
+                _productoSeleccionado = ArticuloStub(_recetaSeleccionada.ProductoTerminadoID, _recetaSeleccionada.ProductoTerminado, "");
+            }
         }
 
         if (EsEdicion)
@@ -586,9 +587,8 @@ else
                 if (detalle.ProductoTerminadoID > 0)
                     _productoSeleccionado = ArticuloStub(detalle.ProductoTerminadoID, detalle.ProductoNombre ?? "", detalle.ReferenciaProducto ?? "");
 
-                _recetas = await ApiClient.GetAsync<List<RecetaResumen>>(
-                    $"api/produccion/recetas?productoTerminadoId={detalle.ProductoTerminadoID}&soloActivas=false") ?? new();
                 _recetaId = detalle.RecetaID;
+                _recetaSeleccionada = _recetas.FirstOrDefault(r => r.RecetaID == detalle.RecetaID);
 
                 var maqOrden = await ApiClient.GetAsync<List<OrdenMaquinariaItem>>(
                     $"api/produccion/ordenes/{OrdenProduccionId}/maquinaria") ?? [];
@@ -676,15 +676,6 @@ else
         return resp?.Items ?? [];
     }
 
-    private async Task<IEnumerable<ArticuloItem>> BuscarProductoAsync(string texto, CancellationToken ct)
-    {
-        var url = string.IsNullOrWhiteSpace(texto)
-            ? "api/catalogo/articulos?estado=true&pagina=1&tamano=15&tipoArticulo=Producto+Terminado"
-            : $"api/catalogo/articulos?texto={Uri.EscapeDataString(texto)}&estado=true&pagina=1&tamano=15&tipoArticulo=Producto+Terminado";
-        var resp = await ApiClient.GetAsync<ArticulosPaginadosResponse>(url);
-        return resp?.Items ?? [];
-    }
-
     private static ClienteItem ClienteStub(int id, string nombre) =>
         new(id, "", nombre, null, null, null, null, null, true, null, null, null, null, null, 0, null, null, null, null, null, null, null, null, null, null, null);
 
@@ -697,12 +688,6 @@ else
         _clienteId = cliente?.ClienteID;
     }
 
-    private async Task OnProductoTerminadoSeleccionadoAsync(ArticuloItem? articulo)
-    {
-        _productoSeleccionado = articulo;
-        await OnProductoTerminadoCambiadoAsync(articulo?.ArticuloID);
-    }
-
     private Task OnTipoProduccionCambiadoAsync(int? nuevoTipoId)
     {
         _tipoProduccionId = nuevoTipoId;
@@ -712,28 +697,15 @@ else
         return Task.CompletedTask;
     }
 
-    private async Task OnProductoTerminadoCambiadoAsync(int? nuevoProductoId)
-    {
-        _productoTerminadoId = nuevoProductoId;
-        _recetaId = null;
-        _maquinasOrden = [];
-        _empleadosOrden = [];
-        _recetas = nuevoProductoId.HasValue
-            ? await ApiClient.GetAsync<List<RecetaResumen>>(
-                $"api/produccion/recetas?productoTerminadoId={nuevoProductoId}&soloActivas=true") ?? new()
-            : new();
-    }
-
     private async Task OnRecetaCambiadaAsync(int? recetaId)
     {
         _recetaId = recetaId;
-        if (recetaId.HasValue)
+        _recetaSeleccionada = _recetas.FirstOrDefault(r => r.RecetaID == recetaId);
+
+        if (_recetaSeleccionada is not null)
         {
-            var maqReceta = await ApiClient.GetAsync<List<RecetaMaquinariaItem>>(
-                $"api/produccion/recetas/{recetaId}/maquinaria") ?? [];
-            _maquinasOrden = maqReceta
-                .Select(m => FilaMaquinaDesdeDecimal(m.MaquinariaID, m.HorasEstimadasPorLote, null))
-                .ToList();
+            _productoTerminadoId = _recetaSeleccionada.ProductoTerminadoID;
+            _productoSeleccionado = ArticuloStub(_recetaSeleccionada.ProductoTerminadoID, _recetaSeleccionada.ProductoTerminado, "");
 
             var empReceta = await ApiClient.GetAsync<List<EmpleadoRecetaItem>>(
                 $"api/produccion/recetas/{recetaId}/empleados") ?? [];
@@ -743,19 +715,11 @@ else
         }
         else
         {
+            _productoTerminadoId = null;
+            _productoSeleccionado = null;
             _maquinasOrden = [];
             _empleadosOrden = [];
         }
-    }
-
-    private async Task RecargarMaquinariaDesdeRecetaAsync()
-    {
-        if (!_recetaId.HasValue) return;
-        var maqReceta = await ApiClient.GetAsync<List<RecetaMaquinariaItem>>(
-            $"api/produccion/recetas/{_recetaId}/maquinaria") ?? [];
-        _maquinasOrden = maqReceta
-            .Select(m => FilaMaquinaDesdeDecimal(m.MaquinariaID, m.HorasEstimadasPorLote, null))
-            .ToList();
     }
 
     private async Task RecargarEmpleadosDesdeRecetaAsync()

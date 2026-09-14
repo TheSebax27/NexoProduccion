@@ -408,4 +408,12 @@ public class CrmController : ControllerBase
         var bytes = NexoApi.Common.Export.ExportService.GenerarPdfCotizacion(data);
         return File(bytes, "application/pdf", $"cotizacion_{id}.pdf");
     }
+
+    [HttpPost("cotizaciones/expirar-vencidas")]
+    [Authorize(Roles = "Administracion,Jefes")]
+    public async Task<ActionResult> ExpirarCotizacionesVencidas()
+    {
+        var afectadas = await _service.ExpireCotizacionesVencidasAsync();
+        return Ok(new { mensaje = $"{afectadas} cotización(es) marcada(s) como VENCIDA.", afectadas });
+    }
 }

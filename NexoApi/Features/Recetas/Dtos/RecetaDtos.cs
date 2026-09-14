@@ -27,6 +27,7 @@ public record CrearNuevaVersionRequest(
 
 public record RecetaResumen(
     int RecetaID,
+    int ProductoTerminadoID,
     string ProductoTerminado,
     string NombreReceta,
     int Version,

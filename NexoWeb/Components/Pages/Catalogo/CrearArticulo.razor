@@ -1,4 +1,4 @@
-@page "/catalogo/articulos/nuevo"
+﻿@page "/catalogo/articulos/nuevo"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject NavigationManager Nav
@@ -431,6 +431,31 @@ else
             </div>
 
         </div>
+
+        @* ── Adicionales ──────────────────────────────────────────────────────── *@
+        <div class="nexo-section mt-4 mb-2">
+            <div class="nexo-section__header">
+                <div class="nexo-section__icon">
+                    <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Style="color:#F59E0B; font-size:1.25rem;" />
+                </div>
+                <div style="flex:1;">
+                    <div class="nexo-section__title">Adicionales</div>
+                    <div class="nexo-section__sub">Artículos opcionales o extras que se pueden agregar a este artículo</div>
+                </div>
+            </div>
+            <div class="nexo-section__body">
+                <MudSwitch T="bool" @bind-Value="_esAdicional"
+                           Label="Este artículo puede ser adicional de otros"
+                           Color="Color.Primary" />
+                @if (_esAdicional)
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2" Icon="@Icons.Material.Filled.Info">
+                        Guarda el artículo para configurar sus adicionales asignados.
+                    </MudAlert>
+                }
+            </div>
+        </div>
+
     </MudForm>
 }
 
@@ -461,8 +486,9 @@ else
     private List<PresentacionItem>   _presentaciones = new();
     private List<IvaItem>            _ivas           = new();
 
-    private bool _cargando  = true;
-    private bool _guardando = false;
+    private bool _cargando    = true;
+    private bool _guardando   = false;
+    private bool _esAdicional = false;
 
     private MudForm _form = default!;
 
@@ -581,7 +607,7 @@ else
     {
         var dialogo = await DialogService.ShowAsync<PresentacionDialog>("Nueva Presentación",
             new DialogParameters<PresentacionDialog>(),
-            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
         var result = await dialogo.Result;
         if (result is null || result.Canceled || result.Data is not PresentacionDialog.Result data) return;
         var nueva = new PresentacionItem(data.Codigo, data.Nombre, data.Fracciones, data.Tipo);
@@ -606,7 +632,7 @@ else
     private async Task AbrirCrearMarcaAsync()
     {
         var dialogo = await DialogService.ShowAsync<MarcaDialog>("Nueva Marca",
-            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
         var result = await dialogo.Result;
         if (result is null || result.Canceled || result.Data is not MarcaDialog.Result data) return;
         _marcas = new List<MarcaItem>(_marcas) { new MarcaItem(data.Codigo, data.Nombre) };
@@ -739,8 +765,22 @@ else
                     new ActualizarImagenRequest(_imagenBase64, _imagenContentType!));
             }
 
+            if (_esAdicional && creado is not null)
+            {
+                try
+                {
+                    await ApiClient.PostAsync<MarcarEsAdicionalRequest>(
+                        $"api/catalogo/articulos/{creado.ArticuloId}/es-adicional",
+                        new MarcarEsAdicionalRequest(true));
+                }
+                catch { }
+            }
+
             Snackbar.Add($"Artículo '{_nombre}' creado correctamente.", Severity.Success);
-            Nav.NavigateTo("/catalogo/articulos");
+            if (_esAdicional && creado is not null)
+                Nav.NavigateTo($"/catalogo/articulos/{creado.ArticuloId}/editar");
+            else
+                Nav.NavigateTo("/catalogo/articulos");
         }
         catch (HttpRequestException ex)
         {

@@ -170,9 +170,9 @@ public record AdicionalesSyncDesdeVisionsRequest(
 // ---------- Catalogo: Iva (= dbo.IVA en Visions) ----------
 // TARJETA no tiene FK a IVA; almacena IVAVALOR e IVADESCRIPCION como copia plana.
 // NEXO sigue el mismo patron: IvaValor e IvaDescripcion en Tarjetas son copias planas.
-public record IvaItem(int IvaID, int Iva, string? Descripcion);
-public record CrearIvaRequest(int Iva, string? Descripcion);
-public record ActualizarIvaRequest(int Iva, string? Descripcion);
+public record IvaItem(int IvaID, int Iva, string? Descripcion, string TipoImpuesto = "IVA");
+public record CrearIvaRequest(int Iva, string? Descripcion, string TipoImpuesto = "IVA");
+public record ActualizarIvaRequest(int Iva, string? Descripcion, string TipoImpuesto = "IVA");
 
 // ---------- Catalogo: GruposMayores (= GRUPOMAYOR en Visions) ----------
 public record GrupoMayorItem(string Codigo, string? Nombre);
@@ -220,7 +220,8 @@ public record ProveedorItem(
     string? TipoIdentificacion = null, int? DigitoVerificacion = null,
     string? Departamento = null, string? Ciudad = null,
     string? CodigoDept = null, string? CodigoMuni = null,
-    string? Pais = null, string? CodigoPais = null
+    string? Pais = null, string? CodigoPais = null,
+    string? TipoIdentificacionDetalle = null
 );
 public record CrearProveedorRequest(
     string RazonSocial, string NIT, string? Contacto, string? Telefono, string? Email, string? Direccion,

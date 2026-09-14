@@ -42,6 +42,9 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
 		<PackageReference Include="QRCoder" Version="1.6.0" />
 		<PackageReference Include="QuestPDF" Version="2026.7.2" />
+		<PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
 
 		<!-- OpenAPI y Swagger alineados para soportar tu código actual sin cambios -->

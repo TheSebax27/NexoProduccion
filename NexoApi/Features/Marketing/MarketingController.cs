@@ -157,7 +157,8 @@ public class MarketingController(IMarketingService svc, IConfiguration config) :
     {
         if (string.IsNullOrWhiteSpace(url)) return BadRequest();
         var destino = await svc.RegistrarClickAsync(token, url);
-        return Redirect(destino ?? url);
+        if (destino is null) return NotFound();
+        return Redirect(destino);
     }
 
     [AllowAnonymous]

@@ -72,7 +72,6 @@ public class MaquinariaController(IMaquinariaService svc) : ControllerBase
     // ── Foto ──────────────────────────────────────────────────────
 
     [HttpGet("api/produccion/maquinaria/{id:int}/foto")]
-    [AllowAnonymous]
     public async Task<IActionResult> ObtenerFoto(int id)
     {
         var foto = await svc.ObtenerFotoAsync(id);

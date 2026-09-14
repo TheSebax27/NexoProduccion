@@ -1,4 +1,4 @@
-@page "/facturacion"
+﻿@page "/facturacion"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -17,13 +17,13 @@
         </div>
     </div>
     <div class="d-flex align-center" style="gap:8px">
-        <BotonFavorito Href="/facturacion" Etiqueta="Salidas" />
         <MudButton Variant="Variant.Filled" Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirCreacionAsync">
             Nueva Factura
         </MudButton>
     </div>
 </div>
+<InfoAyuda Texto="Registro de salidas: facturas pendientes, emitidas y anuladas. Crea, confirma y anula documentos de venta desde un solo lugar." />
 
 @* ── Workspace tabs ── *@
 <MudTabs @bind-ActivePanelIndex="_tabActivo" Elevation="0" Rounded="true"
@@ -52,7 +52,8 @@
                                    Disabled="@(_paginaPend >= _totalPaginasPend)" OnClick="@(() => IrPendAsync(_paginaPend + 1))" />
                 </div>
             </div>
-            <MudTable Items="_pendientes" Hover="true" Dense="true" Striped="true" Style="overflow-x:auto">
+            <div style="overflow-x:auto">
+            <MudTable Items="_pendientes" Hover="true" Dense="true" Striped="true">
                 <HeaderContent>
                     <MudTh>Tipo Doc</MudTh>
                     <MudTh>Nro. Doc</MudTh>
@@ -101,6 +102,7 @@
                     </MudTd>
                 </RowTemplate>
             </MudTable>
+            </div>
         }
     </MudTabPanel>
 
@@ -161,7 +163,8 @@
                                    Disabled="@(_pagina >= _totalPaginas)" OnClick="@(() => IrPaginaAsync(_pagina + 1))" />
                 </div>
             </div>
-            <MudTable Items="_facturas" Hover="true" Dense="true" Striped="true" Style="overflow-x:auto">
+            <div style="overflow-x:auto">
+            <MudTable Items="_facturas" Hover="true" Dense="true" Striped="true">
                 <HeaderContent>
                     <MudTh>Tipo Doc</MudTh>
                     <MudTh>Nro. Doc</MudTh>
@@ -215,6 +218,7 @@
                     </MudTd>
                 </RowTemplate>
             </MudTable>
+            </div>
         }
     </MudTabPanel>
 
@@ -250,7 +254,8 @@
         }
         else
         {
-            <MudTable Items="_devoluciones" Hover="true" Dense="true" Striped="true" Style="overflow-x:auto">
+            <div style="overflow-x:auto">
+            <MudTable Items="_devoluciones" Hover="true" Dense="true" Striped="true">
                 <HeaderContent>
                     <MudTh>Tipo</MudTh>
                     <MudTh>Fecha</MudTh>
@@ -272,7 +277,7 @@
                     <MudTd Style="font-size:0.82rem">
                         @(context.TipoDevolucion == "CLIENTE" ? (context.Cliente ?? "-") : (context.Proveedor ?? "-"))
                     </MudTd>
-                    <MudTd Style="font-size:0.82rem;max-width:200px;overflow:hidden;text-overflow:ellipsis">
+                    <MudTd Style="font-size:0.82rem;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="@(context.Motivo ?? "")">
                         @(context.Motivo ?? "-")
                     </MudTd>
                     <MudTd Style="font-size:0.82rem">@(context.NroDoc ?? "-")</MudTd>
@@ -298,6 +303,7 @@
                     <MudTd colspan="2" />
                 </FooterContent>
             </MudTable>
+            </div>
         }
     </MudTabPanel>
 </MudTabs>
@@ -349,7 +355,8 @@
                                    OnClick="@(async () => { _vPagina++; await CargarVentasVisionsAsync(); })" />
                 </div>
             </div>
-            <MudTable Items="_ventasVisions" Hover="true" Dense="true" Striped="true" Style="overflow-x:auto">
+            <div style="overflow-x:auto">
+            <MudTable Items="_ventasVisions" Hover="true" Dense="true" Striped="true">
                 <HeaderContent>
                     <MudTh>Tipo Doc</MudTh>
                     <MudTh>Nro. Doc</MudTh>
@@ -366,11 +373,17 @@
                     <MudTd>@context.Fecha.ToString("dd/MM/yyyy")</MudTd>
                     <MudTd Style="font-size:0.82rem">@(context.NitCliente ?? "-")</MudTd>
                     <MudTd Style="font-size:0.82rem">@(context.NombreCliente ?? "-")</MudTd>
-                    <MudTd Style="font-size:0.82rem">@context.CentroCostoID</MudTd>
+                    <MudTd Style="font-size:0.82rem">@(_centrosCosto.FirstOrDefault(cc => cc.CentroCostoID == context.CentroCostoID)?.Nombre ?? context.CentroCostoID.ToString())</MudTd>
                     <MudTd Style="text-align:right">@context.TotalVenta.ToString("C0")</MudTd>
-                    <MudTd Style="text-align:right">@context.Lineas</MudTd>
+                    <MudTd Style="text-align:right">
+                        <MudButton Size="Size.Small" Variant="Variant.Text"
+                                   OnClick="@(() => AbrirLineasVisionsAsync(context))">
+                            @context.Lineas
+                        </MudButton>
+                    </MudTd>
                 </RowTemplate>
             </MudTable>
+            </div>
         }
     </MudExpansionPanel>
 </MudExpansionPanels>
@@ -554,7 +567,7 @@
     private async Task AbrirNuevaDevolucionAsync()
     {
         var dialog = await DialogService.ShowAsync<DevolucionDialog>("Nueva Devolución",
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true });
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
         var result = await dialog.Result;
         if (!result.Canceled) await CargarDevolucionesAsync();
     }
@@ -569,7 +582,7 @@
             { x => x.UsaVisions, ConfiguracionEmpresa.UsaVisions }
         };
         var dialogo = await DialogService.ShowAsync<FacturaDialog>("Nueva Factura", parametros,
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
         var resultado = await dialogo.Result;
         if (resultado is null || resultado.Canceled) return;
         try
@@ -594,9 +607,23 @@
             { x => x.CcTieneVisions, ccTieneVisions }
         };
         var dialogo = await DialogService.ShowAsync<GestionFacturaDialog>("Gestionar", parametros,
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
         await dialogo.Result;
         await Task.WhenAll(CargarPendientesAsync(), CargarHistorialAsync());
+    }
+
+    private async Task AbrirLineasVisionsAsync(VentaVisionsItem venta)
+    {
+        var parametros = new DialogParameters<LineasVisionsDialog>
+        {
+            { x => x.CentroCostoID, venta.CentroCostoID },
+            { x => x.TipDoc,        venta.TipDoc },
+            { x => x.NroDoc,        venta.NroDoc }
+        };
+        await DialogService.ShowAsync<LineasVisionsDialog>(
+            $"{venta.TipDoc} {venta.NroDoc} — Líneas",
+            parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
     }
 
     private async Task EliminarFacturaAsync(FacturaItem factura)

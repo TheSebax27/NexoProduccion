@@ -14,6 +14,7 @@ public interface IConfiguracionService
     Task ActualizarConfigInventarioAsync(bool manejarVencimientos, int diasAlerta, string modoLotes);
     Task<ConfigNroDocResponse> ObtenerConfigNroDocAsync();
     Task ActualizarConfigNroDocAsync(string modoNroDoc, long ultimoSecuencial);
+    Task ActualizarVentaDesdeRecetaAsync(bool ventaDesdeReceta);
 }
 
 // Configuracion global de la empresa (nombre + logo del sidebar) -- a
@@ -55,10 +56,10 @@ public class ConfiguracionService : IConfiguracionService
             string NombreEmpresa, string? NombrePropietario,
             byte[]? Logo, string? LogoContentType, bool UsaVisions,
             bool ManejarVencimientos, int DiasAlertaVencimiento, string ModoLotes,
-            string ModoNroDoc, long UltimoNroDocSecuencial)>(
+            string ModoNroDoc, long UltimoNroDocSecuencial, bool VentaDesdeReceta)>(
             @"SELECT NombreEmpresa, NombrePropietario, Logo, LogoContentType, UsaVisions,
                      ManejarVencimientos, DiasAlertaVencimiento, ModoLotes,
-                     ModoNroDoc, UltimoNroDocSecuencial
+                     ModoNroDoc, UltimoNroDocSecuencial, VentaDesdeReceta
               FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
 
         return new ConfiguracionEmpresaResponse(
@@ -66,7 +67,7 @@ public class ConfiguracionService : IConfiguracionService
             fila.Logo is null ? null : Convert.ToBase64String(fila.Logo),
             fila.LogoContentType, fila.UsaVisions,
             fila.ManejarVencimientos, fila.DiasAlertaVencimiento, fila.ModoLotes,
-            fila.ModoNroDoc, fila.UltimoNroDocSecuencial);
+            fila.ModoNroDoc, fila.UltimoNroDocSecuencial, fila.VentaDesdeReceta);
     }
 
     public async Task ActualizarNombreEmpresaAsync(string nombreEmpresa, string? nombrePropietario)
@@ -144,5 +145,14 @@ public class ConfiguracionService : IConfiguracionService
               SET ModoNroDoc = @ModoNroDoc, UltimoNroDocSecuencial = @UltimoNroDocSecuencial
               WHERE ConfiguracionID = 1",
             new { ModoNroDoc = modoNroDoc, UltimoNroDocSecuencial = ultimoSecuencial });
+    }
+
+    public async Task ActualizarVentaDesdeRecetaAsync(bool ventaDesdeReceta)
+    {
+        using var connection = _db.CreateConnection();
+        await EnsureConfigRowAsync(connection);
+        await connection.ExecuteAsync(
+            "UPDATE Organizacion.ConfiguracionEmpresa SET VentaDesdeReceta = @VentaDesdeReceta WHERE ConfiguracionID = 1",
+            new { VentaDesdeReceta = ventaDesdeReceta });
     }
 }

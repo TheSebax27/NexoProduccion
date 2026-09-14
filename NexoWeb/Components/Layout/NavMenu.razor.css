@@ -80,7 +80,7 @@
 
 /* Estado activo — pill morado */
 ::deep .mud-nav-link.nexo-nav-item.active {
-  background: rgba(124,92,255,0.82) !important;
+  background: var(--n-nav-active-bg) !important;
   color: #FFFFFF !important;
   font-weight: 600 !important;
   box-shadow: 0 3px 12px rgba(124,92,255,0.35) !important;

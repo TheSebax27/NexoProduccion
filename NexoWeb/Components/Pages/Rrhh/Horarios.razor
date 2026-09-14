@@ -1,4 +1,4 @@
-@page "/rrhh/horarios"
+﻿@page "/rrhh/horarios"
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Common.ApiClient
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
@@ -23,6 +23,7 @@
         </MudButton>
     </AuthorizeView>
 </div>
+<InfoAyuda Texto="Define los horarios de trabajo (turnos) de la empresa. Cada horario se asigna a empleados para controlar su jornada y asistencia." />
 
 @* ── Lista de horarios ── *@
 <MudPaper Class="pa-4 mb-6" Elevation="1">
@@ -263,7 +264,7 @@
 
     async Task AbrirNuevoHorario()
     {
-        var opts = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true };
         var dialogo = await Dialog.ShowAsync<NuevoHorarioDialog>("Nuevo Horario", opts);
         var resultado = await dialogo.Result;
         if (resultado is { Canceled: false, Data: CrearHorarioRequest req })
@@ -280,7 +281,7 @@
 
     async Task EditarHorarioAsync(HorarioItem horario)
     {
-        var opts = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true };
         var parametros = new DialogParameters<EditarHorarioDialog>
         {
             { x => x.Horario, horario }
@@ -301,7 +302,7 @@
 
     async Task VerHorarioAsync(HorarioItem horario)
     {
-        var opts = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true };
         var parametros = new DialogParameters<VerHorarioDialog>
         {
             { x => x.Horario, horario }

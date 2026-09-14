@@ -1,4 +1,4 @@
-@page "/soporte/tickets"
+﻿@page "/soporte/tickets"
 @using NexoWeb.Common.Auth
 @inject INexoApiClient Api
 @inject IDialogService Dialogs
@@ -26,6 +26,7 @@
             </MudButton>
         </div>
     </div>
+    <InfoAyuda Texto="Gestiona y da seguimiento a solicitudes de soporte: crea tickets, asígnalos a responsables y controla estados hasta su resolución." />
 
     @* KPI Bar *@
     <div class="sop-kpi-row mb-4">
@@ -100,7 +101,7 @@
     {
         @if (!ListaFiltrada.Any())
         {
-            <MudPaper Class="pa-8 text-center" Elevation="0"
+            <MudPaper Class="pa-4 pa-sm-8 text-center" Elevation="0"
                       Style="border:1px dashed var(--mud-palette-lines-default);border-radius:12px">
                 <MudIcon Icon="@Icons.Material.Filled.ConfirmationNumber"
                          Size="Size.Large" Color="Color.Secondary" Class="mb-2" />
@@ -619,7 +620,7 @@
         var dlg = await Dialogs.ShowAsync<TicketDialog>("Nuevo Ticket", new DialogParameters
         {
             ["Modo"] = "crear"
-        }, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        }, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
 
         var result = await dlg.Result;
         if (!result.Canceled && result.Data is CrearTicketRequest req)
@@ -636,7 +637,7 @@
         {
             ["Modo"] = "editar",
             ["Ticket"] = t
-        }, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        }, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
 
         var result = await dlg.Result;
         if (!result.Canceled && result.Data is ActualizarTicketRequest req)

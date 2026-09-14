@@ -143,12 +143,12 @@ public class TareaSincronizarAdicionales
             var esAdicional = (await conn.QueryAsync<string>(
                 "SELECT REFERENCIA FROM dbo.TARJETA_ES_ADICIONAL")).ToList();
 
-            var relaciones = (await conn.QueryAsync<(string Referencia, string RefAdicional)>(
-                "SELECT REFERENCIA, REFADICIONAL FROM dbo.TARJETA_ADICIONALES")).ToList();
+            var relaciones = (await conn.QueryAsync<(string Referencia, string RefAdicional, int Orden)>(
+                "SELECT REFERENCIA, REFADICIONAL, ISNULL(ORDEN, 0) AS Orden FROM dbo.TARJETA_ADICIONALES")).ToList();
 
             var request = new AdicionalesSyncDesdeVisionsRequest(
                 esAdicional.Select(r => new EsAdicionalSyncItem(r)).ToList(),
-                relaciones.Select(r => new AdicionalRelacionSyncItem(r.Referencia, r.RefAdicional, 0)).ToList()
+                relaciones.Select(r => new AdicionalRelacionSyncItem(r.Referencia, r.RefAdicional, r.Orden)).ToList()
             );
 
             await _apiClient.SincronizarAdicionalesDesdeVisionsAsync(request, ct);

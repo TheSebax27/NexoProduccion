@@ -85,4 +85,12 @@ public class ConfiguracionController : ControllerBase
         }
         catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
     }
+
+    [HttpPut("empresa/venta-receta")]
+    [Authorize(Roles = "Administracion")]
+    public async Task<ActionResult> ActualizarVentaDesdeReceta(ActualizarVentaDesdeRecetaRequest request)
+    {
+        await _service.ActualizarVentaDesdeRecetaAsync(request.VentaDesdeReceta);
+        return NoContent();
+    }
 }

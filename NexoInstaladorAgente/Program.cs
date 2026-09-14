@@ -106,15 +106,23 @@ Verde("[OK]");
 
 Paso("Instalando ejecutable del agente...  ");
 var exeDest = Path.Combine(Carpeta, "NexoSyncAgent.exe");
-for (int intento = 1; intento <= 10; intento++)
+try
 {
-    try { File.WriteAllBytes(exeDest, agentBin); break; }
-    catch (IOException) when (intento < 10) { Thread.Sleep(1000); }
+    for (int intento = 1; intento <= 10; intento++)
+    {
+        try { File.WriteAllBytes(exeDest, agentBin); break; }
+        catch (IOException) when (intento < 10) { Thread.Sleep(1000); }
+    }
 }
+catch (Exception ex) { Fallo($"No se pudo instalar el ejecutable: {ex.Message}"); return; }
 Verde("[OK]");
 
 Paso("Escribiendo configuracion...         ");
-File.WriteAllText(Path.Combine(Carpeta, "appsettings.json"), appsettingsJson, Encoding.UTF8);
+try
+{
+    File.WriteAllText(Path.Combine(Carpeta, "appsettings.json"), appsettingsJson, Encoding.UTF8);
+}
+catch (Exception ex) { Fallo($"No se pudo escribir la configuracion: {ex.Message}"); return; }
 Verde("[OK]");
 
 // ── 5. Registrar e iniciar el servicio de Windows ───────────────────────────
@@ -143,8 +151,8 @@ try
             const string sql =
                 "IF NOT EXISTS (SELECT 1 FROM PARAMETROS WHERE PARAMETRO = 'NEXO') " +
                 "INSERT INTO PARAMETROS (CONSECUTIVO, PARAMETRO, VALOR, DESCRIPCION, TIPOGRUPO) " +
-                "VALUES (1905, 'NEXO', 1, 'MANEJAN NEXO', 'HABILITAR')";
-            EjecutarSqlcmd(sqlArgs, sql);
+                "VALUES (1905, 'NEXO', '1', 'MANEJAN NEXO', 'HABILITAR')";
+            EjecutarSqlcmd(sqlArgs.Value.Args, sql, sqlArgs.Value.Password);
             Verde("[OK]");
         }
         else
@@ -157,6 +165,35 @@ try
 catch (Exception exSql)
 {
     Console.WriteLine($"[ADVERTENCIA] No se inserto el parametro NEXO: {exSql.Message}");
+}
+
+// ── 5.6. Parametro SINCANTSA: bloquear ventas sin inventario ─────────────────
+Paso("Configurando SINCANTSA...             ");
+try
+{
+    var connSoloInv = ExtraerConnectionStringVisions(appsettingsJson);
+    if (connSoloInv is not null)
+    {
+        var sqlArgsSoloInv = ConstruirArgsSqlcmd(connSoloInv);
+        if (sqlArgsSoloInv is not null)
+        {
+            const string sqlSoloInv =
+                "IF NOT EXISTS (SELECT 1 FROM PARAMETROS WHERE PARAMETRO = 'SINCANTSA') " +
+                "INSERT INTO PARAMETROS (CONSECUTIVO, PARAMETRO, VALOR, DESCRIPCION, TIPOGRUPO) " +
+                "VALUES (1518, 'SINCANTSA', '0', 'BUSCAR CANTIDADES EN INVENTARIO', 'HABILITAR')";
+
+            EjecutarSqlcmd(sqlArgsSoloInv.Value.Args, sqlSoloInv, sqlArgsSoloInv.Value.Password);
+            Verde("[OK]");
+        }
+        else
+            Console.WriteLine("[OMITIDO] No se pudo parsear la conexion de Visions");
+    }
+    else
+        Console.WriteLine("[OMITIDO] No hay cadena VisionsDb en el appsettings.");
+}
+catch (Exception exSoloInv)
+{
+    Console.WriteLine($"[ADVERTENCIA] No se configuro SINCANTSA: {exSoloInv.Message}");
 }
 
 // ── 6. Verificar resultado ───────────────────────────────────────────────────
@@ -246,9 +283,9 @@ static string? ExtraerConnectionStringVisions(string json)
     return null;
 }
 
-// Parsea la connection string y devuelve los argumentos para sqlcmd (sin el -Q).
-// Soporta Windows Auth (Trusted_Connection=True) y SQL Auth (User ID + Password).
-static string? ConstruirArgsSqlcmd(string connectionString)
+// Parsea la connection string y devuelve (args para sqlcmd, password opcional).
+// Password nunca va en la linea de comandos; se pasa via SQLCMDPASSWORD env var.
+static (string Args, string? Password)? ConstruirArgsSqlcmd(string connectionString)
 {
     try
     {
@@ -268,18 +305,20 @@ static string? ConstruirArgsSqlcmd(string connectionString)
                    || kv.TryGetValue("Integrated Security", out var is_) && (is_.Equals("True", StringComparison.OrdinalIgnoreCase) || is_.Equals("SSPI", StringComparison.OrdinalIgnoreCase));
 
         if (trusted)
-            return $"-S \"{server}\" -d \"{db}\" -E";
+            return ($"-S \"{server}\" -d \"{db}\" -E", (string?)null);
 
         var user = kv.GetValueOrDefault("User ID") ?? kv.GetValueOrDefault("UID");
         var pwd  = kv.GetValueOrDefault("Password") ?? kv.GetValueOrDefault("PWD");
         if (string.IsNullOrWhiteSpace(user)) return null;
-        return $"-S \"{server}\" -d \"{db}\" -U \"{user}\" -P \"{pwd}\"";
+        // pwd via SQLCMDPASSWORD env var; nunca en command line
+        return ($"-S \"{server}\" -d \"{db}\" -U \"{user}\"", pwd);
     }
     catch { return null; }
 }
 
 // Ejecuta sqlcmd con los args dados y el SQL en un archivo temporal.
-static void EjecutarSqlcmd(string sqlcmdArgs, string sql)
+// password se inyecta via SQLCMDPASSWORD env var para no exponerla en la linea de comandos.
+static void EjecutarSqlcmd(string sqlcmdArgs, string sql, string? password = null)
 {
     var tmp = Path.Combine(Path.GetTempPath(), $"nexo_setup_{Guid.NewGuid():N}.sql");
     try
@@ -292,6 +331,8 @@ static void EjecutarSqlcmd(string sqlcmdArgs, string sql)
             RedirectStandardError  = true,
             CreateNoWindow         = true
         };
+        if (!string.IsNullOrEmpty(password))
+            psi.EnvironmentVariables["SQLCMDPASSWORD"] = password;
         using var p = Process.Start(psi) ?? throw new Exception("sqlcmd no encontrado en el PATH.");
         p.WaitForExit(15_000);
         if (p.ExitCode != 0)

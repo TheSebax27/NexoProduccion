@@ -79,8 +79,7 @@ public class FacturacionService : IFacturacionService
 
             case "Aleatorio":
             {
-                var rng = new Random();
-                return rng.NextInt64(1_000_000_000L, 9_999_999_999L).ToString();
+                return Random.Shared.NextInt64(1_000_000_000L, 9_999_999_999L).ToString();
             }
 
             default: // Manual
@@ -115,7 +114,7 @@ public class FacturacionService : IFacturacionService
               AND (@CentroCostoId  IS NULL OR f.CentroCostoID  = @CentroCostoId)
               AND (@Texto          IS NULL OR f.NroDoc LIKE @Texto OR c.NIT LIKE @Texto OR c.Nombre LIKE @Texto)"
             + (soloNoPagadas
-                ? " AND (ISNULL(pag.TotalPagado,0) < ISNULL(tot.Total,0) OR ISNULL(tot.Total,0) = 0)"
+                ? " AND f.VisionsConfirmado = 0 AND (ISNULL(pag.TotalPagado,0) < ISNULL(tot.Total,0) OR ISNULL(tot.Total,0) = 0)"
                 : "");
 
         var p = new { ClienteId = clienteId, CentroCostoId = centroCostoId, TipDoc = tipDoc, Desde = desde, Hasta = hasta, Texto = textoBusqueda };
@@ -275,21 +274,32 @@ public class FacturacionService : IFacturacionService
             throw new InvalidOperationException(
                 "El centro de costo usa Visions. El descuento de inventario se aplica automáticamente cuando Visions confirme el documento.");
 
+        var ventaDesdeReceta = await connection.ExecuteScalarAsync<bool>(
+            "SELECT ISNULL(VentaDesdeReceta, 0) FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
+
+        var spName = ventaDesdeReceta
+            ? "Facturacion.sp_DescontarStockFactura_Receta"
+            : "Facturacion.sp_DescontarStockFactura";
+
         try
         {
             await connection.ExecuteAsync(
-                "EXEC Facturacion.sp_DescontarStockFactura @FacturaID, @UsuarioID",
+                $"EXEC {spName} @FacturaID, @UsuarioID",
                 new { FacturaID = facturaId, UsuarioID = usuarioId });
         }
-        catch (Exception ex) when (ex.Message.Contains("ya fue descontado"))
+        catch (Exception ex) when (ex.Message.Contains("ya fue descontado", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("El stock de esta factura ya fue descontado anteriormente.");
         }
-        catch (Exception ex) when (ex.Message.Contains("Stock insuficiente"))
+        catch (Exception ex) when (ex.Message.Contains("Stock insuficiente", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException(ex.Message);
         }
-        catch (Exception ex) when (ex.Message.Contains("no encontrada") || ex.Message.Contains("no tiene lineas"))
+        catch (Exception ex) when (ex.Message.Contains("no tiene receta activa", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(ex.Message);
+        }
+        catch (Exception ex) when (ex.Message.Contains("no encontrada", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("no tiene lineas", StringComparison.OrdinalIgnoreCase))
         {
             throw new KeyNotFoundException(ex.Message);
         }
@@ -311,6 +321,12 @@ public class FacturacionService : IFacturacionService
             throw new InvalidOperationException("No se puede eliminar: el stock ya fue descontado.");
         if (factura.VisionsConfirmado)
             throw new InvalidOperationException("No se puede eliminar: la factura ya fue confirmada en Visions.");
+
+        var saldoPendiente = await connection.ExecuteScalarAsync<decimal>(
+            "SELECT ISNULL(f.Total - ISNULL((SELECT SUM(p.Monto) FROM Facturacion.Pagos p WHERE p.FacturaID = f.FacturaID), 0), 0) FROM Facturacion.Facturas f WHERE f.FacturaID = @FacturaID AND f.Total > 0",
+            new { FacturaID = facturaId });
+        if (saldoPendiente > 0)
+            throw new InvalidOperationException($"No se puede eliminar: la factura tiene saldo pendiente de {saldoPendiente:C2}.");
 
         connection.Open();
         using var tx = connection.BeginTransaction();
@@ -357,7 +373,7 @@ public class FacturacionService : IFacturacionService
 
         const string sql = @"
             SELECT p.PagoID, p.FacturaID, p.Monto, p.FechaPago, p.MetodoPago, p.Notas,
-                   u.Nombres + ' ' + u.Apellidos AS Usuario
+                   CONCAT(u.Nombres, ' ', u.Apellidos) AS Usuario
             FROM Facturacion.Pagos p
             LEFT JOIN Seguridad.Usuarios u ON u.UsuarioID = p.UsuarioID
             WHERE p.FacturaID = @FacturaId
@@ -372,6 +388,13 @@ public class FacturacionService : IFacturacionService
             throw new InvalidOperationException("El monto del pago debe ser mayor a cero.");
 
         using var connection = _db.CreateConnection();
+
+        var saldo = await connection.ExecuteScalarAsync<decimal>(
+            "SELECT ISNULL(f.Total - ISNULL((SELECT SUM(p.Monto) FROM Facturacion.Pagos p WHERE p.FacturaID = f.FacturaID), 0), 0) FROM Facturacion.Facturas f WHERE f.FacturaID = @FacturaID",
+            new { r.FacturaID });
+
+        if (r.Monto > saldo)
+            throw new InvalidOperationException($"El monto ({r.Monto:C2}) supera el saldo pendiente ({saldo:C2}).");
 
         const string sql = @"
             INSERT INTO Facturacion.Pagos (FacturaID, Monto, FechaPago, MetodoPago, Notas, UsuarioID)
@@ -394,7 +417,8 @@ public class FacturacionService : IFacturacionService
         var lineasPT = await conn.QueryAsync<LineaPTCruda>("""
             SELECT fl.ArticuloID, a.Referencia AS SKU, a.Nombre, fl.Cantidad,
                    (SELECT TOP 1 r.RecetaID FROM Produccion.RecetaBOM r
-                    WHERE r.ProductoTerminadoID = fl.ArticuloID AND r.Estado = 1) AS RecetaID
+                    WHERE r.ProductoTerminadoID = fl.ArticuloID AND r.Estado = 1
+                    ORDER BY r.RecetaID) AS RecetaID
             FROM Facturacion.FacturaLineas fl
             JOIN Catalogo.Tarjetas a ON a.ArticuloID = fl.ArticuloID
             WHERE fl.FacturaID = @facturaId AND a.TipoArticuloID = 2

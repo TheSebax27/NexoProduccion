@@ -122,3 +122,8 @@ public record VentaVisionsItem(
 );
 
 public record VentasVisionsPaginadasResponse(List<VentaVisionsItem> Items, int Total, int Pagina, int Tamano);
+
+public record VentaVisionsLineaItem(
+    string? CodigoArticulo, string? NombreArticulo,
+    decimal Cantidad, decimal PrecioUnitario, decimal Subtotal
+);

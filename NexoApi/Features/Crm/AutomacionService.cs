@@ -112,7 +112,7 @@ public class AutomacionService : IAutomacionService
                            FROM Crm.CotizacionLineas l WHERE l.CotizacionID = c.CotizacionID), 0) AS Total
             FROM Crm.Cotizaciones c
             JOIN Crm.Clientes cl ON cl.ClienteID = c.ClienteID
-            WHERE c.Estado NOT IN ('CONVERTIDA','RECHAZADA')
+            WHERE c.Estado NOT IN ('ACEPTADA','RECHAZADA')
               AND c.ValidoHasta IS NOT NULL
               AND DATEDIFF(DAY, SYSUTCDATETIME(), c.ValidoHasta) BETWEEN 0 AND @Dias",
             new { Dias = dias });

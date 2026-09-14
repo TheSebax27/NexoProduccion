@@ -383,6 +383,15 @@ public class IntegracionController : ControllerBase
         [FromQuery] int tamano = 50)
         => Ok(await _service.ListarVentasVisionsAsync(centroCostoId, tipDoc, desde, hasta, pagina, tamano));
 
+    /// <summary>Líneas de un documento de Visions (EventosEntrantes).</summary>
+    [Authorize(Roles = "Administracion")]
+    [HttpGet("ventas-visions/lineas")]
+    public async Task<ActionResult<IEnumerable<VentaVisionsLineaItem>>> ListarLineasVentaVisions(
+        [FromQuery] int centroCostoId,
+        [FromQuery] string tipDoc,
+        [FromQuery] string nroDoc)
+        => Ok(await _service.ListarLineasVentaVisionsAsync(centroCostoId, tipDoc, nroDoc));
+
     /// <summary>Genera solo el appsettings.json (para actualizar config en agentes ya instalados).</summary>
     [HttpGet("agentes/{id:int}/appsettings-json")]
     [Authorize(Roles = "Administracion")]
@@ -440,5 +449,18 @@ public class IntegracionController : ControllerBase
     {
         await _service.MarcarLimpiezaVisionsCompletadaAsync(id);
         return Ok(new { mensaje = "Limpieza completada." });
+    }
+
+    [HttpGet("agentes/{id:int}/sincantsa")]
+    [Authorize(Roles = "Administracion")]
+    public async Task<ActionResult<SincAntsaResponse>> ObtenerSincAntsa(int id)
+        => Ok(new SincAntsaResponse(await _service.ObtenerSincAntsaAsync(id)));
+
+    [HttpPut("agentes/{id:int}/sincantsa")]
+    [Authorize(Roles = "Administracion")]
+    public async Task<ActionResult> SetSincAntsa(int id, SetSincAntsaRequest request)
+    {
+        await _service.SetSincAntsaAsync(id, request.Activo);
+        return NoContent();
     }
 }

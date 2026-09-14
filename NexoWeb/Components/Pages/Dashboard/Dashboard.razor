@@ -181,6 +181,42 @@ else
                 </div>
             </div>
 
+            @* ── FILA 1b: KPIs Maquinaria ─────────────────────────────────── *@
+            @if (_resumenMaquinaria is not null)
+            {
+                <div class="nexo-section mb-2"><div class="nexo-section__dot"></div><span class="nexo-section__label">Maquinaria</span><div class="nexo-section__line"></div></div>
+                <div class="nexo-bi-kpi-row mb-4" style="grid-template-columns: repeat(4, 1fr);">
+                    <div class="nexo-kpi nexo-kpi--indigo nexo-bi-kpi" style="cursor:pointer"
+                         @onclick="@(() => Navigation.NavigateTo("/produccion/maquinaria"))">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value" style="font-size:1.6rem">@_resumenMaquinaria.TotalMaquinas</div>
+                        <div class="nexo-kpi__label">Máquinas activas</div>
+                        <div class="nexo-kpi__sub">Total en operación</div>
+                    </div>
+                    <div class="nexo-kpi nexo-kpi--@(_resumenMaquinaria.EnMantenimiento > 0 ? "warn" : "green") nexo-bi-kpi" style="cursor:pointer"
+                         @onclick="@(() => Navigation.NavigateTo("/produccion/maquinaria"))">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.Build" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value" style="font-size:1.6rem">@_resumenMaquinaria.EnMantenimiento</div>
+                        <div class="nexo-kpi__label">En mantenimiento</div>
+                        <div class="nexo-kpi__sub">@(_resumenMaquinaria.EnMantenimiento == 0 ? "Sin paradas activas" : "Fuera de servicio")</div>
+                    </div>
+                    <div class="nexo-kpi nexo-kpi--@(_resumenMaquinaria.MantenimientoVencido > 0 ? "red" : "green") nexo-bi-kpi" style="cursor:pointer"
+                         @onclick="@(() => Navigation.NavigateTo("/produccion/maquinaria"))">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@(_resumenMaquinaria.MantenimientoVencido > 0 ? Icons.Material.Filled.Warning : Icons.Material.Filled.CheckCircle)" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value" style="font-size:1.6rem">@_resumenMaquinaria.MantenimientoVencido</div>
+                        <div class="nexo-kpi__label">Mant. vencido</div>
+                        <div class="nexo-kpi__sub">@(_resumenMaquinaria.MantenimientoVencido == 0 ? "Al día" : "Requieren atención")</div>
+                    </div>
+                    <div class="nexo-kpi nexo-kpi--blue nexo-bi-kpi" style="cursor:pointer"
+                         @onclick="@(() => Navigation.NavigateTo("/produccion/maquinaria"))">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.AttachMoney" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value" style="font-size:1.4rem">@_resumenMaquinaria.CostoMantenimientoMes.ToString("C0")</div>
+                        <div class="nexo-kpi__label">Costo mant. mes</div>
+                        <div class="nexo-kpi__sub">@DateTime.Now.ToString("MMMM yyyy")</div>
+                    </div>
+                </div>
+            }
+
             @* ── FILA 2: Línea (70%) + Dona (30%) ─────────────────────────── *@
             <MudGrid Class="mb-4" Spacing="3">
                 <MudItem xs="12" md="8">
@@ -552,7 +588,7 @@ else
                     <MudDateRangePicker @bind-DateRange="_rangoFact" @bind-DateRange:after="OnRangoFactCambiadoAsync"
                                         Label="Período" Variant="Variant.Outlined" Margin="Margin.Dense"
                                         PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy"
-                                        Style="max-width:280px;min-width:240px;" />
+                                        Style="max-width:280px;width:100%;" />
                 </div>
                 <div class="nexo-kpi-grid mb-4">
                     <div class="nexo-kpi nexo-kpi--blue">
@@ -1347,7 +1383,7 @@ else
                     <MudDateRangePicker @bind-DateRange="_rangoFin" @bind-DateRange:after="OnRangoFinCambiadoAsync"
                                         Label="Período" Variant="Variant.Outlined" Margin="Margin.Dense"
                                         PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy"
-                                        Style="max-width:280px;min-width:240px;" />
+                                        Style="max-width:280px;width:100%;" />
                 </div>
 
                 @* KPIs financieros *@
@@ -1585,6 +1621,9 @@ else
     private double _cumplimientoPromedio;
     private double _totalRealProducido;
 
+    // ── Maquinaria ──────────────────────────────────────────────────
+    private ResumenMaquinariaItem? _resumenMaquinaria;
+
     // ── General / Resumen ────────────────────────────────────────────
     private ResumenCrmItem _resumenCrm = new(0, 0);
     private List<VentasPorDepartamentoItem> _ventasDept = new();
@@ -1662,7 +1701,7 @@ else
     private async Task AbrirMapaClientesAsync()
     {
         await DialogService.ShowAsync<MapaClientesDialog>("Mapa de Clientes",
-            new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true });
     }
 
     public void Dispose()
@@ -1770,6 +1809,9 @@ else
         catch { }
 
         try { _proximoEvento = await ApiClient.GetAsync<EventoCalendarioItem>("api/calendario/eventos/proximo"); }
+        catch { }
+
+        try { _resumenMaquinaria = await ApiClient.GetAsync<ResumenMaquinariaItem>("api/dashboard/resumen-maquinaria"); }
         catch { }
 
         // ── Actividad, sparklines y estado del agente ──────────────────────

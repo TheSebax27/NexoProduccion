@@ -159,7 +159,7 @@ public class RecetasService : IRecetasService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT r.RecetaID, a.Nombre AS ProductoTerminado, r.NombreReceta, r.Version,
+            SELECT r.RecetaID, r.ProductoTerminadoID, a.Nombre AS ProductoTerminado, r.NombreReceta, r.Version,
                    r.CantidadRendimientoBase, ISNULL(a.PresentacionCodigo, '') AS UnidadRendimiento, r.Estado
             FROM Produccion.RecetaBOM r
             JOIN Catalogo.Tarjetas a ON a.ArticuloID = r.ProductoTerminadoID

@@ -16,10 +16,9 @@
         </h1>
         <p class="inv-header__sub">Historial de movimientos: entradas, salidas, ajustes y traspasos con saldo tras cada operación.</p>
     </div>
-    <BotonFavorito Href="/inventario/kardex" Etiqueta="Kardex de Artículos" />
 </div>
+<InfoAyuda Texto="Historial completo de movimientos por artículo y bodega: entradas, salidas, ajustes y traspasos con saldo tras cada operación." />
 
-<InventarioNav />
 
 @* ── Filtros ──────────────────────────────────────────────────────────── *@
 <div class="kx-filtros">
@@ -255,8 +254,8 @@ else
     private List<BodegaItem>   _bodegas   = new();
     private int? _articuloId => _articuloSeleccionado?.ArticuloID;
     private int? _bodegaId;
-    private DateTime? _desde;
-    private DateTime? _hasta;
+    private DateTime? _desde = DateTime.Today.AddDays(-30);
+    private DateTime? _hasta = DateTime.Today;
     private string? _filtroCategoria;
     private bool  _cargando;
     private bool  _consultaEjecutada;
@@ -343,3 +342,4 @@ else
         builder.CloseComponent();
     };
 }
+

@@ -59,8 +59,8 @@
     align-items: center;
     padding: 0.2rem 0.65rem;
     border-radius: 20px;
-    background: rgba(124,92,255,0.10);
-    border: 1px solid rgba(124,92,255,0.18);
+    background: var(--n-purple-bg-subtle);
+    border: 1px solid var(--n-purple-border-faint);
     font-size: 0.75rem;
     color: var(--n-purple);
     font-weight: 600;
@@ -106,7 +106,7 @@
     display: inline-block;
     padding: 0.1rem 0.5rem;
     border-radius: 5px;
-    background: rgba(124,92,255,0.09);
+    background: var(--n-purple-bg-faint);
     font-size: 0.73rem;
     font-weight: 700;
     color: var(--n-purple);
@@ -121,7 +121,7 @@
     background: rgba(16,185,129,0.09);
     font-size: 0.72rem;
     font-weight: 600;
-    color: #059669;
+    color: var(--n-success);
 }
 
 .art-pres {
@@ -153,7 +153,7 @@
 
 .art-estado--activo {
     background: rgba(16,185,129,0.10);
-    color: #059669;
+    color: var(--n-success);
 }
 
 .art-estado--inactivo {
@@ -173,7 +173,6 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 0.85rem;
-    min-width: 780px;
 }
 
 .art-table thead tr {
@@ -203,7 +202,7 @@
 }
 
 .art-table__row:hover {
-    background: rgba(124,92,255,0.04);
+    background: var(--n-hover-bg);
 }
 
 .art-table td {

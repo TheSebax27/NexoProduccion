@@ -68,7 +68,10 @@ public class EmpleadosController : ControllerBase
     [Authorize]
     public async Task<ActionResult> ActualizarFoto(int id, ActualizarFotoEmpleadoRequest request)
     {
-        if (Convert.FromBase64String(request.Base64).Length > 1_000_000)
+        byte[] fotoBytes;
+        try { fotoBytes = Convert.FromBase64String(request.Base64); }
+        catch { return BadRequest(new { error = "El archivo no es Base64 válido." }); }
+        if (fotoBytes.Length > 1_000_000)
             return BadRequest(new { error = "La foto es muy grande (máximo 1 MB)." });
 
         try
@@ -114,7 +117,10 @@ public class EmpleadosController : ControllerBase
     [Authorize]
     public async Task<ActionResult> SubirDocumento(int id, SubirDocumentoEmpleadoRequest request)
     {
-        if (Convert.FromBase64String(request.Base64).Length > 5_000_000)
+        byte[] docBytes;
+        try { docBytes = Convert.FromBase64String(request.Base64); }
+        catch { return BadRequest(new { error = "El archivo no es Base64 válido." }); }
+        if (docBytes.Length > 5_000_000)
             return BadRequest(new { error = "El documento es muy grande (máximo 5 MB)." });
 
         var documentoId = await _service.SubirDocumentoAsync(id, request, UsuarioActualId);

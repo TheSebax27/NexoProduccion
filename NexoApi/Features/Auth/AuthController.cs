@@ -137,7 +137,10 @@ public class AuthController : ControllerBase
     {
         // Limite generoso para un avatar pequeno (~1.3MB en base64 ~ 1MB real);
         // suficiente para una foto de perfil sin abrir la puerta a archivos grandes.
-        if (Convert.FromBase64String(request.Base64).Length > 1_000_000)
+        byte[] fotoBytes;
+        try { fotoBytes = Convert.FromBase64String(request.Base64); }
+        catch { return BadRequest(new { error = "El archivo no es Base64 válido." }); }
+        if (fotoBytes.Length > 1_000_000)
             return BadRequest(new { error = "La imagen es muy grande (m�ximo 1 MB)." });
 
         try

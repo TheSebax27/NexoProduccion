@@ -22,15 +22,15 @@
         @foreach (var linea in _lineas)
         {
             <MudGrid Class="mb-2" AlignItems="Center.Center">
-                <MudItem xs="7">
+                <MudItem xs="12" sm="7">
                     <ArticuloAutocomplete Value="linea.ArticuloSeleccionado"
                                           ValueChanged="@((ArticuloItem? v) => linea.ArticuloSeleccionado = v)"
                                           Label="Articulo" />
                 </MudItem>
-                <MudItem xs="4">
+                <MudItem xs="10" sm="4">
                     <MudNumericField @bind-Value="linea.Cantidad" Label="Cantidad" Min="0.01m" Format="N2" Dense="true" />
                 </MudItem>
-                <MudItem xs="1">
+                <MudItem xs="2" sm="1">
                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
                                    OnClick="@(() => _lineas.Remove(linea))" />
                 </MudItem>

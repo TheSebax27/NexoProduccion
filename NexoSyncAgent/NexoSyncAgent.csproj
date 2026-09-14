@@ -18,8 +18,8 @@
 
 	<ItemGroup>
 		<!-- Conexion a la base de datos LOCAL de Visions -->
-		<PackageReference Include="Dapper" Version="2.1.35" />
-		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
+		<PackageReference Include="Dapper" Version="2.1.79" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
 
 		<!-- Llamadas HTTP hacia la API central de NEXO -->
 		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />

@@ -159,7 +159,7 @@ public class TareaSincronizarFacturasNexoVisions
         var confirmadas = (await connection.QueryAsync<FacturaConfirmada>(
             @"SELECT FacturaID, TipDocVisions, NroDocVisions
               FROM dbo.NEXO_FacturasPendientes
-              WHERE Estado='PROCESADA' AND NroDocVisions IS NOT NULL
+              WHERE Estado='PROCESADA' AND NroDocVisions IS NOT NULL AND TipDocVisions IS NOT NULL
                 AND FacturaID NOT IN (
                     SELECT FacturaID FROM dbo.NEXO_FacturasSalientes WHERE FechaSyncBack IS NOT NULL
                 )")).ToList();

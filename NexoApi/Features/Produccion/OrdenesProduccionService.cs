@@ -23,6 +23,7 @@ public interface IOrdenesProduccionService
     Task<IEnumerable<MotivoExcesoItem>> ListarMotivosExcesoAsync();
     Task<IEnumerable<StockLineaItem>> VerificarStockOrdenAsync(int ordenProduccionId);
     Task<string> GenerarSiguienteCodigoOPAsync(string prefijo);
+    Task<int> MarcarRetrasadasAsync();
     Task<string> GenerarSiguienteNumeroLoteAsync(string prefijo);
 }
 
@@ -327,41 +328,25 @@ public class OrdenesProduccionService : IOrdenesProduccionService
         using var connection = _db.CreateConnection();
         return await connection.QueryAsync<StockLineaItem>(@"
             SELECT
-                t.Nombre                                                        AS Articulo,
-                ISNULL(t.PresentacionCodigo, '')                                AS Unidad,
+                t.Nombre                                            AS Articulo,
+                ISNULL(t.PresentacionCodigo, '')                    AS Unidad,
                 CAST(
-                    CASE
-                        WHEN rd.UnidadID = art.UnidadID THEN
-                            CASE WHEN um.Tipo = 'UNIDAD'
-                                 THEN CEILING((rd.CantidadRequerida * op.CantidadProgramada / NULLIF(r.CantidadRendimientoBase,0)) * (1 + rd.PorcentajeMermaEstandar/100.0))
-                                 ELSE (rd.CantidadRequerida * op.CantidadProgramada / NULLIF(r.CantidadRendimientoBase,0)) * (1 + rd.PorcentajeMermaEstandar/100.0)
-                            END
-                        WHEN um.Abreviatura = 'und' AND umArt.Abreviatura = 'cja' AND art.UnidadesPorEmbalaje > 0 THEN
-                            ((rd.CantidadRequerida * op.CantidadProgramada / NULLIF(r.CantidadRendimientoBase,0)) * (1 + rd.PorcentajeMermaEstandar/100.0)) / art.UnidadesPorEmbalaje
-                        WHEN um.Abreviatura = 'cja' AND umArt.Abreviatura = 'und' AND art.UnidadesPorEmbalaje > 0 THEN
-                            CEILING(((rd.CantidadRequerida * op.CantidadProgramada / NULLIF(r.CantidadRendimientoBase,0)) * (1 + rd.PorcentajeMermaEstandar/100.0)) * art.UnidadesPorEmbalaje)
-                        ELSE
-                            (rd.CantidadRequerida * op.CantidadProgramada / NULLIF(r.CantidadRendimientoBase,0)) * (1 + rd.PorcentajeMermaEstandar/100.0)
-                    END
-                AS DECIMAL(18,4))                                               AS CantidadRequerida,
-                ISNULL(SUM(s.CantidadActual), 0)                                AS StockDisponible
+                    rd.CantidadRequerida
+                    * op.CantidadProgramada
+                    / NULLIF(r.CantidadRendimientoBase, 0)
+                    * (1 + rd.PorcentajeMermaEstandar / 100.0)
+                AS DECIMAL(18,4))                                   AS CantidadRequerida,
+                ISNULL(SUM(s.CantidadActual), 0)                    AS StockDisponible
             FROM Produccion.OrdenesProduccion op
-            JOIN Produccion.EstadosOP e              ON e.EstadoOPID      = op.EstadoOPID
-            JOIN Produccion.RecetaBOM r              ON r.RecetaID        = op.RecetaID
-            JOIN Produccion.RecetaBOM_Detalle rd      ON rd.RecetaID       = r.RecetaID
-            JOIN Catalogo.Tarjetas t                 ON t.ArticuloID      = rd.InsumoID
-            JOIN Catalogo.Articulos art              ON art.ArticuloID    = rd.InsumoID
-            JOIN Catalogo.UnidadesMedida um          ON um.UnidadID       = rd.UnidadID
-            LEFT JOIN Catalogo.UnidadesMedida umArt  ON umArt.UnidadID    = art.UnidadID
-            LEFT JOIN Inventario.InventarioStock s    ON s.ArticuloID      = rd.InsumoID
-                                                     AND s.BodegaID       = op.BodegaOrigenMPID
+            JOIN Produccion.RecetaBOM r          ON r.RecetaID   = op.RecetaID
+            JOIN Produccion.RecetaBOM_Detalle rd  ON rd.RecetaID  = r.RecetaID
+            JOIN Catalogo.Tarjetas t              ON t.ArticuloID = rd.InsumoID
+            LEFT JOIN Inventario.InventarioStock s ON s.ArticuloID = rd.InsumoID
+                                                  AND s.BodegaID   = op.BodegaOrigenMPID
             WHERE op.OrdenProduccionID = @ordenProduccionId
-              AND e.Nombre = 'Planificada'
             GROUP BY t.Nombre, t.PresentacionCodigo,
                      rd.CantidadRequerida, op.CantidadProgramada,
-                     r.CantidadRendimientoBase, rd.PorcentajeMermaEstandar,
-                     rd.UnidadID, art.UnidadID, art.UnidadesPorEmbalaje,
-                     um.Tipo, um.Abreviatura, umArt.Abreviatura
+                     r.CantidadRendimientoBase, rd.PorcentajeMermaEstandar
             ORDER BY t.Nombre",
             new { ordenProduccionId });
     }
@@ -386,5 +371,79 @@ public class OrdenesProduccionService : IOrdenesProduccionService
             @"SELECT COUNT(*) FROM Inventario.Lotes WHERE NumeroLote LIKE @Patron",
             new { Patron = patron });
         return $"{prefijo}-{mesActual}-{(usados + 1):D3}";
+    }
+
+    private record OpRetrasadaInfo(string CodigoOP, string ProductoNombre, DateTime FechaPlanificada);
+
+    public async Task<int> MarcarRetrasadasAsync()
+    {
+        using var connection = _db.CreateConnection();
+        var estadoId = await connection.ExecuteScalarAsync<int?>(
+            "SELECT EstadoOPID FROM Produccion.EstadosOP WHERE Nombre = 'Retrasada'");
+        if (estadoId is null) return 0;
+
+        // 1. SELECT the OPs that WILL be updated (same WHERE clause)
+        var opsAfectadas = (await connection.QueryAsync<OpRetrasadaInfo>(@"
+            SELECT op.CodigoOP, t.Nombre AS ProductoNombre, op.FechaPlanificada
+            FROM Produccion.OrdenesProduccion op
+            JOIN Catalogo.Tarjetas t ON t.ArticuloID = op.ProductoTerminadoID
+            WHERE op.FechaPlanificada < CAST(GETDATE() AS DATE)
+              AND op.EstadoOPID IN (
+                  SELECT EstadoOPID FROM Produccion.EstadosOP
+                  WHERE Nombre IN ('En Proceso', 'Planificada')
+              )")).ToList();
+
+        if (opsAfectadas.Count == 0) return 0;
+
+        // 2. Execute the UPDATE
+        var affected = await connection.ExecuteAsync(@"
+            UPDATE Produccion.OrdenesProduccion
+            SET EstadoOPID = @EstadoId
+            WHERE FechaPlanificada < CAST(GETDATE() AS DATE)
+              AND EstadoOPID IN (
+                  SELECT EstadoOPID FROM Produccion.EstadosOP
+                  WHERE Nombre IN ('En Proceso', 'Planificada')
+              )",
+            new { EstadoId = estadoId.Value });
+
+        // 3. Send summary email to production managers — fire-and-forget, never blocks the return value
+        // Uses its own connection to avoid use-after-dispose of the outer using block.
+        var dbFactory = _db;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var emailConn = dbFactory.CreateConnection();
+                var destinatarios = (await emailConn.QueryAsync<string>(@"
+                    SELECT u.Email
+                    FROM Seguridad.Usuarios u
+                    JOIN Seguridad.Roles r ON r.RolID = u.RolID
+                    WHERE r.Nombre IN ('Administracion', 'Jefes')
+                      AND u.Email IS NOT NULL
+                      AND u.Estado = 1")).ToList();
+
+                if (destinatarios.Count == 0) return;
+
+                var subject = $"NEXO — {opsAfectadas.Count} OP(s) marcadas como Retrasada";
+
+                var filas = string.Join("\n", opsAfectadas.Select(op =>
+                    $"  • {op.CodigoOP} — {op.ProductoNombre} — {op.FechaPlanificada:dd/MM/yyyy}"));
+
+                var html = $@"<pre style=""font-family:monospace;font-size:14px"">
+Las siguientes órdenes de producción fueron marcadas automáticamente como <b>Retrasada</b>
+porque su fecha planificada ya venció:
+
+{filas}
+
+Total: {opsAfectadas.Count} OP(s)
+</pre>";
+
+                foreach (var email in destinatarios)
+                    await _email.SendAsync(new EmailMessage(email, subject, html));
+            }
+            catch { /* no bloquear el resultado de MarcarRetrasadasAsync */ }
+        });
+
+        return affected;
     }
 }

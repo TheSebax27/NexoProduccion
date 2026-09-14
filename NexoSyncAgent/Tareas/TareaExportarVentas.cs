@@ -135,7 +135,7 @@ public class TareaExportarVentas
 
                 await _apiClient.RegistrarEventoEntranteAsync(new RegistrarEventoEntranteRequest(
                     idEventoExterno, "VENTA", venta.REFERENCIA, venta.CANTIDAD, venta.FECDOC,
-                    venta.DetalleTarjeta, venta.CostoTarjeta, venta.PPublicoTarjeta,
+                    venta.DetalleTarjeta ?? "", venta.CostoTarjeta ?? 0m, venta.PPublicoTarjeta ?? 0m,
                     venta.NIT, venta.CLIENTE,
                     TipDoc:                  venta.TIPDOC,
                     NroDoc:                  venta.NRODOC,
@@ -145,28 +145,28 @@ public class TareaExportarVentas
                     ClientePrimerApellido:   esJuridica ? null : venta.ClienteApellido1,
                     ClienteSegundoApellido:  esJuridica ? null : venta.ClienteApellido2,
                     ClienteEmpresa:          esJuridica ? venta.ClienteEmpresa : null,
-                    ClienteTelefono:         venta.ClienteTelefono,
-                    ClienteDireccion:        venta.ClienteDireccion,
+                    ClienteTelefono:         venta.ClienteTelefono ?? "",
+                    ClienteDireccion:        venta.ClienteDireccion ?? "",
                     ClienteCiudad:           venta.ClienteCiudad,
                     ClienteDepartamento:     venta.ClienteDepartamento,
                     ClienteCodigoMuni:       venta.ClienteCodigoMuni,
                     ClienteCodigoDept:       venta.ClienteCodigoDept,
-                    MarcaCodigo:             venta.MarcaCodigo,
+                    MarcaCodigo:             venta.MarcaCodigo ?? "",
                     IvaValor:                venta.IvaValor,
                     IvaDescripcion:          venta.IvaDescripcion,
                     IvaSiNo:                 venta.IvaSiNo,
                     Iva2:                    venta.Iva2,
                     IvaDescripcion2:         venta.IvaDescripcion2,
-                    GrupoMenorCodigo:        venta.GrupoMenorCodigo,
-                    PresentacionCodigo:      venta.PresentacionCodigo,
+                    GrupoMenorCodigo:        venta.GrupoMenorCodigo ?? "",
+                    PresentacionCodigo:      venta.PresentacionCodigo ?? "",
                     TipoProductoCodigo:      venta.TipoProductoCodigo,
                     PBodega:                 venta.PBodega,
                     PCredito:                venta.PCredito,
                     UPublico:                venta.UPublico,
                     UBodega:                 venta.UBodega,
                     UCredito:                venta.UCredito,
-                    ExistenciasActuales:     venta.ExistenciasActuales,
-                    ExistenciasMinimas:      venta.ExistenciasMinimas), ct);
+                    ExistenciasActuales:     venta.ExistenciasActuales ?? 0m,
+                    ExistenciasMinimas:      venta.ExistenciasMinimas ?? 0m), ct);
 
                 await connection.ExecuteAsync(
                     @"IF NOT EXISTS (SELECT 1 FROM dbo.NEXO_VentasExportadas

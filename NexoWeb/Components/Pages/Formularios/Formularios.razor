@@ -19,6 +19,7 @@
             Nuevo Formulario
         </MudButton>
     </div>
+    <InfoAyuda Texto="Crea formularios personalizados y compártelos con un enlace público para recopilar respuestas de clientes o empleados." />
 
     @if (_cargando)
     {
@@ -27,7 +28,7 @@
 
     @if (!_cargando && !_formularios.Any())
     {
-        <MudPaper Class="pa-12 text-center" Elevation="0"
+        <MudPaper Class="pa-4 pa-sm-12 text-center" Elevation="0"
                   Style="border:2px dashed var(--mud-palette-lines-default);border-radius:16px">
             <MudIcon Icon="@Icons.Material.Filled.Assignment" Size="Size.Large" Color="Color.Secondary" Class="mb-2" />
             <MudText Typo="Typo.h6" Color="Color.Secondary">Aún no hay formularios</MudText>
@@ -122,8 +123,18 @@
     private async Task Cargar()
     {
         _cargando = true;
-        _formularios = (await Api.GetAsync<List<FormularioItem>>("api/formularios") ?? []);
-        _cargando = false;
+        try
+        {
+            _formularios = (await Api.GetAsync<List<FormularioItem>>("api/formularios") ?? []);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar formularios: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _cargando = false;
+        }
     }
 
     private async Task NuevoFormulario()

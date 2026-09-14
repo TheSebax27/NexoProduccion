@@ -5,7 +5,8 @@ public record ConfiguracionEmpresaResponse(
     string? LogoBase64, string? LogoContentType,
     bool UsaVisions,
     bool ManejarVencimientos, int DiasAlertaVencimiento, string ModoLotes,
-    string ModoNroDoc, long UltimoNroDocSecuencial);
+    string ModoNroDoc, long UltimoNroDocSecuencial,
+    bool VentaDesdeReceta);
 
 public record ActualizarNombreEmpresaRequest(string NombreEmpresa, string? NombrePropietario);
 public record ActualizarLogoEmpresaRequest(string Base64, string ContentType);
@@ -13,3 +14,4 @@ public record ActualizarUsaVisionsRequest(bool UsaVisions);
 public record ActualizarConfigInventarioRequest(bool ManejarVencimientos, int DiasAlertaVencimiento, string ModoLotes);
 public record ConfigNroDocResponse(string ModoNroDoc, long UltimoNroDocSecuencial);
 public record ActualizarConfigNroDocRequest(string ModoNroDoc, long UltimoNroDocSecuencial);
+public record ActualizarVentaDesdeRecetaRequest(bool VentaDesdeReceta);

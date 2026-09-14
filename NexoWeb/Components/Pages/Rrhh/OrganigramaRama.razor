@@ -5,7 +5,7 @@
     <div class="org-card @(_expandido && _hijos.Count > 0 ? "org-card--open" : "")"
          @onclick="ToggleExpandido">
         <div class="org-avatar org-color-@ColorIdx">
-            @Nodo.Nombres[0]@Nodo.Apellidos[0]
+            @(Nodo.Nombres?.Length > 0 ? Nodo.Nombres[0] : '?')@(Nodo.Apellidos?.Length > 0 ? Nodo.Apellidos[0] : ' ')
         </div>
         <div class="org-info">
             <span class="org-name">@Nodo.Nombres @Nodo.Apellidos</span>

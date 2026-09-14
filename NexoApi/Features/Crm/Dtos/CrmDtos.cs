@@ -15,7 +15,8 @@ public record ClienteItem(
     string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
     string? Departamento, string? Ciudad,
     string? TipoIdentificacion, string? CodigoDept, string? CodigoMuni,
-    int? DigitoVerificacion = null
+    int? DigitoVerificacion = null,
+    string? TipoIdentificacionDetalle = null
 );
 
 public record CrearClienteRequest(

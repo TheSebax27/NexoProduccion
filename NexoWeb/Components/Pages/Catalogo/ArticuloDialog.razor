@@ -1,4 +1,4 @@
-@using NexoWeb.Common.Dtos
+﻿@using NexoWeb.Common.Dtos
 @inject IDialogService DialogService
 
 <MudDialog>
@@ -426,7 +426,7 @@
     private async Task AbrirCrearPresentacionAsync()
     {
         var dialogo = await DialogService.ShowAsync<PresentacionDialog>("Nueva Presentacion",
-            new DialogParameters<PresentacionDialog>(), new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+            new DialogParameters<PresentacionDialog>(), new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
         var result = await dialogo.Result;
         if (result is null || result.Canceled || result.Data is not PresentacionDialog.Result data) return;
 

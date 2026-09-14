@@ -16,10 +16,11 @@
         </h1>
         <p class="inv-header__sub">Carga stock inicial o corrige la cantidad tras un conteo físico. Queda registrado en el Kardex.</p>
     </div>
-    <BotonFavorito Href="/inventario/ajustes" Etiqueta="Ajuste de Inventario" />
+</div>
+<div style="max-width:640px;margin:0 auto">
+<InfoAyuda Texto="Carga stock inicial o corrige existencias tras un conteo físico. Cada ajuste queda registrado en el Kardex con motivo y cantidad." />
 </div>
 
-<InventarioNav />
 
 <div class="inv-form-card">
     @* ── Artículo ─────────────────────────────────────────────────── *@
@@ -218,3 +219,4 @@
         finally { _guardando = false; }
     }
 }
+

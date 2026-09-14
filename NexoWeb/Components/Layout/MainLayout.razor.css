@@ -39,7 +39,7 @@
 }
 
 ::deep .nexo-topbar__menu-btn {
-  color: #9B9BB4 !important;
+  color: var(--n-text-3) !important;
   margin-right: 0.5rem !important;
 }
 ::deep .nexo-topbar__menu-btn:hover {
@@ -77,7 +77,7 @@
   background: rgba(255,255,255,0.09);
 }
 ::deep .nexo-topbar__search-icon {
-  color: #9B9BB4 !important;
+  color: var(--n-text-3) !important;
   font-size: 1.1rem !important;
   flex-shrink: 0;
 }
@@ -91,7 +91,7 @@
   font-family: 'Mango Dream', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   min-width: 0;
 }
-::deep .nexo-topbar__search-input::placeholder { color: #7C7C96; }
+::deep .nexo-topbar__search-input::placeholder { color: var(--n-text-3); }
 
 /* Dropdown de sugerencias -- flota sobre el contenido, no empuja layout */
 ::deep .nexo-topbar__search-results {
@@ -99,7 +99,8 @@
   top: calc(100% + 8px);
   left: 0;
   right: 0;
-  background: #FFFFFF;
+  background: var(--n-card);
+  border: 1px solid var(--n-border);
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.15);
   max-height: 420px;
@@ -112,7 +113,7 @@
   align-items: center;
   padding: 0.9rem 1rem;
   font-size: 0.82rem;
-  color: #9B9BB4;
+  color: var(--n-text-3);
 }
 ::deep .nexo-topbar__search-group {
   padding: 0.5rem 1rem 0.25rem;
@@ -120,7 +121,7 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #9B7FFF;
+  color: var(--n-purple-l);
 }
 ::deep .nexo-topbar__search-item {
   padding: 0.5rem 1rem;
@@ -128,19 +129,19 @@
   transition: background-color 0.12s ease;
 }
 ::deep .nexo-topbar__search-item:hover {
-  background: #F2EEFF;
+  background: var(--n-purple-xl);
 }
 ::deep .nexo-topbar__search-item-title {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #1A1C2E;
+  color: var(--n-text-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 ::deep .nexo-topbar__search-item-sub {
   font-size: 0.72rem;
-  color: #9B9BB4;
+  color: var(--n-text-3);
   margin-top: 0.1rem;
   white-space: nowrap;
   overflow: hidden;
@@ -152,7 +153,7 @@
   position: relative;
   flex-shrink: 0;
 }
-::deep .nexo-topbar__notif-btn { color: #9B9BB4 !important; }
+::deep .nexo-topbar__notif-btn { color: var(--n-text-3) !important; }
 ::deep .nexo-topbar__notif-btn:hover {
   background: rgba(255,255,255,0.08) !important;
   color: #FFFFFF !important;
@@ -163,7 +164,7 @@
   width: 9px; height: 9px;
   border-radius: 50%;
   background: #EF4444;
-  border: 2px solid #13131F;
+  border: 2px solid var(--n-dark);
   pointer-events: none;
   animation: nexoNotifPulse 2s ease-in-out infinite;
 }
@@ -189,11 +190,11 @@
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: #9B9BB4;
+  color: var(--n-text-3);
   padding: 0.5rem 1rem 0.4rem;
 }
 ::deep .nexo-topbar__notif-empty {
-  color: #9B9BB4;
+  color: var(--n-text-3);
   font-size: 0.85rem;
 }
 ::deep .nexo-topbar__notif-item {
@@ -207,12 +208,12 @@
 ::deep .nexo-topbar__notif-item-msg {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #1A1C2E;
+  color: var(--n-text-1);
   line-height: 1.3;
 }
 ::deep .nexo-topbar__notif-item-detalle {
   font-size: 0.75rem;
-  color: #9B9BB4;
+  color: var(--n-text-3);
   line-height: 1.3;
   margin-top: 0.1rem;
 }
@@ -323,12 +324,12 @@
 }
 ::deep .nexo-topbar__user-role {
   font-size: 0.7rem;
-  color: #9B9BB4;
+  color: var(--n-text-3);
   white-space: nowrap;
   display: block;
 }
 ::deep .nexo-topbar__chevron {
-  color: #9B9BB4 !important;
+  color: var(--n-text-3) !important;
   font-size: 1rem !important;
   flex-shrink: 0;
 }
@@ -340,6 +341,10 @@
    Lo que SÍ manda desde aquí: estructura interna (mud-drawer-content,
    logo, nav, footer) y estilos de los nav links en modo oscuro. */
 ::deep .mud-drawer.nexo-sidebar {
+  position: fixed !important;
+  top: 0 !important;
+  height: 100vh !important;
+  z-index: 1200 !important;
   background: rgba(10,14,36,0.68) !important; /* sobreescrito por app.css */
   backdrop-filter: blur(34px) saturate(160%) !important;
   -webkit-backdrop-filter: blur(34px) saturate(160%) !important;
@@ -381,8 +386,21 @@
   letter-spacing: 0.07em;
   text-transform: uppercase;
   opacity: 0.92;
+  flex: 1;
+  min-width: 0;
 }
 ::deep .nexo-sidebar__logo-text strong { font-weight: 800; }
+
+::deep .nexo-sidebar__close-btn {
+  color: rgba(255,255,255,0.45) !important;
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-right: -0.3rem;
+}
+::deep .nexo-sidebar__close-btn:hover {
+  background: rgba(255,255,255,0.10) !important;
+  color: #FFFFFF !important;
+}
 
 /* ── Zona de navegación ─────────────────────────────────────── */
 ::deep .nexo-sidebar__nav {
@@ -420,7 +438,7 @@
   padding: 0.52rem 0.9rem;
   border-radius: 8px;
   cursor: pointer;
-  color: #9B9BB4;
+  color: var(--n-text-3);
   font-size: 0.875rem;
   font-weight: 500;
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -428,7 +446,7 @@
 }
 ::deep .nexo-sidebar__footer-item:hover {
   background: rgba(255,255,255,0.06);
-  color: #E0E0F0;
+  color: rgba(255,255,255,0.90);
 }
 ::deep .nexo-sidebar__footer-item--logout:hover {
   background: rgba(239,68,68,0.1);
@@ -439,7 +457,7 @@
 }
 ::deep .nexo-sidebar__footer-icon {
   font-size: 1.1rem !important;
-  color: #6B6B8A !important;
+  color: var(--n-text-2) !important;
   flex-shrink: 0;
 }
 
@@ -476,19 +494,24 @@
    padding-top ahora suma la altura de la barra + el aire original.
    Si se cambia la altura de .nexo-topbar, hay que actualizar este valor tambien. */
 ::deep .mud-main-content.nexo-main-content {
-  background: #F4F5F9 !important;
-  padding: calc(76px + 1.75rem) 2rem 1.75rem !important;
+  background: var(--n-bg) !important;
+  padding: calc(var(--n-topbar-height) + 1.75rem) 2rem 1.75rem !important;
   min-height: 100vh;
 }
 
 /* ── Responsive ─────────────────────────────────────────────── */
+/* En desktop: sidebar siempre visible via Temporary+position:fixed.
+   Ocultar backdrop para que clics en contenido no cierren la barra. */
+@media (min-width: 960px) {
+  ::deep .mud-drawer-overlay { display: none !important; }
+}
 @media (max-width: 960px) {
-  ::deep .mud-main-content.nexo-main-content { padding: calc(76px + 1.25rem) 1rem 1.25rem !important; }
+  ::deep .mud-main-content.nexo-main-content { padding: calc(var(--n-topbar-height) + 1.25rem) 1rem 1.25rem !important; }
   ::deep .nexo-topbar__search { max-width: 200px; }
   ::deep .nexo-topbar__user-info { display: none !important; }
 }
 @media (max-width: 600px) {
-  ::deep .nexo-topbar__search { display: none !important; }
+  ::deep .nexo-topbar__search { max-width: 140px; min-width: 0; }
 }
 
 /* Blazor error UI */

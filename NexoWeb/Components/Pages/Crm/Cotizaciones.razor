@@ -10,7 +10,6 @@
 
 <div class="d-flex align-center mb-4" style="gap: 0.25rem;">
     <MudText Typo="Typo.h5">Cotizaciones</MudText>
-    <BotonFavorito Href="/crm/cotizaciones" Etiqueta="Cotizaciones" />
 </div>
 <InfoAyuda Texto="Propuesta formal de venta con líneas de artículos y precios, antes de facturar. Una cotización Aceptada se puede convertir directo en Factura sin volver a teclear cliente ni artículos." />
 
@@ -127,7 +126,7 @@ else
 }
 
 @* ── Diálogo envío (Email / WhatsApp / Ambos) ──────────────────────── *@
-<MudDialog @bind-IsVisible="_envioDialogVisible" Options='new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true }'>
+<MudDialog @bind-IsVisible="_envioDialogVisible" Options='new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true, CloseButton = true }'>
     <TitleContent>
         <div class="d-flex align-center" style="gap:10px;">
             <MudIcon Icon="@Icons.Material.Outlined.Send" Color="Color.Primary" />
@@ -262,7 +261,7 @@ else
         };
 
         var dialogo = await DialogService.ShowAsync<CotizacionDialog>("Nueva Cotización", parametros,
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
         var resultado = await dialogo.Result;
         if (resultado is null || resultado.Canceled) return;
 
@@ -283,7 +282,7 @@ else
     {
         var parametros = new DialogParameters<GestionCotizacionDialog> { { x => x.Cotizacion, cotizacion } };
         var dialogo = await DialogService.ShowAsync<GestionCotizacionDialog>("Gestionar Cotización", parametros,
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
         await dialogo.Result;
         await CargarCotizacionesAsync();
     }

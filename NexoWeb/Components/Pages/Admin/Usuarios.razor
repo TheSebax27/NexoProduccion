@@ -1,4 +1,4 @@
-@page "/admin/usuarios"
+﻿@page "/admin/usuarios"
 @attribute [Authorize(Roles = "Administracion")]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -10,7 +10,6 @@
 
 <div class="d-flex align-center mb-4" style="gap: 0.25rem;">
     <MudText Typo="Typo.h5">Usuarios</MudText>
-    <BotonFavorito Href="/admin/usuarios" Etiqueta="Usuarios" />
 </div>
 <InfoAyuda Texto="Crea usuarios del sistema y asígnales un rol (Administracion, Jefes, Empleados o Subempleados) y un Centro de Costo. El rol determina qué pantallas puede ver y qué acciones puede hacer." />
 
@@ -64,9 +63,9 @@ else
             <MudTh>Email</MudTh>
             <MudTh>Rol</MudTh>
             <MudTh>Centro de Costo</MudTh>
-            <MudTh>Ultimo Acceso</MudTh>
+            <MudTh>Último Acceso</MudTh>
             <MudTh>Estado</MudTh>
-            <MudTh>Accion</MudTh>
+            <MudTh>Acción</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Nombre">@context.Nombres @context.Apellidos</MudTd>
@@ -74,7 +73,7 @@ else
             <MudTd DataLabel="Email">@context.Email</MudTd>
             <MudTd DataLabel="Rol">@context.Rol</MudTd>
             <MudTd DataLabel="Centro de Costo">@(context.CentroCosto ?? "-")</MudTd>
-            <MudTd DataLabel="Ultimo Acceso">@(context.UltimoAcceso?.ToString("dd/MM/yyyy HH:mm") ?? "Nunca")</MudTd>
+            <MudTd DataLabel="Último Acceso">@(context.UltimoAcceso?.ToString("dd/MM/yyyy HH:mm") ?? "Nunca")</MudTd>
             <MudTd DataLabel="Estado">
                 <MudChip T="string" Color="@(context.Estado ? Color.Success : Color.Error)" Size="Size.Small">
                     @(context.Estado ? "Activo" : "Inactivo")

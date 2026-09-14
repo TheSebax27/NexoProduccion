@@ -1,4 +1,4 @@
-@page "/planificacion/demanda"
+﻿@page "/planificacion/demanda"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -9,7 +9,6 @@
 
 <div class="d-flex align-center mb-4" style="gap: 0.25rem;">
     <MudText Typo="Typo.h5">Demanda Proyectada</MudText>
-    <BotonFavorito Href="/planificacion/demanda" Etiqueta="Demanda Proyectada" />
 </div>
 <InfoAyuda Texto="Forecast de producción a futuro, por artículo y mes -- distinto de las Órdenes de Producción ya creadas. Compara cuánto proyectaste contra lo que realmente se produjo ese mes (Kardex de entradas de Producto Terminado)." />
 

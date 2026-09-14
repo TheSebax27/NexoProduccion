@@ -13,6 +13,7 @@
            OnClick="@(() => Navigation.NavigateTo("/crm/clientes"))" Class="mb-2">
     Clientes
 </MudButton>
+<InfoAyuda Texto="Vista 360° del cliente: datos de contacto, historial de compras, interacciones, ausencias de campaña y acciones de seguimiento." />
 
 @if (_errorCarga is not null)
 {
@@ -30,7 +31,6 @@ else
 {
     <div class="d-flex align-center flex-wrap mb-2" style="gap: 0.4rem;">
         <MudText Typo="Typo.h5">@_cliente.Nombre</MudText>
-        <BotonFavorito Href="@($"/crm/clientes/{_cliente.ExternalId}")" Etiqueta="@_cliente.Nombre" />
         <MudSpacer />
         <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="AbrirEdicionAsync">Editar</MudButton>
     </div>
@@ -464,6 +464,12 @@ else
 
     private async Task EliminarDocumentoAsync(ClienteDocumentoItem documento)
     {
+        var ok = await DialogService.ShowMessageBox(
+            "Eliminar documento",
+            $"¿Eliminar \"{documento.NombreArchivo}\"? Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+        if (ok != true) return;
+
         try
         {
             await ApiClient.DeleteAsync($"api/crm/documentos/{documento.DocumentoID}");

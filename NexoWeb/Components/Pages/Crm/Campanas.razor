@@ -4,9 +4,11 @@
 @inject INexoApiClient Api
 @inject NavigationManager Nav
 @inject ISnackbar Snack
+@inject IDialogService Dialog
 @attribute [Authorize]
 
 <PageTitle>Campañas de Email</PageTitle>
+<InfoAyuda Texto="Crea y envía campañas de email masivo a tus clientes. Diseña el contenido, selecciona destinatarios y mide resultados de apertura." />
 
 @if (_cargando)
 {
@@ -174,6 +176,12 @@ else
 
     async Task ConfirmarEliminar(CampanaResumen c)
     {
+        var ok = await Dialog.ShowMessageBox(
+            "Eliminar campaña",
+            $"¿Eliminar \"{c.Nombre}\"? Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+        if (ok != true) return;
+
         try
         {
             await Api.DeleteAsync($"api/marketing/campanas/{c.CampanaID}");

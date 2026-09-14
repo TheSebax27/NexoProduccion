@@ -18,7 +18,6 @@
         <p class="prod-header__sub">Define los insumos y cantidades por corrida. Cada cambio importante crea una nueva versión.</p>
     </div>
     <div class="prod-header__actions">
-        <BotonFavorito Href="/produccion/recetas" Etiqueta="Recetas (BOM)" />
         @if (_cargando || _recetas.Count > 0 || _filtroProductoId is not null)
         {
             <MudButton Variant="Variant.Filled" Color="Color.Success" Href="/produccion/recetas/crear"
@@ -28,15 +27,15 @@
         }
     </div>
 </div>
+<InfoAyuda Texto="Define insumos y cantidades por corrida de producción (BOM). Cada cambio importante genera una nueva versión versionada de la receta." />
 
-<ProduccionNav />
 
 @* ── Filtros ─────────────────────────────────────────────────────────── *@
 <div class="prod-filtros">
     <ArticuloAutocomplete Value="_filtroArticulo"
                           ValueChanged="@(async a => { _filtroArticulo = a; await OnFiltroCambiadoAsync(a?.ArticuloID); })"
                           Label="Filtrar por producto terminado"
-                          FiltroTipo="Producto Terminado" />
+                          SoloTerminados="true" />
     <MudSwitch T="bool" @bind-Value="_soloActivas" Label="Solo versiones activas"
                Color="Color.Primary" @bind-Value:after="CargarAsync" />
 </div>
@@ -216,3 +215,4 @@ else
             $"Insumos de: {receta.NombreReceta} (v{receta.Version})", p);
     }
 }
+

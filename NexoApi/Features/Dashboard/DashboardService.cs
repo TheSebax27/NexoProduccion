@@ -34,6 +34,8 @@ public interface IDashboardService
     // Feed de actividad y sparklines
     Task<IEnumerable<ActividadItem>> ObtenerActividadRecienteAsync(int n = 20);
     Task<SparklinesDashboard> ObtenerSparklinesAsync();
+
+    Task<ResumenMaquinariaItem> ObtenerResumenMaquinariaAsync();
 }
 
 public class DashboardService : IDashboardService
@@ -196,18 +198,41 @@ public class DashboardService : IDashboardService
     public async Task<ResumenFacturacionItem> ObtenerResumenFacturacionAsync(DateTime desde, DateTime hasta)
     {
         using var connection = _db.CreateConnection();
+        // Une facturas creadas en NEXO (excluye importadas de Visions para no duplicar)
+        // con ventas de Visions leídas directo de EventosEntrantes (fuente de verdad para precios Visions).
         const string sql = @"
             SELECT
-                ISNULL(SUM(ISNULL(tot.Total,0)), 0)                                       AS TotalEmitido,
-                ISNULL(SUM(ISNULL(pag.TotalPagado,0)), 0)                                 AS TotalCobrado,
-                ISNULL(SUM(ISNULL(tot.Total,0) - ISNULL(pag.TotalPagado,0)), 0)           AS SaldoPendiente,
-                COUNT(*)                                                                    AS DocumentosEmitidos
-            FROM Facturacion.Facturas f
-            LEFT JOIN (SELECT FacturaID, SUM(Cantidad * PrecioUnitario) AS Total
-                       FROM Facturacion.FacturaLineas GROUP BY FacturaID) tot ON tot.FacturaID = f.FacturaID
-            LEFT JOIN (SELECT FacturaID, SUM(Monto) AS TotalPagado
-                       FROM Facturacion.Pagos GROUP BY FacturaID) pag ON pag.FacturaID = f.FacturaID
-            WHERE f.Fecha >= @Desde AND f.Fecha <= @Hasta";
+                ISNULL(SUM(src.TotalEmitido), 0)    AS TotalEmitido,
+                ISNULL(SUM(src.TotalCobrado), 0)    AS TotalCobrado,
+                ISNULL(SUM(src.SaldoPendiente), 0)  AS SaldoPendiente,
+                ISNULL(SUM(src.Docs), 0)            AS DocumentosEmitidos
+            FROM (
+                SELECT
+                    ISNULL(tot.Total, 0) AS TotalEmitido,
+                    ISNULL(pag.TotalPagado, 0) AS TotalCobrado,
+                    ISNULL(tot.Total, 0) - ISNULL(pag.TotalPagado, 0) AS SaldoPendiente,
+                    1 AS Docs
+                FROM Facturacion.Facturas f
+                LEFT JOIN (SELECT FacturaID, SUM(Cantidad * PrecioUnitario) AS Total
+                           FROM Facturacion.FacturaLineas GROUP BY FacturaID) tot ON tot.FacturaID = f.FacturaID
+                LEFT JOIN (SELECT FacturaID, SUM(Monto) AS TotalPagado
+                           FROM Facturacion.Pagos GROUP BY FacturaID) pag ON pag.FacturaID = f.FacturaID
+                WHERE f.VisionsConfirmado = 0
+                  AND f.Fecha >= @Desde AND f.Fecha <= @Hasta
+
+                UNION ALL
+
+                SELECT
+                    SUM(ISNULL(ee.Cantidad, 0) * ISNULL(ee.PrecioArticuloVisions, 0)) AS TotalEmitido,
+                    SUM(ISNULL(ee.Cantidad, 0) * ISNULL(ee.PrecioArticuloVisions, 0)) AS TotalCobrado,
+                    0 AS SaldoPendiente,
+                    1 AS Docs
+                FROM Integracion.EventosEntrantes ee
+                WHERE ee.TipDoc IS NOT NULL
+                  AND CAST(ee.FechaEventoOrigen AS DATE) >= @Desde
+                  AND CAST(ee.FechaEventoOrigen AS DATE) <= @Hasta
+                GROUP BY ee.TipDoc, ee.NroDoc, ee.CentroCostoID
+            ) src";
         return await connection.QuerySingleAsync<ResumenFacturacionItem>(sql, new { Desde = desde.Date, Hasta = hasta.Date });
     }
 
@@ -466,5 +491,35 @@ public class DashboardService : IDashboardService
             GROUP BY c.Departamento
             ORDER BY TotalVentas DESC";
         return await connection.QueryAsync<VentasPorDepartamentoItem>(sql);
+    }
+
+    public async Task<ResumenMaquinariaItem> ObtenerResumenMaquinariaAsync()
+    {
+        using var connection = _db.CreateConnection();
+
+        var total = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM Produccion.Maquinaria WHERE Estado NOT IN ('Inactiva','BajaDefinitiva')");
+
+        var enMant = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM Produccion.Maquinaria WHERE Estado = 'EnMantenimiento'");
+
+        var vencido = await connection.ExecuteScalarAsync<int>(@"
+            SELECT COUNT(*)
+            FROM Produccion.Maquinaria m
+            WHERE m.Estado NOT IN ('Inactiva','BajaDefinitiva')
+              AND (
+                  SELECT TOP 1 mm.ProximoMantenimiento
+                  FROM Produccion.MantenimientoMaquinaria mm
+                  WHERE mm.MaquinariaID = m.MaquinariaID AND mm.ProximoMantenimiento IS NOT NULL
+                  ORDER BY mm.FechaRealizado DESC
+              ) < CAST(GETDATE() AS DATE)");
+
+        var costoMes = await connection.ExecuteScalarAsync<decimal>(@"
+            SELECT ISNULL(SUM(Costo), 0)
+            FROM Produccion.MantenimientoMaquinaria
+            WHERE YEAR(FechaRealizado) = YEAR(GETDATE())
+              AND MONTH(FechaRealizado) = MONTH(GETDATE())");
+
+        return new ResumenMaquinariaItem(total, enMant, vencido, costoMes);
     }
 }

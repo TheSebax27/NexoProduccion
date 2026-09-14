@@ -1,4 +1,4 @@
-@page "/produccion/maquinaria"
+﻿@page "/produccion/maquinaria"
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Common.ApiClient
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
@@ -23,10 +23,10 @@
         </MudButton>
     </div>
 </div>
+<InfoAyuda Texto="Registra máquinas con su tipo y estado. Marca equipos en mantenimiento para alertar en órdenes de producción que los requieran." />
 
-<ProduccionNav />
 
-@* ── Filtros ─────────────────────────────────────────────────────────── *@
+@* â”€â”€ Filtros â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ *@
 <div class="prod-filtros">
     <MudSelect T="int?" @bind-Value="_filtroTipo" Label="Tipo" Variant="Variant.Outlined"
                Clearable="true" Style="flex:1; min-width:160px;"
@@ -51,7 +51,7 @@
     </MudButton>
 </div>
 
-@* ── KPIs ─────────────────────────────────────────────────────────────── *@
+@* â”€â”€ KPIs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ *@
 @if (!_cargando && _maquinas.Count > 0)
 {
     <div class="prod-kpis">
@@ -220,7 +220,7 @@ else
             { x => x.Tipos, _tipos }, { x => x.CentrosTrabajo, _centros }, { x => x.Maquina, null }
         };
         var dlg = await Dialog.ShowAsync<MaquinariaDialog>("Nueva Máquina", p_,
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
         if ((await dlg.Result) is { Canceled: false }) await CargarAsync();
     }
 
@@ -233,7 +233,7 @@ else
             { x => x.Tipos, _tipos }, { x => x.CentrosTrabajo, _centros }, { x => x.Maquina, detalle }
         };
         var dlg = await Dialog.ShowAsync<MaquinariaDialog>("Editar Máquina", p_,
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
         if ((await dlg.Result) is { Canceled: false }) await CargarAsync();
     }
 
@@ -244,7 +244,7 @@ else
             { x => x.MaquinariaID, m.MaquinariaID }, { x => x.NombreMaquina, m.Nombre }
         };
         var dlg = await Dialog.ShowAsync<MantenimientoMaquinariaDialog>($"Registrar mantenimiento — {m.Nombre}", p_,
-            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
         if ((await dlg.Result) is { Canceled: false }) await CargarAsync();
     }
 
@@ -261,7 +261,7 @@ else
             { x => x.NombreMaquina, m.Nombre }, { x => x.Historial, historial }
         };
         await Dialog.ShowAsync<HistorialMantenimientoDialog>($"Historial — {m.Nombre}", p_,
-            new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
     }
 
     static Color ColorEstado(string e) => e switch

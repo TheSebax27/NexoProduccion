@@ -27,7 +27,7 @@ public record CerrarOrdenProduccionRequest(
 public record TipoProduccionItem(int TipoProduccionID, string Codigo, string Nombre);
 
 public record RecetaResumen(
-    int RecetaID, string ProductoTerminado, string NombreReceta, int Version,
+    int RecetaID, int ProductoTerminadoID, string ProductoTerminado, string NombreReceta, int Version,
     decimal CantidadRendimientoBase, string UnidadRendimiento, bool Estado
 );
 

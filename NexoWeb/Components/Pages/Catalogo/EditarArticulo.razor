@@ -1,4 +1,4 @@
-@page "/catalogo/articulos/{ArticuloId:int}/editar"
+﻿@page "/catalogo/articulos/{ArticuloId:int}/editar"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject NavigationManager Nav
@@ -876,7 +876,7 @@ else
     {
         var dialogo = await DialogService.ShowAsync<PresentacionDialog>("Nueva Presentación",
             new DialogParameters<PresentacionDialog>(),
-            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
         var result = await dialogo.Result;
         if (result is null || result.Canceled || result.Data is not PresentacionDialog.Result data) return;
         var nueva = new PresentacionItem(data.Codigo, data.Nombre, data.Fracciones, data.Tipo);
@@ -1165,7 +1165,7 @@ else
         };
         var dialogo = await DialogService.ShowAsync<AdicionalesDialog>("Adicionales",
             params_,
-            new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true });
         var result = await dialogo.Result;
         if (result is not null && !result.Canceled && result.Data is int count)
             _cantidadAdicionales = count;

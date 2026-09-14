@@ -1,4 +1,4 @@
-@page "/rrhh/organigrama"
+﻿@page "/rrhh/organigrama"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @using NexoWeb.Common.Dtos
@@ -189,9 +189,9 @@
                 Agregar empleado
             </MudButton>
         </a>
-        <BotonFavorito Href="/rrhh/organigrama" Etiqueta="Organigrama" />
     </div>
 </div>
+<InfoAyuda Texto="Visualiza la jerarquía de la organización basada en el campo «Jefe Directo» de cada empleado, con vistas de árbol y lista." />
 
 @if (_cargando)
 {
@@ -282,7 +282,7 @@ else
                 var nivel = nodo.Nivel;
                 <div class="org-lista-item" style="margin-left:@(nivel * 20)px">
                     <div class="org-avatar org-avatar--@(Math.Abs((nodo.Nombres + nodo.Apellidos).GetHashCode()) % 8)" style="width:32px;height:32px;border-radius:8px;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;flex-shrink:0">
-                        @nodo.Nombres[0]@nodo.Apellidos[0]
+                        @(nodo.Nombres?.Length > 0 ? nodo.Nombres[0] : '?')@(nodo.Apellidos?.Length > 0 ? nodo.Apellidos[0] : ' ')
                     </div>
                     <div style="flex:1;min-width:0">
                         <div style="font-size:13px;font-weight:600">@nodo.Nombres @nodo.Apellidos</div>

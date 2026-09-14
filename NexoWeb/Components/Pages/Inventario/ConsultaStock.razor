@@ -1,4 +1,4 @@
-@page "/inventario/stock"
+﻿﻿@page "/inventario/stock"
 @attribute [Authorize]
 @implements IDisposable
 @inject NexoWeb.Common.ApiClient.INexoApiClient ApiClient
@@ -18,12 +18,11 @@
         </h1>
         <p class="inv-header__sub">Existencias por bodega, lote y valor. Haz clic en ▶ para ver detalle por lote.</p>
     </div>
-    <BotonFavorito Href="/inventario/stock" Etiqueta="Consulta de Stock" />
 </div>
+<InfoAyuda Texto="Consulta existencias actuales por artículo, bodega y lote. Filtra por centro de costo y ve el valor total del inventario." />
 
-<InventarioNav />
 
-@* ── Filtros ─────────────────────────────────────────────────────────── *@
+@* ── Filtros ──────────────────────────────────────────────────────────── *@
 <div class="inv-filtros">
     <MudTextField @bind-Value="_filtroSku" Label="Buscar SKU o artículo" Variant="Variant.Outlined"
                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
@@ -51,7 +50,7 @@
     </MudButton>
 </div>
 
-@* ── Resumen KPIs ─────────────────────────────────────────────────────── *@
+@* ── Resumen KPIs ──────────────────────────────────────────────────────── *@
 @if (!_cargando && _grupos.Count > 0)
 {
     <div class="inv-kpis">
@@ -469,3 +468,4 @@ else
         => ConfiguracionEmpresa.ManejarVencimientos &&
            g.Lotes.Any(l => ObtenerEstadoLote(l.FechaVencimiento) != EstadoLote.Ok);
 }
+

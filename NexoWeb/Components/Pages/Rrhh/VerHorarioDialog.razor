@@ -1,8 +1,8 @@
-@using NexoWeb.Common.Dtos
+﻿@using NexoWeb.Common.Dtos
 @using NexoWeb.Common.ApiClient
 @inject INexoApiClient Api
 
-<MudDialog Style="min-width:650px; max-height:90vh; overflow-y:auto">
+<MudDialog Style="min-width:min(650px,95vw); max-height:90vh; overflow-y:auto">
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.Schedule" Class="mr-2" />
@@ -10,7 +10,7 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-        @* ── Datos generales ── *@
+        @* â”€â”€ Datos generales â”€â”€ *@
         <MudGrid Spacing="2" Class="mb-3">
             <MudItem xs="12" sm="4">
                 <MudText Typo="Typo.caption">Tipo de ciclo</MudText>
@@ -41,7 +41,7 @@
 
         <MudDivider Class="mb-3" />
 
-        @* ── Dias por semana ── *@
+        @* â”€â”€ Dias por semana â”€â”€ *@
         @{
             var semanas = Horario.TipoCiclo switch
             {
@@ -114,7 +114,7 @@
 
         <MudDivider Class="mb-3 mt-1" />
 
-        @* ── Empleados asignados ── *@
+        @* â”€â”€ Empleados asignados â”€â”€ *@
         <div class="d-flex align-center justify-space-between mb-2">
             <MudText Typo="Typo.subtitle2" Style="font-weight:600">Empleados asignados</MudText>
             @if (!_cargandoAsignados)
@@ -171,3 +171,4 @@
         finally { _cargandoAsignados = false; }
     }
 }
+

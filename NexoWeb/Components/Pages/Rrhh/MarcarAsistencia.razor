@@ -7,10 +7,10 @@
 
 <PageTitle>Marcar Asistencia</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="mt-10">
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-4 mt-sm-10">
     @if (_cargando)
     {
-        <MudPaper Class="pa-8 text-center" Elevation="2">
+        <MudPaper Class="pa-4 pa-sm-8 text-center" Elevation="2">
             <MudProgressCircular Indeterminate Color="Color.Primary" />
             <MudText Typo="Typo.body1" Class="mt-3">Verificando...</MudText>
         </MudPaper>
@@ -23,7 +23,7 @@
     }
     else if (_exito)
     {
-        <MudPaper Class="pa-8 text-center" Elevation="3">
+        <MudPaper Class="pa-4 pa-sm-8 text-center" Elevation="3">
             <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
                      Style="font-size:5rem; color:var(--mud-palette-success)" />
             <MudText Typo="Typo.h5" Class="mt-2 mb-1">Registrado!</MudText>

@@ -23,7 +23,7 @@ public class ModulosVisiblesState
     public bool EsVisible(string codigo)
     {
         if (_esAdmin) return true;
-        if (!_cargado || _visibles is null) return true;
+        if (!_cargado || _visibles is null) return false;
         return _visibles.Contains(codigo);
     }
 
@@ -54,7 +54,7 @@ public class ModulosVisiblesState
         }
         catch
         {
-            _visibles = null; // fail-open si la API no responde
+            _visibles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         }
 
         _cargado = true;

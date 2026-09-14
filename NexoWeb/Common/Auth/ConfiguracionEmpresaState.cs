@@ -12,6 +12,7 @@ public class ConfiguracionEmpresaState
 {
     private readonly INexoApiClient _apiClient;
     private bool _cargado;
+    private DateTime _ultimoIntento = DateTime.MinValue;
 
     public bool Cargado => _cargado;
 
@@ -25,6 +26,7 @@ public class ConfiguracionEmpresaState
     public string ModoLotes { get; private set; } = "FIFO";
     public string ModoNroDoc { get; private set; } = "Manual";
     public long UltimoNroDocSecuencial { get; private set; } = 0;
+    public bool VentaDesdeReceta { get; private set; } = false;
 
     // Null si no hay logo propio -- el sidebar usa la imagen por defecto (LogoV.png) en ese caso.
     public string? LogoDataUri => LogoBase64 is null ? null : $"data:{LogoContentType};base64,{LogoBase64}";
@@ -39,7 +41,9 @@ public class ConfiguracionEmpresaState
     public async Task CargarAsync()
     {
         if (_cargado) return;
+        if ((DateTime.UtcNow - _ultimoIntento).TotalSeconds < 10) return;
 
+        _ultimoIntento = DateTime.UtcNow;
         try
         {
             var respuesta = await _apiClient.GetAsync<ConfiguracionEmpresaResponse>("api/configuracion/empresa");
@@ -55,6 +59,7 @@ public class ConfiguracionEmpresaState
                 ModoLotes = respuesta.ModoLotes;
                 ModoNroDoc = respuesta.ModoNroDoc;
                 UltimoNroDocSecuencial = respuesta.UltimoNroDocSecuencial;
+                VentaDesdeReceta = respuesta.VentaDesdeReceta;
                 _cargado = true;
             }
         }
@@ -116,6 +121,15 @@ public class ConfiguracionEmpresaState
             new ActualizarConfigNroDocRequest(modoNroDoc, ultimoSecuencial));
         ModoNroDoc = modoNroDoc;
         UltimoNroDocSecuencial = ultimoSecuencial;
+        OnCambio?.Invoke();
+    }
+
+    public async Task ActualizarVentaDesdeRecetaAsync(bool ventaDesdeReceta)
+    {
+        await _apiClient.PutAsync(
+            "api/configuracion/empresa/venta-receta",
+            new ActualizarVentaDesdeRecetaRequest(ventaDesdeReceta));
+        VentaDesdeReceta = ventaDesdeReceta;
         OnCambio?.Invoke();
     }
 }

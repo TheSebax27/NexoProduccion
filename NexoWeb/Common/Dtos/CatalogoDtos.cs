@@ -249,8 +249,8 @@ public record AgregarAdicionalRequest(int AdicionalID);
 
 // ── Catalogo: Iva (calca de dbo.IVA de Visions) ────────────────────────
 // TARJETA no tiene FK a IVA; almacena valores directamente (copia plana).
-public record IvaItem(int IvaID, int Iva, string? Descripcion);
-public record CrearIvaRequest(int Iva, string? Descripcion);
+public record IvaItem(int IvaID, int Iva, string? Descripcion, string TipoImpuesto = "IVA");
+public record CrearIvaRequest(int Iva, string? Descripcion, string TipoImpuesto = "IVA");
 public record ActualizarIvaRequest(int Iva, string? Descripcion);
 
 // ── Catalogos Visions ────────────────────────────────────────────────────

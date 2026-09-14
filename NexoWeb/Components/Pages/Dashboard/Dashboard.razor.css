@@ -21,7 +21,7 @@
   width: 4px;
   height: 2.25rem;
   border-radius: 4px;
-  background: linear-gradient(180deg, #7C5CFF 0%, #5A3BFF 100%);
+  background: linear-gradient(180deg, var(--n-purple) 0%, var(--n-purple-d) 100%);
   flex-shrink: 0;
 }
 
@@ -30,7 +30,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #7C5CFF;
+  color: var(--n-purple);
   margin: 0 0 0.1rem;
 }
 
@@ -38,7 +38,7 @@
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: -0.025em;
-  color: #1A1C2E;
+  color: var(--n-text-1);
   margin: 0;
   line-height: 1.15;
 }
@@ -47,7 +47,7 @@
   display: flex;
   align-items: center;
   font-size: 0.76rem;
-  color: #B0B0C8;
+  color: var(--n-text-3);
   white-space: nowrap;
 }
 
@@ -68,7 +68,7 @@
   border: 1px solid #E8E9EF;
   border-radius: 24px;
   padding: 1.35rem 1.5rem 1.25rem;
-  box-shadow: 0 10px 40px rgba(26,28,46,.12), inset 0 1px 0 rgba(255,255,255,.90);
+  box-shadow: var(--n-shadow-kpi);
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
@@ -104,20 +104,20 @@
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1;
-  color: #1A1C2E;
+  color: var(--n-text-1);
   margin-bottom: 0.15rem;
 }
 
 .nexo-kpi__label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #6B6B8A;
+  color: var(--n-text-2);
   letter-spacing: 0.01em;
 }
 
 .nexo-kpi__sub {
   font-size: 0.72rem;
-  color: #B0B0C8;
+  color: var(--n-text-3);
   margin-top: 0.2rem;
 }
 
@@ -147,11 +147,11 @@
   gap: 0.65rem;
   margin-bottom: 1.1rem;
   padding-bottom: 0.9rem;
-  border-bottom: 1px solid #EEEEF5;
+  border-bottom: 1px solid var(--n-border);
 }
 
 .nexo-chart-header__icon {
-  color: #B0B0C8 !important;
+  color: var(--n-text-3) !important;
   margin-top: 2px;
   flex-shrink: 0;
 }
@@ -159,13 +159,13 @@
 .nexo-chart-header__title {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #1A1C2E;
+  color: var(--n-text-1);
   line-height: 1.3;
 }
 
 .nexo-chart-header__sub {
   font-size: 0.72rem;
-  color: #B0B0C8;
+  color: var(--n-text-3);
   margin-top: 0.1rem;
 }
 
@@ -202,9 +202,9 @@
   text-align: center;
 }
 
-.nexo-empty-state__icon { font-size: 2.25rem !important; color: #D1D5E8 !important; }
+.nexo-empty-state__icon { font-size: 2.25rem !important; color: var(--n-border-2) !important; }
 .nexo-empty-state__icon--success { color: #10B981 !important; }
-.nexo-empty-state__text { font-size: 0.875rem; color: #B0B0C8; margin: 0; }
+.nexo-empty-state__text { font-size: 0.875rem; color: var(--n-text-3); margin: 0; }
 
 /* ── Gráfico de Variación de Producción (estilo IPI) ─────────
    Barras verdes/rojas centradas en una línea de cero: verde
@@ -223,7 +223,7 @@
 }
 
 .nexo-variacion-chart__zero {
-  stroke: #D1D5E8;
+  stroke: var(--n-border-2);
   stroke-width: 1.5;
 }
 
@@ -237,7 +237,7 @@
 .nexo-variacion-chart__label {
   font-size: 13px;
   font-weight: 700;
-  fill: #1A1C2E;
+  fill: var(--n-text-1);
   font-family: 'Mango Dream', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
 }
 
@@ -250,7 +250,7 @@
   flex: 1 1 0;
   text-align: center;
   font-size: 0.65rem;
-  color: #9B9BB4;
+  color: var(--n-text-3);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -262,7 +262,7 @@
   gap: 0.4rem;
   margin-top: 0.9rem;
   font-size: 0.76rem;
-  color: #6B6B8A;
+  color: var(--n-text-2);
   flex-wrap: wrap;
 }
 .nexo-variacion-chart__legend-dot {
@@ -290,7 +290,7 @@
 .nexo-section__dot {
   width: 8px; height: 8px;
   border-radius: 50%;
-  background: #7C5CFF;
+  background: var(--n-purple);
   flex-shrink: 0;
 }
 .nexo-section__label {
@@ -298,7 +298,7 @@
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #9B9BB4;
+  color: var(--n-text-3);
 }
 .nexo-section__line {
   flex: 1;
@@ -313,7 +313,7 @@
   justify-content: space-between;
   padding: 0.5rem 0 0;
   font-size: 0.75rem;
-  color: #9B9BB4;
+  color: var(--n-text-3);
 }
 
 /* ── Card de cartera ────────────────────────────────────────── */
@@ -330,7 +330,7 @@
 .nexo-cartera-total__label {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #9B9BB4;
+  color: var(--n-text-3);
 }
 
 /* ── Workspace BI tabs ─────────────────────────────────────── */

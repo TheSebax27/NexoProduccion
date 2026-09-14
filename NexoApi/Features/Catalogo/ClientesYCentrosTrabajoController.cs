@@ -35,8 +35,15 @@ public class ClientesYCentrosTrabajoController : ControllerBase
     [Authorize]
     public async Task<ActionResult> ActualizarCentroTrabajo(int id, ActualizarCentroTrabajoRequest request)
     {
-        await _service.ActualizarCentroTrabajoAsync(id, request);
-        return Ok();
+        try
+        {
+            await _service.ActualizarCentroTrabajoAsync(id, request);
+            return Ok();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
     }
 
     [HttpGet("proveedores")]

@@ -55,7 +55,12 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
             "UPDATE Integracion.AgentesSync SET UltimaConexion = SYSUTCDATETIME() WHERE ApiKeyHash = @ApiKeyHash",
             new { ApiKeyHash = apiKeyHash });
 
-        var claims = new[] { new Claim("CentroCostoId", agente.CentroCostoID.ToString()) };
+        var claims = new[]
+        {
+            new Claim("CentroCostoId", agente.CentroCostoID.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, agente.CentroCostoID.ToString()),
+            new Claim(ClaimTypes.Role, "Agente")
+        };
         var identity = new ClaimsIdentity(claims, SchemeName);
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, SchemeName);

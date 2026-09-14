@@ -217,6 +217,16 @@ public class CatalogoService : ICatalogoService
     {
         using var connection = _db.CreateConnection();
 
+        // ICO no admite segundo impuesto
+        if (r.Iva2.HasValue && r.Iva2 != 0 && r.IvaValor.HasValue)
+        {
+            var esICO = await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(1) FROM Catalogo.Iva WHERE Iva = @Iva AND ISNULL(TipoImpuesto,'IVA') = 'ICO'",
+                new { Iva = r.IvaValor.Value });
+            if (esICO > 0)
+                throw new InvalidOperationException("El ICO solo puede ser impuesto principal. Un artículo con ICO no puede tener segundo impuesto.");
+        }
+
         // Auto-crear Marca y Presentacion si el codigo llega desde Visions pero aun no existe en NEXO.
         // GrupoMenor no se auto-crea porque requiere GrupoMayor (FK no-nullable).
         const string sqlEnsureCatalogos = @"
@@ -477,6 +487,16 @@ public class CatalogoService : ICatalogoService
     {
         using var connection = _db.CreateConnection();
 
+        // ICO no admite segundo impuesto: validar antes de actualizar
+        if (r.Iva2.HasValue && r.Iva2 != 0 && r.IvaValor.HasValue)
+        {
+            var esICO = await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(1) FROM Catalogo.Iva WHERE Iva = @Iva AND ISNULL(TipoImpuesto,'IVA') = 'ICO'",
+                new { Iva = r.IvaValor.Value });
+            if (esICO > 0)
+                throw new InvalidOperationException("El ICO solo puede ser impuesto principal. Un artículo con ICO no puede tener segundo impuesto.");
+        }
+
         // Leer precios actuales para detectar cambios
         var precios = await connection.QuerySingleOrDefaultAsync<PreciosActuales>(
             "SELECT Costo, PPublico, PBodega, PCredito FROM Catalogo.Tarjetas WHERE ArticuloID = @Id",
@@ -602,7 +622,7 @@ public class CatalogoService : ICatalogoService
         if (_cache.TryGetValue("cat:ivas", out IEnumerable<IvaItem>? cached)) return cached!;
         using var connection = _db.CreateConnection();
         var result = (await connection.QueryAsync<IvaItem>(
-            "SELECT IvaID, Iva, Descripcion FROM Catalogo.Iva ORDER BY Iva, Descripcion")).ToList();
+            "SELECT IvaID, Iva, Descripcion, ISNULL(TipoImpuesto,'IVA') AS TipoImpuesto FROM Catalogo.Iva ORDER BY TipoImpuesto, Iva, Descripcion")).ToList();
         _cache.Set("cat:ivas", result, _ttlCatalogos);
         return result;
     }
@@ -610,8 +630,10 @@ public class CatalogoService : ICatalogoService
     public async Task<int> CrearIvaAsync(CrearIvaRequest r)
     {
         using var connection = _db.CreateConnection();
+        var tipo = string.IsNullOrWhiteSpace(r.TipoImpuesto) ? "IVA" : r.TipoImpuesto.ToUpper();
         var id = await connection.ExecuteScalarAsync<int>(
-            "INSERT INTO Catalogo.Iva (Iva, Descripcion) OUTPUT INSERTED.IvaID VALUES (@Iva, @Descripcion)", r);
+            "INSERT INTO Catalogo.Iva (Iva, Descripcion, TipoImpuesto) OUTPUT INSERTED.IvaID VALUES (@Iva, @Descripcion, @Tipo)",
+            new { r.Iva, r.Descripcion, Tipo = tipo });
         _cache.Remove("cat:ivas");
         return id;
     }
@@ -619,10 +641,11 @@ public class CatalogoService : ICatalogoService
     public async Task ActualizarIvaAsync(int ivaId, ActualizarIvaRequest r)
     {
         using var connection = _db.CreateConnection();
+        var tipo = string.IsNullOrWhiteSpace(r.TipoImpuesto) ? "IVA" : r.TipoImpuesto.ToUpper();
         var filas = await connection.ExecuteAsync(
-            "UPDATE Catalogo.Iva SET Iva = @Iva, Descripcion = @Descripcion WHERE IvaID = @IvaID",
-            new { IvaID = ivaId, r.Iva, r.Descripcion });
-        if (filas == 0) throw new KeyNotFoundException($"IVA {ivaId} no encontrado.");
+            "UPDATE Catalogo.Iva SET Iva = @Iva, Descripcion = @Descripcion, TipoImpuesto = @Tipo WHERE IvaID = @IvaID",
+            new { IvaID = ivaId, r.Iva, r.Descripcion, Tipo = tipo });
+        if (filas == 0) throw new KeyNotFoundException($"Impuesto {ivaId} no encontrado.");
         _cache.Remove("cat:ivas");
     }
 
@@ -851,11 +874,14 @@ public class CatalogoService : ICatalogoService
     {
         using var connection = _db.CreateConnection();
         return await connection.QueryAsync<ProveedorItem>(
-            @"SELECT ProveedorID, RazonSocial, NIT, Contacto, Telefono, Email, Direccion, Estado,
-                     TipoPersona, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
-                     TipoIdentificacion, DigitoVerificacion, Departamento, Ciudad,
-                     CodigoDept, CodigoMuni, Pais, CodigoPais
-              FROM Catalogo.Proveedores ORDER BY RazonSocial");
+            @"SELECT p.ProveedorID, p.RazonSocial, p.NIT, p.Contacto, p.Telefono, p.Email, p.Direccion, p.Estado,
+                     p.TipoPersona, p.PrimerNombre, p.SegundoNombre, p.PrimerApellido, p.SegundoApellido,
+                     p.TipoIdentificacion, p.DigitoVerificacion, p.Departamento, p.Ciudad,
+                     p.CodigoDept, p.CodigoMuni, p.Pais, p.CodigoPais,
+                     ti.Detalle AS TipoIdentificacionDetalle
+              FROM Catalogo.Proveedores p
+              LEFT JOIN Catalogo.TiposIdentificacion ti ON ti.Codigo = p.TipoIdentificacion
+              ORDER BY p.RazonSocial");
     }
 
     public async Task<int> CrearProveedorAsync(CrearProveedorRequest r)
@@ -1012,7 +1038,7 @@ public class CatalogoService : ICatalogoService
     {
         using var connection = _db.CreateConnection();
         return await connection.QueryAsync<TipoArticuloItem>(
-            "SELECT TipoArticuloID, Codigo, Nombre FROM Catalogo.TiposArticulo ORDER BY Nombre");
+            "SELECT TipoArticuloID, Codigo, Nombre FROM Catalogo.TiposArticulo WHERE Codigo IN ('IN','SER','MP','PT') ORDER BY Nombre");
     }
 
     public async Task<IEnumerable<UnidadMedidaItem>> ListarUnidadesMedidaAsync()

@@ -1,9 +1,9 @@
-@using NexoWeb.Common.Dtos
+﻿@using NexoWeb.Common.Dtos
 @using NexoWeb.Common.ApiClient
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
 
-<MudDialog Style="min-width:700px; max-width:900px;">
+<MudDialog Style="min-width:min(700px,90vw); max-width:min(900px,95vw);">
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Class="mr-2" Style="vertical-align:middle" />
@@ -21,7 +21,7 @@
         {
             <div style="display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:start;">
 
-                @* ── Panel izquierdo: disponibles ── *@
+                @* â”€â”€ Panel izquierdo: disponibles â”€â”€ *@
                 <div>
                     <MudText Typo="Typo.subtitle2" Class="mb-2" Style="color:var(--mud-palette-text-secondary)">
                         Disponibles (@_disponibles.Count)
@@ -191,3 +191,4 @@
 
     private void Cerrar() => MudDialog.Close(DialogResult.Ok(_asignados.Count));
 }
+

@@ -29,12 +29,10 @@ public class OrdenesProduccionController : ControllerBase
     }
 
     [HttpGet("siguiente-codigo")]
-    [AllowAnonymous]
     public async Task<ActionResult<string>> SiguienteCodigoOP([FromQuery] string prefijo = "OP")
         => Ok(await _service.GenerarSiguienteCodigoOPAsync(prefijo.Trim().ToUpper()));
 
     [HttpGet("siguiente-lote")]
-    [AllowAnonymous]
     public async Task<ActionResult<string>> SiguienteNumeroLote([FromQuery] string prefijo = "LOTE")
         => Ok(await _service.GenerarSiguienteNumeroLoteAsync(prefijo.Trim().ToUpper()));
 
@@ -129,5 +127,13 @@ public class OrdenesProduccionController : ControllerBase
     public async Task<ActionResult<IEnumerable<TipoProduccionItem>>> ListarTiposProduccion()
     {
         return Ok(await _service.ListarTiposProduccionAsync());
+    }
+
+    [HttpPost("marcar-retrasadas")]
+    [Authorize(Roles = "Administracion,Jefes")]
+    public async Task<ActionResult> MarcarRetrasadas()
+    {
+        var afectadas = await _service.MarcarRetrasadasAsync();
+        return Ok(new { mensaje = $"{afectadas} orden(es) marcada(s) como Retrasada.", afectadas });
     }
 }

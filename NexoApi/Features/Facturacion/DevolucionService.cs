@@ -75,6 +75,8 @@ public class DevolucionService(IDbConnectionFactory db) : IDevolucionService
                 var tipoMov = await conn.ExecuteScalarAsync<int>(
                     "SELECT TipoMovID FROM Kardex.TiposMovimientoKardex WHERE Codigo = 'ENTRADA_DEVOLUCION_CLIENTE'",
                     transaction: tx);
+                if (tipoMov == 0)
+                    throw new InvalidOperationException("Tipo de movimiento Kardex 'ENTRADA_DEVOLUCION_CLIENTE' no encontrado. Verifique la configuración.");
 
                 var bodegaId = r.CentroCostoID.HasValue
                     ? await conn.ExecuteScalarAsync<int?>(
@@ -120,6 +122,8 @@ public class DevolucionService(IDbConnectionFactory db) : IDevolucionService
                 var tipoMov = await conn.ExecuteScalarAsync<int>(
                     "SELECT TipoMovID FROM Kardex.TiposMovimientoKardex WHERE Codigo = 'SALIDA_DEVOLUCION_PROVEEDOR'",
                     transaction: tx);
+                if (tipoMov == 0)
+                    throw new InvalidOperationException("Tipo de movimiento Kardex 'SALIDA_DEVOLUCION_PROVEEDOR' no encontrado. Verifique la configuración.");
 
                 var bodegaId = r.CentroCostoID.HasValue
                     ? await conn.ExecuteScalarAsync<int?>(

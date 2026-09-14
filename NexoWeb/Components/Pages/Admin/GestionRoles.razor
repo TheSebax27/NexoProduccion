@@ -1,4 +1,4 @@
-@page "/admin/roles"
+﻿@page "/admin/roles"
 @attribute [Authorize(Roles = "Administracion")]
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Common.ApiClient
@@ -12,6 +12,7 @@
 <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
     Crea y edita roles, configura que modulos ve cada rol, y aplica overrides por usuario.
 </MudText>
+<InfoAyuda Texto="Administra roles del sistema, configura qué módulos ve cada rol y aplica permisos individuales por usuario." />
 
 <MudTabs Elevation="0" Rounded ApplyEffectsToContainer Class="mb-4">
 
@@ -297,7 +298,7 @@
         var dlg = await DialogService.ShowAsync<CrearEditarRolDialog>(
             "Nuevo rol",
             new DialogParameters<CrearEditarRolDialog> { { x => x.Rol, null } },
-            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
 
         var result = await dlg.Result;
         if (result?.Canceled == false) await CargarRoles();
@@ -308,7 +309,7 @@
         var dlg = await DialogService.ShowAsync<CrearEditarRolDialog>(
             "Editar rol",
             new DialogParameters<CrearEditarRolDialog> { { x => x.Rol, rol } },
-            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
 
         var result = await dlg.Result;
         if (result?.Canceled == false) await CargarRoles();
@@ -323,7 +324,7 @@
                 { x => x.RolId, rol.RolID },
                 { x => x.RolNombre, rol.Nombre }
             },
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
 
         await dlg.Result;
     }
@@ -336,8 +337,8 @@
         var usuarios = rol.CantidadUsuarios;
         var msg = usuarios > 0
             ? $"El rol '{rol.Nombre}' tiene {usuarios} usuario(s) asignado(s). " +
-              "Al eliminarlo, esos usuarios quedaran sin rol hasta que se les reasigne uno. ¿Continuar?"
-            : $"Se eliminara el rol '{rol.Nombre}'. Esta accion no se puede deshacer.";
+              "Al eliminarlo, esos usuarios quedarán sin rol hasta que se les reasigne uno. ¿Continuar?"
+            : $"Se eliminará el rol '{rol.Nombre}'. Esta acción no se puede deshacer.";
 
         var confirm = await DialogService.ShowMessageBox(
             $"Eliminar '{rol.Nombre}'", msg,

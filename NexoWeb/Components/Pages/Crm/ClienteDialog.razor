@@ -41,7 +41,7 @@
                                Variant="Variant.Outlined" FullWidth="true" Clearable="true">
                         @foreach (var t in _tiposId)
                         {
-                            <MudSelectItem T="string?" Value="@t.Codigo">@t.Detalle</MudSelectItem>
+                            <MudSelectItem T="string?" Value="@t.Codigo">@(t.Detalle ?? t.Codigo)</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>

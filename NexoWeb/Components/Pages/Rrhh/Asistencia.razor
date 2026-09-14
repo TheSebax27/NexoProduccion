@@ -1,4 +1,4 @@
-@page "/rrhh/asistencia"
+﻿@page "/rrhh/asistencia"
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Common.ApiClient
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
@@ -28,6 +28,7 @@
         </MudButton>
     </div>
 </div>
+<InfoAyuda Texto="Consulta y registra entradas y salidas del personal. Revisa el historial por empleado y turno, o agrega marcas manuales." />
 
 @* Filtros *@
 <MudPaper Class="pa-4 mb-4" Elevation="1">
@@ -179,7 +180,7 @@
         {
             { x => x.Empleados, _empleados }
         };
-        var opts = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
         var dialogo = await Dialog.ShowAsync<RegistrarManualAsistenciaDialog>(
             "Registro Manual de Asistencia", params_, opts);
         var resultado = await dialogo.Result;

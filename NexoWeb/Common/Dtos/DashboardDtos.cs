@@ -24,6 +24,10 @@ public record EmpleadosPorCentroCostoItem(string CentroCosto, int TotalEmpleados
 public record ResumenPlanificacionItem(decimal CumplimientoDemandaPromedio, decimal CumplimientoVentaPromedio);
 public record ResumenInventarioItem(decimal ValorTotalStock, int ArticulosConAlerta);
 
+public record ResumenMaquinariaItem(
+    int TotalMaquinas, int EnMantenimiento, int MantenimientoVencido, decimal CostoMantenimientoMes
+);
+
 public record VentasPorDepartamentoItem(string Departamento, decimal TotalVentas, int CantidadClientes);
 
 // Tab Facturación BI

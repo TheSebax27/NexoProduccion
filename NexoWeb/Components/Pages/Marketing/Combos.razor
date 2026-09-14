@@ -17,6 +17,7 @@
         </MudButton>
     </AuthorizeView>
 </div>
+<InfoAyuda Texto="Crea combos y ofertas especiales agrupando artículos con precio fijo o descuento. Actívalos por período y aplícalos en ventas." />
 
 <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
     <MudGrid Spacing="2">
@@ -136,7 +137,7 @@ else
 
     private async Task NuevoCombo()
     {
-        var dialog = await DialogService.ShowAsync<ComboDialog>("Nuevo combo", new DialogParameters(), new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var dialog = await DialogService.ShowAsync<ComboDialog>("Nuevo combo", new DialogParameters(), new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
         var result = await dialog.Result;
         if (!result!.Canceled) await CargarAsync();
     }
@@ -144,7 +145,7 @@ else
     private async Task EditarCombo(ComboItem combo)
     {
         var params_ = new DialogParameters { ["ComboId"] = combo.ComboID };
-        var dialog = await DialogService.ShowAsync<ComboDialog>($"Editar — {combo.Nombre}", params_, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var dialog = await DialogService.ShowAsync<ComboDialog>($"Editar — {combo.Nombre}", params_, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
         var result = await dialog.Result;
         if (!result!.Canceled) await CargarAsync();
     }
@@ -152,7 +153,7 @@ else
     private async Task VerCombo(ComboItem combo)
     {
         var params_ = new DialogParameters { ["ComboId"] = combo.ComboID, ["SoloVer"] = true };
-        await DialogService.ShowAsync<ComboDialog>(combo.Nombre, params_, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        await DialogService.ShowAsync<ComboDialog>(combo.Nombre, params_, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
     }
 
     private static Color ChipEstado(string estado) => estado switch

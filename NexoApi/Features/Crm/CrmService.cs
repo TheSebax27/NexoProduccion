@@ -58,6 +58,7 @@ public interface ICrmService
     Task<bool> EnviarEmailCotizacionAsync(int cotizacionId);
     Task<CotizacionPdfData?> ObtenerCotizacionParaPdfAsync(int cotizacionId);
     Task<(bool Enviado, string? Error)> EnviarWhatsAppCotizacionAsync(int cotizacionId);
+    Task<int> ExpireCotizacionesVencidasAsync();
 
     // Catálogo de referencia geográfica/tributaria
     Task<IEnumerable<PaisItem>> ListarPaisesAsync();
@@ -99,9 +100,11 @@ public class CrmService : ICrmService
                    (SELECT COUNT(*) FROM Crm.Contactos ct WHERE ct.ClienteID = c.ClienteID AND ct.Estado = 1) AS TotalContactos,
                    (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion,
                    c.TipoPersona, c.PrimerNombre, c.SegundoNombre, c.PrimerApellido, c.SegundoApellido,
-                   c.Departamento, c.Ciudad, c.TipoIdentificacion, c.CodigoDept, c.CodigoMuni, c.DigitoVerificacion
+                   c.Departamento, c.Ciudad, c.TipoIdentificacion, c.CodigoDept, c.CodigoMuni, c.DigitoVerificacion,
+                   ti.Detalle AS TipoIdentificacionDetalle
             FROM Crm.Clientes c
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = c.ResponsableID
+            LEFT JOIN Catalogo.TiposIdentificacion ti ON ti.Codigo = c.TipoIdentificacion
             WHERE (@ResponsableId IS NULL OR c.ResponsableID = @ResponsableId)
               AND (@TipoCliente IS NULL OR c.TipoCliente = @TipoCliente)
               AND (@FuenteContacto IS NULL OR c.FuenteContacto = @FuenteContacto)
@@ -127,6 +130,7 @@ public class CrmService : ICrmService
         const string sqlBase = @"
             FROM Crm.Clientes c
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = c.ResponsableID
+            LEFT JOIN Catalogo.TiposIdentificacion ti ON ti.Codigo = c.TipoIdentificacion
             WHERE c.Estado = 1
               AND (@Texto IS NULL OR c.Nombre LIKE '%' + @Texto + '%' OR c.NIT LIKE '%' + @Texto + '%')
               AND (@ResponsableId IS NULL OR c.ResponsableID = @ResponsableId)
@@ -144,7 +148,8 @@ public class CrmService : ICrmService
                    (SELECT COUNT(*) FROM Crm.Contactos ct WHERE ct.ClienteID = c.ClienteID AND ct.Estado = 1) AS TotalContactos,
                    (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion,
                    c.TipoPersona, c.PrimerNombre, c.SegundoNombre, c.PrimerApellido, c.SegundoApellido,
-                   c.Departamento, c.Ciudad, c.TipoIdentificacion, c.CodigoDept, c.CodigoMuni, c.DigitoVerificacion " + sqlBase + @"
+                   c.Departamento, c.Ciudad, c.TipoIdentificacion, c.CodigoDept, c.CodigoMuni, c.DigitoVerificacion,
+                   ti.Detalle AS TipoIdentificacionDetalle " + sqlBase + @"
             ORDER BY c.Nombre
             OFFSET @Offset ROWS FETCH NEXT @Tamano ROWS ONLY",
             new { Texto = string.IsNullOrWhiteSpace(texto) ? null : texto, ResponsableId = responsableId, TipoCliente = tipoCliente, FuenteContacto = fuenteContacto, Offset = offset, Tamano = tamano });
@@ -166,9 +171,11 @@ public class CrmService : ICrmService
                    (SELECT COUNT(*) FROM Crm.Contactos ct WHERE ct.ClienteID = c.ClienteID AND ct.Estado = 1) AS TotalContactos,
                    (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion,
                    c.TipoPersona, c.PrimerNombre, c.SegundoNombre, c.PrimerApellido, c.SegundoApellido,
-                   c.Departamento, c.Ciudad, c.TipoIdentificacion, c.CodigoDept, c.CodigoMuni, c.DigitoVerificacion
+                   c.Departamento, c.Ciudad, c.TipoIdentificacion, c.CodigoDept, c.CodigoMuni, c.DigitoVerificacion,
+                   ti.Detalle AS TipoIdentificacionDetalle
             FROM Crm.Clientes c
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = c.ResponsableID
+            LEFT JOIN Catalogo.TiposIdentificacion ti ON ti.Codigo = c.TipoIdentificacion
             WHERE c.ExternalId = @ExternalId";
 
         return await connection.QuerySingleOrDefaultAsync<ClienteItem>(sql, new { ExternalId = externalId });
@@ -956,7 +963,9 @@ public class CrmService : ICrmService
         var data = await connection.QueryFirstOrDefaultAsync<(int ClienteID, string Cliente, string? Email,
             DateTime Fecha, DateTime? ValidoHasta, decimal Total, string? Notas)>(@"
             SELECT c.ClienteID, cl.Nombre AS Cliente, cl.Email,
-                   c.Fecha, c.ValidoHasta, c.Total, c.Notas
+                   c.Fecha, c.ValidoHasta,
+                   ISNULL((SELECT SUM(l.Cantidad * l.PrecioUnitario) FROM Crm.CotizacionLineas l WHERE l.CotizacionID = c.CotizacionID), 0) AS Total,
+                   c.Notas
             FROM Crm.Cotizaciones c
             JOIN Crm.Clientes cl ON cl.ClienteID = c.ClienteID
             WHERE c.CotizacionID = @CotizacionId", new { CotizacionId = cotizacionId });
@@ -988,7 +997,9 @@ public class CrmService : ICrmService
         var data = await connection.QueryFirstOrDefaultAsync<(int ClienteID, string Cliente, string? Telefono,
             DateTime Fecha, DateTime? ValidoHasta, decimal Total, string? Notas)>(@"
             SELECT c.ClienteID, cl.Nombre AS Cliente, cl.Telefono,
-                   c.Fecha, c.ValidoHasta, c.Total, c.Notas
+                   c.Fecha, c.ValidoHasta,
+                   ISNULL((SELECT SUM(l.Cantidad * l.PrecioUnitario) FROM Crm.CotizacionLineas l WHERE l.CotizacionID = c.CotizacionID), 0) AS Total,
+                   c.Notas
             FROM Crm.Cotizaciones c
             JOIN Crm.Clientes cl ON cl.ClienteID = c.ClienteID
             WHERE c.CotizacionID = @Id", new { Id = cotizacionId });
@@ -1026,6 +1037,17 @@ public class CrmService : ICrmService
         return (resultado.Enviado, resultado.Error);
     }
 
+    public async Task<int> ExpireCotizacionesVencidasAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.ExecuteAsync(@"
+            UPDATE Crm.Cotizaciones
+            SET Estado = 'VENCIDA'
+            WHERE ValidoHasta IS NOT NULL
+              AND ValidoHasta < CAST(GETDATE() AS DATE)
+              AND Estado NOT IN ('ACEPTADA','RECHAZADA','CONVERTIDA','VENCIDA','CANCELADA')");
+    }
+
     public async Task<IEnumerable<PaisItem>> ListarPaisesAsync()
     {
         using var connection = _db.CreateConnection();
@@ -1044,7 +1066,7 @@ public class CrmService : ICrmService
     {
         using var connection = _db.CreateConnection();
         return await connection.QueryAsync<TipoIdentificacionItem>(
-            "SELECT Codigo, Detalle FROM Catalogo.TiposIdentificacion ORDER BY TRY_CAST(Codigo AS int), Codigo");
+            "SELECT Codigo, Detalle FROM Catalogo.TiposIdentificacion ORDER BY COALESCE(Detalle, Codigo)");
     }
 
     // ── Segmentación automática ──────────────────────────────────────────
@@ -1089,7 +1111,7 @@ public class CrmService : ICrmService
                 SELECT MAX(CAST(f.Fecha AS DATE)) FROM Facturacion.Facturas f WHERE f.ClienteID = @ClienteID
             );
             -- Registro del cliente
-            DECLARE @FechaRegistro DATE = (SELECT CAST(FechaRegistro AS DATE) FROM Crm.Clientes WHERE ClienteID = @ClienteID);
+            DECLARE @FechaRegistro DATE = (SELECT CAST(FechaCreacion AS DATE) FROM Crm.Clientes WHERE ClienteID = @ClienteID);
 
             SELECT @ClienteID AS ClienteID,
                 CASE
@@ -1133,7 +1155,8 @@ public class CrmService : ICrmService
             DECLARE @Cupo DECIMAL(18,2) = ISNULL(
                 (SELECT CupoCredito FROM Crm.LineasCredito WHERE ClienteID = @ClienteID), 0);
             DECLARE @Utilizado DECIMAL(18,2) = ISNULL((
-                SELECT SUM(c.Total) FROM Crm.Cotizaciones c
+                SELECT SUM(ISNULL((SELECT SUM(l.Cantidad * l.PrecioUnitario) FROM Crm.CotizacionLineas l WHERE l.CotizacionID = c.CotizacionID), 0))
+                FROM Crm.Cotizaciones c
                 WHERE c.ClienteID = @ClienteID AND c.Estado IN ('BORRADOR','ENVIADA','ACEPTADA')
             ), 0);
             SELECT @Cupo AS CupoCredito, @Utilizado AS Utilizado,

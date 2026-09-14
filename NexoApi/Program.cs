@@ -28,8 +28,22 @@ using NexoApi.Features.Recetas;
 using NexoApi.Features.Rrhh;
 using NexoApi.Features.Seguridad;
 using NexoApi.Features.Traspasos;
+using NexoApi.BackgroundServices;
 using System.Text;
 using Dapper;
+using Serilog;
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", Serilog.Events.LogEventLevel.Information)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.File("logs/nexoapi-.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 30,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .CreateLogger();
 
 // QuestPDF exige declarar el tipo de licencia antes de generar cualquier PDF.
 // Community es gratuita para empresas con ingresos anuales menores a 1M USD
@@ -40,6 +54,8 @@ QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 SqlMapper.AddTypeHandler(new TimeOnlyTypeHandler());
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -107,6 +123,7 @@ builder.Services.AddScoped<ICrmService, CrmService>();
 builder.Services.AddScoped<NexoApi.Features.Email.IEmailService, NexoApi.Features.Email.GmailEmailService>();
 builder.Services.AddHttpClient();
 builder.Services.AddHostedService<NexoApi.Infrastructure.AutomationBackgroundService>();
+builder.Services.AddHostedService<NexoScheduler>();
 builder.Services.AddScoped<IPlanificacionService, PlanificacionService>();
 builder.Services.AddScoped<ICalendarioService, CalendarioService>();
 builder.Services.AddScoped<ILogisticaService, LogisticaService>();
@@ -171,6 +188,8 @@ builder.Services.AddMemoryCache();
 // PIPELINE DE LA APLICACIÓN
 // ----------------------------------------------------------------------------
 var app = builder.Build();
+
+app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {

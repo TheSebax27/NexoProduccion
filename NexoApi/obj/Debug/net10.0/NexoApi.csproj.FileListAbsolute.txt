@@ -131,3 +131,13 @@ C:\Produccion\NexoApi\obj\Debug\net10.0\NexoApi.pdb
 C:\Produccion\NexoApi\obj\Debug\net10.0\NexoApi.genruntimeconfig.cache
 C:\Produccion\NexoApi\obj\Debug\net10.0\ref\NexoApi.dll
 C:\Produccion\NexoApi\bin\Debug\net10.0\web.config
+C:\Produccion\NexoApi\bin\Debug\net10.0\Microsoft.Extensions.DependencyModel.dll
+C:\Produccion\NexoApi\bin\Debug\net10.0\Serilog.dll
+C:\Produccion\NexoApi\bin\Debug\net10.0\Serilog.AspNetCore.dll
+C:\Produccion\NexoApi\bin\Debug\net10.0\Serilog.Extensions.Hosting.dll
+C:\Produccion\NexoApi\bin\Debug\net10.0\Serilog.Extensions.Logging.dll
+C:\Produccion\NexoApi\bin\Debug\net10.0\Serilog.Formatting.Compact.dll
+C:\Produccion\NexoApi\bin\Debug\net10.0\Serilog.Settings.Configuration.dll
+C:\Produccion\NexoApi\bin\Debug\net10.0\Serilog.Sinks.Console.dll
+C:\Produccion\NexoApi\bin\Debug\net10.0\Serilog.Sinks.Debug.dll
+C:\Produccion\NexoApi\bin\Debug\net10.0\Serilog.Sinks.File.dll

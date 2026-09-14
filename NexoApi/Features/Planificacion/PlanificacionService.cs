@@ -316,7 +316,7 @@ public class PlanificacionService : IPlanificacionService
 
         const string sql = @"
             SELECT h.HistorialID, h.MetaID, h.MetaValorAnterior, h.NotasAnterior, h.FechaCambio,
-                   u.Nombres + ' ' + u.Apellidos AS Usuario
+                   CONCAT(u.Nombres, ' ', u.Apellidos) AS Usuario
             FROM Planificacion.MetasVentaHistorial h
             LEFT JOIN Seguridad.Usuarios u ON u.UsuarioID = h.UsuarioID
             WHERE h.MetaID = @MetaId

@@ -188,6 +188,13 @@ public class AuthService : IAuthService
     {
         using var connection = _db.CreateConnection();
 
+        var duplicado = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(1) FROM Seguridad.Usuarios WHERE Email = @Email AND UsuarioID <> @UsuarioId",
+            new { r.Email, UsuarioId = usuarioId });
+
+        if (duplicado > 0)
+            throw new InvalidOperationException($"El correo '{r.Email}' ya está en uso por otro usuario.");
+
         const string sql = @"
             UPDATE Seguridad.Usuarios
             SET Nombres = @Nombres, Apellidos = @Apellidos, Email = @Email,
@@ -314,6 +321,10 @@ public class AuthService : IAuthService
         var refreshToken = _jwt.GenerateRefreshToken();
         var expiraEn = DateTime.UtcNow.AddMinutes(double.Parse(_config["Jwt:ExpirationMinutes"]!));
         var refreshExpira = DateTime.UtcNow.AddDays(double.Parse(_config["Jwt:RefreshTokenExpirationDays"]!));
+
+        await conn.ExecuteAsync(
+            "UPDATE Seguridad.SesionesUsuario SET Activa = 0 WHERE UsuarioID = @usuarioId AND Activa = 1",
+            new { usuarioId });
 
         await conn.ExecuteAsync("""
             INSERT INTO Seguridad.SesionesUsuario (UsuarioID, Token, RefreshToken, FechaExpiracion, Activa)

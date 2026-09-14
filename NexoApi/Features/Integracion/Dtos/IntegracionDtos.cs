@@ -91,7 +91,7 @@ public record RegistrarEventoEntranteRequest(
 // Visions de este cliente -- NO el CentroCostoID interno de NEXO (son cosas
 // distintas: un mismo Visions puede compartir varias sucursales/CENTROCOSTO
 // en una sola base, cada una mapeada a su propio Centro de Costo en NEXO).
-public record ConfiguracionAgenteResponse(int? CentroCostoVisions, bool Activo, string? PrefijosDocumentoVenta, int IntervalMinutes, DateTime? FechaInicioSyncVentas = null);
+public record ConfiguracionAgenteResponse(int? CentroCostoVisions, bool Activo, string? PrefijosDocumentoVenta, int IntervalMinutes, DateTime? FechaInicioSyncVentas = null, bool SincAntsaActivo = false);
 
 // ---------- Configuracion completa del agente (solo Administracion, desde la web) ----------
 
@@ -382,4 +382,12 @@ public record VentaVisionsItem(
 
 public record VentasVisionsPaginadasResponse(List<VentaVisionsItem> Items, int Total, int Pagina, int Tamano);
 
+public record VentaVisionsLineaItem(
+    string? CodigoArticulo, string? NombreArticulo,
+    decimal Cantidad, decimal PrecioUnitario, decimal Subtotal
+);
+
 public record PendienteLimpiezaVisions(int LimpiezaID, string Tipo, int EntidadID);
+
+public record SincAntsaResponse(bool Activo);
+public record SetSincAntsaRequest(bool Activo);

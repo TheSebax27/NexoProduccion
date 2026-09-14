@@ -9,7 +9,7 @@
                 <ArticuloAutocomplete Value="_articuloSeleccionado"
                                       ValueChanged="@(a => { _articuloSeleccionado = a; _articuloId = a?.ArticuloID; })"
                                       Label="Articulo (Producto Terminado)" Required="true"
-                                      FiltroTipo="Producto Terminado" />
+                                      SoloTerminados="true" />
 
                 <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Required="true"
                            RequiredError="Selecciona un centro de costo" Class="mb-3">

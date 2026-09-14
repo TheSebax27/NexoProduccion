@@ -154,4 +154,8 @@ public class DashboardController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<VentasPorDepartamentoItem>>> VentasPorDepartamento()
         => Ok(await _service.ObtenerVentasPorDepartamentoAsync());
+
+    [HttpGet("resumen-maquinaria")]
+    public async Task<ActionResult<ResumenMaquinariaItem>> ResumenMaquinaria()
+        => Ok(await _service.ObtenerResumenMaquinariaAsync());
 }

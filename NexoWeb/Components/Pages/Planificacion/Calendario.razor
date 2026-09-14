@@ -12,7 +12,6 @@
 
 <div class="d-flex align-center mb-4" style="gap: 0.25rem;">
     <MudText Typo="Typo.h5">Calendario</MudText>
-    <BotonFavorito Href="/planificacion/calendario" Etiqueta="Calendario" />
 </div>
 <InfoAyuda Texto="Agenda reuniones, deadlines, capacitaciones y entregas. Los Administradores y Jefes pueden crear y editar eventos; los Empleados ven los eventos a los que están invitados. Los cambios se reflejan en tiempo real para todos los usuarios conectados." />
 
@@ -378,7 +377,7 @@
 
         var titulo  = evento is null ? "Nuevo evento" : "Editar evento";
         var dialogo = await DialogService.ShowAsync<CalendarioEventoDialog>(titulo, parametros,
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
         var resultado = await dialogo.Result;
 
         if (resultado is null || resultado.Canceled) return;

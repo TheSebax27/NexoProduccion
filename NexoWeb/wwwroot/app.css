@@ -74,6 +74,15 @@
   --n-error:   #EF4444;
   --n-info:    #0EA5E9;
 
+  /* Tints de estado para fondos, bordes y badges */
+  --n-success-bg:     rgba(16,185,129,0.09);
+  --n-success-bg-2:   rgba(16,185,129,0.10);
+  --n-success-border: rgba(16,185,129,0.18);
+  --n-info-bg:        rgba(14,165,233,0.10);
+  --n-info-border:    rgba(14,165,233,0.18);
+  --n-error-bg:       rgba(239,68,68,0.10);
+  --n-error-border:   rgba(239,68,68,0.18);
+
   --n-shadow:    0 2px 8px rgba(26,28,46,0.07), 0 1px 2px rgba(26,28,46,0.04);
   --n-shadow-md: 0 4px 16px rgba(26,28,46,0.08), 0 2px 4px rgba(26,28,46,0.04);
   --n-shadow-lg: 0 8px 32px rgba(26,28,46,0.10), 0 2px 8px rgba(26,28,46,0.05);
@@ -84,6 +93,25 @@
   --n-radius-xl: 24px;
 
   --n-font: 'Mango Dream', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+
+  /* Topbar height — usado en calc() de contenido principal */
+  --n-topbar-height: 76px;
+
+  /* Purple tints para chips, badges, hover y SKU */
+  --n-purple-bg-faint:     rgba(124,92,255,0.09);
+  --n-purple-bg-subtle:    rgba(124,92,255,0.10);
+  --n-purple-border-faint: rgba(124,92,255,0.18);
+  --n-nav-active-bg:       rgba(124,92,255,0.82);
+  --n-hover-bg:            rgba(124,92,255,0.04);
+
+  /* Shadow elevado para tarjetas KPI */
+  --n-shadow-kpi: 0 10px 40px rgba(26,28,46,0.12), inset 0 1px 0 rgba(255,255,255,0.90);
+
+  /* Z-index del panel de notificaciones */
+  --nexo-z-notif-container: 1001;
+  --nexo-z-notif-overlay:   1000;
+  --nexo-z-notif-panel:     1002;
+  --nexo-z-avatar:          1003;
 }
 
 /* ── Base ───────────────────────────────────────────────────── */
@@ -237,7 +265,7 @@ html, body {
 }
 
 .mud-table-head .mud-table-row {
-  background: #F8F8FC !important;
+  background: var(--n-bg) !important;
 }
 
 .mud-table-head .mud-table-cell {
@@ -249,7 +277,7 @@ html, body {
   border-bottom: 1px solid var(--n-border) !important;
   padding: 13px 18px !important;
   white-space: nowrap !important;
-  background: #F8F8FC !important;
+  background: var(--n-bg) !important;
 }
 
 .mud-table-body .mud-table-cell {
@@ -260,7 +288,7 @@ html, body {
 }
 
 .mud-table-body .mud-table-row:hover {
-  background-color: #F2EEFF !important;
+  background-color: var(--n-purple-xl) !important;
   transition: background-color 0.15s ease !important;
 }
 
@@ -269,13 +297,13 @@ html, body {
 }
 
 .mud-table-striped .mud-table-body .mud-table-row:nth-child(odd) {
-  background-color: #FAFAFD !important;
+  background-color: var(--n-card) !important;
 }
 
 /* Paginación */
 .mud-table-pagination {
   border-top: 1px solid var(--n-border) !important;
-  background: #FAFAFD !important;
+  background: var(--n-card) !important;
   font-size: 0.8rem !important;
 }
 
@@ -862,6 +890,7 @@ a, .btn-link { color: var(--n-purple); }
   background: rgba(5,8,22,0.45) !important;
   backdrop-filter: blur(40px) saturate(180%) brightness(0.88) !important;
   -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(0.88) !important;
+  z-index: 1400 !important;
   border-right: 1px solid rgba(100,60,220,0.22) !important;
   box-shadow:
     2px 0 32px rgba(0,0,0,0.25),
@@ -894,6 +923,29 @@ a, .btn-link { color: var(--n-purple); }
   fill: var(--n-text-1) !important;
 }
 #nexo-app-root.nexo-tema-oscuro .nexo-variacion-chart__axis span {
+  color: var(--n-text-3) !important;
+}
+
+/* Search dropdown — fondo sólido oscuro para que sea legible sobre el topbar glass */
+#nexo-app-root.nexo-tema-oscuro .nexo-topbar__search-results {
+  background: rgba(7,15,40,0.97) !important;
+  border-color: rgba(255,255,255,0.10) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .nexo-topbar__search-item:hover {
+  background: rgba(124,92,255,0.14) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .nexo-topbar__search-item-title {
+  color: var(--n-text-1) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .nexo-topbar__search-item-sub,
+#nexo-app-root.nexo-tema-oscuro .nexo-topbar__search-status {
+  color: var(--n-text-3) !important;
+}
+
+/* Page hero timestamp — muted text adapta al modo oscuro */
+#nexo-app-root.nexo-tema-oscuro .nexo-page-hero__timestamp {
   color: var(--n-text-3) !important;
 }
 
@@ -1511,6 +1563,11 @@ a, .btn-link { color: var(--n-purple); }
   min-width: 90px !important;
   letter-spacing: 0.01em !important;
 }
+/* Permitir que popovers de MudSelect floten sobre tabs sin clipear */
+.mud-tabs-panels,
+.mud-tab-panel {
+  overflow: visible !important;
+}
 /* Modo oscuro refuerzo */
 #nexo-app-root.nexo-tema-oscuro .mud-tab {
   color: rgba(255,255,255,0.50) !important;
@@ -1639,6 +1696,7 @@ a, .btn-link { color: var(--n-purple); }
   background: rgba(255,255,255,0.40) !important;
   backdrop-filter: blur(40px) saturate(200%) brightness(1.05) !important;
   -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.05) !important;
+  z-index: 1400 !important;
   border-right: 1px solid rgba(110,80,230,0.20) !important;
   box-shadow: 2px 0 32px rgba(90,60,200,0.12), inset -1px 0 0 rgba(110,80,230,0.12) !important;
 }
@@ -1905,6 +1963,12 @@ a, .btn-link { color: var(--n-purple); }
   .nexo-section__body       { padding: 1rem; }
   .nexo-section__header     { padding: 0.9rem 1rem; }
   .nexo-action-bar__inner   { padding: 0.75rem 1rem; }
+
+  /* Paginación compacta en móvil: oculta "Filas por página" */
+  .mud-table-pagination-caption,
+  .mud-table-pagination-select-arrow,
+  .mud-table-pagination .mud-input-control { display: none !important; }
+  .mud-table-pagination { font-size: 0.75rem !important; }
 }
 
 /* ══════════════════════════════════════════════════════════════
