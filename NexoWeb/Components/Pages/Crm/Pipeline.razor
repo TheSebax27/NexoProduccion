@@ -1,0 +1,340 @@
+@page "/crm/pipeline"
+@attribute [Authorize]
+@inject INexoApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
+@using NexoWeb.Common.Dtos
+@using NexoWeb.Common.ApiClient
+
+<PageTitle>Pipeline CRM - NEXO</PageTitle>
+
+<div class="d-flex align-center justify-space-between mb-4">
+    <MudText Typo="Typo.h5">Pipeline CRM</MudText>
+    <VistaToggle OnCambio="StateHasChanged" />
+</div>
+<InfoAyuda Texto="Vista unificada del embudo: Leads en etapas tempranas y Oportunidades en etapas avanzadas. Al calificar un lead puedes convertirlo en oportunidad con un click." />
+
+<div class="d-flex align-center flex-wrap mb-4" style="gap:1rem">
+    <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.PersonAddAlt"
+               OnClick="AbrirNuevoLeadAsync">Nuevo Lead</MudButton>
+    <MudSelect T="string?" Value="_filtroEtapa" ValueChanged="OnFiltroEtapaCambiadoAsync"
+               Label="Filtrar por etapa" Clearable="true" Style="max-width:220px">
+        @foreach (var e in _etapas)
+        {
+            <MudSelectItem T="string?" Value="@e.Clave">@e.Etiqueta</MudSelectItem>
+        }
+    </MudSelect>
+</div>
+
+@if (_errorCarga is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">No se pudo cargar el pipeline: @_errorCarga</MudAlert>
+}
+@if (_cargando)
+{
+    <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (_items.Count == 0)
+{
+    <MudText Style="color:var(--n-text-3)">No hay registros en el pipeline.</MudText>
+}
+else if (Preferencias.VistaListado == "lista")
+{
+    <MudTable Items="_items" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Nombre</MudTh>
+            <MudTh>Empresa</MudTh>
+            <MudTh>Etapa</MudTh>
+            <MudTh Style="text-align:right">Valor Est.</MudTh>
+            <MudTh>Responsable</MudTh>
+            <MudTh>Cierre Esp.</MudTh>
+            <MudTh>Acción</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nombre">
+                <div style="font-weight:600">@context.Nombre</div>
+                @if (context.Tipo == "OPORTUNIDAD")
+                {
+                    <div style="font-size:0.72rem;color:var(--n-text-3)">Oportunidad</div>
+                }
+            </MudTd>
+            <MudTd DataLabel="Empresa">@(context.Empresa ?? "-")</MudTd>
+            <MudTd DataLabel="Etapa">
+                <MudChip T="string" Size="Size.Small" Color="@ColorEtapa(context.Etapa)" Style="font-size:0.72rem">
+                    @EtiquetaEtapa(context.Etapa)
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Valor Est." Style="text-align:right">
+                @(context.ValorEstimado.HasValue && context.ValorEstimado > 0
+                    ? context.ValorEstimado.Value.ToString("C0")
+                    : "-")
+            </MudTd>
+            <MudTd DataLabel="Responsable">@(context.Responsable ?? "-")</MudTd>
+            <MudTd DataLabel="Cierre Esp.">@(context.FechaCierreEsperada?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
+            <MudTd DataLabel="Acción">
+                <div class="d-flex flex-wrap" style="gap:0.25rem">
+                    @AccionesItem(context)
+                </div>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+else
+{
+    <div class="nexo-cards-grid">
+        @foreach (var item in _items)
+        {
+            <div class="nexo-ec nexo-ec--crm">
+                <div class="nexo-ec__header">
+                    <div class="nexo-ec__avatar">
+                        @(item.Nombre.Length > 0 ? item.Nombre[0].ToString().ToUpper() : "?")
+                    </div>
+                    <div class="nexo-ec__title-block">
+                        <div class="nexo-ec__name">@item.Nombre</div>
+                        @if (!string.IsNullOrEmpty(item.Empresa))
+                        {
+                            <div class="nexo-ec__sub">@item.Empresa</div>
+                        }
+                    </div>
+                    <MudChip T="string" Size="Size.Small" Color="@ColorEtapa(item.Etapa)"
+                             Style="margin-left:auto;font-size:0.68rem;height:22px">
+                        @EtiquetaEtapa(item.Etapa)
+                    </MudChip>
+                </div>
+                <div class="nexo-ec__body">
+                    @if (!string.IsNullOrEmpty(item.Telefono))
+                    {
+                        <div class="nexo-ec__row">
+                            <MudIcon Icon="@Icons.Material.Outlined.Phone" Size="Size.Small" />
+                            <span>@item.Telefono</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(item.Email))
+                    {
+                        <div class="nexo-ec__row">
+                            <MudIcon Icon="@Icons.Material.Outlined.Email" Size="Size.Small" />
+                            <span>@item.Email</span>
+                        </div>
+                    }
+                    @if (item.ValorEstimado.HasValue && item.ValorEstimado > 0)
+                    {
+                        <div class="nexo-ec__row">
+                            <MudIcon Icon="@Icons.Material.Outlined.AttachMoney" Size="Size.Small" />
+                            <span style="font-weight:600">@item.ValorEstimado.Value.ToString("C0")</span>
+                            @if (!string.IsNullOrEmpty(item.ConfianzaCierre))
+                            {
+                                <span style="font-size:0.7rem;opacity:.7;margin-left:4px">(@item.ConfianzaCierre)</span>
+                            }
+                        </div>
+                    }
+                    @if (item.FechaCierreEsperada.HasValue)
+                    {
+                        <div class="nexo-ec__row">
+                            <MudIcon Icon="@Icons.Material.Outlined.Event" Size="Size.Small" />
+                            <span>Cierre: @item.FechaCierreEsperada.Value.ToString("dd/MM/yyyy")</span>
+                        </div>
+                    }
+                </div>
+                <div class="nexo-ec__footer">
+                    <span style="font-size:0.72rem;opacity:.65">@(item.Responsable ?? "Sin responsable")</span>
+                    <div class="d-flex flex-wrap" style="gap:0.25rem">
+                        @AccionesItem(item)
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<PipelineItem> _items = new();
+    private bool _cargando = true;
+    private string? _errorCarga;
+    private string? _filtroEtapa;
+
+    private static readonly (string Clave, string Etiqueta)[] _etapas =
+    [
+        ("NUEVO",       "Nuevo Lead"),
+        ("CONTACTADO",  "Contactado"),
+        ("CALIFICADO",  "Calificado"),
+        ("PROSPECCION", "Prospección"),
+        ("PROPUESTA",   "Propuesta"),
+        ("NEGOCIACION", "Negociación"),
+        ("GANADA",      "Ganada"),
+        ("PERDIDA",     "Perdida"),
+    ];
+
+    // OnInitializedAsync overridden below near AbrirNuevoLeadAsync
+
+    private async Task CargarAsync()
+    {
+        _cargando = true; _errorCarga = null;
+        try
+        {
+            var url = "/crm/pipeline" + (_filtroEtapa is not null ? $"?etapa={_filtroEtapa}" : "");
+            _items = (await ApiClient.GetAsync<IEnumerable<PipelineItem>>(url) ?? []).ToList();
+        }
+        catch (Exception ex) { _errorCarga = ex.Message; }
+        finally { _cargando = false; }
+    }
+
+    private async Task OnFiltroEtapaCambiadoAsync(string? etapa)
+    {
+        _filtroEtapa = etapa;
+        await CargarAsync();
+    }
+
+    private static Color ColorEtapa(string etapa) => etapa switch
+    {
+        "NUEVO"       => Color.Default,
+        "CONTACTADO"  => Color.Info,
+        "CALIFICADO"  => Color.Warning,
+        "PROSPECCION" => Color.Warning,
+        "PROPUESTA"   => Color.Primary,
+        "NEGOCIACION" => Color.Secondary,
+        "GANADA"      => Color.Success,
+        "PERDIDA"     => Color.Error,
+        "DESCARTADO"  => Color.Error,
+        _             => Color.Default
+    };
+
+    private static string EtiquetaEtapa(string etapa) => etapa switch
+    {
+        "PROSPECCION" => "Prospección",
+        "NEGOCIACION" => "Negociación",
+        "GANADA"      => "Ganada",
+        "PERDIDA"     => "Perdida",
+        "DESCARTADO"  => "Descartado",
+        _ => char.ToUpper(etapa[0]) + etapa[1..].ToLower()
+    };
+
+    private RenderFragment AccionesItem(PipelineItem item) => __builder =>
+    {
+        if (item.Tipo == "LEAD")
+        {
+            if (item.Etapa == "CALIFICADO")
+            {
+                <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled"
+                           StartIcon="@Icons.Material.Filled.TrendingUp"
+                           OnClick="@(() => CrearOportunidadAsync(item))">
+                    Crear Oportunidad
+                </MudButton>
+            }
+            else if (item.Etapa is not ("DESCARTADO" or "CONVERTIDO"))
+            {
+                var siguienteEtapa = item.Etapa switch
+                {
+                    "NUEVO"      => "CONTACTADO",
+                    "CONTACTADO" => "CALIFICADO",
+                    _            => null
+                };
+                if (siguienteEtapa is not null)
+                {
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                               OnClick="@(() => CambiarEtapaLeadAsync(item, siguienteEtapa))">
+                        → @EtiquetaEtapa(siguienteEtapa)
+                    </MudButton>
+                }
+                <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text"
+                           OnClick="@(() => CambiarEtapaLeadAsync(item, "DESCARTADO"))">
+                    Descartar
+                </MudButton>
+            }
+        }
+        else // OPORTUNIDAD
+        {
+            if (item.Etapa is not ("GANADA" or "PERDIDA"))
+            {
+                var sig = item.Etapa switch
+                {
+                    "PROSPECCION" => "PROPUESTA",
+                    "PROPUESTA"   => "NEGOCIACION",
+                    "NEGOCIACION" => "GANADA",
+                    _             => null
+                };
+                if (sig is not null)
+                {
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                               OnClick="@(() => CambiarEtapaOportunidadAsync(item, sig))">
+                        → @EtiquetaEtapa(sig)
+                    </MudButton>
+                }
+                <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text"
+                           OnClick="@(() => CambiarEtapaOportunidadAsync(item, "PERDIDA"))">
+                    Perder
+                </MudButton>
+            }
+        }
+    };
+
+    private async Task CrearOportunidadAsync(PipelineItem lead)
+    {
+        var req = new CrearOportunidadDesdeLeadRequest(
+            Nombre: lead.Nombre, ValorEstimado: 0, ConfianzaCierre: "NEUTRO",
+            FechaCierreEsperada: null, Notas: null);
+        try
+        {
+            await ApiClient.PostAsync<CrearOportunidadDesdeLeadRequest, object>(
+                $"/crm/pipeline/lead/{lead.ID}/oportunidad", req);
+            Snackbar.Add("Oportunidad creada en etapa Prospección", Severity.Success);
+            await CargarAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task CambiarEtapaLeadAsync(PipelineItem item, string nuevaEtapa)
+    {
+        try
+        {
+            await ApiClient.PatchAsync<object, object>($"/crm/leads/{item.ID}/etapa",
+                new { Etapa = nuevaEtapa });
+            await CargarAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task CambiarEtapaOportunidadAsync(PipelineItem item, string nuevaEtapa)
+    {
+        try
+        {
+            var oportunidad = (await ApiClient.GetAsync<IEnumerable<OportunidadItem>>("/crm/oportunidades"))
+                ?.FirstOrDefault(o => o.OportunidadID == item.OportunidadID);
+            if (oportunidad is null) return;
+
+            var req = new ActualizarOportunidadRequest(
+                oportunidad.Nombre, oportunidad.ValorEstimado, oportunidad.ConfianzaCierre,
+                nuevaEtapa, oportunidad.FechaCierreEsperada, oportunidad.ResponsableID, oportunidad.Notas);
+
+            await ApiClient.PutAsync<ActualizarOportunidadRequest>($"/crm/oportunidades/{item.OportunidadID}", req);
+            await CargarAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+    }
+
+    private List<EmpleadoItem> _empleados = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _empleados = await ApiClient.GetAsync<List<EmpleadoItem>>("api/rrhh/empleados?soloActivos=true") ?? new();
+        await CargarAsync();
+    }
+
+    private async Task AbrirNuevoLeadAsync()
+    {
+        var parametros = new DialogParameters<LeadDialog> { { x => x.Empleados, _empleados } };
+        var dialogo = await DialogService.ShowAsync<LeadDialog>("Nuevo Lead", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialogo.Result;
+        if (result is { Canceled: false, Data: CrearLeadRequest req })
+        {
+            try
+            {
+                await ApiClient.PostAsync<CrearLeadRequest, object>("/crm/leads", req);
+                Snackbar.Add("Lead creado", Severity.Success);
+                await CargarAsync();
+            }
+            catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+        }
+    }
+}

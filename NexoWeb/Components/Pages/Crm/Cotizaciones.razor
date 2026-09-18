@@ -64,6 +64,7 @@ else if (Preferencias.VistaListado == "lista")
             <MudTh>Fecha</MudTh>
             <MudTh>Válido hasta</MudTh>
             <MudTh>Cliente</MudTh>
+            <MudTh>Negocio</MudTh>
             <MudTh Style="text-align:right">Total</MudTh>
             <MudTh>Estado</MudTh>
             <MudTh>Factura</MudTh>
@@ -93,6 +94,19 @@ else if (Preferencias.VistaListado == "lista")
                 }
             </MudTd>
             <MudTd DataLabel="Cliente">@context.Cliente</MudTd>
+            <MudTd DataLabel="Negocio">
+                @if (context.OportunidadNombre is not null)
+                {
+                    <MudChip T="string" Size="Size.Small" Icon="@Icons.Material.Filled.TrendingUp"
+                             Color="Color.Primary" Style="font-size:0.72rem">
+                        @context.OportunidadNombre
+                    </MudChip>
+                }
+                else
+                {
+                    <span style="color:var(--n-text-3);font-size:0.8rem">—</span>
+                }
+            </MudTd>
             <MudTd DataLabel="Total" Style="text-align:right">@context.Total.ToString("C0")</MudTd>
             <MudTd DataLabel="Estado">
                 <MudChip T="string" Size="Size.Small" Color="@ColorEstado(context.Estado)">@context.Estado</MudChip>

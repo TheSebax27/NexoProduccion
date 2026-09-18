@@ -108,6 +108,23 @@ public record ClienteFrioItem(int ClienteID, string ExternalId, string Nombre, s
 
 public record CambiarEtapaLeadRequest(string Etapa);
 
+// ---------- Pipeline unificado (Leads + Oportunidades en una sola vista) ----------
+// Tipo: "LEAD" para registros de Crm.Leads sin oportunidad vinculada.
+//       "OPORTUNIDAD" para registros de Crm.Oportunidades.
+// Etapas Lead:        NUEVO | CONTACTADO | CALIFICADO | DESCARTADO
+// Etapas Oportunidad: PROSPECCION | PROPUESTA | NEGOCIACION | GANADA | PERDIDA
+public record PipelineItem(
+    string Tipo, int ID, int? LeadID, int? OportunidadID, int? ClienteID,
+    string Nombre, string? Empresa, string? Telefono, string? Email, string Etapa,
+    decimal? ValorEstimado, string? ConfianzaCierre,
+    int? ResponsableID, string? Responsable, string? Notas,
+    DateTime FechaCreacion, DateTime? FechaCierreEsperada, DateTime? FechaCierre
+);
+public record CrearOportunidadDesdeLeadRequest(
+    string? Nombre, decimal ValorEstimado, string ConfianzaCierre,
+    DateTime? FechaCierreEsperada, string? Notas
+);
+
 // ---------- Oportunidades (embudo de ventas, agosto 2026) ----------
 // Origen: un Lead sin convertir aun, o un Cliente ya existente -- al menos
 // uno de los dos debe venir informado (CK_Oportunidades_OrigenRequerido en BD).
@@ -145,8 +162,8 @@ public record CompletarActividadRequest(bool Completada);
 // ---------- Cotizaciones (agosto 2026) ----------
 public record LineaCotizacionInput(int ArticuloID, decimal Cantidad, decimal PrecioUnitario);
 public record CotizacionItem(
-    int CotizacionID, int ClienteID, string Cliente, int? OportunidadID, DateTime Fecha,
-    DateTime? ValidoHasta, string Estado, string? Notas, int? FacturaID, decimal Total,
+    int CotizacionID, int ClienteID, string Cliente, int? OportunidadID, string? OportunidadNombre,
+    DateTime Fecha, DateTime? ValidoHasta, string Estado, string? Notas, int? FacturaID, decimal Total,
     int? CentroCostoID = null, string? CentroCosto = null
 );
 public record CrearCotizacionRequest(int ClienteID, int? OportunidadID, DateTime Fecha, DateTime? ValidoHasta, string? Notas, List<LineaCotizacionInput> Lineas, int? CentroCostoID = null);

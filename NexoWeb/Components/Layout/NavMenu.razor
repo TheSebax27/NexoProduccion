@@ -74,17 +74,11 @@
                 <MudNavGroup Title="CRM"
                              Icon="@Icons.Material.Filled.Groups"
                              Class="nexo-nav-group">
-                    @if (Modulos.EsVisible("CRM.LEADS"))
+                    @if (Modulos.EsVisible("CRM.LEADS") || Modulos.EsVisible("CRM.OPORTUNIDADES"))
                     {
-                        <MudNavLink Href="/crm/leads"
-                                    Icon="@Icons.Material.Filled.PersonSearch"
-                                    Class="nexo-nav-item">Leads</MudNavLink>
-                    }
-                    @if (Modulos.EsVisible("CRM.OPORTUNIDADES"))
-                    {
-                        <MudNavLink Href="/crm/oportunidades"
-                                    Icon="@Icons.Material.Filled.MonetizationOn"
-                                    Class="nexo-nav-item">Oportunidades</MudNavLink>
+                        <MudNavLink Href="/crm/pipeline"
+                                    Icon="@Icons.Material.Filled.TrendingUp"
+                                    Class="nexo-nav-item">Pipeline</MudNavLink>
                     }
                     @if (Modulos.EsVisible("CRM.ACTIVIDADES"))
                     {

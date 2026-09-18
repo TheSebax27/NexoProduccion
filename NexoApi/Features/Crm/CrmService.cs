@@ -38,6 +38,10 @@ public interface ICrmService
     Task<IEnumerable<ClienteFrioItem>> ListarClientesFriosAsync(int diasSinContacto);
     Task CambiarEtapaLeadAsync(int leadId, string etapa);
 
+    // ---------- Pipeline unificado ----------
+    Task<IEnumerable<PipelineItem>> ListarPipelineAsync(string? etapa, int? responsableId);
+    Task<int> CrearOportunidadDesdeLeadAsync(int leadId, CrearOportunidadDesdeLeadRequest request);
+
     // ---------- Oportunidades (embudo de ventas, agosto 2026) ----------
     Task<IEnumerable<OportunidadItem>> ListarOportunidadesAsync(string? etapa, int? responsableId);
     Task<int> CrearOportunidadAsync(CrearOportunidadRequest request);
@@ -665,6 +669,76 @@ public class CrmService : ICrmService
 
     // ---------- Oportunidades (embudo de ventas) ----------
 
+    public async Task<IEnumerable<PipelineItem>> ListarPipelineAsync(string? etapa, int? responsableId)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT 'LEAD' AS Tipo, l.LeadID AS ID, l.LeadID, CAST(NULL AS int) AS OportunidadID,
+                   l.ClienteIDConvertido AS ClienteID,
+                   l.Nombre, l.Empresa, l.Telefono, l.Email, l.Etapa,
+                   CAST(NULL AS decimal(18,2)) AS ValorEstimado, CAST(NULL AS nvarchar(20)) AS ConfianzaCierre,
+                   l.ResponsableID, e.Nombres + ' ' + e.Apellidos AS Responsable, l.Notas,
+                   l.FechaCreacion, CAST(NULL AS datetime2) AS FechaCierreEsperada, l.FechaConversion AS FechaCierre
+            FROM Crm.Leads l
+            LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = l.ResponsableID
+            WHERE l.Etapa NOT IN ('CONVERTIDO')
+              AND NOT EXISTS (SELECT 1 FROM Crm.Oportunidades o WHERE o.LeadID = l.LeadID)
+              AND (@Etapa IS NULL OR l.Etapa = @Etapa)
+              AND (@ResponsableId IS NULL OR l.ResponsableID = @ResponsableId)
+
+            UNION ALL
+
+            SELECT 'OPORTUNIDAD', o.OportunidadID, o.LeadID, o.OportunidadID, o.ClienteID,
+                   COALESCE(NULLIF(o.Nombre,''), l.Nombre, c.Nombre) AS Nombre,
+                   COALESCE(l.Empresa, c.Nombre) AS Empresa,
+                   COALESCE(l.Telefono, c.Telefono) AS Telefono,
+                   COALESCE(l.Email, c.Email) AS Email,
+                   o.Etapa, o.ValorEstimado, o.ConfianzaCierre,
+                   o.ResponsableID, e.Nombres + ' ' + e.Apellidos AS Responsable, o.Notas,
+                   o.FechaCreacion, o.FechaCierreEsperada, o.FechaCierre
+            FROM Crm.Oportunidades o
+            LEFT JOIN Crm.Leads l ON l.LeadID = o.LeadID
+            LEFT JOIN Crm.Clientes c ON c.ClienteID = o.ClienteID
+            LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = o.ResponsableID
+            WHERE (@Etapa IS NULL OR o.Etapa = @Etapa)
+              AND (@ResponsableId IS NULL OR o.ResponsableID = @ResponsableId)
+
+            ORDER BY FechaCreacion DESC";
+
+        return await connection.QueryAsync<PipelineItem>(sql, new { Etapa = etapa, ResponsableId = responsableId });
+    }
+
+    public async Task<int> CrearOportunidadDesdeLeadAsync(int leadId, CrearOportunidadDesdeLeadRequest r)
+    {
+        using var connection = _db.CreateConnection();
+
+        var lead = await connection.QueryFirstOrDefaultAsync<(string Nombre, int? ResponsableID)>(
+            "SELECT Nombre, ResponsableID FROM Crm.Leads WHERE LeadID = @LeadId AND Etapa NOT IN ('CONVERTIDO','DESCARTADO')",
+            new { LeadId = leadId });
+
+        if (lead == default)
+            throw new KeyNotFoundException($"Lead {leadId} no encontrado o ya convertido/descartado.");
+
+        if (await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(1) FROM Crm.Oportunidades WHERE LeadID = @LeadId", new { LeadId = leadId }) > 0)
+            throw new InvalidOperationException("Este lead ya tiene una oportunidad vinculada.");
+
+        const string sql = @"
+            INSERT INTO Crm.Oportunidades (LeadID, ClienteID, Nombre, ValorEstimado, ConfianzaCierre,
+                                           FechaCierreEsperada, ResponsableID, Notas, Etapa)
+            OUTPUT INSERTED.OportunidadID
+            VALUES (@LeadID, NULL, @Nombre, @ValorEstimado, @ConfianzaCierre,
+                    @FechaCierreEsperada, @ResponsableID, @Notas, 'PROSPECCION')";
+
+        return await connection.ExecuteScalarAsync<int>(sql, new
+        {
+            LeadID = leadId,
+            Nombre = r.Nombre ?? lead.Nombre,
+            r.ValorEstimado, r.ConfianzaCierre, r.FechaCierreEsperada, r.Notas,
+            ResponsableID = lead.ResponsableID
+        });
+    }
+
     public async Task<IEnumerable<OportunidadItem>> ListarOportunidadesAsync(string? etapa, int? responsableId)
     {
         using var connection = _db.CreateConnection();
@@ -796,12 +870,14 @@ public class CrmService : ICrmService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
-            SELECT c.CotizacionID, c.ClienteID, cl.Nombre AS Cliente, c.OportunidadID, c.Fecha, c.ValidoHasta,
-                   c.Estado, c.Notas, c.FacturaID,
+            SELECT c.CotizacionID, c.ClienteID, cl.Nombre AS Cliente, c.OportunidadID,
+                   o.Nombre AS OportunidadNombre,
+                   c.Fecha, c.ValidoHasta, c.Estado, c.Notas, c.FacturaID,
                    ISNULL((SELECT SUM(l.Cantidad * l.PrecioUnitario) FROM Crm.CotizacionLineas l WHERE l.CotizacionID = c.CotizacionID), 0) AS Total,
                    c.CentroCostoID, cc.Nombre AS CentroCosto
             FROM Crm.Cotizaciones c
             JOIN Crm.Clientes cl ON cl.ClienteID = c.ClienteID
+            LEFT JOIN Crm.Oportunidades o ON o.OportunidadID = c.OportunidadID
             LEFT JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = c.CentroCostoID
             WHERE (@ClienteId IS NULL OR c.ClienteID = @ClienteId)
               AND (@Estado IS NULL OR c.Estado = @Estado)

@@ -238,6 +238,25 @@ public class CrmController : ControllerBase
 
     // ---------- Oportunidades (embudo de ventas, agosto 2026) ----------
 
+    // ---------- Pipeline unificado ----------
+
+    [HttpGet("pipeline")]
+    public async Task<ActionResult<IEnumerable<PipelineItem>>> ListarPipeline(
+        [FromQuery] string? etapa, [FromQuery] int? responsableId)
+        => Ok(await _service.ListarPipelineAsync(etapa, responsableId));
+
+    [HttpPost("pipeline/lead/{leadId:int}/oportunidad")]
+    public async Task<ActionResult> CrearOportunidadDesdeLead(int leadId, CrearOportunidadDesdeLeadRequest request)
+    {
+        try
+        {
+            var id = await _service.CrearOportunidadDesdeLeadAsync(leadId, request);
+            return Ok(new { oportunidadId = id });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
     [HttpGet("oportunidades")]
     public async Task<ActionResult<IEnumerable<OportunidadItem>>> ListarOportunidades([FromQuery] string? etapa, [FromQuery] int? responsableId)
         => Ok(await _service.ListarOportunidadesAsync(etapa, responsableId));
