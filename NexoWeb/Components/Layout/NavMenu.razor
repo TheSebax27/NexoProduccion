@@ -74,7 +74,7 @@
                 <MudNavGroup Title="CRM"
                              Icon="@Icons.Material.Filled.Groups"
                              Class="nexo-nav-group">
-                    @if (Modulos.EsVisible("CRM.LEADS") || Modulos.EsVisible("CRM.OPORTUNIDADES"))
+                    @if (Modulos.EsVisible("CRM.PIPELINE") || Modulos.EsVisible("CRM.LEADS") || Modulos.EsVisible("CRM.OPORTUNIDADES"))
                     {
                         <MudNavLink Href="/crm/pipeline"
                                     Icon="@Icons.Material.Filled.TrendingUp"

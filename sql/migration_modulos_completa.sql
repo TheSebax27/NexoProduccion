@@ -121,15 +121,22 @@ IF NOT EXISTS (SELECT 1 FROM Seguridad.Modulos WHERE Codigo = 'CRM.CLIENTES')
     VALUES ('CRM.CLIENTES', 'Clientes', '/crm/clientes',
             (SELECT ModuloID FROM Seguridad.Modulos WHERE Codigo = 'CRM'), NULL, 14, 0);
 
+-- Pipeline unifica Leads + Oportunidades. Los codigos CRM.LEADS y CRM.OPORTUNIDADES
+-- se mantienen por compatibilidad pero CRM.PIPELINE es el modulo activo en el nav.
+IF NOT EXISTS (SELECT 1 FROM Seguridad.Modulos WHERE Codigo = 'CRM.PIPELINE')
+    INSERT INTO Seguridad.Modulos (Codigo, Nombre, Ruta, ModuloPadreID, Icono, Orden, EsGrupo)
+    VALUES ('CRM.PIPELINE', 'Pipeline CRM', '/crm/pipeline',
+            (SELECT ModuloID FROM Seguridad.Modulos WHERE Codigo = 'CRM'), NULL, 21, 0);
+
 IF NOT EXISTS (SELECT 1 FROM Seguridad.Modulos WHERE Codigo = 'CRM.LEADS')
     INSERT INTO Seguridad.Modulos (Codigo, Nombre, Ruta, ModuloPadreID, Icono, Orden, EsGrupo)
-    VALUES ('CRM.LEADS', 'Leads', '/crm/leads',
-            (SELECT ModuloID FROM Seguridad.Modulos WHERE Codigo = 'CRM'), NULL, 21, 0);
+    VALUES ('CRM.LEADS', 'Leads (legado)', '/crm/leads',
+            (SELECT ModuloID FROM Seguridad.Modulos WHERE Codigo = 'CRM'), NULL, 29, 0);
 
 IF NOT EXISTS (SELECT 1 FROM Seguridad.Modulos WHERE Codigo = 'CRM.OPORTUNIDADES')
     INSERT INTO Seguridad.Modulos (Codigo, Nombre, Ruta, ModuloPadreID, Icono, Orden, EsGrupo)
-    VALUES ('CRM.OPORTUNIDADES', 'Oportunidades', '/crm/oportunidades',
-            (SELECT ModuloID FROM Seguridad.Modulos WHERE Codigo = 'CRM'), NULL, 22, 0);
+    VALUES ('CRM.OPORTUNIDADES', 'Oportunidades (legado)', '/crm/oportunidades',
+            (SELECT ModuloID FROM Seguridad.Modulos WHERE Codigo = 'CRM'), NULL, 30, 0);
 
 IF NOT EXISTS (SELECT 1 FROM Seguridad.Modulos WHERE Codigo = 'CRM.ACTIVIDADES')
     INSERT INTO Seguridad.Modulos (Codigo, Nombre, Ruta, ModuloPadreID, Icono, Orden, EsGrupo)
@@ -349,7 +356,7 @@ WHERE r.Nombre = 'Jefes'
   AND m.Codigo IN (
     'BI',
     'OPERACIONES','OPERACIONES.FACTURACION','OPERACIONES.DESPACHOS',
-    'CRM','CRM.CLIENTES','CRM.COTIZACIONES','CRM.LEADS','CRM.OPORTUNIDADES',
+    'CRM','CRM.CLIENTES','CRM.COTIZACIONES','CRM.PIPELINE',
     'CRM.ACTIVIDADES','CRM.CAMPANAS','CRM.COMBOS','CRM.CONOCIMIENTO',
     'FINANZAS','FINANZAS.GASTOS',
     'FORMULARIOS.GESTOR','SOPORTE.TICKETS',
@@ -408,7 +415,7 @@ CROSS JOIN Seguridad.Modulos m
 WHERE r.Nombre = 'Ventas'
   AND m.Codigo IN (
     'INVENTARIO','INVENTARIO.STOCK',
-    'CRM','CRM.CLIENTES','CRM.LEADS','CRM.OPORTUNIDADES',
+    'CRM','CRM.CLIENTES','CRM.PIPELINE',
     'CRM.ACTIVIDADES','CRM.COTIZACIONES','CRM.CAMPANAS','CRM.COMBOS',
     'SOPORTE.TICKETS','FORMULARIOS.GESTOR','CRM.CONOCIMIENTO'
   )
