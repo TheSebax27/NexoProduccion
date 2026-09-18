@@ -2897,3 +2897,136 @@ a, .btn-link { color: var(--n-purple); }
 :root[data-theme="dark"] .nexo-kpi-delta--up   { background: rgba(16,185,129,0.20); color: #34D399; }
 :root[data-theme="dark"] .nexo-kpi-delta--down { background: rgba(239,68,68,0.20);  color: #F87171; }
 :root[data-theme="dark"] .nexo-bi-stat__val    { color: #A78BFA; }
+
+/* ================================================================
+   VISTA TOGGLE — switch lista/tarjetas
+   ================================================================ */
+.nexo-vista-toggle {
+  display: inline-flex;
+  background: var(--n-card);
+  border: 1px solid var(--n-border);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+.nexo-vista-toggle__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--n-text-2);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.nexo-vista-toggle__btn:hover {
+  background: var(--n-border);
+  color: var(--n-text-1);
+}
+.nexo-vista-toggle__btn--active {
+  background: var(--mud-palette-primary);
+  color: #fff;
+}
+
+/* ================================================================
+   NEXO CARDS GRID — grid estándar para todos los listados de tarjetas
+   ================================================================ */
+.nexo-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 1rem;
+}
+
+/* ── Tarjeta genérica ────────────────────────────────────────────
+   Modules use accent colors via modifier class:
+   nexo-ec--crm, nexo-ec--catalogo, nexo-ec--produccion,
+   nexo-ec--rrhh, nexo-ec--compras, nexo-ec--finanzas,
+   nexo-ec--admin, nexo-ec--logistica
+   ─────────────────────────────────────────────────────────────── */
+.nexo-ec {
+  background: var(--n-card);
+  border: 1px solid var(--n-border);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: default;
+}
+.nexo-ec:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+}
+.nexo-ec__header {
+  padding: 1rem 1rem 0.75rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  position: relative;
+}
+.nexo-ec__header::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  border-radius: 14px 0 0 0;
+}
+.nexo-ec--crm      .nexo-ec__header::before { background: #22D3EE; }
+.nexo-ec--catalogo .nexo-ec__header::before { background: #7C5CFF; }
+.nexo-ec--produccion .nexo-ec__header::before { background: #F59E0B; }
+.nexo-ec--rrhh     .nexo-ec__header::before { background: #EC4899; }
+.nexo-ec--compras  .nexo-ec__header::before { background: #10B981; }
+.nexo-ec--finanzas .nexo-ec__header::before { background: #3B82F6; }
+.nexo-ec--admin    .nexo-ec__header::before { background: #8B5CF6; }
+.nexo-ec--logistica .nexo-ec__header::before { background: #F97316; }
+.nexo-ec--marketing .nexo-ec__header::before { background: #EF4444; }
+
+.nexo-ec__avatar {
+  width: 44px; height: 44px; min-width: 44px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; font-weight: 700; color: #fff;
+  background: linear-gradient(135deg, var(--mud-palette-primary), var(--mud-palette-secondary));
+  margin-left: 8px;
+}
+.nexo-ec__title-block { flex: 1; min-width: 0; padding-left: 8px; }
+.nexo-ec__name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--n-text-1);
+  line-height: 1.25;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nexo-ec__sub {
+  font-size: 0.78rem;
+  color: var(--n-text-2);
+  margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nexo-ec__body {
+  padding: 0 1rem 0.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+}
+.nexo-ec__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--n-text-2);
+}
+.nexo-ec__row strong { color: var(--n-text-1); font-weight: 600; }
+.nexo-ec__footer {
+  padding: 0.6rem 1rem;
+  border-top: 1px solid var(--n-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}

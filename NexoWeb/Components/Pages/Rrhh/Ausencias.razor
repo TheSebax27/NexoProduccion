@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Ausencias y Vacaciones - NEXO</PageTitle>
@@ -13,6 +14,9 @@
             <p class="nexo-page-hero__module">Recursos Humanos</p>
             <h1 class="nexo-page-hero__title">Ausencias y Vacaciones</h1>
         </div>
+    </div>
+    <div class="d-flex align-center" style="gap:8px">
+        <VistaToggle OnCambio="StateHasChanged" />
     </div>
 </div>
 <InfoAyuda Texto="Visualiza vacaciones, incapacidades y permisos aprobados del personal. Muestra quién está fuera hoy y el calendario del mes." />
@@ -154,7 +158,7 @@ else if (_ausencias.Count == 0)
 {
     <MudText Style="color:var(--mud-palette-text-secondary)">No hay ausencias con ese filtro.</MudText>
 }
-else
+else if (Preferencias.VistaListado == "lista")
 {
     <MudTable Items="_ausencias" Hover="true" Dense="true">
         <HeaderContent>
@@ -193,6 +197,42 @@ else
             </MudTd>
         </RowTemplate>
     </MudTable>
+}
+else
+{
+    <div class="nexo-cards-grid">
+        @foreach (var a in _ausencias)
+        {
+            var dias = (int)(a.FechaFin.Date - a.FechaInicio.Date).TotalDays + 1;
+            <div class="nexo-ec nexo-ec--rrhh">
+                <div class="nexo-ec__header">
+                    <div class="nexo-ec__avatar" style="background:linear-gradient(135deg,#EC4899,#BE185D)">
+                        @Initials(a.Empleado)
+                    </div>
+                    <div class="nexo-ec__title-block">
+                        <div class="nexo-ec__name">@a.Empleado</div>
+                        <div class="nexo-ec__sub">@a.Tipo</div>
+                    </div>
+                    <MudChip T="string" Size="Size.Small" Color="@ColorEstado(a.Estado)" Style="font-size:0.7rem">@a.Estado</MudChip>
+                </div>
+                <div class="nexo-ec__body">
+                    <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.CalendarToday" Size="Size.Small" /><span>@a.FechaInicio.ToString("dd/MM") → @a.FechaFin.ToString("dd/MM/yyyy")</span></div>
+                    <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.Today" Size="Size.Small" /><strong>@dias día@(dias != 1 ? "s" : "")</strong></div>
+                    @if (a.Motivo is not null)
+                    {
+                        <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.Notes" Size="Size.Small" /><span>@a.Motivo</span></div>
+                    }
+                </div>
+                @if (a.Estado == "PENDIENTE")
+                {
+                    <div class="nexo-ec__footer">
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Success" OnClick="@(() => CambiarEstadoAsync(a, "APROBADA"))">Aprobar</MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error" OnClick="@(() => CambiarEstadoAsync(a, "RECHAZADA"))">Rechazar</MudButton>
+                    </div>
+                }
+            </div>
+        }
+    </div>
 }
 
 @code {

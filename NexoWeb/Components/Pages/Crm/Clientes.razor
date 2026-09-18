@@ -9,18 +9,12 @@
 
 <PageTitle>Clientes - NEXO</PageTitle>
 
-<div class="nexo-page-hero">
-    <div class="nexo-page-hero__left">
-        <div class="nexo-page-hero__accent"></div>
-        <div>
-            <p class="nexo-page-hero__module">CRM</p>
-            <h1 class="nexo-page-hero__title">Clientes</h1>
-        </div>
+<div class="d-flex align-center justify-space-between mb-4">
+    <div class="d-flex align-center" style="gap:0.25rem">
+        <MudText Typo="Typo.h5">Clientes</MudText>
     </div>
-    <div class="d-flex gap-2">
-        <ExportButton Endpoint="api/crm/clientes/exportar/excel"
-                      EndpointPdf="api/crm/clientes/exportar/pdf"
-                      NombreArchivo="clientes" />
+    <div class="d-flex align-center" style="gap:8px">
+        <VistaToggle OnCambio="StateHasChanged" />
         <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Map"
                    OnClick="AbrirMapaAsync" Size="Size.Small">
             Ver mapa
@@ -77,12 +71,7 @@
 }
 else if (!_clientes.Any())
 {
-    <NexoEmptyState
-        Icono="@Icons.Material.Outlined.People"
-        Titulo="Sin clientes"
-        Descripcion="@(_filtroBusqueda is not null || _filtroResponsableId is not null || _filtroTipoCliente is not null ? "Ningún cliente coincide con el filtro." : "Aún no hay clientes registrados.")"
-        BotonTexto="@(_filtroBusqueda is null && _filtroResponsableId is null && _filtroTipoCliente is null ? "Nuevo Cliente" : null)"
-        BotonOnClick="@(_filtroBusqueda is null && _filtroResponsableId is null && _filtroTipoCliente is null ? AbrirCreacionAsync : default)" />
+    <MudText>No hay clientes que coincidan con el filtro.</MudText>
 }
 else if (Preferencias.VistaListado == "tarjetas")
 {
@@ -140,7 +129,7 @@ else
             <MudTh>Contactos</MudTh>
             <MudTh>Última Interacción</MudTh>
             <MudTh>Estado</MudTh>
-            <MudTh>Acción</MudTh>
+            <MudTh>Accion</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Nombre">

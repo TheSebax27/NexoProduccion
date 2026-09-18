@@ -3,19 +3,14 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
-@using NexoWeb.Components.Pages.Facturacion
 
 <PageTitle>Despachos - NEXO</PageTitle>
 
-<div class="nexo-page-hero">
-    <div class="nexo-page-hero__left">
-        <div class="nexo-page-hero__accent"></div>
-        <div>
-            <p class="nexo-page-hero__module">Logística</p>
-            <h1 class="nexo-page-hero__title">Despachos</h1>
-        </div>
-    </div>
+<div class="d-flex align-center justify-space-between mb-4">
+    <MudText Typo="Typo.h5">Despachos</MudText>
+    <VistaToggle OnCambio="StateHasChanged" />
 </div>
 <InfoAyuda Texto="Registra despachos de Producto Terminado a clientes, con su guía. Al crear un despacho se descuenta el stock (FEFO) de la bodega de origen automáticamente -- no se puede crear si no hay stock suficiente. 'Confirmar Entrega' cuando el cliente reciba la mercancía, o 'Anular' para revertir el stock si fue un error." />
 
@@ -43,14 +38,9 @@
 }
 else if (_despachos.Count == 0)
 {
-    <NexoEmptyState
-        Icono="@Icons.Material.Outlined.LocalShipping"
-        Titulo="Sin despachos"
-        Descripcion="@(_filtroEstado is not null ? "Ningún despacho coincide con el filtro." : "Aún no hay despachos registrados.")"
-        BotonTexto="@(_filtroEstado is null ? "Nuevo Despacho" : null)"
-        BotonOnClick="@(_filtroEstado is null ? AbrirCreacionAsync : default)" />
+    <MudText>No hay despachos registrados.</MudText>
 }
-else
+else if (Preferencias.VistaListado == "lista")
 {
     <MudTable Items="_despachos" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
@@ -84,23 +74,47 @@ else
                         Anular
                     </MudButton>
                 }
-                @if (context.Estado == "ENTREGADO")
-                {
-                    <MudButton Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Receipt"
-                               OnClick="@(() => GenerarFacturaDesdeDespachoAsync(context))">
-                        Facturar
-                    </MudButton>
-                }
             </MudTd>
         </RowTemplate>
     </MudTable>
+}
+else
+{
+    <div class="nexo-cards-grid">
+        @foreach (var d in _despachos)
+        {
+            <div class="nexo-ec nexo-ec--logistica">
+                <div class="nexo-ec__header">
+                    <div class="nexo-ec__avatar" style="background:linear-gradient(135deg,#F97316,#EA580C)">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" Style="color:#fff" />
+                    </div>
+                    <div class="nexo-ec__title-block">
+                        <div class="nexo-ec__name">@(d.NumeroGuia ?? $"DES-{d.DespachoID}")</div>
+                        <div class="nexo-ec__sub">@d.Cliente</div>
+                    </div>
+                    <MudChip T="string" Size="Size.Small" Color="@ColorEstado(d.Estado)" Style="font-size:0.7rem">@d.Estado</MudChip>
+                </div>
+                <div class="nexo-ec__body">
+                    <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.Business" Size="Size.Small" /><span>@d.CentroCosto</span></div>
+                    <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.CalendarToday" Size="Size.Small" /><span>@d.FechaDespacho.ToLocalTime().ToString("dd/MM/yyyy")</span></div>
+                    <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.AttachMoney" Size="Size.Small" /><strong>@d.ValorTotal.ToString("C0")</strong></div>
+                </div>
+                <div class="nexo-ec__footer">
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => VerDetalleAsync(d))">Ver</MudButton>
+                    @if (d.Estado == "DESPACHADO")
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Success" OnClick="@(() => ConfirmarEntregaAsync(d))">Entregar</MudButton>
+                    }
+                </div>
+            </div>
+        }
+    </div>
 }
 
 @code {
     private List<DespachoItem> _despachos = new();
     private List<CentroCostoItem> _centrosCosto = new();
     private List<BodegaItem> _bodegas = new();
-    private List<CentroCostoBasicoItem> _centrosCostoFactura = new();
     private bool _cargando = true;
     private bool _creando;
     private string? _errorCarga;
@@ -126,9 +140,6 @@ else
             _despachos = await tareaDespachos ?? new();
             _centrosCosto = await tareaCentrosCosto ?? new();
             _bodegas = await tareaBodegas ?? new();
-            _centrosCostoFactura = _centrosCosto
-                .Select(c => new CentroCostoBasicoItem(c.CentroCostoID, c.Nombre, c.TieneVisions))
-                .ToList();
         }
         catch (Exception ex)
         {
@@ -228,39 +239,6 @@ else
             await ApiClient.PostAsync<AnularDespachoRequest, object?>($"api/logistica/despachos/{despacho.DespachoID}/anular", request);
             Snackbar.Add("Despacho anulado. El stock fue devuelto a la bodega de origen.", Severity.Success);
             await CargarDespachosAsync();
-        }
-        catch (HttpRequestException ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
-    }
-
-    private async Task GenerarFacturaDesdeDespachoAsync(DespachoItem despacho)
-    {
-        var ccTieneVisions = _centrosCostoFactura
-            .FirstOrDefault(c => c.CentroCostoID == despacho.CentroCostoID)?.TieneVisions ?? false;
-
-        var parametros = new DialogParameters<FacturaDialog>
-        {
-            { x => x.CombosActivos, new List<ComboItem>() },
-            { x => x.CentrosCosto, _centrosCostoFactura },
-            { x => x.UsaVisions, ccTieneVisions },
-            { x => x.ClienteIdPre, despacho.ClienteID },
-            { x => x.ClienteNombrePre, despacho.Cliente },
-            { x => x.CentroCostoIdPre, despacho.CentroCostoID }
-        };
-
-        var dialogo = await DialogService.ShowAsync<FacturaDialog>(
-            $"Factura — {despacho.NumeroGuia}", parametros,
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
-        var resultado = await dialogo.Result;
-        if (resultado is null || resultado.Canceled) return;
-
-        try
-        {
-            var request = (CrearFacturaRequest)resultado.Data!;
-            await ApiClient.PostAsync<CrearFacturaRequest, object?>("api/facturacion/facturas", request);
-            Snackbar.Add("Factura creada correctamente.", Severity.Success);
         }
         catch (HttpRequestException ex)
         {

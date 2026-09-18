@@ -5,6 +5,7 @@
 @inject NavigationManager Nav
 @inject ISnackbar Snack
 @inject IDialogService Dialog
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @attribute [Authorize]
 
 <PageTitle>Campañas de Email</PageTitle>
@@ -32,6 +33,7 @@ else
     <MudStack Row AlignItems="AlignItems.Center" Class="mb-4">
         <MudText Typo="Typo.h5">Campañas de Email</MudText>
         <MudSpacer />
+        <VistaToggle OnCambio="StateHasChanged" />
         @if (_contador is not null)
         {
             var pct = (double)_contador.EmailsHoy / _contador.LimiteGmail * 100;
@@ -48,6 +50,33 @@ else
             Nueva campaña
         </MudButton>
     </MudStack>
+    @if (Preferencias.VistaListado == "lista")
+    {
+    <MudTable Items="_campanas" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Nombre</MudTh>
+            <MudTh>Asunto</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Enviados</MudTh>
+            <MudTh>Abiertos</MudTh>
+            <MudTh>Fecha</MudTh>
+            <MudTh>Acción</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+            <MudTd DataLabel="Asunto">@context.Asunto</MudTd>
+            <MudTd DataLabel="Estado"><MudChip T="string" Size="Size.Small" Color="@ColorEstado(context.Estado)">@context.Estado</MudChip></MudTd>
+            <MudTd DataLabel="Enviados">@context.TotalEnviados</MudTd>
+            <MudTd DataLabel="Abiertos">@context.TotalAbiertos</MudTd>
+            <MudTd DataLabel="Fecha">@context.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="Acción">
+                <MudButton Size="Size.Small" OnClick="@(() => Nav.NavigateTo($"/crm/campanas/{context.CampanaID}"))">Editar</MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+    }
+    else
+    {
     <MudGrid>
         @foreach (var c in _campanas)
         {
@@ -141,6 +170,7 @@ else
             </MudItem>
         }
     </MudGrid>
+    }
 }
 
 @code {

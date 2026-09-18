@@ -8,14 +8,9 @@
 
 <PageTitle>Usuarios - NEXO</PageTitle>
 
-<div class="nexo-page-hero">
-    <div class="nexo-page-hero__left">
-        <div class="nexo-page-hero__accent"></div>
-        <div>
-            <p class="nexo-page-hero__module">Admin</p>
-            <h1 class="nexo-page-hero__title">Usuarios</h1>
-        </div>
-    </div>
+<div class="d-flex align-center justify-space-between mb-4">
+    <MudText Typo="Typo.h5">Usuarios</MudText>
+    <VistaToggle OnCambio="StateHasChanged" />
 </div>
 <InfoAyuda Texto="Crea usuarios del sistema y asígnales un rol (Administracion, Jefes, Empleados o Subempleados) y un Centro de Costo. El rol determina qué pantallas puede ver y qué acciones puede hacer." />
 
@@ -34,12 +29,7 @@
 }
 else if (_usuarios.Count == 0)
 {
-    <NexoEmptyState
-        Icono="@Icons.Material.Outlined.People"
-        Titulo="Sin usuarios"
-        Descripcion="Aún no hay usuarios registrados en el sistema."
-        BotonTexto="Nuevo Usuario"
-        BotonOnClick="AbrirCreacionAsync" />
+    <MudText>No hay usuarios registrados.</MudText>
 }
 else if (Preferencias.VistaListado == "tarjetas")
 {

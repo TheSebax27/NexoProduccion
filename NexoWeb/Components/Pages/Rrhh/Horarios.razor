@@ -5,6 +5,7 @@
 @inject INexoApiClient Api
 @inject ISnackbar Snackbar
 @inject IDialogService Dialog
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 
 <PageTitle>Horarios — NEXO</PageTitle>
 
@@ -16,12 +17,15 @@
             <h1 class="nexo-page-hero__title">Horarios de Trabajo</h1>
         </div>
     </div>
-    <AuthorizeView Roles="Administracion" Context="authHero">
-        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                   StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirNuevoHorario">
-            Nuevo Horario
-        </MudButton>
-    </AuthorizeView>
+    <div class="d-flex align-center" style="gap:8px">
+        <VistaToggle OnCambio="StateHasChanged" />
+        <AuthorizeView Roles="Administracion" Context="authHero">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirNuevoHorario">
+                Nuevo Horario
+            </MudButton>
+        </AuthorizeView>
+    </div>
 </div>
 <InfoAyuda Texto="Define los horarios de trabajo (turnos) de la empresa. Cada horario se asigna a empleados para controlar su jornada y asistencia." />
 
@@ -43,7 +47,7 @@
     {
         <MudAlert Severity="Severity.Info">No hay horarios creados aun.</MudAlert>
     }
-    else
+    else if (Preferencias.VistaListado == "lista")
     {
         <MudTable Items="_horarios" Dense Hover Bordered>
             <HeaderContent>
@@ -106,6 +110,34 @@
                 </MudTd>
             </RowTemplate>
         </MudTable>
+    }
+    else
+    {
+        <div class="nexo-cards-grid">
+            @foreach (var h in _horarios)
+            {
+                <div class="nexo-ec nexo-ec--rrhh">
+                    <div class="nexo-ec__header">
+                        <div class="nexo-ec__avatar" style="background:linear-gradient(135deg,#EC4899,#BE185D)">
+                            <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" Style="color:#fff" />
+                        </div>
+                        <div class="nexo-ec__title-block">
+                            <div class="nexo-ec__name">@h.Nombre</div>
+                            <div class="nexo-ec__sub">@(h.TipoCiclo switch { "SEMANA_AB" => "A/B", "SEMANA_4" => "A/B/C/D", _ => "Fijo" }) · @(h.RegistraSalida ? "E+S" : "Solo E")</div>
+                        </div>
+                        <MudChip T="string" Size="Size.Small" Color="@(h.Activo ? Color.Success : Color.Default)" Style="font-size:0.7rem">@(h.Activo ? "Activo" : "Inactivo")</MudChip>
+                    </div>
+                    <div class="nexo-ec__body">
+                        <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.AccessTime" Size="Size.Small" /><span>Tolerancia: @h.ToleranciaTardanzaMin min</span></div>
+                        <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.CalendarViewWeek" Size="Size.Small" /><span>@ResumenDias(h)</span></div>
+                    </div>
+                    <div class="nexo-ec__footer">
+                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => VerHorarioAsync(h))">Ver</MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => EditarHorarioAsync(h))">Editar</MudButton>
+                    </div>
+                </div>
+            }
+        </div>
     }
 </MudPaper>
 

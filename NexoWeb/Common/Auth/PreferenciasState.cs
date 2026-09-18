@@ -28,7 +28,7 @@ public class PreferenciasState
     // Vista Lista/Tarjetas: es un unico control global (Settings), no por
     // pantalla -- antes era por pagina (clave "Vista:{pagina}"), se
     // simplifico a pedido del usuario.
-    public string VistaListado => "lista";
+    public string VistaListado => ObtenerValor("VistaListado", "lista");
 
     // Icono de ayuda por pagina -- activado por defecto (util para usuarios
     // nuevos desde el primer login, sin tener que descubrir el toggle antes).

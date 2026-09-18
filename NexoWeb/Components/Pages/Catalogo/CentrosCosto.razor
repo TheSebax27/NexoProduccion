@@ -1,4 +1,4 @@
-@page "/catalogo/centros-costo"
+﻿@page "/catalogo/centros-costo"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -8,16 +8,11 @@
 
 <PageTitle>Centros de Costo - NEXO</PageTitle>
 
-<div class="nexo-page-hero">
-    <div class="nexo-page-hero__left">
-        <div class="nexo-page-hero__accent"></div>
-        <div>
-            <p class="nexo-page-hero__module">Catálogo</p>
-            <h1 class="nexo-page-hero__title">Centros de Costo</h1>
-        </div>
-    </div>
+<div class="d-flex align-center justify-space-between mb-4">
+    <MudText Typo="Typo.h5">Centros de Costo</MudText>
+    <VistaToggle OnCambio="StateHasChanged" />
 </div>
-<InfoAyuda Texto="Un Centro de Costo representa una planta, sede u operación. Agrupa Bodegas, Centros de Trabajo y Usuarios, y sirve para separar el costo e inventario de cada operación." />
+<InfoAyuda Texto="Un Centro de Costo representa una planta, sede u operaci�n. Agrupa Bodegas, Centros de Trabajo y Usuarios, y sirve para separar el costo e inventario de cada operaci�n." />
 
 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
            StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
@@ -48,8 +43,8 @@ else if (Preferencias.VistaListado == "tarjetas")
                         @(cc.Estado ? "Activo" : "Inactivo")
                     </MudChip>
                 </div>
-                <div class="nexo-item-card__sub">@cc.Codigo · @cc.TipoCentro</div>
-                <div class="nexo-item-card__row"><span>Dirección</span><strong>@cc.Direccion</strong></div>
+                <div class="nexo-item-card__sub">@cc.Codigo � @cc.TipoCentro</div>
+                <div class="nexo-item-card__row"><span>Direcci�n</span><strong>@cc.Direccion</strong></div>
                 <div class="nexo-item-card__actions">
                     <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(cc))">Editar</MudButton>
                 </div>

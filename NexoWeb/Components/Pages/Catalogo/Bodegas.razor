@@ -1,4 +1,4 @@
-@page "/catalogo/bodegas"
+﻿@page "/catalogo/bodegas"
 @attribute [Authorize]
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
@@ -8,16 +8,11 @@
 
 <PageTitle>Bodegas - NEXO</PageTitle>
 
-<div class="nexo-page-hero">
-    <div class="nexo-page-hero__left">
-        <div class="nexo-page-hero__accent"></div>
-        <div>
-            <p class="nexo-page-hero__module">Catálogo</p>
-            <h1 class="nexo-page-hero__title">Bodegas</h1>
-        </div>
-    </div>
+<div class="d-flex align-center justify-space-between mb-4">
+    <MudText Typo="Typo.h5">Bodegas</MudText>
+    <VistaToggle OnCambio="StateHasChanged" />
 </div>
-<InfoAyuda Texto="Las bodegas almacenan el inventario físico (o virtual, ej. para tránsito) dentro de un Centro de Costo. Cada movimiento de inventario queda asociado a una bodega específica." />
+<InfoAyuda Texto="Las bodegas almacenan el inventario f�sico (o virtual, ej. para tr�nsito) dentro de un Centro de Costo. Cada movimiento de inventario queda asociado a una bodega espec�fica." />
 
 <MudGrid Class="mb-4">
     <MudItem xs="12" sm="6" md="4">
@@ -222,7 +217,7 @@ else
     {
         var confirmado = await DialogService.ShowMessageBox(
             "Confirmar",
-            $"¿Desactivar la bodega '{bodega.Nombre}'? No podrá usarse en nuevos movimientos de inventario.",
+            $"�Desactivar la bodega '{bodega.Nombre}'? No podra usarse en nuevos movimientos de inventario.",
             yesText: "Desactivar", cancelText: "Cancelar");
 
         if (confirmado != true)
