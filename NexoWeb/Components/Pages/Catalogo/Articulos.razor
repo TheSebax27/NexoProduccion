@@ -79,12 +79,12 @@
         <div class="art-resumen__chip">
             <strong>@_total</strong>&nbsp;artículo@(_total != 1 ? "s" : "") en total
         </div>
-        @if (_tiposResumen.Any())
+        @if (_tiposResumen.Count > 0)
         {
-            foreach (var (tipo, cant) in _tiposResumen)
+            foreach (var r in _tiposResumen)
             {
                 <div class="art-resumen__chip art-resumen__chip--muted">
-                    @cant @tipo
+                    @r.Cantidad @r.Tipo
                 </div>
             }
         }
@@ -330,10 +330,7 @@ else
 
     private bool _importando = false;
 
-    private IEnumerable<(string Tipo, int Cant)> _tiposResumen =>
-        _articulos.GroupBy(a => a.TipoArticulo)
-                  .Select(g => (g.Key, g.Count()))
-                  .OrderByDescending(x => x.Item2);
+    private List<ResumenTipoItem> _tiposResumen = new();
 
     protected override void OnInitialized()
     {
@@ -380,8 +377,9 @@ else
 
             var ruta = "api/catalogo/articulos?" + string.Join("&", q);
             var resp = await ApiClient.GetAsync<ArticulosPaginadosResponse>(ruta);
-            _articulos = resp?.Items ?? new();
-            _total     = resp?.Total ?? 0;
+            _articulos    = resp?.Items ?? new();
+            _total        = resp?.Total ?? 0;
+            _tiposResumen = resp?.ResumenTipos ?? new();
         }
         catch (Exception ex)
         {

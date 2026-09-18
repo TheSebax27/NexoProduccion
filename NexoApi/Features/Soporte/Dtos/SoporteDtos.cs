@@ -5,7 +5,7 @@ public record TicketItem(
     string Prioridad, string Estado,
     int ReportadoPor, string? ReportadoPorNombre,
     int? AsignadoA, string? AsignadoANombre,
-    int? ClienteID, string? Cliente,
+    int? ClienteID, string? Cliente, string? NitCliente, string? TelefonoCliente,
     DateTime FechaCreacion, DateTime FechaActualizacion, DateTime? FechaResolucion,
     string? Notas, int TotalComentarios
 );

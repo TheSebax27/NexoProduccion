@@ -147,7 +147,8 @@ public record ImportarExcelResult(int Creados, int Actualizados, int Errores, Li
 public record VarianteItem(int ArticuloID, string Referencia, string Nombre, string? NombreVariante, bool Estado, decimal Existencias);
 public record CrearVarianteRequest(string? NombreVariante, string? Referencia, string? Nombre);
 
-public record ArticulosPaginadosResponse(List<ArticuloItem> Items, int Total, int Pagina, int Tamano);
+public record ResumenTipoItem(string Tipo, int Cantidad);
+public record ArticulosPaginadosResponse(List<ArticuloItem> Items, int Total, int Pagina, int Tamano, List<ResumenTipoItem>? ResumenTipos = null);
 public record UnidadMedidaItem(int UnidadID, string Nombre, string Abreviatura, string Tipo);
 
 // ---------- Adicionales (toppings/extras — se sincronizan con Visions) ----------

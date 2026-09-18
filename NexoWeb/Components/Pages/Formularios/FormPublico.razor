@@ -157,16 +157,26 @@
     protected override async Task OnInitializedAsync()
     {
         _cargando = true;
-        _formulario = await Api.GetAsync<FormularioPublicoItem>($"api/formularios/publico/{Token}");
-        if (_formulario is not null)
+        try
         {
-            foreach (var c in _formulario.Campos)
+            _formulario = await Api.GetAsync<FormularioPublicoItem>($"api/formularios/publico/{Token}");
+            if (_formulario is not null)
             {
-                _valores[c.Etiqueta] = string.Empty;
-                if (c.Tipo == "MULTIPLE") _multipleValores[c.Etiqueta] = new();
+                foreach (var c in _formulario.Campos)
+                {
+                    _valores[c.Etiqueta] = string.Empty;
+                    if (c.Tipo == "MULTIPLE") _multipleValores[c.Etiqueta] = new();
+                }
             }
         }
-        _cargando = false;
+        catch
+        {
+            // formulario no encontrado o error de red — _formulario queda null → muestra "no encontrado"
+        }
+        finally
+        {
+            _cargando = false;
+        }
     }
 
     private static List<string> ParseOpciones(string? opciones)

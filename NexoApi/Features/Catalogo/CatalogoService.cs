@@ -407,7 +407,21 @@ public class CatalogoService : ICatalogoService
                 : a).ToList();
         }
 
-        return new ArticulosPaginadosResponse(items, total, pagina, tamano);
+        var resumenTipos = (await connection.QueryAsync<ResumenTipoItem>(@"
+            SELECT ta.Nombre AS Tipo, COUNT(*) AS Cantidad
+            FROM Catalogo.Tarjetas a
+            JOIN Catalogo.TiposArticulo ta ON ta.TipoArticuloID = a.TipoArticuloID
+            WHERE (@TipoArticuloId IS NULL OR a.TipoArticuloID = @TipoArticuloId)
+              AND (@Texto IS NULL OR a.Nombre LIKE '%' + @Texto + '%' OR a.Referencia LIKE '%' + @Texto + '%')
+              AND (@Estado IS NULL OR a.Estado = @Estado)
+              AND (@CentroCostoId IS NULL OR EXISTS (
+                  SELECT 1 FROM Integracion.MapeoArticulos ma
+                  WHERE ma.ArticuloID = a.ArticuloID AND ma.CentroCostoID = @CentroCostoId AND ma.Estado = 1))
+            GROUP BY ta.Nombre
+            ORDER BY COUNT(*) DESC",
+            p, commandTimeout: 60)).ToList();
+
+        return new ArticulosPaginadosResponse(items, total, pagina, tamano, resumenTipos);
     }
 
     public async Task<int> ContarArticulosAsync(bool? estado = null)

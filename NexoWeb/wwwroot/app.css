@@ -2362,7 +2362,7 @@ a, .btn-link { color: var(--n-purple); }
     border: 1px solid var(--mud-palette-lines-default);
     padding: .85rem 1.1rem; text-align: center;
 }
-.sop-kpi-val { font-size: 1.8rem; font-weight: 700; line-height: 1; margin-bottom: .2rem; }
+.sop-kpi-val { font-size: 1.8rem; font-weight: 700; line-height: 1; margin-bottom: .2rem; color: var(--mud-palette-text-primary); }
 .sop-kpi-lbl { font-size: .7rem; color: var(--mud-palette-text-secondary); text-transform: uppercase; letter-spacing: .05em; }
 
 /* Ticket card list */

@@ -460,4 +460,8 @@ public class CrmController : ControllerBase
         var bytes    = ExportService.GenerarPdfClientes(clientes, empresa.NombreEmpresa);
         return File(bytes, "application/pdf", $"clientes_{DateTime.Now:yyyyMMdd}.pdf");
     }
+
+    [HttpGet("clientes/{id:int}/prediccion-compra")]
+    public async Task<ActionResult<PrediccionCompraItem>> PrediccionCompra(int id)
+        => Ok(await _service.PrediccionCompraAsync(id));
 }

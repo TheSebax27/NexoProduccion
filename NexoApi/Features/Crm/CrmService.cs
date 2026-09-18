@@ -74,6 +74,7 @@ public interface ICrmService
     Task<LineaCreditoItem?> ObtenerLineaCreditoAsync(int clienteId);
     Task ActualizarLineaCreditoAsync(int clienteId, ActualizarLineaCreditoRequest request);
     Task<DisponibilidadCreditoItem> ObtenerDisponibilidadCreditoAsync(int clienteId);
+    Task<PrediccionCompraItem> PrediccionCompraAsync(int clienteId);
 }
 
 public class CrmService : ICrmService
@@ -1245,5 +1246,35 @@ public class CrmService : ICrmService
             SELECT @Cupo AS CupoCredito, @Utilizado AS Utilizado,
                    CASE WHEN @Cupo = 0 THEN 9999999 ELSE @Cupo - @Utilizado END AS Disponible";
         return await connection.QuerySingleAsync<DisponibilidadCreditoItem>(sql, new { ClienteID = clienteId });
+    }
+
+    public async Task<PrediccionCompraItem> PrediccionCompraAsync(int clienteId)
+    {
+        using var connection = _db.CreateConnection();
+        var datos = await connection.QueryFirstOrDefaultAsync<(double? PromedioDias, DateTime? UltimaCompra, int TotalCompras)>(@"
+            WITH Compras AS (
+                SELECT CAST(Fecha AS date) AS FechaCompra
+                FROM Facturacion.Facturas
+                WHERE ClienteID = @ClienteID AND Estado <> 'ANULADA'
+                GROUP BY CAST(Fecha AS date)
+            ),
+            ConLag AS (
+                SELECT FechaCompra,
+                       LAG(FechaCompra) OVER (ORDER BY FechaCompra) AS FechaAnterior
+                FROM Compras
+            )
+            SELECT
+                AVG(CAST(DATEDIFF(day, FechaAnterior, FechaCompra) AS FLOAT))    AS PromedioDias,
+                (SELECT CAST(MAX(FechaCompra) AS datetime) FROM Compras)          AS UltimaCompra,
+                (SELECT COUNT(*) FROM Compras)                                    AS TotalCompras
+            FROM ConLag
+            WHERE FechaAnterior IS NOT NULL",
+            new { ClienteID = clienteId });
+
+        DateTime? proxima = null;
+        if (datos.PromedioDias.HasValue && datos.UltimaCompra.HasValue)
+            proxima = datos.UltimaCompra.Value.AddDays(datos.PromedioDias.Value);
+
+        return new PrediccionCompraItem(datos.PromedioDias, datos.UltimaCompra, proxima, datos.TotalCompras);
     }
 }

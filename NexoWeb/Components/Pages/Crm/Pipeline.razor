@@ -39,109 +39,205 @@ else if (_items.Count == 0)
 {
     <MudText Style="color:var(--n-text-3)">No hay registros en el pipeline.</MudText>
 }
-else if (Preferencias.VistaListado == "lista")
-{
-    <MudTable Items="_items" Hover="true" Dense="true" Striped="true">
-        <HeaderContent>
-            <MudTh>Nombre</MudTh>
-            <MudTh>Empresa</MudTh>
-            <MudTh>Etapa</MudTh>
-            <MudTh Style="text-align:right">Valor Est.</MudTh>
-            <MudTh>Responsable</MudTh>
-            <MudTh>Cierre Esp.</MudTh>
-            <MudTh>Acción</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Nombre">
-                <div style="font-weight:600">@context.Nombre</div>
-                @if (context.Tipo == "OPORTUNIDAD")
-                {
-                    <div style="font-size:0.72rem;color:var(--n-text-3)">Oportunidad</div>
-                }
-            </MudTd>
-            <MudTd DataLabel="Empresa">@(context.Empresa ?? "-")</MudTd>
-            <MudTd DataLabel="Etapa">
-                <MudChip T="string" Size="Size.Small" Color="@ColorEtapa(context.Etapa)" Style="font-size:0.72rem">
-                    @EtiquetaEtapa(context.Etapa)
-                </MudChip>
-            </MudTd>
-            <MudTd DataLabel="Valor Est." Style="text-align:right">
-                @(context.ValorEstimado.HasValue && context.ValorEstimado > 0
-                    ? context.ValorEstimado.Value.ToString("C0")
-                    : "-")
-            </MudTd>
-            <MudTd DataLabel="Responsable">@(context.Responsable ?? "-")</MudTd>
-            <MudTd DataLabel="Cierre Esp.">@(context.FechaCierreEsperada?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
-            <MudTd DataLabel="Acción">
-                <div class="d-flex flex-wrap" style="gap:0.25rem">
-                    @AccionesItem(context)
-                </div>
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
-}
 else
 {
-    <div class="nexo-cards-grid">
-        @foreach (var item in _items)
+    <div style="display:flex;gap:1.25rem;align-items:flex-start">
+        <div style="flex:1;min-width:0">
+            @if (Preferencias.VistaListado == "lista")
+            {
+                <MudTable Items="_items" Hover="true" Dense="true" Striped="true">
+                    <HeaderContent>
+                        <MudTh>Nombre</MudTh>
+                        <MudTh>Empresa</MudTh>
+                        <MudTh>Etapa</MudTh>
+                        <MudTh Style="text-align:right">Valor Est.</MudTh>
+                        <MudTh>Responsable</MudTh>
+                        <MudTh>Cierre Esp.</MudTh>
+                        <MudTh>Acción</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Nombre">
+                            <div style="font-weight:600">@context.Nombre</div>
+                            @if (context.Tipo == "OPORTUNIDAD")
+                            {
+                                <div style="font-size:0.72rem;color:var(--n-text-3)">Oportunidad</div>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="Empresa">@(context.Empresa ?? "-")</MudTd>
+                        <MudTd DataLabel="Etapa">
+                            <MudChip T="string" Size="Size.Small" Color="@ColorEtapa(context.Etapa)" Style="font-size:0.72rem">
+                                @EtiquetaEtapa(context.Etapa)
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Valor Est." Style="text-align:right">
+                            @(context.ValorEstimado.HasValue && context.ValorEstimado > 0
+                                ? context.ValorEstimado.Value.ToString("C0")
+                                : "-")
+                        </MudTd>
+                        <MudTd DataLabel="Responsable">@(context.Responsable ?? "-")</MudTd>
+                        <MudTd DataLabel="Cierre Esp.">@(context.FechaCierreEsperada?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
+                        <MudTd DataLabel="Acción">
+                            <div class="d-flex flex-wrap" style="gap:0.25rem">
+                                @AccionesItem(context)
+                                @if (context.OportunidadID.HasValue)
+                                {
+                                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info"
+                                               StartIcon="@Icons.Material.Outlined.Assignment"
+                                               OnClick="@(() => AbrirActividadesAsync(context))">Actividades</MudButton>
+                                }
+                            </div>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+            else
+            {
+                <div class="nexo-cards-grid">
+                    @foreach (var item in _items)
+                    {
+                        <div class="nexo-ec nexo-ec--crm">
+                            <div class="nexo-ec__header">
+                                <div class="nexo-ec__avatar">
+                                    @(item.Nombre.Length > 0 ? item.Nombre[0].ToString().ToUpper() : "?")
+                                </div>
+                                <div class="nexo-ec__title-block">
+                                    <div class="nexo-ec__name">@item.Nombre</div>
+                                    @if (!string.IsNullOrEmpty(item.Empresa))
+                                    {
+                                        <div class="nexo-ec__sub">@item.Empresa</div>
+                                    }
+                                </div>
+                                <MudChip T="string" Size="Size.Small" Color="@ColorEtapa(item.Etapa)"
+                                         Style="margin-left:auto;font-size:0.68rem;height:22px">
+                                    @EtiquetaEtapa(item.Etapa)
+                                </MudChip>
+                            </div>
+                            <div class="nexo-ec__body">
+                                @if (!string.IsNullOrEmpty(item.Telefono))
+                                {
+                                    <div class="nexo-ec__row">
+                                        <MudIcon Icon="@Icons.Material.Outlined.Phone" Size="Size.Small" />
+                                        <span>@item.Telefono</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(item.Email))
+                                {
+                                    <div class="nexo-ec__row">
+                                        <MudIcon Icon="@Icons.Material.Outlined.Email" Size="Size.Small" />
+                                        <span>@item.Email</span>
+                                    </div>
+                                }
+                                @if (item.ValorEstimado.HasValue && item.ValorEstimado > 0)
+                                {
+                                    <div class="nexo-ec__row">
+                                        <MudIcon Icon="@Icons.Material.Outlined.AttachMoney" Size="Size.Small" />
+                                        <span style="font-weight:600">@item.ValorEstimado.Value.ToString("C0")</span>
+                                        @if (!string.IsNullOrEmpty(item.ConfianzaCierre))
+                                        {
+                                            <span style="font-size:0.7rem;opacity:.7;margin-left:4px">(@item.ConfianzaCierre)</span>
+                                        }
+                                    </div>
+                                }
+                                @if (item.FechaCierreEsperada.HasValue)
+                                {
+                                    <div class="nexo-ec__row">
+                                        <MudIcon Icon="@Icons.Material.Outlined.Event" Size="Size.Small" />
+                                        <span>Cierre: @item.FechaCierreEsperada.Value.ToString("dd/MM/yyyy")</span>
+                                    </div>
+                                }
+                                @if (item.OportunidadID.HasValue)
+                                {
+                                    var cnt = _contadoresActividades.GetValueOrDefault(item.OportunidadID.Value);
+                                    <div class="nexo-ec__row" style="margin-top:4px;cursor:pointer" @onclick="() => AbrirActividadesAsync(item)">
+                                        <MudIcon Icon="@Icons.Material.Outlined.Assignment" Size="Size.Small" Style="color:var(--mud-palette-info)" />
+                                        <span style="font-size:0.75rem;color:var(--mud-palette-info)">
+                                            @(cnt > 0 ? $"{cnt} activ. pendiente{(cnt != 1 ? "s" : "")}" : "Ver actividades")
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+                            <div class="nexo-ec__footer">
+                                <span style="font-size:0.72rem;opacity:.65">@(item.Responsable ?? "Sin responsable")</span>
+                                <div class="d-flex flex-wrap" style="gap:0.25rem">
+                                    @AccionesItem(item)
+                                    @if (item.OportunidadID.HasValue)
+                                    {
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info"
+                                                   StartIcon="@Icons.Material.Outlined.Assignment"
+                                                   OnClick="@(() => AbrirActividadesAsync(item))">Actividades</MudButton>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (_itemActivo is not null)
         {
-            <div class="nexo-ec nexo-ec--crm">
-                <div class="nexo-ec__header">
-                    <div class="nexo-ec__avatar">
-                        @(item.Nombre.Length > 0 ? item.Nombre[0].ToString().ToUpper() : "?")
+            <div style="width:360px;flex-shrink:0;background:var(--mud-palette-surface);border:1px solid var(--mud-palette-lines-default);border-radius:12px;padding:1rem;position:sticky;top:1rem">
+                <div class="d-flex align-center justify-space-between mb-3">
+                    <div>
+                        <div style="font-weight:700;font-size:0.95rem">@_itemActivo.Nombre</div>
+                        <div style="font-size:0.72rem;opacity:.65">Actividades</div>
                     </div>
-                    <div class="nexo-ec__title-block">
-                        <div class="nexo-ec__name">@item.Nombre</div>
-                        @if (!string.IsNullOrEmpty(item.Empresa))
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="CerrarPanel" />
+                </div>
+
+                @if (_cargandoActividades)
+                {
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="ma-2" />
+                }
+                else if (!_actividades.Any())
+                {
+                    <MudText Style="font-size:0.8rem;opacity:.6" Class="mb-3">Sin actividades registradas.</MudText>
+                }
+                else
+                {
+                    <div style="max-height:320px;overflow-y:auto;margin-bottom:0.75rem">
+                        @foreach (var act in _actividades.OrderBy(a => a.Completada).ThenBy(a => a.FechaVencimiento))
                         {
-                            <div class="nexo-ec__sub">@item.Empresa</div>
+                            <div style="display:flex;align-items:flex-start;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid var(--mud-palette-lines-default)">
+                                <MudIconButton Icon="@(act.Completada ? Icons.Material.Filled.CheckCircle : Icons.Material.Outlined.RadioButtonUnchecked)"
+                                               Color="@(act.Completada ? Color.Success : Color.Default)"
+                                               Size="Size.Small" Style="margin-top:-4px"
+                                               OnClick="@(() => ToggleCompletarActividadAsync(act))" />
+                                <div style="flex:1;min-width:0">
+                                    <div style="font-size:0.82rem;font-weight:600;@(act.Completada ? "text-decoration:line-through;opacity:.55" : "")">@act.Titulo</div>
+                                    <div style="font-size:0.72rem;opacity:.6">
+                                        @EtiquetaTipoActividad(act.Tipo)
+                                        @if (act.FechaVencimiento.HasValue)
+                                        {
+                                            <span style="margin-left:6px;@(act.FechaVencimiento < DateTime.UtcNow && !act.Completada ? "color:var(--mud-palette-error)" : "")">
+                                                · @act.FechaVencimiento.Value.ToLocalTime().ToString("dd/MM")
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                                <MudIconButton Icon="@Icons.Material.Outlined.Delete" Size="Size.Small"
+                                               Color="Color.Error" Style="margin-top:-4px"
+                                               OnClick="@(() => EliminarActividadPanelAsync(act))" />
+                            </div>
                         }
                     </div>
-                    <MudChip T="string" Size="Size.Small" Color="@ColorEtapa(item.Etapa)"
-                             Style="margin-left:auto;font-size:0.68rem;height:22px">
-                        @EtiquetaEtapa(item.Etapa)
-                    </MudChip>
-                </div>
-                <div class="nexo-ec__body">
-                    @if (!string.IsNullOrEmpty(item.Telefono))
-                    {
-                        <div class="nexo-ec__row">
-                            <MudIcon Icon="@Icons.Material.Outlined.Phone" Size="Size.Small" />
-                            <span>@item.Telefono</span>
-                        </div>
-                    }
-                    @if (!string.IsNullOrEmpty(item.Email))
-                    {
-                        <div class="nexo-ec__row">
-                            <MudIcon Icon="@Icons.Material.Outlined.Email" Size="Size.Small" />
-                            <span>@item.Email</span>
-                        </div>
-                    }
-                    @if (item.ValorEstimado.HasValue && item.ValorEstimado > 0)
-                    {
-                        <div class="nexo-ec__row">
-                            <MudIcon Icon="@Icons.Material.Outlined.AttachMoney" Size="Size.Small" />
-                            <span style="font-weight:600">@item.ValorEstimado.Value.ToString("C0")</span>
-                            @if (!string.IsNullOrEmpty(item.ConfianzaCierre))
-                            {
-                                <span style="font-size:0.7rem;opacity:.7;margin-left:4px">(@item.ConfianzaCierre)</span>
-                            }
-                        </div>
-                    }
-                    @if (item.FechaCierreEsperada.HasValue)
-                    {
-                        <div class="nexo-ec__row">
-                            <MudIcon Icon="@Icons.Material.Outlined.Event" Size="Size.Small" />
-                            <span>Cierre: @item.FechaCierreEsperada.Value.ToString("dd/MM/yyyy")</span>
-                        </div>
-                    }
-                </div>
-                <div class="nexo-ec__footer">
-                    <span style="font-size:0.72rem;opacity:.65">@(item.Responsable ?? "Sin responsable")</span>
-                    <div class="d-flex flex-wrap" style="gap:0.25rem">
-                        @AccionesItem(item)
-                    </div>
-                </div>
+                }
+
+                <MudDivider Class="mb-3" />
+                <div style="font-size:0.8rem;font-weight:600;margin-bottom:0.5rem">Nueva actividad</div>
+                <MudSelect @bind-Value="_nuevoTipo" Label="Tipo" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" T="string">
+                    <MudSelectItem Value="@("LLAMADA")">Llamada</MudSelectItem>
+                    <MudSelectItem Value="@("EMAIL")">Email</MudSelectItem>
+                    <MudSelectItem Value="@("REUNION")">Reunión</MudSelectItem>
+                    <MudSelectItem Value="@("TAREA")">Tarea</MudSelectItem>
+                </MudSelect>
+                <MudTextField @bind-Value="_nuevoTitulo" Label="Título" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Class="mb-2" />
+                <MudDatePicker @bind-Date="_nuevaFecha" Label="Vence (opcional)" Variant="Variant.Outlined"
+                               Margin="Margin.Dense" Class="mb-2" DateFormat="dd/MM/yyyy" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
+                           Disabled="@string.IsNullOrWhiteSpace(_nuevoTitulo)"
+                           OnClick="CrearActividadPanelAsync">Agregar</MudButton>
             </div>
         }
     </div>
@@ -172,7 +268,7 @@ else
         _cargando = true; _errorCarga = null;
         try
         {
-            var url = "/crm/pipeline" + (_filtroEtapa is not null ? $"?etapa={_filtroEtapa}" : "");
+            var url = "api/crm/pipeline" + (_filtroEtapa is not null ? $"?etapa={_filtroEtapa}" : "");
             _items = (await ApiClient.GetAsync<IEnumerable<PipelineItem>>(url) ?? []).ToList();
         }
         catch (Exception ex) { _errorCarga = ex.Message; }
@@ -276,7 +372,7 @@ else
         try
         {
             await ApiClient.PostAsync<CrearOportunidadDesdeLeadRequest, object>(
-                $"/crm/pipeline/lead/{lead.ID}/oportunidad", req);
+                $"api/crm/pipeline/lead/{lead.ID}/oportunidad", req);
             Snackbar.Add("Oportunidad creada en etapa Prospección", Severity.Success);
             await CargarAsync();
         }
@@ -287,7 +383,7 @@ else
     {
         try
         {
-            await ApiClient.PatchAsync<object, object>($"/crm/leads/{item.ID}/etapa",
+            await ApiClient.PatchAsync<object, object>($"api/crm/leads/{item.ID}/etapa",
                 new { Etapa = nuevaEtapa });
             await CargarAsync();
         }
@@ -298,7 +394,7 @@ else
     {
         try
         {
-            var oportunidad = (await ApiClient.GetAsync<IEnumerable<OportunidadItem>>("/crm/oportunidades"))
+            var oportunidad = (await ApiClient.GetAsync<IEnumerable<OportunidadItem>>("api/crm/oportunidades"))
                 ?.FirstOrDefault(o => o.OportunidadID == item.OportunidadID);
             if (oportunidad is null) return;
 
@@ -306,11 +402,96 @@ else
                 oportunidad.Nombre, oportunidad.ValorEstimado, oportunidad.ConfianzaCierre,
                 nuevaEtapa, oportunidad.FechaCierreEsperada, oportunidad.ResponsableID, oportunidad.Notas);
 
-            await ApiClient.PutAsync<ActualizarOportunidadRequest>($"/crm/oportunidades/{item.OportunidadID}", req);
+            await ApiClient.PutAsync<ActualizarOportunidadRequest>($"api/crm/oportunidades/{item.OportunidadID}", req);
             await CargarAsync();
         }
         catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
     }
+
+    // ---- Panel Actividades ----
+    private PipelineItem? _itemActivo;
+    private List<ActividadItem> _actividades = new();
+    private bool _cargandoActividades;
+    private Dictionary<int, int> _contadoresActividades = new();
+    private string _nuevoTipo = "LLAMADA";
+    private string _nuevoTitulo = "";
+    private DateTime? _nuevaFecha;
+
+    private async Task AbrirActividadesAsync(PipelineItem item)
+    {
+        _itemActivo = item;
+        _nuevoTitulo = "";
+        _nuevaFecha = null;
+        await CargarActividadesPanelAsync();
+    }
+
+    private async Task CargarActividadesPanelAsync()
+    {
+        if (_itemActivo?.OportunidadID is null) return;
+        _cargandoActividades = true;
+        StateHasChanged();
+        try
+        {
+            var resultado = await ApiClient.GetAsync<IEnumerable<ActividadItem>>(
+                $"api/crm/actividades?soloActivas=false&oportunidadId={_itemActivo.OportunidadID}");
+            _actividades = (resultado ?? []).ToList();
+            _contadoresActividades[_itemActivo.OportunidadID.Value] = _actividades.Count(a => !a.Completada);
+        }
+        catch { }
+        finally { _cargandoActividades = false; }
+    }
+
+    private void CerrarPanel()
+    {
+        _itemActivo = null;
+        _actividades.Clear();
+    }
+
+    private async Task ToggleCompletarActividadAsync(ActividadItem act)
+    {
+        try
+        {
+            await ApiClient.PatchAsync<CompletarActividadRequest, object>(
+                $"api/crm/actividades/{act.ActividadID}/completar",
+                new CompletarActividadRequest(!act.Completada));
+            await CargarActividadesPanelAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task EliminarActividadPanelAsync(ActividadItem act)
+    {
+        try
+        {
+            await ApiClient.DeleteAsync($"api/crm/actividades/{act.ActividadID}");
+            await CargarActividadesPanelAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task CrearActividadPanelAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_nuevoTitulo) || _itemActivo?.OportunidadID is null) return;
+        try
+        {
+            var fechaUtc = _nuevaFecha.HasValue ? DateTime.SpecifyKind(_nuevaFecha.Value, DateTimeKind.Local).ToUniversalTime() : (DateTime?)null;
+            var req = new CrearActividadRequest(_nuevoTipo, _nuevoTitulo.Trim(), null, fechaUtc,
+                _itemActivo.OportunidadID, _itemActivo.ClienteID, null);
+            await ApiClient.PostAsync<CrearActividadRequest, object>("api/crm/actividades", req);
+            _nuevoTitulo = "";
+            _nuevaFecha = null;
+            await CargarActividadesPanelAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+    }
+
+    private static string EtiquetaTipoActividad(string tipo) => tipo switch
+    {
+        "LLAMADA" => "Llamada",
+        "EMAIL"   => "Email",
+        "REUNION" => "Reunión",
+        _         => "Tarea"
+    };
 
     private List<EmpleadoItem> _empleados = new();
 
@@ -330,7 +511,7 @@ else
         {
             try
             {
-                await ApiClient.PostAsync<CrearLeadRequest, object>("/crm/leads", req);
+                await ApiClient.PostAsync<CrearLeadRequest, object>("api/crm/leads", req);
                 Snackbar.Add("Lead creado", Severity.Success);
                 await CargarAsync();
             }

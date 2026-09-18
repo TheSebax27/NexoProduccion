@@ -151,3 +151,10 @@ public record ClienteSegmentoItem(int ClienteID, string Segmento);
 public record LineaCreditoItem(int ClienteID, decimal CupoCredito, string? Observaciones);
 public record ActualizarLineaCreditoRequest(decimal CupoCredito, string? Observaciones);
 public record DisponibilidadCreditoItem(decimal CupoCredito, decimal Utilizado, decimal Disponible);
+
+// ---------- Inteligencia de ventas ----------
+public record PrediccionCompraItem(
+    double? PromedioDias,
+    DateTime? UltimaCompra,
+    DateTime? ProximaCompraEsperada,
+    int TotalCompras);

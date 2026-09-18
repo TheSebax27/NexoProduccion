@@ -585,10 +585,8 @@ else
                     <div class="nexo-section__dot" style="background:#10B981"></div>
                     <span class="nexo-section__label">Resumen del período</span>
                     <div class="nexo-section__line"></div>
-                    <MudDateRangePicker @bind-DateRange="_rangoFact" @bind-DateRange:after="OnRangoFactCambiadoAsync"
-                                        Label="Período" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                        PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy"
-                                        Style="max-width:280px;min-width:230px;" />
+                    <MudDatePicker @bind-Date="_factDesde" @bind-Date:after="OnRangoFactCambiadoAsync" Label="Desde" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudDatePicker @bind-Date="_factHasta" @bind-Date:after="OnRangoFactCambiadoAsync" Label="Hasta" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </div>
                 <div class="nexo-kpi-grid mb-4">
                     <div class="nexo-kpi nexo-kpi--blue">
@@ -857,6 +855,85 @@ else
                         </MudItem>
                     </MudGrid>
                 }
+
+            @if (_horariosPico.Count > 0 || _paresComplementarios.Count > 0)
+            {
+                <div class="nexo-section mt-4"><div class="nexo-section__dot" style="background:#6366F1"></div><span class="nexo-section__label">Inteligencia de ventas</span><div class="nexo-section__line"></div></div>
+                <MudGrid>
+                    @if (_paresComplementarios.Count > 0)
+                    {
+                        <MudItem xs="12" md="6">
+                            <MudPaper Class="pa-5 nexo-chart-card">
+                                <div class="nexo-chart-header nexo-chart-card__header">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Recommend" Size="Size.Small" Class="nexo-chart-header__icon" />
+                                    <div class="flex-grow-1">
+                                        <div class="nexo-chart-header__title">Productos que se compran juntos</div>
+                                        <div class="nexo-chart-header__sub">Pares más frecuentes en facturas</div>
+                                    </div>
+                                </div>
+                                <MudTable Items="_paresComplementarios" Dense="true" Hover="true" Elevation="0">
+                                    <HeaderContent>
+                                        <MudTh>Artículo A</MudTh>
+                                        <MudTh>Artículo B</MudTh>
+                                        <MudTh Style="text-align:right">Veces</MudTh>
+                                    </HeaderContent>
+                                    <RowTemplate>
+                                        <MudTd Style="font-size:0.82rem">@context.ArticuloANombre</MudTd>
+                                        <MudTd Style="font-size:0.82rem">@context.ArticuloBNombre</MudTd>
+                                        <MudTd Style="text-align:right">
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Primary">@context.Veces</MudChip>
+                                        </MudTd>
+                                    </RowTemplate>
+                                </MudTable>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                    @if (_horariosPico.Count > 0)
+                    {
+                        <MudItem xs="12" md="6">
+                            <MudPaper Class="pa-5 nexo-chart-card">
+                                <div class="nexo-chart-header nexo-chart-card__header">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Schedule" Size="Size.Small" Class="nexo-chart-header__icon" />
+                                    <div class="flex-grow-1">
+                                        <div class="nexo-chart-header__title">Horarios pico de ventas</div>
+                                        <div class="nexo-chart-header__sub">Transacciones por hora · últimos 3 meses</div>
+                                    </div>
+                                </div>
+                                <div style="overflow-x:auto;margin-top:0.75rem">
+                                    @{ var maxPico = _horariosPico.Count > 0 ? _horariosPico.Max(h => h.Total) : 1; }
+                                    <table style="border-collapse:collapse;font-size:0.7rem;width:100%">
+                                        <tr>
+                                            <td style="width:28px"></td>
+                                            @foreach (var h in Enumerable.Range(7, 15))
+                                            {
+                                                <th style="text-align:center;padding:1px 2px;font-weight:500;color:var(--mud-palette-text-secondary)">@h</th>
+                                            }
+                                        </tr>
+                                        @foreach (var dia in Enumerable.Range(1, 7))
+                                        {
+                                            <tr>
+                                                <td style="font-weight:600;color:var(--mud-palette-text-secondary);padding:2px 4px;white-space:nowrap">@NombreDia(dia)</td>
+                                                @foreach (var h in Enumerable.Range(7, 15))
+                                                {
+                                                    var total = _horariosPico.FirstOrDefault(x => x.Hora == h && x.DiaSemana == dia)?.Total ?? 0;
+                                                    var opacity = maxPico > 0 && total > 0 ? (double)total / maxPico : 0;
+                                                    var bg = total > 0 ? $"rgba(99,102,241,{opacity:F2})" : "transparent";
+                                                    var fg = opacity > 0.5 ? "white" : "var(--mud-palette-text-secondary)";
+                                                    <td style="text-align:center;padding:1px">
+                                                        <div style="background:@bg;border-radius:3px;padding:3px 1px;min-height:20px;min-width:22px;color:@fg">
+                                                            @(total > 0 ? total.ToString() : "")
+                                                        </div>
+                                                    </td>
+                                                }
+                                            </tr>
+                                        }
+                                    </table>
+                                </div>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
             }
             }
         </MudTabPanel>
@@ -872,9 +949,8 @@ else
                                 <div class="nexo-chart-header__title">Producción Planificada vs Real</div>
                                 <div class="nexo-chart-header__sub">Comparativo diario</div>
                             </div>
-                            <MudDateRangePicker @bind-DateRange="_rangoPlanVsReal" @bind-DateRange:after="OnRangoPlanVsRealCambiadoAsync"
-                                                Label="Rango" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                                PickerVariant="PickerVariant.Dialog" Style="max-width:300px;min-width:260px;" DateFormat="dd/MM/yyyy" />
+                            <MudDatePicker @bind-Date="_planDesde" @bind-Date:after="OnRangoPlanVsRealCambiadoAsync" Label="Desde" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            <MudDatePicker @bind-Date="_planHasta" @bind-Date:after="OnRangoPlanVsRealCambiadoAsync" Label="Hasta" Variant="Variant.Outlined" Margin="Margin.Dense" />
                         </div>
                         <div class="nexo-chart-card__body">
                             @if (_planVsReal.Count == 0)
@@ -910,9 +986,8 @@ else
                                 <div class="nexo-chart-header__title">Variación de Producción vs Plan</div>
                                 <div class="nexo-chart-header__sub">Verde: supera el plan · Rojo: por debajo</div>
                             </div>
-                            <MudDateRangePicker @bind-DateRange="_rangoVariacion" @bind-DateRange:after="OnRangoVariacionCambiadoAsync"
-                                                Label="Rango" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                                PickerVariant="PickerVariant.Dialog" Style="max-width:260px;min-width:220px;" DateFormat="dd/MM/yyyy" />
+                            <MudDatePicker @bind-Date="_varDesde" @bind-Date:after="OnRangoVariacionCambiadoAsync" Label="Desde" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            <MudDatePicker @bind-Date="_varHasta" @bind-Date:after="OnRangoVariacionCambiadoAsync" Label="Hasta" Variant="Variant.Outlined" Margin="Margin.Dense" />
                         </div>
                         <div class="nexo-chart-card__body">
                             @if (_variacionProduccion.Count == 0)
@@ -979,9 +1054,8 @@ else
                                 <div class="nexo-chart-header__title">Pérdidas y Mermas por Motivo</div>
                                 <div class="nexo-chart-header__sub">Detalle por motivo</div>
                             </div>
-                            <MudDateRangePicker @bind-DateRange="_rangoPerdidas" @bind-DateRange:after="OnRangoPerdidasCambiadoAsync"
-                                                Label="Rango" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                                PickerVariant="PickerVariant.Dialog" Style="max-width:300px;min-width:260px;" DateFormat="dd/MM/yyyy" />
+                            <MudDatePicker @bind-Date="_perdDesde" @bind-Date:after="OnRangoPerdidasCambiadoAsync" Label="Desde" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            <MudDatePicker @bind-Date="_perdHasta" @bind-Date:after="OnRangoPerdidasCambiadoAsync" Label="Hasta" Variant="Variant.Outlined" Margin="Margin.Dense" />
                         </div>
                         <div class="nexo-chart-card__body">
                             @if (_perdidas.Count == 0)
@@ -1380,10 +1454,8 @@ else
                     <div class="nexo-section__dot" style="background:#7C5CFF"></div>
                     <span class="nexo-section__label">Análisis de márgenes</span>
                     <div class="nexo-section__line"></div>
-                    <MudDateRangePicker @bind-DateRange="_rangoFin" @bind-DateRange:after="OnRangoFinCambiadoAsync"
-                                        Label="Período" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                        PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy"
-                                        Style="max-width:280px;min-width:230px;" />
+                    <MudDatePicker @bind-Date="_finDesde" @bind-Date:after="OnRangoFinCambiadoAsync" Label="Desde" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudDatePicker @bind-Date="_finHasta" @bind-Date:after="OnRangoFinCambiadoAsync" Label="Hasta" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </div>
 
                 @* KPIs financieros *@
@@ -1411,6 +1483,18 @@ else
                         <div class="nexo-kpi__value">@_margenArticulos.Count</div>
                         <div class="nexo-kpi__label">Artículos analizados</div>
                         <div class="nexo-kpi__sub">Con ventas en el período</div>
+                    </div>
+                    <div class="nexo-kpi nexo-kpi--amber">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.Receipt" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value">@FinTotalGastos.ToString("C0")</div>
+                        <div class="nexo-kpi__label">Gastos Operativos</div>
+                        <div class="nexo-kpi__sub">@_gastosCategoria.Count categoría(s) registradas</div>
+                    </div>
+                    <div class="nexo-kpi nexo-kpi--@(FinUtilidadNeta >= 0 ? (FinPctUtilidadNeta >= 15 ? "green" : "amber") : "red")">
+                        <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" /></div>
+                        <div class="nexo-kpi__value">@FinUtilidadNeta.ToString("C0")</div>
+                        <div class="nexo-kpi__label">Utilidad Neta</div>
+                        <div class="nexo-kpi__sub">@FinPctUtilidadNeta.ToString("N1")% sobre ventas · Margen − Gastos Op.</div>
                     </div>
                 </div>
 
@@ -1460,6 +1544,35 @@ else
                         </MudTable>
                     }
                 </MudPaper>
+
+                @if (_gastosCategoria.Count > 0)
+                {
+                    <div class="nexo-section"><div class="nexo-section__dot" style="background:#F59E0B"></div><span class="nexo-section__label">Gastos operativos por categoría</span><div class="nexo-section__line"></div></div>
+                    <MudPaper Class="pa-5 mb-4">
+                        <MudTable Items="_gastosCategoria" Dense="true" Hover="true" Elevation="0">
+                            <HeaderContent>
+                                <MudTh>Categoría</MudTh>
+                                <MudTh Style="text-align:right">Registros</MudTh>
+                                <MudTh Style="text-align:right">Total</MudTh>
+                                <MudTh Style="text-align:right">% del gasto</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.Categoria</MudTd>
+                                <MudTd Style="text-align:right;font-size:0.82rem;color:#9B9BB4">@context.Cantidad</MudTd>
+                                <MudTd Style="text-align:right;font-weight:600;color:#F59E0B">@context.Total.ToString("C0")</MudTd>
+                                <MudTd Style="text-align:right">
+                                    @{ var pctGasto = FinTotalGastos > 0 ? (context.Total / FinTotalGastos * 100) : 0; }
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Warning">@pctGasto.ToString("N1")%</MudChip>
+                                </MudTd>
+                            </RowTemplate>
+                            <FooterContent>
+                                <MudTd colspan="2" Style="font-weight:700">Total gastos operativos</MudTd>
+                                <MudTd Style="text-align:right;font-weight:700;color:#F59E0B">@FinTotalGastos.ToString("C0")</MudTd>
+                                <MudTd></MudTd>
+                            </FooterContent>
+                        </MudTable>
+                    </MudPaper>
+                }
             }
         </MudTabPanel>
 
@@ -1600,16 +1713,19 @@ else
     private List<PlanVsRealPunto> _planVsReal = new();
     private List<ChartSeries> _seriesPlanVsReal = new();
     private string[] _labelsPlanVsReal = Array.Empty<string>();
-    private DateRange _rangoPlanVsReal = new(DateTime.Today.AddDays(-14), DateTime.Today);
+    private DateTime? _planDesde = DateTime.Today.AddDays(-14);
+    private DateTime? _planHasta = DateTime.Today;
     private List<(DateTime Fecha, double Porcentaje, bool SinPlan)> _variacionProduccion = new();
-    private DateRange _rangoVariacion = new(DateTime.Today.AddDays(-30), DateTime.Today);
+    private DateTime? _varDesde = DateTime.Today.AddDays(-30);
+    private DateTime? _varHasta = DateTime.Today;
     private List<DistribucionCentroCostoItem> _distribucion = new();
     private double[] _dataDistribucion = Array.Empty<double>();
     private string[] _labelsDistribucion = Array.Empty<string>();
     private List<PerdidaPorMotivoItem> _perdidas = new();
     private double[] _dataPerdidas = Array.Empty<double>();
     private string[] _labelsPerdidas = Array.Empty<string>();
-    private DateRange _rangoPerdidas = new(DateTime.Today.AddDays(-30), DateTime.Today);
+    private DateTime? _perdDesde = DateTime.Today.AddDays(-30);
+    private DateTime? _perdHasta = DateTime.Today;
     private List<ArticuloItem> _productosTerminados = new();
     private int _totalArticulosActivos;
     private int _articuloSeleccionadoId;
@@ -1655,8 +1771,11 @@ else
     private List<TopClienteItem> _topClientes = new();
     private List<TopArticuloItem> _topArticulos = new();
     private DevolucionesAnalytics? _analyticsDevolucion;
-    private DateRange _rangoFact = new(DateTime.Today.AddMonths(-1), DateTime.Today);
+    private DateTime? _factDesde = DateTime.Today.AddMonths(-1);
+    private DateTime? _factHasta = DateTime.Today;
     private int _mesesFact = 12;
+    private List<HorarioPicoItem> _horariosPico = new();
+    private List<ParComplementarioItem> _paresComplementarios = new();
     private List<ComparativaMesItem> _comparativaYoY = new();
 
 
@@ -1670,13 +1789,18 @@ else
     private bool _tabFinCargando;
     private bool _tabFinCargado;
     private List<MargenArticuloItem> _margenArticulos = new();
-    private DateRange _rangoFin = new(DateTime.Today.AddMonths(-3), DateTime.Today);
+    private List<ResumenGastoCategoria> _gastosCategoria = new();
+    private DateTime? _finDesde = DateTime.Today.AddMonths(-3);
+    private DateTime? _finHasta = DateTime.Today;
 
     // Propiedades computadas para KPIs financieros (evitan @{} inline en Razor)
-    private decimal FinTotalVentas  => _margenArticulos.Sum(m => m.TotalFacturado);
-    private decimal FinTotalCosto   => _margenArticulos.Sum(m => m.CostoEstimado);
-    private decimal FinTotalMargen  => _margenArticulos.Sum(m => m.MargenBruto);
-    private decimal FinPctMargen    => FinTotalVentas > 0 ? (FinTotalMargen / FinTotalVentas * 100) : 0;
+    private decimal FinTotalVentas     => _margenArticulos.Sum(m => m.TotalFacturado);
+    private decimal FinTotalCosto      => _margenArticulos.Sum(m => m.CostoEstimado);
+    private decimal FinTotalMargen     => _margenArticulos.Sum(m => m.MargenBruto);
+    private decimal FinPctMargen       => FinTotalVentas > 0 ? (FinTotalMargen / FinTotalVentas * 100) : 0;
+    private decimal FinTotalGastos     => _gastosCategoria.Sum(g => g.Total);
+    private decimal FinUtilidadNeta    => FinTotalMargen - FinTotalGastos;
+    private decimal FinPctUtilidadNeta => FinTotalVentas > 0 ? (FinUtilidadNeta / FinTotalVentas * 100) : 0;
 
     // ── Rutas alternativas cuando BI no es visible ───────────────────
     private static readonly (string Codigo, string Ruta)[] _rutasAlternativas =
@@ -1731,12 +1855,12 @@ else
         try
         {
             var tareaPlanVsReal    = ApiClient.GetAsync<List<PlanVsRealPunto>>(
-                $"api/dashboard/plan-vs-real?desde={_rangoPlanVsReal.Start:yyyy-MM-dd}&hasta={_rangoPlanVsReal.End:yyyy-MM-dd}");
+                $"api/dashboard/plan-vs-real?desde={_planDesde:yyyy-MM-dd}&hasta={_planHasta:yyyy-MM-dd}");
             var tareaVariacion     = ApiClient.GetAsync<List<PlanVsRealPunto>>(
-                $"api/dashboard/plan-vs-real?desde={_rangoVariacion.Start:yyyy-MM-dd}&hasta={_rangoVariacion.End:yyyy-MM-dd}");
+                $"api/dashboard/plan-vs-real?desde={_varDesde:yyyy-MM-dd}&hasta={_varHasta:yyyy-MM-dd}");
             var tareaDistribucion  = ApiClient.GetAsync<List<DistribucionCentroCostoItem>>("api/dashboard/distribucion-centro-costo");
             var tareaPerdidas      = ApiClient.GetAsync<List<PerdidaPorMotivoItem>>(
-                $"api/dashboard/perdidas-por-motivo?desde={_rangoPerdidas.Start:yyyy-MM-dd}&hasta={_rangoPerdidas.End:yyyy-MM-dd}");
+                $"api/dashboard/perdidas-por-motivo?desde={_perdDesde:yyyy-MM-dd}&hasta={_perdHasta:yyyy-MM-dd}");
             var tareaProductos       = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos?estado=true");
             var tareaConteoArticulos = ApiClient.GetAsync<int>("api/catalogo/articulos/count?estado=true");
             var tareaCumplimiento    = ApiClient.GetAsync<List<CumplimientoCentroCostoItem>>("api/dashboard/cumplimiento-planificacion");
@@ -1856,26 +1980,30 @@ else
         try
         {
             var tareaResumen = ApiClient.GetAsync<ResumenFacturacionItem>(
-                $"api/dashboard/resumen-facturacion?desde={_rangoFact.Start:yyyy-MM-dd}&hasta={_rangoFact.End:yyyy-MM-dd}");
+                $"api/dashboard/resumen-facturacion?desde={_factDesde:yyyy-MM-dd}&hasta={_factHasta:yyyy-MM-dd}");
             var tareaIngresos = ApiClient.GetAsync<List<IngresoPorMesPunto>>(
                 $"api/dashboard/ingresos-por-mes?meses={_mesesFact}");
             var tareaClientes = ApiClient.GetAsync<List<TopClienteItem>>(
-                $"api/dashboard/top-clientes?desde={_rangoFact.Start:yyyy-MM-dd}&hasta={_rangoFact.End:yyyy-MM-dd}&top=10");
+                $"api/dashboard/top-clientes?desde={_factDesde:yyyy-MM-dd}&hasta={_factHasta:yyyy-MM-dd}&top=10");
             var tareaArticulos = ApiClient.GetAsync<List<TopArticuloItem>>(
-                $"api/dashboard/top-articulos?desde={_rangoFact.Start:yyyy-MM-dd}&hasta={_rangoFact.End:yyyy-MM-dd}&top=10");
+                $"api/dashboard/top-articulos?desde={_factDesde:yyyy-MM-dd}&hasta={_factHasta:yyyy-MM-dd}&top=10");
             var tareaYoY = ApiClient.GetAsync<List<ComparativaMesItem>>(
                 $"api/dashboard/comparativa-yoy?meses={_mesesFact}");
             var tareaDevolucion = ApiClient.GetAsync<DevolucionesAnalytics>(
                 $"api/facturacion/devoluciones/analytics?meses={_mesesFact}");
+            var tareaHorarios = ApiClient.GetAsync<List<HorarioPicoItem>>("api/dashboard/horarios-pico?meses=3");
+            var tareaComplementarios = ApiClient.GetAsync<List<ParComplementarioItem>>("api/dashboard/pares-complementarios?top=10");
 
-            await Task.WhenAll(tareaResumen, tareaIngresos, tareaClientes, tareaArticulos, tareaYoY, tareaDevolucion);
+            await Task.WhenAll(tareaResumen, tareaIngresos, tareaClientes, tareaArticulos, tareaYoY, tareaDevolucion, tareaHorarios, tareaComplementarios);
 
             _resumenFact         = await tareaResumen    ?? new(0, 0, 0, 0);
             _ingresosMes         = await tareaIngresos   ?? new();
             _topClientes         = await tareaClientes   ?? new();
             _topArticulos        = await tareaArticulos  ?? new();
-            _comparativaYoY      = await tareaYoY        ?? new();
-            _analyticsDevolucion = await tareaDevolucion;
+            _comparativaYoY       = await tareaYoY            ?? new();
+            _analyticsDevolucion  = await tareaDevolucion;
+            _horariosPico         = await tareaHorarios        ?? new();
+            _paresComplementarios = await tareaComplementarios ?? new();
             ActualizarGraficoIngresos();
             _tabFactCargado = true;
         }
@@ -1903,7 +2031,7 @@ else
 
     private async Task OnRangoFactCambiadoAsync()
     {
-        if (_rangoFact.Start is null || _rangoFact.End is null) return;
+        if (_factDesde is null || _factHasta is null) return;
         _tabFactCargado = false;
         await CargarTabFacturacionAsync();
     }
@@ -1951,6 +2079,12 @@ else
             </svg>
             """;
     }
+
+    private static string NombreDia(int dia) => dia switch
+    {
+        1 => "Dom", 2 => "Lun", 3 => "Mar", 4 => "Mié",
+        5 => "Jue", 6 => "Vie", 7 => "Sáb", _ => ""
+    };
 
     private static string TiempoAtras(DateTime utc)
     {
@@ -2021,9 +2155,9 @@ else
 
     private async Task OnRangoVariacionCambiadoAsync()
     {
-        if (_rangoVariacion.Start is null || _rangoVariacion.End is null) return;
+        if (_varDesde is null || _varHasta is null) return;
         var datos = await ApiClient.GetAsync<List<PlanVsRealPunto>>(
-            $"api/dashboard/plan-vs-real?desde={_rangoVariacion.Start:yyyy-MM-dd}&hasta={_rangoVariacion.End:yyyy-MM-dd}") ?? new();
+            $"api/dashboard/plan-vs-real?desde={_varDesde:yyyy-MM-dd}&hasta={_varHasta:yyyy-MM-dd}") ?? new();
         _variacionProduccion = datos.Select(p => (p.Fecha,
             Porcentaje: p.TotalPlanificado > 0 ? (double)((p.TotalReal - p.TotalPlanificado) / p.TotalPlanificado * 100) : 0d,
             SinPlan: p.TotalPlanificado == 0 && p.TotalReal > 0)).ToList();
@@ -2031,18 +2165,18 @@ else
 
     private async Task OnRangoPlanVsRealCambiadoAsync()
     {
-        if (_rangoPlanVsReal.Start is null || _rangoPlanVsReal.End is null) return;
+        if (_planDesde is null || _planHasta is null) return;
         _planVsReal = await ApiClient.GetAsync<List<PlanVsRealPunto>>(
-            $"api/dashboard/plan-vs-real?desde={_rangoPlanVsReal.Start:yyyy-MM-dd}&hasta={_rangoPlanVsReal.End:yyyy-MM-dd}") ?? new();
+            $"api/dashboard/plan-vs-real?desde={_planDesde:yyyy-MM-dd}&hasta={_planHasta:yyyy-MM-dd}") ?? new();
         ActualizarGraficoPlanVsReal();
         _totalRealProducido = _seriesPlanVsReal.FirstOrDefault(s => s.Name == "Real")?.Data.Sum() ?? 0;
     }
 
     private async Task OnRangoPerdidasCambiadoAsync()
     {
-        if (_rangoPerdidas.Start is null || _rangoPerdidas.End is null) return;
+        if (_perdDesde is null || _perdHasta is null) return;
         _perdidas = await ApiClient.GetAsync<List<PerdidaPorMotivoItem>>(
-            $"api/dashboard/perdidas-por-motivo?desde={_rangoPerdidas.Start:yyyy-MM-dd}&hasta={_rangoPerdidas.End:yyyy-MM-dd}") ?? new();
+            $"api/dashboard/perdidas-por-motivo?desde={_perdDesde:yyyy-MM-dd}&hasta={_perdHasta:yyyy-MM-dd}") ?? new();
         ActualizarGraficoPerdidas();
     }
 
@@ -2095,8 +2229,13 @@ else
         StateHasChanged();
         try
         {
-            _margenArticulos = await ApiClient.GetAsync<List<MargenArticuloItem>>(
-                $"api/dashboard/margen-articulos?desde={_rangoFin.Start:yyyy-MM-dd}&hasta={_rangoFin.End:yyyy-MM-dd}&top=30") ?? new();
+            var tareaMargen  = ApiClient.GetAsync<List<MargenArticuloItem>>(
+                $"api/dashboard/margen-articulos?desde={_finDesde:yyyy-MM-dd}&hasta={_finHasta:yyyy-MM-dd}&top=30");
+            var tareaGastos  = ApiClient.GetAsync<List<ResumenGastoCategoria>>(
+                $"api/finanzas/gastos/resumen-categoria?desde={_finDesde:yyyy-MM-dd}&hasta={_finHasta:yyyy-MM-dd}");
+            await Task.WhenAll(tareaMargen, tareaGastos);
+            _margenArticulos  = await tareaMargen  ?? new();
+            _gastosCategoria  = await tareaGastos  ?? new();
             _tabFinCargado = true;
         }
         catch (Exception ex) { Snackbar.Add($"Error al cargar margen: {ex.Message}", Severity.Warning); }
@@ -2105,7 +2244,7 @@ else
 
     private async Task OnRangoFinCambiadoAsync()
     {
-        if (_rangoFin.Start is null || _rangoFin.End is null) return;
+        if (_finDesde is null || _finHasta is null) return;
         _tabFinCargado = false;
         await CargarTabFinancieroAsync();
     }

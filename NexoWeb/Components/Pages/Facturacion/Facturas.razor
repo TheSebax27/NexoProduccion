@@ -42,7 +42,7 @@
                 No hay documentos pendientes de pago.
             </MudAlert>
         }
-        else
+        else if (Preferencias.VistaListado == "lista")
         {
             <div style="display:flex; justify-content:space-between; align-items:center; margin:8px 0; font-size:0.85rem; opacity:.7">
                 <span>@_totalPend documentos pendientes · página @_paginaPend de @_totalPaginasPend</span>
@@ -105,6 +105,59 @@
             </MudTable>
             </div>
         }
+        else
+        {
+            <div class="nexo-cards-grid" style="margin-top:8px">
+                @foreach (var f in _pendientes)
+                {
+                    <div class="nexo-ec">
+                        <div class="nexo-ec__header">
+                            <MudChip T="string" Size="Size.Small" Color="@ColorTipDoc(f.TipDoc)" Style="flex-shrink:0">@f.TipDoc</MudChip>
+                            <div class="nexo-ec__title-block" style="margin-left:8px">
+                                <div class="nexo-ec__name">@f.Cliente</div>
+                                @if (f.NitCliente is not null) { <div class="nexo-ec__sub">NIT @f.NitCliente</div> }
+                            </div>
+                            <MudChip T="string" Size="Size.Small" Color="@ColorEstado(f.Estado)"
+                                     Style="margin-left:auto;font-size:0.68rem;height:22px;flex-shrink:0">
+                                @EtiquetaEstado(f.Estado)
+                            </MudChip>
+                        </div>
+                        <div class="nexo-ec__body">
+                            <div class="nexo-ec__row">
+                                <MudIcon Icon="@Icons.Material.Outlined.Tag" Size="Size.Small" />
+                                <span>@(f.NroDoc ?? "—") · @f.Fecha.ToString("dd/MM/yyyy")</span>
+                            </div>
+                            <div class="nexo-ec__row">
+                                <MudIcon Icon="@Icons.Material.Outlined.AttachMoney" Size="Size.Small" />
+                                <span>Total: <b>@f.Total.ToString("C0")</b> · Saldo: <b style="color:var(--mud-palette-error)">@f.SaldoPendiente.ToString("C0")</b></span>
+                            </div>
+                            @if (f.CentroCostoNombre is not null)
+                            {
+                                <div class="nexo-ec__row">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Business" Size="Size.Small" />
+                                    <span>@f.CentroCostoNombre</span>
+                                </div>
+                            }
+                        </div>
+                        <div class="nexo-ec__footer">
+                            <div style="display:flex;gap:4px;align-items:center">
+                                @if (f.VisionsConfirmado)
+                                { <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Success" Size="Size.Small" Title="Confirmado en Visions" /> }
+                            </div>
+                            <div style="display:flex;gap:4px">
+                                <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(f))">Gestionar</MudButton>
+                                @if (!f.StockDescontado && !f.VisionsConfirmado)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error"
+                                                   Size="Size.Small" Title="Eliminar factura"
+                                                   OnClick="@(() => EliminarFacturaAsync(f))" />
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     </MudTabPanel>
 
     @* ════ Tab 2: Historial ════ *@
@@ -153,7 +206,7 @@
         { <MudProgressLinear Indeterminate="true" Class="mb-2" /> }
         else if (_facturas.Count == 0)
         { <MudAlert Severity="Severity.Info">No hay documentos que coincidan con los filtros.</MudAlert> }
-        else
+        else if (Preferencias.VistaListado == "lista")
         {
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:0.85rem; opacity:.7">
                 <span>@_total documentos · página @_pagina de @_totalPaginas</span>
@@ -221,6 +274,59 @@
             </MudTable>
             </div>
         }
+        else
+        {
+            <div class="nexo-cards-grid" style="margin-top:8px">
+                @foreach (var f in _facturas)
+                {
+                    <div class="nexo-ec">
+                        <div class="nexo-ec__header">
+                            <MudChip T="string" Size="Size.Small" Color="@ColorTipDoc(f.TipDoc)" Style="flex-shrink:0">@f.TipDoc</MudChip>
+                            <div class="nexo-ec__title-block" style="margin-left:8px">
+                                <div class="nexo-ec__name">@f.Cliente</div>
+                                @if (f.NitCliente is not null) { <div class="nexo-ec__sub">NIT @f.NitCliente</div> }
+                            </div>
+                            <MudChip T="string" Size="Size.Small" Color="@ColorEstado(f.Estado)"
+                                     Style="margin-left:auto;font-size:0.68rem;height:22px;flex-shrink:0">
+                                @EtiquetaEstado(f.Estado)
+                            </MudChip>
+                        </div>
+                        <div class="nexo-ec__body">
+                            <div class="nexo-ec__row">
+                                <MudIcon Icon="@Icons.Material.Outlined.Tag" Size="Size.Small" />
+                                <span>@(f.NroDoc ?? "—") · @f.Fecha.ToString("dd/MM/yyyy")</span>
+                            </div>
+                            <div class="nexo-ec__row">
+                                <MudIcon Icon="@Icons.Material.Outlined.AttachMoney" Size="Size.Small" />
+                                <span>Total: <b>@f.Total.ToString("C0")</b> · Pagado: <b>@f.TotalPagado.ToString("C0")</b></span>
+                            </div>
+                            @if (f.CentroCostoNombre is not null)
+                            {
+                                <div class="nexo-ec__row">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Business" Size="Size.Small" />
+                                    <span>@f.CentroCostoNombre</span>
+                                </div>
+                            }
+                        </div>
+                        <div class="nexo-ec__footer">
+                            <div style="display:flex;gap:4px;align-items:center">
+                                @if (f.StockDescontado) { <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Title="Inventario descontado" /> }
+                                @if (f.VisionsConfirmado) { <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Success" Size="Size.Small" Title="Confirmado en Visions" /> }
+                            </div>
+                            <div style="display:flex;gap:4px">
+                                <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(f))">Gestionar</MudButton>
+                                @if (!f.StockDescontado && !f.VisionsConfirmado)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error"
+                                                   Size="Size.Small" Title="Eliminar factura"
+                                                   OnClick="@(() => EliminarFacturaAsync(f))" />
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     </MudTabPanel>
 
     @* ════ Tab 3: Devoluciones ════ *@
@@ -253,7 +359,7 @@
         {
             <MudAlert Severity="Severity.Info" Class="mt-2">No hay devoluciones registradas en el período.</MudAlert>
         }
-        else
+        else if (Preferencias.VistaListado == "lista")
         {
             <div style="overflow-x:auto">
             <MudTable Items="_devoluciones" Hover="true" Dense="true" Striped="true">
@@ -304,6 +410,53 @@
                     <MudTd colspan="2" />
                 </FooterContent>
             </MudTable>
+            </div>
+        }
+        else
+        {
+            <div class="nexo-cards-grid" style="margin-top:8px">
+                @foreach (var d in _devoluciones)
+                {
+                    <div class="nexo-ec">
+                        <div class="nexo-ec__header">
+                            <MudChip T="string" Size="Size.Small"
+                                     Color="@(d.TipoDevolucion == "CLIENTE" ? Color.Info : Color.Warning)"
+                                     Style="flex-shrink:0">@d.TipoDevolucion</MudChip>
+                            <div class="nexo-ec__title-block" style="margin-left:8px">
+                                <div class="nexo-ec__name">
+                                    @(d.TipoDevolucion == "CLIENTE" ? (d.Cliente ?? "—") : (d.Proveedor ?? "—"))
+                                </div>
+                                <div class="nexo-ec__sub">@d.Fecha.ToString("dd/MM/yyyy")</div>
+                            </div>
+                            <MudChip T="string" Size="Size.Small"
+                                     Color="@(d.OrigenVisions ? Color.Secondary : Color.Default)"
+                                     Style="margin-left:auto;font-size:0.68rem;height:22px;flex-shrink:0">
+                                @(d.OrigenVisions ? "Visions" : "NEXO")
+                            </MudChip>
+                        </div>
+                        <div class="nexo-ec__body">
+                            @if (!string.IsNullOrEmpty(d.Motivo))
+                            {
+                                <div class="nexo-ec__row">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Notes" Size="Size.Small" />
+                                    <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@d.Motivo</span>
+                                </div>
+                            }
+                            <div class="nexo-ec__row">
+                                <MudIcon Icon="@Icons.Material.Outlined.AttachMoney" Size="Size.Small" />
+                                <span><b>@d.Total.ToString("C0")</b></span>
+                                @if (!string.IsNullOrEmpty(d.NroDoc))
+                                { <span style="font-size:0.75rem;opacity:.7;margin-left:4px">· @d.NroDoc</span> }
+                            </div>
+                        </div>
+                        <div class="nexo-ec__footer">
+                            @if (d.StockRestituido)
+                            { <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Title="Stock restituido" /> }
+                            else
+                            { <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Color="Color.Warning" Size="Size.Small" Title="Stock pendiente" /> }
+                        </div>
+                    </div>
+                }
             </div>
         }
     </MudTabPanel>

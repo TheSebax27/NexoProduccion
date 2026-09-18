@@ -60,7 +60,7 @@ else if (_empleados.Count == 0 && _errorCarga is null)
         BotonTexto="Nuevo empleado"
         BotonOnClick="AbrirCreacionAsync" />
 }
-else if (Preferencias.VistaListado == "lista")
+else if (Preferencias.VistaListado != "lista")
 {
     <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px;">
         @foreach (var emp in EmpleadosFiltrados)
@@ -158,49 +158,42 @@ else if (Preferencias.VistaListado == "lista")
 }
 else
 {
-    <div class="nexo-cards-grid">
-        @foreach (var e in EmpleadosFiltrados)
-        {
-            <div class="nexo-ec nexo-ec--rrhh">
-                <div class="nexo-ec__header">
-                    <span class="nexo-ec__title">@e.Nombres @e.Apellidos</span>
-                    <MudChip T="string" Size="Size.Small" Color="@ColorEstadoLaboral(e)" Style="margin:0;height:20px;font-size:.7rem">@EtiquetaEstadoLaboral(e)</MudChip>
+    <MudTable Items="EmpleadosFiltrados" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Empleado</MudTh>
+            <MudTh>Cargo</MudTh>
+            <MudTh>Departamento</MudTh>
+            <MudTh>Centro de Costo</MudTh>
+            <MudTh>Teléfono</MudTh>
+            <MudTh>Email</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Acción</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Empleado">
+                <span style="font-weight:600">@context.Nombres @context.Apellidos</span>
+            </MudTd>
+            <MudTd DataLabel="Cargo">@(context.Cargo ?? "—")</MudTd>
+            <MudTd DataLabel="Departamento">@(context.Departamento ?? "—")</MudTd>
+            <MudTd DataLabel="Centro de Costo">@(context.CentroCosto ?? "—")</MudTd>
+            <MudTd DataLabel="Teléfono">@(context.Telefono ?? "—")</MudTd>
+            <MudTd DataLabel="Email">@(context.Email ?? "—")</MudTd>
+            <MudTd DataLabel="Estado">
+                <MudChip T="string" Size="Size.Small" Color="@ColorEstadoLaboral(context)">
+                    @EtiquetaEstadoLaboral(context)
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Acción">
+                <div class="d-flex" style="gap:4px">
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => AbrirEdicionAsync(context))">Editar</MudButton>
                 </div>
-                <div class="nexo-ec__body">
-                    <div class="nexo-ec__row">
-                        <span class="nexo-ec__label">Cargo</span>
-                        <span class="nexo-ec__value">@(e.Cargo ?? "—")</span>
-                    </div>
-                    <div class="nexo-ec__row">
-                        <span class="nexo-ec__label">Departamento</span>
-                        <span class="nexo-ec__value">@(e.Departamento ?? "—")</span>
-                    </div>
-                    <div class="nexo-ec__row">
-                        <span class="nexo-ec__label">Centro de Costo</span>
-                        <span class="nexo-ec__value">@(e.CentroCosto ?? "—")</span>
-                    </div>
-                    @if (!string.IsNullOrWhiteSpace(e.Telefono))
-                    {
-                        <div class="nexo-ec__row">
-                            <span class="nexo-ec__label">Teléfono</span>
-                            <span class="nexo-ec__value">@e.Telefono</span>
-                        </div>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(e.Email))
-                    {
-                        <div class="nexo-ec__row">
-                            <span class="nexo-ec__label">Email</span>
-                            <span class="nexo-ec__value">@e.Email</span>
-                        </div>
-                    }
-                </div>
-                <div class="nexo-ec__actions">
-                    <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(e))">Gestionar</MudButton>
-                    <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(e))">Editar</MudButton>
-                </div>
-            </div>
-        }
-    </div>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No hay empleados que coincidan con la búsqueda.</MudText>
+        </NoRecordsContent>
+    </MudTable>
 }
 
 @code {

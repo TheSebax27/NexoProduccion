@@ -10,14 +10,25 @@
 
 <div class="d-flex align-center justify-space-between mb-4">
     <MudText Typo="Typo.h5">Proveedores</MudText>
-    <VistaToggle OnCambio="StateHasChanged" />
+    <div class="d-flex align-center" style="gap:8px">
+        <ExportButton Endpoint="api/catalogo/proveedores/exportar/excel"
+                      EndpointPdf="api/catalogo/proveedores/exportar/pdf"
+                      NombreArchivo="proveedores" />
+        <VistaToggle OnCambio="StateHasChanged" />
+    </div>
 </div>
 <InfoAyuda Texto="Registra los proveedores que usas al crear un Pedido. El NIT y los datos de contacto quedan disponibles para referencia rápida." />
 
-<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
-           StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
-    Nuevo Proveedor
-</MudButton>
+<div class="d-flex align-center justify-space-between mb-4" style="gap:12px">
+    <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
+               StartIcon="@Icons.Material.Filled.Add">
+        Nuevo Proveedor
+    </MudButton>
+    <MudTextField @bind-Value="_busqueda" Placeholder="Buscar por razón social, NIT, email..."
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true"
+                  Style="max-width:360px" />
+</div>
 
 @if (_errorCarga is not null)
 {
@@ -34,7 +45,7 @@ else if (_proveedores.Count == 0)
 else if (Preferencias.VistaListado == "tarjetas")
 {
     <div class="nexo-card-grid">
-        @foreach (var proveedor in _proveedores)
+        @foreach (var proveedor in _proveedoresFiltrados)
         {
             <div class="nexo-item-card">
                 <div class="d-flex align-center justify-space-between">
@@ -56,7 +67,7 @@ else if (Preferencias.VistaListado == "tarjetas")
 }
 else
 {
-    <MudTable Items="_proveedores" Hover="true" Dense="true" Striped="true">
+    <MudTable Items="_proveedoresFiltrados" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
             <MudTh>Razon Social</MudTh>
             <MudTh>NIT</MudTh>
@@ -89,8 +100,17 @@ else
 
 @code {
     private List<ProveedorItem> _proveedores = new();
+    private string _busqueda = string.Empty;
     private bool _cargando = true;
     private string? _errorCarga;
+
+    private IEnumerable<ProveedorItem> _proveedoresFiltrados => string.IsNullOrWhiteSpace(_busqueda)
+        ? _proveedores
+        : _proveedores.Where(p =>
+            (p.RazonSocial?.Contains(_busqueda, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (p.NIT?.Contains(_busqueda, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (p.Email?.Contains(_busqueda, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (p.Contacto?.Contains(_busqueda, StringComparison.OrdinalIgnoreCase) ?? false));
 
     protected override async Task OnInitializedAsync() => await CargarAsync();
 

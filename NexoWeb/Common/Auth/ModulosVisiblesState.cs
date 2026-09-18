@@ -19,7 +19,7 @@ public class ModulosVisiblesState
     public ModulosVisiblesState(INexoApiClient api) => _api = api;
 
     // Devuelve true si el modulo debe mostrarse en el menu.
-    // Mientras no haya cargado (primer render), es true (fail-open).
+    // Mientras no haya cargado, retorna false (fail-closed) para no mostrar modulos no autorizados.
     public bool EsVisible(string codigo)
     {
         if (_esAdmin) return true;

@@ -92,3 +92,7 @@ public record AlertaStockItem(
     decimal CantidadActual, decimal StockMinimo,
     decimal Deficit
 );
+
+// ---------- Inteligencia de ventas ----------
+public record HorarioPicoItem(int Hora, int DiaSemana, int Total);
+public record ParComplementarioItem(int ArticuloAID, string ArticuloANombre, int ArticuloBID, string ArticuloBNombre, int Veces);

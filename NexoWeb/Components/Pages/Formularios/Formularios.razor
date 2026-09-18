@@ -3,6 +3,7 @@
 @inject IDialogService Dialogs
 @inject ISnackbar Snackbar
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <PageTitle>Formularios | NEXO ERP</PageTitle>
 
@@ -155,7 +156,8 @@
     private async Task CopiarEnlace(string token)
     {
         var url = $"{Nav.BaseUri}f/{token}";
-        Snackbar.Add($"Enlace copiado: {url}", Severity.Info);
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", url);
+        Snackbar.Add("Enlace copiado", Severity.Success);
     }
 
     private async Task Eliminar(FormularioItem f)

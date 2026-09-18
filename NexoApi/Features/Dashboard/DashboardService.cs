@@ -36,6 +36,10 @@ public interface IDashboardService
     Task<SparklinesDashboard> ObtenerSparklinesAsync();
 
     Task<ResumenMaquinariaItem> ObtenerResumenMaquinariaAsync();
+
+    // Inteligencia de ventas
+    Task<IEnumerable<HorarioPicoItem>> ObtenerHorariosPicoAsync(int meses = 3);
+    Task<IEnumerable<ParComplementarioItem>> ObtenerParesComplementariosAsync(int top = 10);
 }
 
 public class DashboardService : IDashboardService
@@ -240,19 +244,40 @@ public class DashboardService : IDashboardService
     {
         using var connection = _db.CreateConnection();
         const string sql = @"
-            SELECT
-                YEAR(f.Fecha)            AS Anio,
-                MONTH(f.Fecha)           AS Mes,
-                DATENAME(MONTH, f.Fecha) AS NombreMes,
-                ISNULL(SUM(ISNULL(tot.Total,0)), 0)       AS TotalFacturado,
-                ISNULL(SUM(ISNULL(pag.TotalPagado,0)), 0) AS TotalCobrado
-            FROM Facturacion.Facturas f
-            LEFT JOIN (SELECT FacturaID, SUM(Cantidad * PrecioUnitario) AS Total
-                       FROM Facturacion.FacturaLineas GROUP BY FacturaID) tot ON tot.FacturaID = f.FacturaID
-            LEFT JOIN (SELECT FacturaID, SUM(Monto) AS TotalPagado
-                       FROM Facturacion.Pagos GROUP BY FacturaID) pag ON pag.FacturaID = f.FacturaID
-            WHERE f.Fecha >= DATEADD(MONTH, -@Meses, CAST(GETUTCDATE() AS DATE))
-            GROUP BY YEAR(f.Fecha), MONTH(f.Fecha), DATENAME(MONTH, f.Fecha)
+            SELECT Anio, Mes, MAX(NombreMes) AS NombreMes,
+                   SUM(TotalFacturado) AS TotalFacturado,
+                   SUM(TotalCobrado)   AS TotalCobrado
+            FROM (
+                -- NEXO (excluye confirmados Visions para no duplicar)
+                SELECT YEAR(f.Fecha) AS Anio, MONTH(f.Fecha) AS Mes,
+                       DATENAME(MONTH, f.Fecha) AS NombreMes,
+                       ISNULL(SUM(ISNULL(tot.Total,0)), 0)       AS TotalFacturado,
+                       ISNULL(SUM(ISNULL(pag.TotalPagado,0)), 0) AS TotalCobrado
+                FROM Facturacion.Facturas f
+                LEFT JOIN (SELECT FacturaID, SUM(Cantidad * PrecioUnitario) AS Total
+                           FROM Facturacion.FacturaLineas GROUP BY FacturaID) tot ON tot.FacturaID = f.FacturaID
+                LEFT JOIN (SELECT FacturaID, SUM(Monto) AS TotalPagado
+                           FROM Facturacion.Pagos GROUP BY FacturaID) pag ON pag.FacturaID = f.FacturaID
+                WHERE f.VisionsConfirmado = 0
+                  AND f.Fecha >= DATEADD(MONTH, -@Meses, CAST(GETUTCDATE() AS DATE))
+                GROUP BY YEAR(f.Fecha), MONTH(f.Fecha), DATENAME(MONTH, f.Fecha)
+
+                UNION ALL
+
+                -- Visions EventosEntrantes
+                SELECT YEAR(CAST(ee.FechaEventoOrigen AS DATE)) AS Anio,
+                       MONTH(CAST(ee.FechaEventoOrigen AS DATE)) AS Mes,
+                       DATENAME(MONTH, ee.FechaEventoOrigen) AS NombreMes,
+                       SUM(ISNULL(ee.Cantidad,0) * ISNULL(ee.PrecioArticuloVisions,0)) AS TotalFacturado,
+                       SUM(ISNULL(ee.Cantidad,0) * ISNULL(ee.PrecioArticuloVisions,0)) AS TotalCobrado
+                FROM Integracion.EventosEntrantes ee
+                WHERE ee.TipDoc IS NOT NULL
+                  AND CAST(ee.FechaEventoOrigen AS DATE) >= DATEADD(MONTH, -@Meses, CAST(GETUTCDATE() AS DATE))
+                GROUP BY YEAR(CAST(ee.FechaEventoOrigen AS DATE)),
+                         MONTH(CAST(ee.FechaEventoOrigen AS DATE)),
+                         DATENAME(MONTH, ee.FechaEventoOrigen)
+            ) src
+            GROUP BY Anio, Mes
             ORDER BY Anio, Mes";
         return await connection.QueryAsync<IngresoPorMesPunto>(sql, new { Meses = meses });
     }
@@ -262,17 +287,37 @@ public class DashboardService : IDashboardService
         using var connection = _db.CreateConnection();
         const string sql = @"
             SELECT TOP (@Top)
-                c.ClienteID,
-                c.Nombre AS Cliente,
-                c.NIT,
-                ISNULL(SUM(ISNULL(tot.Total,0)), 0) AS TotalFacturado,
-                COUNT(f.FacturaID)                  AS NumDocumentos
-            FROM Facturacion.Facturas f
-            JOIN Crm.Clientes c ON c.ClienteID = f.ClienteID
-            LEFT JOIN (SELECT FacturaID, SUM(Cantidad * PrecioUnitario) AS Total
-                       FROM Facturacion.FacturaLineas GROUP BY FacturaID) tot ON tot.FacturaID = f.FacturaID
-            WHERE f.Fecha >= @Desde AND f.Fecha <= @Hasta
-            GROUP BY c.ClienteID, c.Nombre, c.NIT
+                ISNULL(MAX(c.ClienteID), 0)                AS ClienteID,
+                MAX(ISNULL(c.Nombre, src.NombreCliente))   AS Cliente,
+                src.NIT,
+                SUM(src.Importe)                           AS TotalFacturado,
+                SUM(src.Docs)                              AS NumDocumentos
+            FROM (
+                -- NEXO (excluye confirmados Visions)
+                SELECT ISNULL(c2.NIT, 'SIN-NIT')    AS NIT,
+                       ISNULL(c2.Nombre, 'Sin cliente') AS NombreCliente,
+                       ISNULL(tot.Total, 0)             AS Importe,
+                       1                                AS Docs
+                FROM Facturacion.Facturas f
+                LEFT JOIN Crm.Clientes c2 ON c2.ClienteID = f.ClienteID
+                LEFT JOIN (SELECT FacturaID, SUM(Cantidad * PrecioUnitario) AS Total
+                           FROM Facturacion.FacturaLineas GROUP BY FacturaID) tot ON tot.FacturaID = f.FacturaID
+                WHERE f.VisionsConfirmado = 0 AND f.Fecha >= @Desde AND f.Fecha <= @Hasta
+
+                UNION ALL
+
+                -- Visions EventosEntrantes
+                SELECT ISNULL(ee.NitCliente, 'SIN-NIT')     AS NIT,
+                       ISNULL(ee.NombreCliente, 'Sin nombre') AS NombreCliente,
+                       ISNULL(ee.Cantidad, 0) * ISNULL(ee.PrecioArticuloVisions, 0) AS Importe,
+                       1 AS Docs
+                FROM Integracion.EventosEntrantes ee
+                WHERE ee.TipDoc IS NOT NULL
+                  AND CAST(ee.FechaEventoOrigen AS DATE) >= @Desde
+                  AND CAST(ee.FechaEventoOrigen AS DATE) <= @Hasta
+            ) src
+            LEFT JOIN Crm.Clientes c ON c.NIT = src.NIT
+            GROUP BY src.NIT
             ORDER BY TotalFacturado DESC";
         return await connection.QueryAsync<TopClienteItem>(sql, new { Top = top, Desde = desde.Date, Hasta = hasta.Date });
     }
@@ -282,16 +327,35 @@ public class DashboardService : IDashboardService
         using var connection = _db.CreateConnection();
         const string sql = @"
             SELECT TOP (@Top)
-                a.ArticuloID,
-                a.Referencia AS SKU,
-                a.Nombre,
-                ISNULL(SUM(ABS(fl.Cantidad)), 0)                     AS CantidadVendida,
-                ISNULL(SUM(ABS(fl.Cantidad) * fl.PrecioUnitario), 0) AS TotalFacturado
-            FROM Facturacion.FacturaLineas fl
-            JOIN Facturacion.Facturas f  ON f.FacturaID  = fl.FacturaID
-            JOIN Catalogo.Tarjetas a     ON a.ArticuloID = fl.ArticuloID
-            WHERE f.Fecha >= @Desde AND f.Fecha <= @Hasta
-            GROUP BY a.ArticuloID, a.Referencia, a.Nombre
+                ISNULL(MAX(a2.ArticuloID), 0)       AS ArticuloID,
+                src.SKU,
+                MAX(ISNULL(a2.Nombre, src.Nombre))  AS Nombre,
+                SUM(src.Cantidad)                   AS CantidadVendida,
+                SUM(src.Importe)                    AS TotalFacturado
+            FROM (
+                -- NEXO (excluye confirmados Visions)
+                SELECT a.Referencia AS SKU, a.Nombre,
+                       ABS(fl.Cantidad)                     AS Cantidad,
+                       ABS(fl.Cantidad) * fl.PrecioUnitario AS Importe
+                FROM Facturacion.FacturaLineas fl
+                JOIN Facturacion.Facturas f ON f.FacturaID  = fl.FacturaID
+                JOIN Catalogo.Tarjetas a    ON a.ArticuloID = fl.ArticuloID
+                WHERE f.VisionsConfirmado = 0 AND f.Fecha >= @Desde AND f.Fecha <= @Hasta
+
+                UNION ALL
+
+                -- Visions EventosEntrantes
+                SELECT ee.CodigoArticuloVisions AS SKU,
+                       ISNULL(ee.NombreArticuloVisions, ee.CodigoArticuloVisions) AS Nombre,
+                       ABS(ISNULL(ee.Cantidad, 0))                                               AS Cantidad,
+                       ABS(ISNULL(ee.Cantidad, 0)) * ISNULL(ee.PrecioArticuloVisions, 0)         AS Importe
+                FROM Integracion.EventosEntrantes ee
+                WHERE ee.TipDoc IS NOT NULL
+                  AND CAST(ee.FechaEventoOrigen AS DATE) >= @Desde
+                  AND CAST(ee.FechaEventoOrigen AS DATE) <= @Hasta
+            ) src
+            LEFT JOIN Catalogo.Tarjetas a2 ON a2.Referencia = src.SKU
+            GROUP BY src.SKU
             ORDER BY TotalFacturado DESC";
         return await connection.QueryAsync<TopArticuloItem>(sql, new { Top = top, Desde = desde.Date, Hasta = hasta.Date });
     }
@@ -521,5 +585,39 @@ public class DashboardService : IDashboardService
               AND MONTH(FechaRealizado) = MONTH(GETDATE())");
 
         return new ResumenMaquinariaItem(total, enMant, vencido, costoMes);
+    }
+
+    public async Task<IEnumerable<HorarioPicoItem>> ObtenerHorariosPicoAsync(int meses = 3)
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<HorarioPicoItem>(@"
+            SELECT DATEPART(HOUR, Fecha)    AS Hora,
+                   DATEPART(WEEKDAY, Fecha) AS DiaSemana,
+                   COUNT(*)                 AS Total
+            FROM Facturacion.Facturas
+            WHERE Estado <> 'ANULADA'
+              AND Fecha >= DATEADD(MONTH, -@Meses, CAST(GETDATE() AS date))
+            GROUP BY DATEPART(HOUR, Fecha), DATEPART(WEEKDAY, Fecha)
+            ORDER BY DATEPART(HOUR, Fecha), DATEPART(WEEKDAY, Fecha)",
+            new { Meses = meses });
+    }
+
+    public async Task<IEnumerable<ParComplementarioItem>> ObtenerParesComplementariosAsync(int top = 10)
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.QueryAsync<ParComplementarioItem>(@"
+            SELECT TOP (@Top)
+                a.ArticuloID  AS ArticuloAID,
+                ta.Nombre     AS ArticuloANombre,
+                b.ArticuloID  AS ArticuloBID,
+                tb.Nombre     AS ArticuloBNombre,
+                COUNT(*)      AS Veces
+            FROM Facturacion.FacturaLineas a
+            JOIN Facturacion.FacturaLineas b ON a.FacturaID = b.FacturaID AND b.ArticuloID > a.ArticuloID
+            JOIN Catalogo.Tarjetas ta ON ta.ArticuloID = a.ArticuloID
+            JOIN Catalogo.Tarjetas tb ON tb.ArticuloID = b.ArticuloID
+            GROUP BY a.ArticuloID, ta.Nombre, b.ArticuloID, tb.Nombre
+            ORDER BY Veces DESC",
+            new { Top = top });
     }
 }

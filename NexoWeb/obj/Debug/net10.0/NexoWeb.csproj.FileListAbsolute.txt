@@ -50,7 +50,6 @@ C:\Produccion\NexoWeb\obj\Debug\net10.0\scopedcss\projectbundle\NexoWeb.bundle.s
 C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\tzxjg6is5z-{0}-mhumzvqd1g-mhumzvqd1g.gz
 C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\0wz98yz2xy-{0}-rnojub5shy-rnojub5shy.gz
 C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\82xpymwtvw-{0}-31ctn0hll9-31ctn0hll9.gz
-C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\lsmuzx4tfk-{0}-y6k98vxcvf-y6k98vxcvf.gz
 C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\zlhnwxzp6m-{0}-bqjiyaj88i-bqjiyaj88i.gz
 C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\rfo77zb88m-{0}-c2jlpeoesf-c2jlpeoesf.gz
 C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\j6k4p04ukp-{0}-erw9l3u2r3-erw9l3u2r3.gz
@@ -111,7 +110,8 @@ C:\Produccion\NexoWeb\obj\Debug\net10.0\ref\NexoWeb.dll
 C:\Produccion\NexoWeb\bin\Debug\net10.0\web.config
 C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\1jra6etdxu-{0}-9hsif5t8mt-9hsif5t8mt.gz
 C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\emdyfxdyab-{0}-dwu72t6gfx-dwu72t6gfx.gz
-C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\mohx22tfow-{0}-bf059h0ntw-bf059h0ntw.gz
-C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\fidee3c6o4-{0}-bf059h0ntw-bf059h0ntw.gz
-C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\iu0nu0fy9n-{0}-aprvqahyvs-aprvqahyvs.gz
-C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\rkatry7cmk-{0}-bx8hdgka4o-bx8hdgka4o.gz
+C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\iu0nu0fy9n-{0}-r06ojnjxoq-r06ojnjxoq.gz
+C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\mohx22tfow-{0}-22muauxmfu-22muauxmfu.gz
+C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\fidee3c6o4-{0}-22muauxmfu-22muauxmfu.gz
+C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\lsmuzx4tfk-{0}-85wnva9xnt-85wnva9xnt.gz
+C:\Produccion\NexoWeb\obj\Debug\net10.0\compressed\rkatry7cmk-{0}-4dj51aveo4-4dj51aveo4.gz

@@ -34,7 +34,7 @@ public class SoporteService : ISoporteService
                    ISNULL(ur.Nombres + ' ' + ur.Apellidos, '') AS ReportadoPorNombre,
                    t.AsignadoA,
                    ISNULL(ua.Nombres + ' ' + ua.Apellidos, NULL) AS AsignadoANombre,
-                   t.ClienteID, c.Nombre AS Cliente,
+                   t.ClienteID, c.Nombre AS Cliente, c.NIT AS NitCliente, c.Telefono AS TelefonoCliente,
                    t.FechaCreacion, t.FechaActualizacion, t.FechaResolucion, t.Notas,
                    (SELECT COUNT(*) FROM Soporte.TicketComentarios WHERE TicketID = t.TicketID) AS TotalComentarios
             FROM Soporte.Tickets t

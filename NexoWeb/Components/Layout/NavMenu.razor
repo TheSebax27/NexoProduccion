@@ -80,13 +80,7 @@
                                     Icon="@Icons.Material.Filled.TrendingUp"
                                     Class="nexo-nav-item">Pipeline</MudNavLink>
                     }
-                    @if (Modulos.EsVisible("CRM.ACTIVIDADES"))
-                    {
-                        <MudNavLink Href="/crm/actividades"
-                                    Icon="@Icons.Material.Filled.EventNote"
-                                    Class="nexo-nav-item">Actividades</MudNavLink>
-                    }
-                    @if (Modulos.EsVisible("CRM.CAMPANAS"))
+@if (Modulos.EsVisible("CRM.CAMPANAS"))
                     {
                         <MudNavLink Href="/crm/campanas"
                                     Icon="@Icons.Material.Filled.Campaign"

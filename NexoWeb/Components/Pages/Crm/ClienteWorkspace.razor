@@ -63,6 +63,15 @@ else
                 @_segmento.Segmento
             </MudChip>
         }
+        @if (_prediccion?.ProximaCompraEsperada is not null)
+        {
+            var diasRestantes = (int)(_prediccion.ProximaCompraEsperada.Value.Date - DateTime.Today).TotalDays;
+            var colorPred = diasRestantes < 0 ? Color.Error : diasRestantes <= 5 ? Color.Warning : Color.Primary;
+            var labelDias = diasRestantes > 0 ? $"+{diasRestantes}d" : diasRestantes < 0 ? $"{diasRestantes}d" : "hoy";
+            <MudChip T="string" Size="Size.Small" Color="@colorPred" Icon="@Icons.Material.Filled.CalendarToday">
+                Próxima compra: @_prediccion.ProximaCompraEsperada.Value.ToString("dd MMM") (@labelDias)
+            </MudChip>
+        }
     </div>
 
     <MudPaper Class="pa-4">
@@ -486,6 +495,7 @@ else
     private ClienteSegmentoItem? _segmento;
     private DisponibilidadCreditoItem? _disponibilidad;
     private LineaCreditoItem? _lineaCredito;
+    private PrediccionCompraItem? _prediccion;
     private decimal _nuevoCupo;
     private string? _nuevaObsCredito;
     private bool _guardandoCredito;
@@ -499,10 +509,12 @@ else
             var ts = ApiClient.GetAsync<ClienteSegmentoItem>($"api/crm/clientes/{id}/segmento");
             var td = ApiClient.GetAsync<DisponibilidadCreditoItem>($"api/crm/clientes/{id}/linea-credito/disponible");
             var tl = ApiClient.GetAsync<LineaCreditoItem>($"api/crm/clientes/{id}/linea-credito");
-            await Task.WhenAll(ts, td, tl);
-            _segmento      = await ts;
+            var tp = ApiClient.GetAsync<PrediccionCompraItem>($"api/crm/clientes/{id}/prediccion-compra");
+            await Task.WhenAll(ts, td, tl, tp);
+            _segmento       = await ts;
             _disponibilidad = await td;
-            _lineaCredito  = await tl;
+            _lineaCredito   = await tl;
+            _prediccion     = await tp;
             if (_lineaCredito is not null) { _nuevoCupo = _lineaCredito.CupoCredito; _nuevaObsCredito = _lineaCredito.Observaciones; }
         }
         catch { }

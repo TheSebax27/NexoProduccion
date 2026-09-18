@@ -129,6 +129,14 @@ public class DashboardController : ControllerBase
     public async Task<ActionResult<SparklinesDashboard>> Sparklines()
         => Ok(await _service.ObtenerSparklinesAsync());
 
+    [HttpGet("horarios-pico")]
+    public async Task<ActionResult<IEnumerable<HorarioPicoItem>>> HorariosPico([FromQuery] int meses = 3)
+        => Ok(await _service.ObtenerHorariosPicoAsync(meses));
+
+    [HttpGet("pares-complementarios")]
+    public async Task<ActionResult<IEnumerable<ParComplementarioItem>>> ParesComplementarios([FromQuery] int top = 10)
+        => Ok(await _service.ObtenerParesComplementariosAsync(top));
+
     [HttpGet("exportar/excel")]
     public async Task<IActionResult> ExportarExcel([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
     {

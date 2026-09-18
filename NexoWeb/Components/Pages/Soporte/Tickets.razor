@@ -57,6 +57,10 @@
     {
         <MudPaper Class="pa-3 mb-4" Elevation="0" Style="border:1px solid var(--mud-palette-lines-default);border-radius:10px">
             <div class="d-flex align-center gap-3 flex-wrap">
+                <MudTextField @bind-Value="_filtroBusqueda" Label="Nombre, NIT, teléfono o negocio"
+                              Variant="Variant.Outlined" Clearable="true" Immediate="true"
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              Style="min-width:280px" Margin="Margin.Dense" />
                 <MudSelect @bind-Value="_filtroEstado" Label="Estado" Variant="Variant.Outlined"
                            Clearable="true" Style="min-width:160px" Dense="true" T="string">
                     <MudSelectItem Value="@("ABIERTO")">Abierto</MudSelectItem>
@@ -420,6 +424,7 @@
     private bool _mostrarFiltros;
     private string? _filtroEstado;
     private string? _filtroPrioridad;
+    private string? _filtroBusqueda;
     private bool _vistaEsTabla = true;
     private void SetVistaTabla() => _vistaEsTabla = true;
     private void SetVistaKanban() => _vistaEsTabla = false;
@@ -452,7 +457,17 @@
 
     private IEnumerable<TicketItem> _ticketsFiltrados => _tickets
         .Where(t => _filtroEstado is null || t.Estado == _filtroEstado)
-        .Where(t => _filtroPrioridad is null || t.Prioridad == _filtroPrioridad);
+        .Where(t => _filtroPrioridad is null || t.Prioridad == _filtroPrioridad)
+        .Where(t =>
+        {
+            if (string.IsNullOrWhiteSpace(_filtroBusqueda)) return true;
+            var q = _filtroBusqueda.Trim();
+            return (t.ReportadoPorNombre?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (t.NitCliente?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (t.TelefonoCliente?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (t.Cliente?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (t.Titulo?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false);
+        });
 
     private List<TicketItem> ListaFiltrada => _ticketsFiltrados.ToList();
     private List<TicketItem> GetTicketsPorEstado(string estado) =>

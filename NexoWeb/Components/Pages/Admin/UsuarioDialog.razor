@@ -1,51 +1,89 @@
 @using NexoWeb.Common.Dtos
 
-<MudDialog>
+<MudDialog Style="min-width:480px">
     <DialogContent>
+        <div class="d-flex flex-column align-center mb-4">
+            <MudAvatar Color="Color.Primary" Size="Size.Large" Class="mb-2">
+                <MudIcon Icon="@(EsEdicion ? Icons.Material.Filled.ManageAccounts : Icons.Material.Filled.PersonAdd)" Size="Size.Medium" />
+            </MudAvatar>
+            <MudText Typo="Typo.h6" Class="font-weight-bold">@(EsEdicion ? "Editar Usuario" : "Nuevo Usuario")</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">@(EsEdicion ? "Modifica los datos del usuario" : "Completa los datos para crear la cuenta")</MudText>
+        </div>
+
+        <MudDivider Class="mb-4" />
+
         <MudForm @ref="_form" Model="@this">
-            <MudTextField @bind-Value="_nombres" Label="Nombres" Required="true"
-                          RequiredError="Los nombres son obligatorios" Class="mb-3" />
+            <MudGrid Spacing="2">
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_nombres" Label="Nombres" Required="true"
+                                  RequiredError="Requerido" Variant="Variant.Outlined"
+                                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_apellidos" Label="Apellidos" Required="true"
+                                  RequiredError="Requerido" Variant="Variant.Outlined" />
+                </MudItem>
 
-            <MudTextField @bind-Value="_apellidos" Label="Apellidos" Required="true"
-                          RequiredError="Los apellidos son obligatorios" Class="mb-3" />
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_email" Label="Email" Required="true"
+                                  RequiredError="Requerido" Variant="Variant.Outlined"
+                                  InputType="InputType.Email"
+                                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Email" />
+                </MudItem>
 
-            <MudTextField @bind-Value="_email" Label="Email" Required="true"
-                          RequiredError="El email es obligatorio" Class="mb-3" />
-
-            @if (!EsEdicion)
-            {
-                <MudTextField @bind-Value="_username" Label="Usuario" Required="true"
-                              RequiredError="El usuario es obligatorio" Class="mb-3" />
-
-                <MudTextField @bind-Value="_password" Label="Contrasena" InputType="InputType.Password"
-                              Required="true" RequiredError="La contrasena es obligatoria" Class="mb-3" />
-            }
-
-            <MudSelect T="int?" @bind-Value="_rolId" Label="Rol" Required="true"
-                       RequiredError="Selecciona un rol" Placeholder="Seleccionar rol..." Class="mb-3">
-                @foreach (var rol in Roles)
+                @if (!EsEdicion)
                 {
-                    <MudSelectItem T="int?" Value="@((int?)rol.RolID)">@rol.Nombre</MudSelectItem>
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="_username" Label="Usuario" Required="true"
+                                      RequiredError="Requerido" Variant="Variant.Outlined"
+                                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AccountCircle" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="_password" Label="Contraseña" Required="true"
+                                      RequiredError="Requerido" Variant="Variant.Outlined"
+                                      InputType="InputType.Password"
+                                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Lock" />
+                    </MudItem>
                 }
-            </MudSelect>
 
-            <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo (opcional)" Clearable="true" Class="mb-3">
-                @foreach (var centro in CentrosCosto)
+                <MudItem xs="@(EsEdicion ? 6 : 12)">
+                    <MudSelect T="int?" @bind-Value="_rolId" Label="Rol" Required="true"
+                               RequiredError="Selecciona un rol" Variant="Variant.Outlined"
+                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AdminPanelSettings">
+                        @foreach (var rol in Roles)
+                        {
+                            <MudSelectItem T="int?" Value="@((int?)rol.RolID)">@rol.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="@(EsEdicion ? 6 : 12)">
+                    <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Clearable="true"
+                               Variant="Variant.Outlined"
+                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Business">
+                        @foreach (var centro in CentrosCosto)
+                        {
+                            <MudSelectItem T="int?" Value="@((int?)centro.CentroCostoID)">@centro.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                @if (EsEdicion)
                 {
-                    <MudSelectItem T="int?" Value="@((int?)centro.CentroCostoID)">@centro.Nombre</MudSelectItem>
+                    <MudItem xs="12">
+                        <MudSwitch T="bool" @bind-Value="_estado" Color="Color.Success"
+                                   Label="@(_estado ? "Usuario activo" : "Usuario inactivo")" />
+                    </MudItem>
                 }
-            </MudSelect>
-
-            @if (EsEdicion)
-            {
-                <MudSwitch T="bool" @bind-Value="_estado" Color="Color.Success" Label="Activo" />
-            }
+            </MudGrid>
         </MudForm>
     </DialogContent>
+
     <DialogActions>
-        <MudButton OnClick="Cancelar">Cancelar</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="GuardarAsync">
-            @(EsEdicion ? "Guardar Cambios" : "Crear")
+        <MudButton OnClick="Cancelar" Variant="Variant.Text">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="GuardarAsync"
+                   StartIcon="@(EsEdicion ? Icons.Material.Filled.Save : Icons.Material.Filled.PersonAdd)">
+            @(EsEdicion ? "Guardar Cambios" : "Crear Usuario")
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -55,11 +93,7 @@
 
     [Parameter] public List<RolItem> Roles { get; set; } = new();
     [Parameter] public List<CentroCostoItem> CentrosCosto { get; set; } = new();
-
-    // Si se pasa un Usuario existente, el dialogo entra en modo edicion.
     [Parameter] public UsuarioItem? Usuario { get; set; }
-
-    // Pre-relleno desde un empleado (flujo "Crear usuario para este empleado").
     [Parameter] public EmpleadoItem? EmpleadoPrefil { get; set; }
 
     private bool EsEdicion => Usuario is not null;
@@ -105,8 +139,7 @@
     private async Task GuardarAsync()
     {
         await _form.Validate();
-        if (!_form.IsValid)
-            return;
+        if (!_form.IsValid) return;
 
         if (EsEdicion)
         {
