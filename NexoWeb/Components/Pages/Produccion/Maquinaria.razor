@@ -5,6 +5,7 @@
 @inject INexoApiClient Api
 @inject ISnackbar Snackbar
 @inject IDialogService Dialog
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 
 <PageTitle>Maquinaria — NEXO</PageTitle>
 
@@ -16,7 +17,8 @@
         </h1>
         <p class="prod-header__sub">Registra y controla el estado de máquinas, tipos y mantenimientos.</p>
     </div>
-    <div class="prod-header__actions">
+    <div class="prod-header__actions" style="display:flex;align-items:center;gap:8px;">
+        <VistaToggle OnCambio="StateHasChanged" />
         <MudButton Variant="Variant.Filled" Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirCrear">
             Nueva Máquina
@@ -96,7 +98,7 @@ else if (_maquinas.Count == 0)
         <p>No hay máquinas con los filtros actuales.</p>
     </div>
 }
-else
+else if (Preferencias.VistaListado == "lista")
 {
     <div class="prod-table-wrap">
         <table class="prod-table">
@@ -171,6 +173,48 @@ else
                 }
             </tbody>
         </table>
+    </div>
+}
+else
+{
+    <div class="nexo-cards-grid">
+        @foreach (var m in _maquinas)
+        {
+            <div class="nexo-ec nexo-ec--produccion">
+                <div class="nexo-ec__header">
+                    <div class="nexo-ec__avatar" style="background:linear-gradient(135deg,#F59E0B,#D97706)">
+                        @if (m.TieneFoto)
+                        {
+                            <img src="@($"api/produccion/maquinaria/{m.MaquinariaID}/foto")" alt=""
+                                 style="width:44px;height:44px;object-fit:cover;border-radius:10px;" />
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Size="Size.Small" Style="color:#fff" />
+                        }
+                    </div>
+                    <div class="nexo-ec__title-block">
+                        <div class="nexo-ec__name">@m.Nombre</div>
+                        <div class="nexo-ec__sub">@m.Codigo · @m.TipoMaquinaria</div>
+                    </div>
+                    <MudChip T="string" Size="Size.Small" Color="@ColorEstado(m.Estado)" Style="font-size:0.7rem">@EtiquetaEstado(m.Estado)</MudChip>
+                </div>
+                <div class="nexo-ec__body">
+                    @if (m.CentroTrabajo is not null)
+                    {
+                        <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.LocationOn" Size="Size.Small" /><span>@m.CentroTrabajo</span></div>
+                    }
+                    @if (m.ProximoMantenimiento.HasValue)
+                    {
+                        <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.Build" Size="Size.Small" /><span>Mant. @m.ProximoMantenimiento.Value.ToString("dd/MM/yyyy")</span></div>
+                    }
+                </div>
+                <div class="nexo-ec__footer">
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => AbrirEditar(m))">Editar</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Warning" OnClick="@(() => AbrirMantenimiento(m))">Mant.</MudButton>
+                </div>
+            </div>
+        }
     </div>
 }
 

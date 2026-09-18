@@ -3,6 +3,7 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 @using NexoWeb.Components.Pages.Admin
 
@@ -19,6 +20,7 @@
     <div class="d-flex align-center" style="gap:8px">
         @if (!_cargando && _empleados.Count > 0)
         {
+            <VistaToggle OnCambio="StateHasChanged" />
             <MudTextField T="string" @bind-Value="_busqueda" Placeholder="Buscar empleado…"
                           Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                           Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense"
@@ -58,7 +60,7 @@ else if (_empleados.Count == 0 && _errorCarga is null)
         BotonTexto="Nuevo empleado"
         BotonOnClick="AbrirCreacionAsync" />
 }
-else
+else if (Preferencias.VistaListado == "lista")
 {
     <MudTable Items="EmpleadosFiltrados" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
@@ -119,6 +121,52 @@ else
             </MudTd>
         </RowTemplate>
     </MudTable>
+}
+else
+{
+    <div class="nexo-cards-grid">
+        @foreach (var e in EmpleadosFiltrados)
+        {
+            <div class="nexo-ec nexo-ec--rrhh">
+                <div class="nexo-ec__header">
+                    <span class="nexo-ec__title">@e.Nombres @e.Apellidos</span>
+                    <MudChip T="string" Size="Size.Small" Color="@ColorEstadoLaboral(e)" Style="margin:0;height:20px;font-size:.7rem">@EtiquetaEstadoLaboral(e)</MudChip>
+                </div>
+                <div class="nexo-ec__body">
+                    <div class="nexo-ec__row">
+                        <span class="nexo-ec__label">Cargo</span>
+                        <span class="nexo-ec__value">@(e.Cargo ?? "—")</span>
+                    </div>
+                    <div class="nexo-ec__row">
+                        <span class="nexo-ec__label">Departamento</span>
+                        <span class="nexo-ec__value">@(e.Departamento ?? "—")</span>
+                    </div>
+                    <div class="nexo-ec__row">
+                        <span class="nexo-ec__label">Centro de Costo</span>
+                        <span class="nexo-ec__value">@(e.CentroCosto ?? "—")</span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(e.Telefono))
+                    {
+                        <div class="nexo-ec__row">
+                            <span class="nexo-ec__label">Teléfono</span>
+                            <span class="nexo-ec__value">@e.Telefono</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(e.Email))
+                    {
+                        <div class="nexo-ec__row">
+                            <span class="nexo-ec__label">Email</span>
+                            <span class="nexo-ec__value">@e.Email</span>
+                        </div>
+                    }
+                </div>
+                <div class="nexo-ec__actions">
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(e))">Gestionar</MudButton>
+                    <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(e))">Editar</MudButton>
+                </div>
+            </div>
+        }
+    </div>
 }
 
 @code {

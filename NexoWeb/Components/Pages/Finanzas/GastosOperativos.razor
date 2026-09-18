@@ -3,6 +3,7 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Gastos Operativos - NEXO</PageTitle>
@@ -14,6 +15,9 @@
             <p class="nexo-page-hero__module">Finanzas</p>
             <h1 class="nexo-page-hero__title">Gastos Operativos</h1>
         </div>
+    </div>
+    <div class="d-flex align-center" style="gap:8px">
+        <VistaToggle OnCambio="StateHasChanged" />
     </div>
 </div>
 <InfoAyuda Texto="Registro de todos los gastos de la empresa fuera de producción: eventos, viáticos, servicios, publicidad y más. Compara por categoría y mes." />
@@ -107,7 +111,7 @@ else if (_gastos.Count == 0)
         BotonTexto="Registrar primer gasto"
         BotonOnClick="AbrirCreacionAsync" />
 }
-else
+else if (Preferencias.VistaListado == "lista")
 {
     <MudTable Items="_gastosPorFecha" Hover="true" Dense="true" Groupable="false">
         <HeaderContent>
@@ -161,6 +165,40 @@ else
             <MudTd />
         </FooterContent>
     </MudTable>
+}
+else
+{
+    <div class="nexo-cards-grid">
+        @foreach (var g in _gastosPorFecha)
+        {
+            <div class="nexo-ec nexo-ec--finanzas">
+                <div class="nexo-ec__header">
+                    <div class="nexo-ec__avatar" style="background:linear-gradient(135deg,#3B82F6,#1D4ED8)">
+                        <span style="font-size:1.3rem">@CatIcon(g.Categoria)</span>
+                    </div>
+                    <div class="nexo-ec__title-block">
+                        <div class="nexo-ec__name">@g.Descripcion</div>
+                        <div class="nexo-ec__sub">@g.Categoria · @g.Fecha.ToString("dd/MM/yyyy")</div>
+                    </div>
+                    <strong style="font-size:0.9rem;color:var(--n-text-1);white-space:nowrap">@g.Monto.ToString("C0")</strong>
+                </div>
+                <div class="nexo-ec__body">
+                    @if (g.Proveedor is not null)
+                    {
+                        <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.Store" Size="Size.Small" /><span>@g.Proveedor</span></div>
+                    }
+                    @if (g.CentroCosto is not null)
+                    {
+                        <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.Business" Size="Size.Small" /><span>@g.CentroCosto</span></div>
+                    }
+                </div>
+                <div class="nexo-ec__footer">
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => AbrirEdicionAsync(g))">Editar</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error" OnClick="@(() => EliminarAsync(g))">Eliminar</MudButton>
+                </div>
+            </div>
+        }
+    </div>
 }
 
 @code {

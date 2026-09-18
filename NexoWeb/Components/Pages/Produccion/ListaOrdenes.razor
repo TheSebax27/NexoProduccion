@@ -17,7 +17,8 @@
         </h1>
         <p class="prod-header__sub">Planifica, libera y cierra órdenes de producción. El stock se descuenta al liberar.</p>
     </div>
-    <div class="prod-header__actions">
+    <div class="prod-header__actions" style="display:flex;align-items:center;gap:8px;">
+        <VistaToggle OnCambio="StateHasChanged" />
         @if (_puedeGestionar && (_cargando || _todas.Any() || _filtroEstado is not null))
         {
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
@@ -92,7 +93,7 @@ else if (_ordenes.Count == 0)
         </div>
     }
 }
-else
+else if (Preferencias.VistaListado == "lista")
 {
     <div class="prod-table-wrap">
         <table class="prod-table">
@@ -213,6 +214,51 @@ else
             <span><MudIcon Icon="@Icons.Material.Filled.Cancel" Style="font-size:14px; vertical-align:middle;" /> Cancelar</span>
         </div>
     }
+}
+else
+{
+    <div class="nexo-cards-grid">
+        @foreach (var o in _ordenes)
+        {
+            var (chipColor, chipIcon) = ChipEstado(o.Estado);
+            var fecha = o.FechaInicio ?? o.FechaPlanificada;
+            <div class="nexo-ec nexo-ec--produccion">
+                <div class="nexo-ec__header">
+                    <div class="nexo-ec__avatar" style="background:linear-gradient(135deg,#F59E0B,#D97706)">
+                        <MudIcon Icon="@Icons.Material.Filled.Factory" Size="Size.Small" Style="color:#fff" />
+                    </div>
+                    <div class="nexo-ec__title-block">
+                        <div class="nexo-ec__name">@o.CodigoOP</div>
+                        <div class="nexo-ec__sub">@o.Producto</div>
+                    </div>
+                    <MudChip T="string" Size="Size.Small" Color="@chipColor" Icon="@chipIcon" Style="font-size:0.7rem">@o.Estado</MudChip>
+                </div>
+                <div class="nexo-ec__body">
+                    <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.Factory" Size="Size.Small" /><span>@o.CentroCosto</span></div>
+                    <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.Inventory" Size="Size.Small" /><strong>@o.CantidadProgramada.ToString("N0")</strong><span>programadas</span></div>
+                    @if (fecha.HasValue)
+                    {
+                        <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.CalendarToday" Size="Size.Small" /><span>@fecha.Value.ToString("dd/MM/yy")</span></div>
+                    }
+                </div>
+                <div class="nexo-ec__footer">
+                    @if (o.Estado == "Planificada" && _puedeGestionar)
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Href="@($"/produccion/ordenes/{o.OrdenProduccionID}/editar")">Editar</MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Info" OnClick="@(() => LiberarConVerificacionAsync(o))">Liberar</MudButton>
+                    }
+                    else if (o.Estado == "Liberada" && _puedeGestionar)
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => IniciarAsync(o.OrdenProduccionID))">Iniciar</MudButton>
+                    }
+                    else if (o.Estado == "En Proceso" && _puedeCerrar)
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Success" OnClick="@(() => AbrirCierreAsync(o.OrdenProduccionID, o.CodigoOP))">Cerrar</MudButton>
+                    }
+                </div>
+            </div>
+        }
+    </div>
 }
 
 @code {

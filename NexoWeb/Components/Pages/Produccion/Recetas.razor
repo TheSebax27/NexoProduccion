@@ -17,7 +17,8 @@
         </h1>
         <p class="prod-header__sub">Define los insumos y cantidades por corrida. Cada cambio importante crea una nueva versión.</p>
     </div>
-    <div class="prod-header__actions">
+    <div class="prod-header__actions" style="display:flex;align-items:center;gap:8px;">
+        <VistaToggle OnCambio="StateHasChanged" />
         @if (_cargando || _recetas.Count > 0 || _filtroProductoId is not null)
         {
             <MudButton Variant="Variant.Filled" Color="Color.Success" Href="/produccion/recetas/crear"

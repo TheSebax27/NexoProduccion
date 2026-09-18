@@ -3,11 +3,15 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Proyectos - NEXO</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">Proyectos</MudText>
+<div class="d-flex align-center justify-space-between mb-4">
+    <MudText Typo="Typo.h5">Proyectos</MudText>
+    <VistaToggle OnCambio="StateHasChanged" />
+</div>
 <InfoAyuda Texto="Gestión básica de proyectos: tareas con responsable y fecha límite, y costos imputados (mano de obra, materiales u otros) comparados contra el presupuesto." />
 
 @if (_errorCarga is not null)
@@ -46,7 +50,37 @@ else
         </MudButton>
     </div>
 
-    @* ── Grid de cards ── *@
+    @* ── Grid de cards / lista ── *@
+    @if (Preferencias.VistaListado == "lista")
+    {
+    <MudTable Items="_proyectosFiltrados" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Nombre</MudTh>
+            <MudTh>Cliente</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Prioridad</MudTh>
+            <MudTh Style="text-align:right">Presupuesto</MudTh>
+            <MudTh>Tareas</MudTh>
+            <MudTh>Vence</MudTh>
+            <MudTh>Acción</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+            <MudTd DataLabel="Cliente">@(context.Cliente ?? "—")</MudTd>
+            <MudTd DataLabel="Estado"><MudChip T="string" Size="Size.Small" Color="@ColorEstado(context.Estado)">@EstadoLabel(context.Estado)</MudChip></MudTd>
+            <MudTd DataLabel="Prioridad">@context.Prioridad</MudTd>
+            <MudTd DataLabel="Presupuesto" Style="text-align:right">@context.Presupuesto.ToString("C0")</MudTd>
+            <MudTd DataLabel="Tareas">@context.TareasCompletadas/@context.TotalTareas</MudTd>
+            <MudTd DataLabel="Vence">@(context.FechaFin?.ToString("dd/MM/yyyy") ?? "—")</MudTd>
+            <MudTd DataLabel="Acción">
+                <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
+                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => AbrirEdicionAsync(context))">Editar</MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+    }
+    else
+    {
     <div class="nexo-card-grid">
         @foreach (var p in _proyectosFiltrados)
         {
@@ -141,6 +175,7 @@ else
             </div>
         }
     </div>
+    }
 
     @if (!_proyectosFiltrados.Any())
     {

@@ -3,12 +3,14 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Leads - NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+<div class="d-flex align-center justify-space-between mb-4">
     <MudText Typo="Typo.h5">Leads</MudText>
+    <VistaToggle OnCambio="StateHasChanged" />
 </div>
 <InfoAyuda Texto="Un Lead es un prospecto que todavía no es cliente. Sigue su propio embudo (Nuevo → Contactado → Calificado → Convertido/Descartado). Al convertirlo se crea el Cliente automáticamente, con la misma información." />
 
@@ -51,6 +53,8 @@ else
     }
 else
 {
+    @if (Preferencias.VistaListado == "lista")
+    {
     <MudTable Items="_leads" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
             <MudTh>Nombre</MudTh>
@@ -127,6 +131,45 @@ else
             </MudTd>
         </RowTemplate>
     </MudTable>
+    }
+    else
+    {
+    <div class="nexo-cards-grid">
+        @foreach (var l in _leads)
+        {
+            <div class="nexo-ec nexo-ec--crm">
+                <div class="nexo-ec__header">
+                    <div class="nexo-ec__avatar" style="background:linear-gradient(135deg,#22D3EE,#0EA5E9)">
+                        @(l.Nombre?.Length > 0 ? l.Nombre[0..1].ToUpper() : "L")
+                    </div>
+                    <div class="nexo-ec__title-block">
+                        <div class="nexo-ec__name">@l.Nombre</div>
+                        <div class="nexo-ec__sub">@(l.Empresa ?? l.NIT ?? "Sin empresa")</div>
+                    </div>
+                    <MudChip T="string" Size="Size.Small" Color="@ColorEtapa(l.Etapa)" Style="font-size:0.7rem">@l.Etapa</MudChip>
+                </div>
+                <div class="nexo-ec__body">
+                    @if (!string.IsNullOrEmpty(l.FuenteContacto))
+                    {
+                        <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.Source" Size="Size.Small" /><span>@l.FuenteContacto</span></div>
+                    }
+                    @if (!string.IsNullOrEmpty(l.Responsable))
+                    {
+                        <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.Person" Size="Size.Small" /><span>@l.Responsable</span></div>
+                    }
+                    <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.CalendarToday" Size="Size.Small" /><span>@l.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy")</span></div>
+                </div>
+                <div class="nexo-ec__footer">
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => AbrirEdicionAsync(l))">Editar</MudButton>
+                    @if (l.Etapa == "CALIFICADO")
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Success" OnClick="@(() => ConvertirAsync(l))">Convertir</MudButton>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+    }
     }
 }
 

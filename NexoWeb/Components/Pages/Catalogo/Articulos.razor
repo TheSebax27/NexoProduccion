@@ -19,6 +19,7 @@
         <p class="art-header__sub">Catálogo maestro: materias primas, insumos y productos terminados.</p>
     </div>
     <div class="art-header__actions">
+        <VistaToggle OnCambio="StateHasChanged" />
         <ExportButton Endpoint="api/catalogo/articulos/exportar" NombreArchivo="articulos" />
         <MudFileUpload T="IBrowserFile" FilesChanged="ImportarExcelAsync" Accept=".xlsx,.xls" MaximumFileCount="1">
             <ActivatorContent>

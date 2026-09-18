@@ -5,6 +5,7 @@
 @inject INexoApiClient Api
 @inject ISnackbar Snackbar
 @inject IDialogService Dialog
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 
 <PageTitle>Asistencia — NEXO</PageTitle>
 
@@ -17,6 +18,7 @@
         </div>
     </div>
     <div class="d-flex align-center" style="gap:8px">
+        <VistaToggle OnCambio="StateHasChanged" />
         <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Tv"
                    Href="/rrhh/kiosco" Target="_blank">
             Abrir Kiosco
@@ -64,6 +66,8 @@
     <MudProgressLinear Indeterminate Color="Color.Primary" Class="mb-4" />
 }
 
+@if (Preferencias.VistaListado == "lista")
+{
 <MudTable Items="_registros" Dense Hover Bordered Loading="_cargando" LoadingProgressColor="Color.Primary">
     <HeaderContent>
         <MudTh>Empleado</MudTh>
@@ -144,6 +148,48 @@
         <MudText Color="Color.Secondary">No hay registros para los filtros seleccionados.</MudText>
     </NoRecordsContent>
 </MudTable>
+}
+else
+{
+<div class="nexo-cards-grid">
+    @foreach (var r in _registros)
+    {
+        <div class="nexo-ec nexo-ec--rrhh">
+            <div class="nexo-ec__header">
+                <span class="nexo-ec__title">@r.Empleado</span>
+                <span class="nexo-ec__badge">@r.Fecha.ToString("dd/MM/yyyy")</span>
+            </div>
+            <div class="nexo-ec__body">
+                <div class="nexo-ec__row">
+                    <span class="nexo-ec__label">Entrada</span>
+                    <span class="nexo-ec__value">@(r.HoraEntrada?.ToString("HH:mm") ?? "—")</span>
+                </div>
+                <div class="nexo-ec__row">
+                    <span class="nexo-ec__label">Salida</span>
+                    <span class="nexo-ec__value">@(r.HoraSalida?.ToString("HH:mm") ?? "—")</span>
+                </div>
+                <div class="nexo-ec__row">
+                    <span class="nexo-ec__label">Horas</span>
+                    <span class="nexo-ec__value">@(r.HorasEfectivas.HasValue ? $"{r.HorasEfectivas:F1}h" : "—")</span>
+                </div>
+                @if (r.MinutosTardanza.HasValue)
+                {
+                    var min = r.MinutosTardanza.Value;
+                    var col = min == 0 ? "color:var(--mud-palette-success)" : min <= 15 ? "color:var(--mud-palette-warning)" : "color:var(--mud-palette-error)";
+                    <div class="nexo-ec__row">
+                        <span class="nexo-ec__label">Tardanza</span>
+                        <span class="nexo-ec__value" style="@col">@(min == 0 ? "A tiempo" : $"+{min} min")</span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    @if (!_registros.Any())
+    {
+        <MudText Color="Color.Secondary">No hay registros para los filtros seleccionados.</MudText>
+    }
+</div>
+}
 
 @code {
     List<EmpleadoItem> _empleados = [];

@@ -4,12 +4,14 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Cotizaciones - NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+<div class="d-flex align-center justify-space-between mb-4">
     <MudText Typo="Typo.h5">Cotizaciones</MudText>
+    <VistaToggle OnCambio="StateHasChanged" />
 </div>
 <InfoAyuda Texto="Propuesta formal de venta con líneas de artículos y precios, antes de facturar. Una cotización Aceptada se puede convertir directo en Factura sin volver a teclear cliente ni artículos." />
 
@@ -55,7 +57,7 @@ else if (_cotizaciones.Count == 0)
 {
     <MudText>No hay cotizaciones registradas.</MudText>
 }
-else
+else if (Preferencias.VistaListado == "lista")
 {
     <MudTable Items="_cotizaciones" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
@@ -123,6 +125,41 @@ else
             <MudText>No hay cotizaciones registradas.</MudText>
         </NoRecordsContent>
     </MudTable>
+}
+else
+{
+    <div class="nexo-cards-grid">
+        @foreach (var cotiz in _cotizaciones)
+        {
+            <div class="nexo-ec nexo-ec--crm">
+                <div class="nexo-ec__header">
+                    <div class="nexo-ec__avatar" style="background:linear-gradient(135deg,#0891B2,#22D3EE)">
+                        <MudIcon Icon="@Icons.Material.Outlined.Description" Size="Size.Small" Style="color:#fff" />
+                    </div>
+                    <div class="nexo-ec__title-block">
+                        <div class="nexo-ec__name">COT-@cotiz.CotizacionID</div>
+                        <div class="nexo-ec__sub">@cotiz.Cliente</div>
+                    </div>
+                    <MudChip T="string" Size="Size.Small" Color="@ColorEstado(cotiz.Estado)" Style="font-size:0.7rem">@cotiz.Estado</MudChip>
+                </div>
+                <div class="nexo-ec__body">
+                    <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.AttachMoney" Size="Size.Small" /><strong>@cotiz.Total.ToString("N0")</strong></div>
+                    <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.CalendarToday" Size="Size.Small" /><span>@cotiz.Fecha.ToString("dd/MM/yyyy")</span></div>
+                    @if (cotiz.ValidoHasta.HasValue)
+                    {
+                        <div class="nexo-ec__row"><MudIcon Icon="@Icons.Material.Outlined.Event" Size="Size.Small" /><span>Válido hasta @cotiz.ValidoHasta.Value.ToString("dd/MM/yyyy")</span></div>
+                    }
+                </div>
+                <div class="nexo-ec__footer">
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => AbrirGestionAsync(cotiz))">Gestionar</MudButton>
+                    @if (cotiz.Estado == "ACEPTADA" && cotiz.FacturaID is null)
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Success" OnClick="@(() => ConvertirAFacturaAsync(cotiz.CotizacionID))">→ Factura</MudButton>
+                    }
+                </div>
+            </div>
+        }
+    </div>
 }
 
 @* ── Diálogo envío (Email / WhatsApp / Ambos) ──────────────────────── *@

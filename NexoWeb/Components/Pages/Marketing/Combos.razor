@@ -4,18 +4,22 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 
 <PageTitle>Combos / Ofertas</PageTitle>
 
 <div class="d-flex align-center justify-space-between mb-3 flex-wrap" style="gap:.5rem">
     <MudText Typo="Typo.h5">Combos y Ofertas</MudText>
-    <AuthorizeView Roles="Administracion,Jefes,Marketing">
-        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                   StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="NuevoCombo">
-            Nuevo combo
-        </MudButton>
-    </AuthorizeView>
+    <div class="d-flex align-center" style="gap:8px">
+        <VistaToggle OnCambio="StateHasChanged" />
+        <AuthorizeView Roles="Administracion,Jefes,Marketing">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="NuevoCombo">
+                Nuevo combo
+            </MudButton>
+        </AuthorizeView>
+    </div>
 </div>
 <InfoAyuda Texto="Crea combos y ofertas especiales agrupando artículos con precio fijo o descuento. Actívalos por período y aplícalos en ventas." />
 
@@ -42,6 +46,28 @@
 else if (_combos.Count == 0)
 {
     <MudAlert Severity="Severity.Info">No hay combos registrados.</MudAlert>
+}
+else if (Preferencias.VistaListado == "lista")
+{
+    <MudTable Items="_combos" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Nombre</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh Style="text-align:right">Precio</MudTh>
+            <MudTh>Vigencia</MudTh>
+            <MudTh>Acción</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+            <MudTd DataLabel="Estado"><MudChip T="string" Size="Size.Small" Color="@ChipEstado(context.Estado)">@context.Estado</MudChip></MudTd>
+            <MudTd DataLabel="Precio" Style="text-align:right">@context.PrecioEfectivo.ToString("C0")</MudTd>
+            <MudTd DataLabel="Vigencia">@(context.FechaInicio?.ToString("dd/MM") ?? "—") — @(context.FechaFin?.ToString("dd/MM/yyyy") ?? "—")</MudTd>
+            <MudTd DataLabel="Acción">
+                <MudButton Size="Size.Small" OnClick="@(() => EditarCombo(context))">Editar</MudButton>
+                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => VerCombo(context))">Ver</MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
 }
 else
 {

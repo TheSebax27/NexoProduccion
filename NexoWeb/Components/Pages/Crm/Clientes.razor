@@ -13,10 +13,13 @@
     <div class="d-flex align-center" style="gap:0.25rem">
         <MudText Typo="Typo.h5">Clientes</MudText>
     </div>
-    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Map"
-               OnClick="AbrirMapaAsync" Size="Size.Small">
-        Ver mapa
-    </MudButton>
+    <div class="d-flex align-center" style="gap:8px">
+        <VistaToggle OnCambio="StateHasChanged" />
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Map"
+                   OnClick="AbrirMapaAsync" Size="Size.Small">
+            Ver mapa
+        </MudButton>
+    </div>
 </div>
 <InfoAyuda Texto="Registra los clientes de la empresa, con seguimiento comercial: de dónde vinieron, qué tipo de cliente son y quién los atiende. Usa 'Gestionar' para ver contactos, bitácora, historial completo y documentos de cada uno." />
 

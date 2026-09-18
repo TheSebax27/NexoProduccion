@@ -3,12 +3,14 @@
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Actividades CRM - NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+<div class="d-flex align-center justify-space-between mb-4">
     <MudText Typo="Typo.h5">Actividades</MudText>
+    <VistaToggle OnCambio="StateHasChanged" />
 </div>
 <InfoAyuda Texto="Registro de llamadas, emails, reuniones y tareas de seguimiento vinculadas a oportunidades y clientes. Las actividades vencidas o de hoy aparecen resaltadas." />
 

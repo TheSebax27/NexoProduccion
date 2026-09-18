@@ -16,7 +16,8 @@
         </h1>
         <p class="inv-header__sub">El stock se descuenta de la bodega origen al enviar y se suma en destino al confirmar la recepción.</p>
     </div>
-    <div class="inv-header__actions">
+    <div class="inv-header__actions" style="display:flex;align-items:center;gap:8px;">
+        <VistaToggle OnCambio="StateHasChanged" />
         <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
                    StartIcon="@Icons.Material.Filled.Add">
             Nuevo Traspaso

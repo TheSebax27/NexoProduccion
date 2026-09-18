@@ -3,12 +3,14 @@
 @inject INexoApiClient ApiClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
 
 <PageTitle>Oportunidades - NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
+<div class="d-flex align-center justify-space-between mb-4">
     <MudText Typo="Typo.h5">Oportunidades</MudText>
+    <VistaToggle OnCambio="StateHasChanged" />
 </div>
 <InfoAyuda Texto="Embudo de ventas: cada oportunidad viene de un Lead o de un Cliente existente, con valor estimado y probabilidad de cierre. Muévela entre etapas con las flechas, o márcala Ganada/Perdida directamente." />
 
@@ -24,6 +26,33 @@
 @if (_cargando)
 {
     <MudProgressCircular Indeterminate="true" Class="ma-4" />
+}
+else if (Preferencias.VistaListado == "lista")
+{
+    <MudTable Items="_oportunidades" Hover="true" Dense="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Nombre</MudTh>
+            <MudTh>Cliente/Lead</MudTh>
+            <MudTh Style="text-align:right">Valor</MudTh>
+            <MudTh>Etapa</MudTh>
+            <MudTh>Responsable</MudTh>
+            <MudTh>Cierre</MudTh>
+            <MudTh>Acción</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+            <MudTd DataLabel="Cliente/Lead">@(context.Cliente ?? context.Lead ?? "-")</MudTd>
+            <MudTd DataLabel="Valor" Style="text-align:right">@context.ValorEstimado.ToString("C0")</MudTd>
+            <MudTd DataLabel="Etapa">
+                <MudChip T="string" Size="Size.Small" Color="@(context.Etapa is "GANADA" ? Color.Success : context.Etapa is "PERDIDA" ? Color.Error : Color.Primary)">@context.Etapa</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Responsable">@(context.Responsable ?? "-")</MudTd>
+            <MudTd DataLabel="Cierre">@(context.FechaCierreEsperada?.ToString("dd/MM/yyyy") ?? "-")</MudTd>
+            <MudTd DataLabel="Acción">
+                <MudButton Size="Size.Small" OnClick="@(() => AbrirEdicionAsync(context))">Editar</MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
 }
 else
 {
