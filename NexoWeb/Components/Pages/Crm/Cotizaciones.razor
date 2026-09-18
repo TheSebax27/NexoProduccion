@@ -8,8 +8,14 @@
 
 <PageTitle>Cotizaciones - NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
-    <MudText Typo="Typo.h5">Cotizaciones</MudText>
+<div class="nexo-page-hero">
+    <div class="nexo-page-hero__left">
+        <div class="nexo-page-hero__accent"></div>
+        <div>
+            <p class="nexo-page-hero__module">CRM</p>
+            <h1 class="nexo-page-hero__title">Cotizaciones</h1>
+        </div>
+    </div>
 </div>
 <InfoAyuda Texto="Propuesta formal de venta con líneas de artículos y precios, antes de facturar. Una cotización Aceptada se puede convertir directo en Factura sin volver a teclear cliente ni artículos." />
 
@@ -53,7 +59,12 @@
 }
 else if (_cotizaciones.Count == 0)
 {
-    <MudText>No hay cotizaciones registradas.</MudText>
+    <NexoEmptyState
+        Icono="@Icons.Material.Outlined.RequestQuote"
+        Titulo="Sin cotizaciones"
+        Descripcion="@(_filtroCliente is not null || _filtroEstado is not null ? "Ninguna cotización coincide con el filtro." : "Aún no hay cotizaciones registradas.")"
+        BotonTexto="@(_filtroCliente is null && _filtroEstado is null ? "Nueva Cotización" : null)"
+        BotonOnClick="@(_filtroCliente is null && _filtroEstado is null ? AbrirCreacionAsync : default)" />
 }
 else
 {

@@ -177,10 +177,10 @@
 ::deep .nexo-topbar__notif-panel {
   min-width: 300px;
   max-width: 360px;
-  background: #FFFFFF;
+  background: var(--mud-palette-surface);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.32);
+  border: 1px solid var(--n-border);
   overflow: hidden;
   overflow-y: auto;
   max-height: 70vh;

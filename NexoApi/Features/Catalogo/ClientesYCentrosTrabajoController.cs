@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NexoApi.Common.Export;
 using NexoApi.Features.Catalogo.Dtos;
+using NexoApi.Features.Configuracion;
 
 namespace NexoApi.Features.Catalogo;
 
@@ -13,10 +15,12 @@ namespace NexoApi.Features.Catalogo;
 public class ClientesYCentrosTrabajoController : ControllerBase
 {
     private readonly ICatalogoService _service;
+    private readonly IConfiguracionService _config;
 
-    public ClientesYCentrosTrabajoController(ICatalogoService service)
+    public ClientesYCentrosTrabajoController(ICatalogoService service, IConfiguracionService config)
     {
         _service = service;
+        _config  = config;
     }
 
     [HttpGet("centros-trabajo")]
@@ -90,5 +94,26 @@ public class ClientesYCentrosTrabajoController : ControllerBase
     {
         var id = await _service.AgregarComoClienteDesdeProveedorAsync(proveedorId);
         return Ok(new { ClienteID = id });
+    }
+
+    // ── Exportar proveedores ─────────────────────────────────────────────────
+
+    [HttpGet("proveedores/exportar/excel")]
+    public async Task<IActionResult> ExportarProveedoresExcel()
+    {
+        var proveedores = await _service.ListarProveedoresAsync();
+        var bytes       = ExportService.GenerarExcelProveedores(proveedores);
+        return File(bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"proveedores_{DateTime.Now:yyyyMMdd}.xlsx");
+    }
+
+    [HttpGet("proveedores/exportar/pdf")]
+    public async Task<IActionResult> ExportarProveedoresPdf()
+    {
+        var proveedores = await _service.ListarProveedoresAsync();
+        var empresa     = await _config.ObtenerEmpresaAsync();
+        var bytes       = ExportService.GenerarPdfProveedores(proveedores, empresa.NombreEmpresa);
+        return File(bytes, "application/pdf", $"proveedores_{DateTime.Now:yyyyMMdd}.pdf");
     }
 }

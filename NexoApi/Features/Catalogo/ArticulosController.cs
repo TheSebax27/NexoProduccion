@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using NexoApi.Common.Export;
 using NexoApi.Features.Catalogo.Dtos;
 using NexoApi.Features.Configuracion;
+using NexoApi.Common.Security;
 
 namespace NexoApi.Features.Catalogo;
 
@@ -79,6 +80,10 @@ public class ArticulosController : ControllerBase
     {
         return Ok(await _service.ListarTodosArticulosAsync(tipoArticuloId, estado));
     }
+
+    [HttpGet("count")]
+    public async Task<ActionResult<int>> Contar([FromQuery] bool? estado)
+        => Ok(await _service.ContarArticulosAsync(estado));
 
     [HttpGet("buscar")]
     public async Task<ActionResult<IEnumerable<ArticuloItem>>> Buscar(
@@ -313,11 +318,13 @@ public class ArticulosController : ControllerBase
     }
 
     [HttpGet("adicionales/sync")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
     public async Task<ActionResult<AdicionalesSyncResponse>> SyncData()
         => Ok(await _adicionales.ObtenerDatosSyncAsync());
 
     // El agente llama aquí para subir lo que Visions tiene (upsert; no elimina en NEXO).
     [HttpPost("adicionales/sync-desde-visions")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
     public async Task<ActionResult> SyncDesdeVisions([FromBody] AdicionalesSyncDesdeVisionsRequest request)
     {
         await _adicionales.SincronizarDesdeVisionsAsync(request);

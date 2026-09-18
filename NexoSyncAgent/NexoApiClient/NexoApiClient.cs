@@ -33,10 +33,13 @@ public class NexoApiClient : INexoApiClient
     {
         var respuesta = await _http.PostAsJsonAsync("api/integracion/eventos-entrantes", request, ct);
 
-        // Si el evento ya existia (idempotencia del lado de la API), la API
-        // responde 200 igual -- no es un error, asi que no hace falta
-        // tratarlo distinto aqui.
-        respuesta.EnsureSuccessStatusCode();
+        if (!respuesta.IsSuccessStatusCode)
+        {
+            var cuerpo = await respuesta.Content.ReadAsStringAsync(ct);
+            throw new HttpRequestException(
+                $"Error {(int)respuesta.StatusCode} al registrar evento entrante [{request.IdEventoExterno}]: {cuerpo}",
+                null, respuesta.StatusCode);
+        }
     }
 
     public async Task<ConfiguracionAgenteResponse> ObtenerConfiguracionAsync(CancellationToken ct)
@@ -258,6 +261,12 @@ public class NexoApiClient : INexoApiClient
     public async Task SincronizarAdicionalesDesdeVisionsAsync(AdicionalesSyncDesdeVisionsRequest request, CancellationToken ct)
     {
         var r = await _http.PostAsJsonAsync("api/catalogo/articulos/adicionales/sync-desde-visions", request, ct);
+        r.EnsureSuccessStatusCode();
+    }
+
+    public async Task SolicitarCatalogoCompletoAsync(CancellationToken ct)
+    {
+        var r = await _http.PostAsync("api/integracion/sync/solicitar-catalogo-completo", null, ct);
         r.EnsureSuccessStatusCode();
     }
 }

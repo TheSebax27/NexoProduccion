@@ -156,7 +156,11 @@
         _articuloSeleccionado = art;
         _modoManual = false;
         _cajas = 0; _unidades = 0; _cantidad = 0;
+        _costoUnitario = art is null ? 0m : RedonearCosto(art.PPublico ?? 0m);
     }
+
+    private static decimal RedonearCosto(decimal costo) =>
+        costo > 1000m ? Math.Round(costo, 0) : costo;
 
     private void RecalcularDesdeCajas()
     {

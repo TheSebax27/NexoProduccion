@@ -640,16 +640,22 @@ public class CrmService : ICrmService
         using var connection = _db.CreateConnection();
 
         const string sql = @"
+            WITH UltInteraccion AS (
+                SELECT ClienteID, MAX(Fecha) AS UltimaFecha
+                FROM Crm.Interacciones
+                GROUP BY ClienteID
+            )
             SELECT c.ClienteID, c.ExternalId, c.Nombre, e.Nombres + ' ' + e.Apellidos AS Responsable,
-                   (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion,
+                   ui.UltimaFecha AS UltimaInteraccion,
                    c.ProximoContacto
             FROM Crm.Clientes c
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = c.ResponsableID
+            LEFT JOIN UltInteraccion ui ON ui.ClienteID = c.ClienteID
             WHERE c.Estado = 1
               AND c.NIT <> 'CF-SYS'
               AND (
-                  (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) IS NULL
-                  OR (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) < DATEADD(DAY, -@DiasSinContacto, SYSUTCDATETIME())
+                  ui.UltimaFecha IS NULL
+                  OR ui.UltimaFecha < DATEADD(DAY, -@DiasSinContacto, SYSUTCDATETIME())
                   OR (c.ProximoContacto IS NOT NULL AND c.ProximoContacto < CAST(GETDATE() AS DATE))
               )
             ORDER BY c.Nombre";
@@ -897,14 +903,15 @@ public class CrmService : ICrmService
         if (lineas.Count == 0)
             throw new InvalidOperationException("La cotización no tiene artículos para facturar.");
 
-        // Verificar stock antes de crear la factura
+        // Verificar stock antes de crear la factura — filtrado por el CC de la cotización
         var articuloIds = lineas.Select(l => l.ArticuloID).Distinct().ToList();
         var stocks = (await connection.QueryAsync<StockArticulo>(
-            @"SELECT ArticuloID, ISNULL(SUM(CantidadActual), 0) AS StockTotal
-              FROM Inventario.InventarioStock
-              WHERE ArticuloID IN @ids
-              GROUP BY ArticuloID",
-            new { ids = articuloIds })).ToDictionary(s => s.ArticuloID, s => s.StockTotal);
+            @"SELECT s.ArticuloID, ISNULL(SUM(s.CantidadActual), 0) AS StockTotal
+              FROM Inventario.InventarioStock s
+              JOIN Inventario.Bodegas b ON b.BodegaID = s.BodegaID
+              WHERE s.ArticuloID IN @ids AND (@ccId = 0 OR b.CentroCostoID = @ccId)
+              GROUP BY s.ArticuloID",
+            new { ids = articuloIds, ccId = cotizacion.CentroCostoID ?? 0 })).ToDictionary(s => s.ArticuloID, s => s.StockTotal);
 
         var sinStock = lineas
             .Where(l => stocks.ContainsKey(l.ArticuloID) && l.Cantidad > stocks[l.ArticuloID])

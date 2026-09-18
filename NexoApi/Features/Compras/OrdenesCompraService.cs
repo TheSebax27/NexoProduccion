@@ -92,9 +92,11 @@ public class OrdenesCompraService : IOrdenesCompraService
             JOIN Catalogo.Proveedores p ON p.ProveedorID = oc.ProveedorID
             JOIN Compras.OrdenesCompraDetalle d ON d.OrdenCompraID = oc.OrdenCompraID
             WHERE (@Estado IS NULL OR oc.EstadoOC = @Estado)
+              AND oc.FechaEmision >= DATEADD(MONTH, -6, SYSUTCDATETIME())
             GROUP BY oc.OrdenCompraID, oc.Codigo, p.RazonSocial, oc.EstadoOC, oc.FechaEmision, oc.FechaRecepcion,
                      oc.ExportadoVisions, oc.NroDocVisions, oc.TipDocVisions
-            ORDER BY oc.FechaEmision DESC";
+            ORDER BY oc.FechaEmision DESC
+            OFFSET 0 ROWS FETCH NEXT 500 ROWS ONLY";
 
         return await connection.QueryAsync<OrdenCompraResumen>(sql, new { Estado = estado });
     }

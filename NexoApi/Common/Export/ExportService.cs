@@ -290,6 +290,212 @@ public static class ExportService
         })).GeneratePdf();
     }
 
+    public static byte[] GenerarExcelClientes(IEnumerable<ClienteItem> clientes)
+    {
+        using var wb = new XLWorkbook();
+        var ws = wb.Worksheets.Add("Clientes");
+
+        string[] headers = { "Nombre", "NIT", "Tipo Cliente", "Tipo Persona", "Teléfono", "Email",
+            "Dirección", "Ciudad", "Departamento", "Responsable", "Fuente Contacto",
+            "Total Contactos", "Última Interacción", "Estado" };
+        EstilizarEncabezados(ws, headers);
+
+        int row = 2;
+        foreach (var c in clientes)
+        {
+            ws.Cell(row, 1).Value  = c.Nombre;
+            ws.Cell(row, 2).Value  = c.NIT ?? "";
+            ws.Cell(row, 3).Value  = c.TipoCliente ?? "";
+            ws.Cell(row, 4).Value  = c.TipoPersona ?? "";
+            ws.Cell(row, 5).Value  = c.Telefono ?? "";
+            ws.Cell(row, 6).Value  = c.Email ?? "";
+            ws.Cell(row, 7).Value  = c.Direccion ?? "";
+            ws.Cell(row, 8).Value  = c.Ciudad ?? "";
+            ws.Cell(row, 9).Value  = c.Departamento ?? "";
+            ws.Cell(row, 10).Value = c.Responsable ?? "";
+            ws.Cell(row, 11).Value = c.FuenteContacto ?? "";
+            ws.Cell(row, 12).Value = c.TotalContactos;
+            ws.Cell(row, 13).Value = c.UltimaInteraccion.HasValue ? c.UltimaInteraccion.Value.ToString("dd/MM/yyyy") : "";
+            ws.Cell(row, 14).Value = c.Estado ? "Activo" : "Inactivo";
+            if (row % 2 == 0)
+                ws.Row(row).Style.Fill.BackgroundColor = XLColor.FromHtml("#F5F7FA");
+            row++;
+        }
+
+        ws.Columns().AdjustToContents();
+        ws.SheetView.FreezeRows(1);
+        using var ms = new MemoryStream();
+        wb.SaveAs(ms);
+        return ms.ToArray();
+    }
+
+    public static byte[] GenerarPdfClientes(IEnumerable<ClienteItem> clientes, string empresa)
+    {
+        const string azul = "#1E3A5F";
+        var lista = clientes.ToList();
+
+        return Document.Create(container => container.Page(page =>
+        {
+            page.Size(PageSizes.A4.Landscape());
+            page.MarginHorizontal(1.5f, Unit.Centimetre);
+            page.MarginVertical(1.2f, Unit.Centimetre);
+            page.DefaultTextStyle(x => x.FontSize(8f));
+
+            page.Header().Row(row =>
+            {
+                row.RelativeItem().Column(c =>
+                {
+                    c.Item().Text(empresa).Bold().FontSize(14).FontColor(azul);
+                    c.Item().Text("Listado de Clientes").FontSize(10).FontColor(Colors.Grey.Darken1);
+                });
+                row.AutoItem().AlignRight().Column(c =>
+                {
+                    c.Item().AlignRight().Text($"Fecha: {DateTime.Now:dd/MM/yyyy}").FontColor(Colors.Grey.Darken2);
+                    c.Item().AlignRight().Text($"Total: {lista.Count} clientes").FontColor(Colors.Grey.Darken2);
+                });
+            });
+
+            page.Content().PaddingTop(10).Table(table =>
+            {
+                table.ColumnsDefinition(cols =>
+                {
+                    cols.RelativeColumn(3);
+                    cols.RelativeColumn(2);
+                    cols.RelativeColumn(2);
+                    cols.RelativeColumn(2);
+                    cols.RelativeColumn(2);
+                    cols.RelativeColumn(2);
+                    cols.RelativeColumn(2);
+                });
+
+                table.Header(h =>
+                {
+                    foreach (var t in new[] { "Nombre", "NIT", "Teléfono", "Email", "Ciudad", "Responsable", "Estado" })
+                        h.Cell().Background(azul).Padding(4).Text(t).FontColor(Colors.White).Bold().FontSize(7.5f);
+                });
+
+                int idx = 0;
+                foreach (var c in lista)
+                {
+                    string bg = idx++ % 2 == 0 ? Colors.White : "#F9FAFB";
+                    table.Cell().Background(bg).BorderBottom(0.5f).BorderColor("#E5E7EB").Padding(4).Text(c.Nombre).FontSize(7.5f);
+                    table.Cell().Background(bg).BorderBottom(0.5f).BorderColor("#E5E7EB").Padding(4).Text(c.NIT ?? "").FontSize(7.5f);
+                    table.Cell().Background(bg).BorderBottom(0.5f).BorderColor("#E5E7EB").Padding(4).Text(c.Telefono ?? "").FontSize(7.5f);
+                    table.Cell().Background(bg).BorderBottom(0.5f).BorderColor("#E5E7EB").Padding(4).Text(c.Email ?? "").FontSize(7.5f);
+                    table.Cell().Background(bg).BorderBottom(0.5f).BorderColor("#E5E7EB").Padding(4).Text(c.Ciudad ?? "").FontSize(7.5f);
+                    table.Cell().Background(bg).BorderBottom(0.5f).BorderColor("#E5E7EB").Padding(4).Text(c.Responsable ?? "").FontSize(7.5f);
+                    table.Cell().Background(bg).BorderBottom(0.5f).BorderColor("#E5E7EB").Padding(4).Text(c.Estado ? "Activo" : "Inactivo").FontSize(7.5f);
+                }
+            });
+
+            page.Footer().AlignCenter().Text(t =>
+            {
+                t.DefaultTextStyle(s => s.FontSize(7).FontColor(Colors.Grey.Medium));
+                t.Span($"Generado por NEXO ERP — {DateTime.Now:dd/MM/yyyy HH:mm}");
+            });
+        })).GeneratePdf();
+    }
+
+    public static byte[] GenerarExcelProveedores(IEnumerable<ProveedorItem> proveedores)
+    {
+        using var wb = new XLWorkbook();
+        var ws = wb.Worksheets.Add("Proveedores");
+
+        string[] headers = { "Razón Social", "NIT", "Tipo Persona", "Contacto", "Teléfono", "Email",
+            "Dirección", "Ciudad", "Departamento", "País", "Estado" };
+        EstilizarEncabezados(ws, headers);
+
+        int row = 2;
+        foreach (var p in proveedores)
+        {
+            ws.Cell(row, 1).Value  = p.RazonSocial;
+            ws.Cell(row, 2).Value  = p.NIT ?? "";
+            ws.Cell(row, 3).Value  = p.TipoPersona ?? "";
+            ws.Cell(row, 4).Value  = p.Contacto ?? "";
+            ws.Cell(row, 5).Value  = p.Telefono ?? "";
+            ws.Cell(row, 6).Value  = p.Email ?? "";
+            ws.Cell(row, 7).Value  = p.Direccion ?? "";
+            ws.Cell(row, 8).Value  = p.Ciudad ?? "";
+            ws.Cell(row, 9).Value  = p.Departamento ?? "";
+            ws.Cell(row, 10).Value = p.Pais ?? "";
+            ws.Cell(row, 11).Value = p.Estado ? "Activo" : "Inactivo";
+            if (row % 2 == 0)
+                ws.Row(row).Style.Fill.BackgroundColor = XLColor.FromHtml("#F5F7FA");
+            row++;
+        }
+
+        ws.Columns().AdjustToContents();
+        ws.SheetView.FreezeRows(1);
+        using var ms = new MemoryStream();
+        wb.SaveAs(ms);
+        return ms.ToArray();
+    }
+
+    public static byte[] GenerarPdfProveedores(IEnumerable<ProveedorItem> proveedores, string empresa)
+    {
+        const string azul = "#1E3A5F";
+        var lista = proveedores.ToList();
+
+        return Document.Create(container => container.Page(page =>
+        {
+            page.Size(PageSizes.A4.Landscape());
+            page.MarginHorizontal(1.5f, Unit.Centimetre);
+            page.MarginVertical(1.2f, Unit.Centimetre);
+            page.DefaultTextStyle(x => x.FontSize(8f));
+
+            page.Header().Row(row =>
+            {
+                row.RelativeItem().Column(c =>
+                {
+                    c.Item().Text(empresa).Bold().FontSize(14).FontColor(azul);
+                    c.Item().Text("Listado de Proveedores").FontSize(10).FontColor(Colors.Grey.Darken1);
+                });
+                row.AutoItem().AlignRight().Column(c =>
+                {
+                    c.Item().AlignRight().Text($"Fecha: {DateTime.Now:dd/MM/yyyy}").FontColor(Colors.Grey.Darken2);
+                    c.Item().AlignRight().Text($"Total: {lista.Count} proveedores").FontColor(Colors.Grey.Darken2);
+                });
+            });
+
+            page.Content().PaddingTop(10).Table(table =>
+            {
+                table.ColumnsDefinition(cols =>
+                {
+                    cols.RelativeColumn(3);
+                    cols.RelativeColumn(2);
+                    cols.RelativeColumn(2);
+                    cols.RelativeColumn(2);
+                    cols.RelativeColumn(2);
+                    cols.RelativeColumn(2);
+                });
+
+                table.Header(h =>
+                {
+                    foreach (var t in new[] { "Razón Social", "NIT", "Teléfono", "Email", "Ciudad", "Estado" })
+                        h.Cell().Background(azul).Padding(4).Text(t).FontColor(Colors.White).Bold().FontSize(7.5f);
+                });
+
+                int idx = 0;
+                foreach (var p in lista)
+                {
+                    string bg = idx++ % 2 == 0 ? Colors.White : "#F9FAFB";
+                    table.Cell().Background(bg).BorderBottom(0.5f).BorderColor("#E5E7EB").Padding(4).Text(p.RazonSocial).FontSize(7.5f);
+                    table.Cell().Background(bg).BorderBottom(0.5f).BorderColor("#E5E7EB").Padding(4).Text(p.NIT ?? "").FontSize(7.5f);
+                    table.Cell().Background(bg).BorderBottom(0.5f).BorderColor("#E5E7EB").Padding(4).Text(p.Telefono ?? "").FontSize(7.5f);
+                    table.Cell().Background(bg).BorderBottom(0.5f).BorderColor("#E5E7EB").Padding(4).Text(p.Email ?? "").FontSize(7.5f);
+                    table.Cell().Background(bg).BorderBottom(0.5f).BorderColor("#E5E7EB").Padding(4).Text(p.Ciudad ?? "").FontSize(7.5f);
+                    table.Cell().Background(bg).BorderBottom(0.5f).BorderColor("#E5E7EB").Padding(4).Text(p.Estado ? "Activo" : "Inactivo").FontSize(7.5f);
+                }
+            });
+
+            page.Footer().AlignCenter().Text(t =>
+            {
+                t.DefaultTextStyle(s => s.FontSize(7).FontColor(Colors.Grey.Medium));
+                t.Span($"Generado por NEXO ERP — {DateTime.Now:dd/MM/yyyy HH:mm}");
+            });
+        })).GeneratePdf();
+    }
+
     private static void EstilizarEncabezados(IXLWorksheet ws, string[] headers)
     {
         for (int i = 0; i < headers.Length; i++)

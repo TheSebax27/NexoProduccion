@@ -62,33 +62,43 @@
             </div>
             @if (!_consumidorFinal)
             {
-                <div class="mb-3">
-                    <MudTextField T="string?" Value="_nitBusqueda"
-                                  ValueChanged="OnNitBusquedaCambiado"
-                                  Label="NIT / Documento del cliente"
-                                  Placeholder="Escribe el NIT o cédula"
-                                  Adornment="Adornment.End"
-                                  AdornmentIcon="@Icons.Material.Filled.Search"
-                                  Immediate="true" DebounceInterval="400"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" />
-                    @if (_clienteEncontrado is not null)
-                    {
-                        <MudAlert Severity="Severity.Success" Dense="true" Class="mt-1"
-                                  Icon="@Icons.Material.Outlined.CheckCircle">
-                            <strong>@_clienteEncontrado.Nombre</strong> — NIT @_clienteEncontrado.NIT
-                        </MudAlert>
-                    }
-                    else if (_nitNoEncontrado)
-                    {
-                        <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-1">
-                            NIT <strong>@_nitBusqueda</strong> no está registrado.
-                            <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Text"
-                                       OnClick="AbrirCreacionClienteAsync" Class="ml-1">
-                                Crear cliente
-                            </MudButton>
-                        </MudAlert>
-                    }
-                </div>
+                @if (ClienteIdPre is not null)
+                {
+                    <MudAlert Severity="Severity.Success" Dense="true" Class="mb-3"
+                              Icon="@Icons.Material.Outlined.LocalShipping">
+                        Cliente: <strong>@ClienteNombrePre</strong> (desde despacho)
+                    </MudAlert>
+                }
+                else
+                {
+                    <div class="mb-3">
+                        <MudTextField T="string?" Value="_nitBusqueda"
+                                      ValueChanged="OnNitBusquedaCambiado"
+                                      Label="NIT / Documento del cliente"
+                                      Placeholder="Escribe el NIT o cédula"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@Icons.Material.Filled.Search"
+                                      Immediate="true" DebounceInterval="400"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        @if (_clienteEncontrado is not null)
+                        {
+                            <MudAlert Severity="Severity.Success" Dense="true" Class="mt-1"
+                                      Icon="@Icons.Material.Outlined.CheckCircle">
+                                <strong>@_clienteEncontrado.Nombre</strong> — NIT @_clienteEncontrado.NIT
+                            </MudAlert>
+                        }
+                        else if (_nitNoEncontrado)
+                        {
+                            <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-1">
+                                NIT <strong>@_nitBusqueda</strong> no está registrado.
+                                <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Text"
+                                           OnClick="AbrirCreacionClienteAsync" Class="ml-1">
+                                    Crear cliente
+                                </MudButton>
+                            </MudAlert>
+                        }
+                    </div>
+                }
             }
 
             <div style="display:grid; grid-template-columns:160px 1fr; gap:10px; margin-bottom:14px">
@@ -287,6 +297,11 @@
     [Parameter] public List<CentroCostoBasicoItem> CentrosCosto { get; set; } = new();
     [Parameter] public bool UsaVisions { get; set; } = false;
 
+    // Pre-fill desde un despacho (opcional): si se pasan, se salta la búsqueda de NIT
+    [Parameter] public int? ClienteIdPre { get; set; }
+    [Parameter] public string? ClienteNombrePre { get; set; }
+    [Parameter] public int? CentroCostoIdPre { get; set; }
+
     private enum TipoLinea { Articulo, Combo }
 
     private class LineaEditable
@@ -325,6 +340,14 @@
     private List<ComboItem> _combosActivos => CombosActivos;
 
 
+
+    protected override void OnInitialized()
+    {
+        if (ClienteIdPre is not null)
+            _clienteId = ClienteIdPre;
+        if (CentroCostoIdPre is not null)
+            OnCentroCostoCambiado(CentroCostoIdPre);
+    }
 
     private void OnConsumidorFinalCambiado(bool valor)
     {

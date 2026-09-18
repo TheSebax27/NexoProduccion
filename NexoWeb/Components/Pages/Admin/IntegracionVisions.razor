@@ -22,7 +22,7 @@
 </div>
 <InfoAyuda Texto="Configura y monitorea el agente de sincronización entre NEXO ERP y el sistema POS Visions: estado, logs y ajustes." />
 
-<MudTabs @ref="_tabs" Elevation="0" Rounded="false" ApplyEffectsToContainer="true" PanelClass="pt-4">
+<MudTabs @ref="_tabs" Elevation="0" Rounded="false" ApplyEffectsToContainer="true" PanelClass="pt-4" Class="nexo-bi-tabs">
 
     <!-- ══════════════════════════════════════ TAB 1: ESTADO -->
     <MudTabPanel Text="Estado del agente" Icon="@Icons.Material.Outlined.MonitorHeart">
@@ -145,6 +145,35 @@
                             <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3" Icon="@Icons.Material.Outlined.BugReport">
                                 <strong>@ag.EventosConError evento(s) con error</strong> — expande el historial para ver el detalle.
                                 Posible causa: artículo no mapeado o referencia inexistente en Visions.
+                            </MudAlert>
+                        }
+
+                        @if (ag.ArticulosFaltantesVisions > 0 && !_sincronizandoCatalogo.Contains(ag.CentroCostoID) && !_descartadosCatalogo.Contains(ag.CentroCostoID))
+                        {
+                            <MudAlert Severity="Severity.Warning" Dense="false" Class="mt-3" Icon="@Icons.Material.Outlined.Inventory2">
+                                <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+                                    <span>
+                                        <strong>@ag.ArticulosFaltantesVisions artículo(s)</strong> de otros puntos Visions no están en este Visions.
+                                        ¿Quieres sincronizarlos ahora?
+                                    </span>
+                                    <div class="d-flex gap-2">
+                                        <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small"
+                                                   StartIcon="@Icons.Material.Outlined.Sync"
+                                                   OnClick="@(() => SolicitarCatalogoAsync(ag.CentroCostoID))">
+                                            Sí, sincronizar
+                                        </MudButton>
+                                        <MudButton Variant="Variant.Text" Size="Size.Small"
+                                                   OnClick="@(() => _descartadosCatalogo.Add(ag.CentroCostoID))">
+                                            No, después
+                                        </MudButton>
+                                    </div>
+                                </div>
+                            </MudAlert>
+                        }
+                        @if (_sincronizandoCatalogo.Contains(ag.CentroCostoID))
+                        {
+                            <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3" Icon="@Icons.Material.Outlined.Sync">
+                                Solicitud enviada — el agente recibirá los artículos en el próximo ciclo de sincronización.
                             </MudAlert>
                         }
 
@@ -922,6 +951,10 @@
     // ── SINCANTSA ────────────────────────────────────────────────────────────
     private bool _editSincAntsa;
 
+    // ── Sync catálogo completo (faltantes entre puntos) ──────────────────────
+    private HashSet<int> _sincronizandoCatalogo = new();
+    private HashSet<int> _descartadosCatalogo   = new();
+
     // ── Crear agente ─────────────────────────────────────────────────────
     private int? _nuevoCcId;
     private string _nuevaDescripcion = string.Empty;
@@ -1262,6 +1295,21 @@
         if (hace.TotalMinutes < 10) return (Color.Success, "Conectado");
         if (hace.TotalMinutes < 30) return (Color.Warning, "Alerta");
         return (Color.Error, "Sin respuesta");
+    }
+
+    private async Task SolicitarCatalogoAsync(int centroCostoId)
+    {
+        _sincronizandoCatalogo.Add(centroCostoId);
+        try
+        {
+            await ApiClient.PostAsync($"api/integracion/sync/solicitar-catalogo-completo-admin?centroCostoId={centroCostoId}");
+            Snackbar.Add("Solicitud enviada. El agente sincronizará los artículos en el próximo ciclo.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _sincronizandoCatalogo.Remove(centroCostoId);
+            Snackbar.Add($"Error al solicitar sincronización: {ex.Message}", Severity.Error);
+        }
     }
 
     private record SincAntsaResponse(bool Activo);

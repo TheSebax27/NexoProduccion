@@ -86,9 +86,13 @@
                 <MudDivider Class="my-2" />
 
                 <div class="frm-link-row">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="frm-link-text">
+                    <a href="/f/@f.Token" target="_blank"
+                       style="font-size:0.75rem;color:var(--mud-palette-text-secondary);text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                         /f/@f.Token
-                    </MudText>
+                    </a>
+                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small"
+                                   Href="@($"/f/{f.Token}")" Target="_blank"
+                                   Title="Abrir formulario público" />
                     <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small"
                                    OnClick="@(() => CopiarEnlace(f.Token))"
                                    Title="Copiar enlace público" />

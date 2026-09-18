@@ -48,6 +48,9 @@
 
 /* ── Variables globales ─────────────────────────────────────── */
 :root {
+  /* Picker/popover por encima del sidebar (z-index 1400) y sus backdrop-filter stacking contexts */
+  --mud-zindex-popover: 1500;
+
   --n-purple:      #7C5CFF;
   --n-purple-d:    #5A3BFF;
   --n-purple-dd:   #4B2FE0;
@@ -60,7 +63,7 @@
   --n-dark-2:  #1A1A2E;
   --n-dark-3:  #22223A;
 
-  --n-bg:      #EDEFF5;
+  --n-bg:      #ECECF3;
   --n-card:    #FAFBFD;
   --n-border:  #E8E9EF;
   --n-border-2:#D1D5E8;
@@ -82,6 +85,8 @@
   --n-info-border:    rgba(14,165,233,0.18);
   --n-error-bg:       rgba(239,68,68,0.10);
   --n-error-border:   rgba(239,68,68,0.18);
+  --n-warning-bg:     rgba(245,158,11,0.09);
+  --n-warning-border: rgba(245,158,11,0.20);
 
   --n-shadow:    0 2px 8px rgba(26,28,46,0.07), 0 1px 2px rgba(26,28,46,0.04);
   --n-shadow-md: 0 4px 16px rgba(26,28,46,0.08), 0 2px 4px rgba(26,28,46,0.04);
@@ -248,6 +253,58 @@ html, body {
   font-weight: 700 !important;
   color: var(--n-text-1) !important;
   letter-spacing: -0.01em !important;
+}
+
+/* ── Encabezado de página (nexo-page-hero) — global ─────────── */
+.nexo-page-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+}
+.nexo-page-hero__left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.nexo-page-hero__accent {
+  width: 4px;
+  height: 2.25rem;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--n-purple) 0%, var(--n-purple-d) 100%);
+  flex-shrink: 0;
+}
+.nexo-page-hero__module {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--n-purple);
+  margin: 0 0 0.1rem;
+}
+.nexo-page-hero__title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--n-text-1);
+  margin: 0;
+  line-height: 1.15;
+}
+.nexo-page-hero__sub {
+  font-size: 0.8rem;
+  color: var(--n-text-2);
+  margin-top: 0.15rem;
+}
+.nexo-page-hero__timestamp {
+  display: flex;
+  align-items: center;
+  font-size: 0.76rem;
+  color: var(--n-text-3);
+  white-space: nowrap;
+}
+.nexo-page-hero__icon {
+  color: var(--n-text-3);
+  margin-top: 2px;
 }
 
 /* ── Toolbar de filtros (MudGrid dentro del contenido) ──────── */
@@ -481,6 +538,14 @@ html, body {
 .mud-picker {
   border-radius: var(--n-radius-lg) !important;
   box-shadow: var(--n-shadow-lg) !important;
+}
+
+/* Prevent date range picker inputs from truncating the year */
+.mud-date-range-picker {
+    min-width: 230px !important;
+}
+.mud-date-picker {
+    min-width: 130px !important;
 }
 
 /* Toolbar superior (año + fecha/rango grande) — mud-button-year y
@@ -786,8 +851,8 @@ a, .btn-link { color: var(--n-purple); }
     radial-gradient(ellipse 55% 25% at 18% 0%,     rgba(100,80,240,0.18)  0%, transparent 60%),
     /* luz blanca central que da la sensación de "pantalla encendida" */
     radial-gradient(ellipse 70% 55% at 48% 28%,    rgba(255,255,255,0.95) 0%, transparent 68%),
-    /* base blanca con tinte perlado-lavanda */
-    linear-gradient(145deg, #F5F3FF 0%, #FAFAFF 35%, #F8F6FF 60%, #F4F2FF 100%) fixed !important;
+    /* base Arctic Pearl */
+    #ECECF3 !important;
   min-height: 100vh;
   animation: lightBgDrift 28s ease-in-out infinite alternate;
 }
@@ -1007,6 +1072,11 @@ a, .btn-link { color: var(--n-purple); }
 .nexo-settings-nav-item .ns-chevron {
   margin-left: auto;
   opacity: 0.45;
+}
+.nexo-settings-nav-item.ns-subitem {
+  padding-left: 2.25rem;
+  font-size: 0.8rem;
+  opacity: 0.82;
 }
 .nexo-settings-nav-divider {
   height: 1px;
@@ -2445,6 +2515,18 @@ a, .btn-link { color: var(--n-purple); }
     z-index: 1;
 }
 .sop-ticket-wrap:last-child .sop-connector { display: none; }
+
+/* ── GestionProyectoDialog Kanban — dark mode via toggle explícito ─ */
+#nexo-app-root.nexo-tema-oscuro .nexo-kanban__columna {
+  background: rgba(255,255,255,0.05) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .nexo-kanban__tarjeta {
+  background: rgba(255,255,255,0.09) !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.35) !important;
+}
+#nexo-app-root.nexo-tema-oscuro .nexo-kanban__tarjeta-titulo {
+  color: rgba(255,255,255,0.92) !important;
+}
 
 /* Kanban */
 .sop-kanban { display: flex; gap: 1rem; align-items: flex-start; overflow-x: auto; padding-bottom: .5rem; }

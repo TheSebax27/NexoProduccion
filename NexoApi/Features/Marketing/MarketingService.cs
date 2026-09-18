@@ -115,16 +115,30 @@ public class MarketingService(IDbConnectionFactory db, IEmailService email) : IM
             ? "SELECT COUNT(*) FROM Crm.Clientes cl"
             : "SELECT cl.ClienteID, cl.Email, cl.Nombre, cl.Contacto AS Empresa FROM Crm.Clientes cl";
 
+        if (tipo == "FRIOS")
+        {
+            var cteSelect = contar
+                ? "SELECT COUNT(*)"
+                : "SELECT cl.ClienteID, cl.Email, cl.Nombre, cl.Contacto AS Empresa";
+            return $"""
+                WITH _UltInt AS (
+                    SELECT ClienteID, MAX(Fecha) AS UltimaFecha
+                    FROM Crm.Interacciones
+                    GROUP BY ClienteID
+                )
+                {cteSelect}
+                FROM Crm.Clientes cl
+                LEFT JOIN _UltInt ui ON ui.ClienteID = cl.ClienteID
+                WHERE cl.Estado = 1 AND cl.Email IS NOT NULL
+                  AND ISNULL(ui.UltimaFecha, '2000-01-01') < DATEADD(DAY, -@DiasSinContacto, SYSUTCDATETIME())
+                """;
+        }
+
         var where = tipo switch
         {
             "TIPO_CLIENTE" => "cl.Estado = 1 AND cl.Email IS NOT NULL AND cl.TipoCliente = @Valor",
             "FUENTE"       => "cl.Estado = 1 AND cl.Email IS NOT NULL AND cl.FuenteContacto = @Valor",
             "RESPONSABLE"  => "cl.Estado = 1 AND cl.Email IS NOT NULL AND cl.ResponsableID = TRY_CAST(@Valor AS INT)",
-            "FRIOS"        => """
-                cl.Estado = 1 AND cl.Email IS NOT NULL
-                AND ISNULL((SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = cl.ClienteID), '2000-01-01')
-                    < DATEADD(DAY, -@DiasSinContacto, SYSUTCDATETIME())
-                """,
             "CON_COTIZACION" => """
                 cl.Estado = 1 AND cl.Email IS NOT NULL
                 AND EXISTS (SELECT 1 FROM Crm.Cotizaciones co

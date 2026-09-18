@@ -30,10 +30,11 @@ public static class NexoTheme
             // ── Fondos ────────────────────────────────────────────────
             // Agosto 2026: antes Surface era #FFFFFF puro -- el usuario lo vio
             // demasiado luminoso/con brillo. Se bajo a un blanco roto suave
-            // (#FAFBFD) y se oscurecio un poco el fondo general (#EDEFF5) para
-            // que las tarjetas sigan contrastando contra el fondo (ver mismo
-            // ajuste en wwwroot/app.css, variables --n-bg/--n-card).
-            Background          = "#EDEFF5",   // Gris claro elegante
+            // (#FAFBFD) y se oscurecio un poco el fondo general.
+            // Sep 2026: Background cambiado a #ECECF3 (Arctic Pearl) para dar
+            // mas cuerpo al fondo claro; misma actualización en --n-bg y
+            // gradiente base de #nexo-app-root en wwwroot/app.css.
+            Background          = "#ECECF3",   // Arctic Pearl (fondo claro)
             Surface             = "#FAFBFD",   // Tarjetas y paneles (blanco roto, no puro)
 
             // ── Barra superior ────────────────────────────────────────

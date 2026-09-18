@@ -27,8 +27,7 @@
 
 @* ── Workspace tabs ── *@
 <MudTabs @bind-ActivePanelIndex="_tabActivo" Elevation="0" Rounded="true"
-         ApplyEffectsToContainer="true" Class="mb-2"
-         ActiveTabClass="nexo-tab-active">
+         ApplyEffectsToContainer="true" Class="nexo-bi-tabs mb-2">
     @* ════ Tab 1: Pendientes ════ *@
     <MudTabPanel Text="Pendientes" Icon="@Icons.Material.Filled.Schedule">
         @if (_cargandoPend)

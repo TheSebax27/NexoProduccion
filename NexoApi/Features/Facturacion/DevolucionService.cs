@@ -18,8 +18,10 @@ public class DevolucionService(IDbConnectionFactory db) : IDevolucionService
         string? tipo, int? clienteId, int? proveedorId, DateTime? desde, DateTime? hasta)
     {
         using var conn = db.CreateConnection();
+        var desdeEfectivo = desde ?? DateTime.UtcNow.AddMonths(-6);
         return await conn.QueryAsync<DevolucionItem>(@"
-            SELECT d.DevolucionID, d.TipoDevolucion,
+            SELECT TOP 500
+                   d.DevolucionID, d.TipoDevolucion,
                    d.FacturaOrigenID,
                    f.NroDoc AS NroDocOrigen,
                    d.ClienteID,  c.Nombre  AS Cliente,
@@ -37,10 +39,10 @@ public class DevolucionService(IDbConnectionFactory db) : IDevolucionService
             WHERE (@tipo       IS NULL OR d.TipoDevolucion = @tipo)
               AND (@clienteId  IS NULL OR d.ClienteID      = @clienteId)
               AND (@proveedorId IS NULL OR d.ProveedorID   = @proveedorId)
-              AND (@desde      IS NULL OR d.Fecha         >= @desde)
+              AND d.Fecha >= @desdeEfectivo
               AND (@hasta      IS NULL OR d.Fecha         <= @hasta)
             ORDER BY d.Fecha DESC, d.DevolucionID DESC",
-            new { tipo, clienteId, proveedorId, desde, hasta });
+            new { tipo, clienteId, proveedorId, desdeEfectivo, hasta });
     }
 
     public async Task<int> CrearAsync(CrearDevolucionRequest r, int usuarioId)
@@ -61,6 +63,45 @@ public class DevolucionService(IDbConnectionFactory db) : IDevolucionService
             new { r.TipoDevolucion, r.FacturaOrigenID, r.ClienteID, r.ProveedorID, r.CentroCostoID,
                   r.Fecha, r.Motivo, r.NroDoc, Total = total, UsuarioID = usuarioId }, tx);
 
+        // Lookups fijos para toda la devolución — se resuelven una sola vez antes del loop
+        int tipoMovCliente = 0, tipoMovProveedor = 0;
+        int? bodegaIdFijo = null;
+
+        if (r.TipoDevolucion == "CLIENTE")
+        {
+            tipoMovCliente = await conn.ExecuteScalarAsync<int>(
+                "SELECT TipoMovID FROM Kardex.TiposMovimientoKardex WHERE Codigo = 'ENTRADA_DEVOLUCION_CLIENTE'",
+                transaction: tx);
+            if (tipoMovCliente == 0)
+                throw new InvalidOperationException("Tipo de movimiento Kardex 'ENTRADA_DEVOLUCION_CLIENTE' no encontrado. Verifique la configuración.");
+
+            if (r.CentroCostoID.HasValue)
+                bodegaIdFijo = await conn.ExecuteScalarAsync<int?>(
+                    "SELECT BodegaVentaVisionsID FROM Organizacion.CentrosCosto WHERE CentroCostoID = @Id",
+                    new { Id = r.CentroCostoID.Value }, tx);
+
+            if (!bodegaIdFijo.HasValue)
+                throw new InvalidOperationException(
+                    "El Centro de Costo no tiene Bodega de Venta configurada. Seleccione un Centro de Costo válido.");
+        }
+        else if (r.TipoDevolucion == "PROVEEDOR")
+        {
+            tipoMovProveedor = await conn.ExecuteScalarAsync<int>(
+                "SELECT TipoMovID FROM Kardex.TiposMovimientoKardex WHERE Codigo = 'SALIDA_DEVOLUCION_PROVEEDOR'",
+                transaction: tx);
+            if (tipoMovProveedor == 0)
+                throw new InvalidOperationException("Tipo de movimiento Kardex 'SALIDA_DEVOLUCION_PROVEEDOR' no encontrado. Verifique la configuración.");
+
+            if (r.CentroCostoID.HasValue)
+                bodegaIdFijo = await conn.ExecuteScalarAsync<int?>(
+                    "SELECT BodegaVentaVisionsID FROM Organizacion.CentrosCosto WHERE CentroCostoID = @Id",
+                    new { Id = r.CentroCostoID.Value }, tx);
+
+            if (!bodegaIdFijo.HasValue)
+                throw new InvalidOperationException(
+                    "El Centro de Costo no tiene Bodega de Venta configurada. Seleccione un Centro de Costo válido.");
+        }
+
         foreach (var linea in r.Lineas)
         {
             await conn.ExecuteAsync(@"
@@ -71,22 +112,8 @@ public class DevolucionService(IDbConnectionFactory db) : IDevolucionService
             // Restituir o retirar stock según el tipo
             if (r.TipoDevolucion == "CLIENTE")
             {
-                // Cliente devuelve → entra stock
-                var tipoMov = await conn.ExecuteScalarAsync<int>(
-                    "SELECT TipoMovID FROM Kardex.TiposMovimientoKardex WHERE Codigo = 'ENTRADA_DEVOLUCION_CLIENTE'",
-                    transaction: tx);
-                if (tipoMov == 0)
-                    throw new InvalidOperationException("Tipo de movimiento Kardex 'ENTRADA_DEVOLUCION_CLIENTE' no encontrado. Verifique la configuración.");
-
-                var bodegaId = r.CentroCostoID.HasValue
-                    ? await conn.ExecuteScalarAsync<int?>(
-                        "SELECT BodegaVentaVisionsID FROM Organizacion.CentrosCosto WHERE CentroCostoID = @Id",
-                        new { Id = r.CentroCostoID.Value }, tx)
-                    : null;
-
-                if (!bodegaId.HasValue)
-                    throw new InvalidOperationException(
-                        "El Centro de Costo no tiene Bodega de Venta configurada. Seleccione un Centro de Costo válido.");
+                var tipoMov  = tipoMovCliente;
+                var bodegaId = bodegaIdFijo;
 
                 if (bodegaId.HasValue)
                 {
@@ -118,22 +145,8 @@ public class DevolucionService(IDbConnectionFactory db) : IDevolucionService
             }
             else if (r.TipoDevolucion == "PROVEEDOR")
             {
-                // Devolucion a proveedor → sale stock
-                var tipoMov = await conn.ExecuteScalarAsync<int>(
-                    "SELECT TipoMovID FROM Kardex.TiposMovimientoKardex WHERE Codigo = 'SALIDA_DEVOLUCION_PROVEEDOR'",
-                    transaction: tx);
-                if (tipoMov == 0)
-                    throw new InvalidOperationException("Tipo de movimiento Kardex 'SALIDA_DEVOLUCION_PROVEEDOR' no encontrado. Verifique la configuración.");
-
-                var bodegaId = r.CentroCostoID.HasValue
-                    ? await conn.ExecuteScalarAsync<int?>(
-                        "SELECT BodegaVentaVisionsID FROM Organizacion.CentrosCosto WHERE CentroCostoID = @Id",
-                        new { Id = r.CentroCostoID.Value }, tx)
-                    : null;
-
-                if (!bodegaId.HasValue)
-                    throw new InvalidOperationException(
-                        "El Centro de Costo no tiene Bodega de Venta configurada. Seleccione un Centro de Costo válido.");
+                var tipoMov  = tipoMovProveedor;
+                var bodegaId = bodegaIdFijo;
 
                 if (bodegaId.HasValue)
                 {

@@ -77,12 +77,12 @@ public class TareaSincronizarPedidos
             new
             {
                 pedido.PedidoID,
-                pedido.Codigo,
-                NombreProveedor = pedido.ProveedorNombre,
+                Codigo          = pedido.Codigo ?? "",
+                NombreProveedor = pedido.ProveedorNombre ?? "",
                 NITProveedor    = pedido.ProveedorNit ?? "",
                 pedido.Fecha,
                 TotalNexo       = total,
-                pedido.TipoMovimiento
+                TipoMovimiento  = pedido.TipoMovimiento ?? "COMPRA"
             });
 
         var orden = 0;

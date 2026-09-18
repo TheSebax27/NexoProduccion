@@ -3,53 +3,6 @@
    Tarjetas KPI blancas, encabezado, gráficos, estados vacíos
    ================================================================ */
 
-/* ── Encabezado de página ──────────────────────────────────── */
-.nexo-page-hero {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.75rem;
-}
-
-.nexo-page-hero__left {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-}
-
-.nexo-page-hero__accent {
-  width: 4px;
-  height: 2.25rem;
-  border-radius: 4px;
-  background: linear-gradient(180deg, var(--n-purple) 0%, var(--n-purple-d) 100%);
-  flex-shrink: 0;
-}
-
-.nexo-page-hero__module {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--n-purple);
-  margin: 0 0 0.1rem;
-}
-
-.nexo-page-hero__title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.025em;
-  color: var(--n-text-1);
-  margin: 0;
-  line-height: 1.15;
-}
-
-.nexo-page-hero__timestamp {
-  display: flex;
-  align-items: center;
-  font-size: 0.76rem;
-  color: var(--n-text-3);
-  white-space: nowrap;
-}
 
 /* ── Grid de tarjetas KPI ──────────────────────────────────── */
 .nexo-kpi-grid {

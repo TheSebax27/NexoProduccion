@@ -8,8 +8,17 @@
 
 <PageTitle>Proveedores - NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
-    <MudText Typo="Typo.h5">Proveedores</MudText>
+<div class="nexo-page-hero">
+    <div class="nexo-page-hero__left">
+        <div class="nexo-page-hero__accent"></div>
+        <div>
+            <p class="nexo-page-hero__module">Catálogo</p>
+            <h1 class="nexo-page-hero__title">Proveedores</h1>
+        </div>
+    </div>
+    <ExportButton Endpoint="api/catalogo/proveedores/exportar/excel"
+                  EndpointPdf="api/catalogo/proveedores/exportar/pdf"
+                  NombreArchivo="proveedores" />
 </div>
 <InfoAyuda Texto="Registra los proveedores que usas al crear un Pedido. El NIT y los datos de contacto quedan disponibles para referencia rápida." />
 
@@ -57,13 +66,13 @@ else
 {
     <MudTable Items="_proveedores" Hover="true" Dense="true" Striped="true">
         <HeaderContent>
-            <MudTh>Razon Social</MudTh>
+            <MudTh>Razón Social</MudTh>
             <MudTh>NIT</MudTh>
             <MudTh>Contacto</MudTh>
-            <MudTh>Telefono</MudTh>
+            <MudTh>Teléfono</MudTh>
             <MudTh>Email</MudTh>
             <MudTh>Estado</MudTh>
-            <MudTh>Accion</MudTh>
+            <MudTh>Acción</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Razon Social">@context.RazonSocial</MudTd>

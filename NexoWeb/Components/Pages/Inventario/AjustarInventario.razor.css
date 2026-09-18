@@ -28,7 +28,7 @@
 .inv-form-section { display: flex; flex-direction: column; gap: .35rem; }
 .inv-form-label   { font-size: .78rem; font-weight: 600; color: var(--n-text-2); text-transform: uppercase; letter-spacing: .04em; }
 .inv-form-field   { width: 100%; }
-.inv-req          { color: rgb(244,67,54); margin-left: 2px; }
+.inv-req          { color: var(--n-error); margin-left: 2px; }
 
 /* ── Info artículo ─────────────────────────────────────────────────── */
 .inv-art-info {

@@ -48,7 +48,7 @@ public class AutomacionService : IAutomacionService
     {
         using var con = _db.CreateConnection();
         var regla = await con.QueryFirstOrDefaultAsync<ReglaRow>(
-            "SELECT * FROM Crm.ReglasAutomatizacion WHERE ReglaID = @ReglaID", new { ReglaID = reglaId })
+            "SELECT ReglaID,Nombre,Descripcion,Evento,ParametrosJSON,Activa,FechaCreacion FROM Crm.ReglasAutomatizacion WHERE ReglaID = @ReglaID", new { ReglaID = reglaId })
             ?? throw new KeyNotFoundException($"Regla {reglaId} no encontrada.");
 
         return await EvaluarReglaAsync(con, regla, ignorarDedup: true);
@@ -60,7 +60,7 @@ public class AutomacionService : IAutomacionService
     {
         using var con = _db.CreateConnection();
         var reglas = (await con.QueryAsync<ReglaRow>(
-            "SELECT * FROM Crm.ReglasAutomatizacion WHERE Activa = 1 AND Evento <> 'ETAPA_CAMBIADA'")).ToList();
+            "SELECT ReglaID,Nombre,Descripcion,Evento,ParametrosJSON,Activa,FechaCreacion FROM Crm.ReglasAutomatizacion WHERE Activa = 1 AND Evento <> 'ETAPA_CAMBIADA'")).ToList();
 
         foreach (var r in reglas)
             await EvaluarReglaAsync(con, r, ignorarDedup: false);
@@ -72,7 +72,7 @@ public class AutomacionService : IAutomacionService
     {
         using var con = _db.CreateConnection();
         var reglas = await con.QueryAsync<ReglaRow>(
-            "SELECT * FROM Crm.ReglasAutomatizacion WHERE Activa = 1 AND Evento = 'ETAPA_CAMBIADA'");
+            "SELECT ReglaID,Nombre,Descripcion,Evento,ParametrosJSON,Activa,FechaCreacion FROM Crm.ReglasAutomatizacion WHERE Activa = 1 AND Evento = 'ETAPA_CAMBIADA'");
 
         foreach (var r in reglas)
         {

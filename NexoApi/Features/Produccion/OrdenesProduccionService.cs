@@ -116,7 +116,9 @@ public class OrdenesProduccionService : IOrdenesProduccionService
             JOIN Produccion.TiposProduccion tp ON tp.TipoProduccionID = op.TipoProduccionID
             WHERE (@CentroCostoId IS NULL OR op.CentroCostoDestinoID = @CentroCostoId)
               AND (@Estado IS NULL OR e.Nombre = @Estado)
-            ORDER BY op.FechaCreacion DESC";
+              AND op.FechaCreacion >= DATEADD(MONTH, -6, SYSUTCDATETIME())
+            ORDER BY op.FechaCreacion DESC
+            OFFSET 0 ROWS FETCH NEXT 500 ROWS ONLY";
 
         return await connection.QueryAsync<OrdenProduccionResumen>(sql, new { CentroCostoId = centroCostoId, Estado = estado });
     }

@@ -1,3 +1,7 @@
+-- OBSOLETO: este script tiene bugs de CentroCostoID en la validacion de stock
+-- y en el cursor de descuento (suma stock global en vez de filtrar por CC de la factura).
+-- Ademas usa CREATE PROCEDURE sin OR ALTER; no se puede reaplicar si ya existe.
+-- NO ejecutar. La version correcta esta en nexosql_compat2016.sql (CREATE OR ALTER PROCEDURE).
 -- VentaDesdeReceta: cuando activo, DescontarStock descuenta insumos de receta
 -- en vez de stock del PT. Compatible con facturas NEXO directo y Visions.
 

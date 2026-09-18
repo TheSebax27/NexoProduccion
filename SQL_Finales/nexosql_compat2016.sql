@@ -4751,6 +4751,8 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM Facturacion.FacturaLineas WHERE FacturaID = @FacturaID)
         THROW 57003, 'La factura no tiene lineas de articulos.', 1;
 
+    DECLARE @FacCC INT = (SELECT CentroCostoID FROM Facturacion.Facturas WHERE FacturaID = @FacturaID);
+
     -- Valida stock solo de lineas con articulo (combos no mueven stock)
     DECLARE @ArticulosSinStock NVARCHAR(2000);
     SELECT @ArticulosSinStock = STUFF((
@@ -4760,9 +4762,11 @@ BEGIN
         FROM Facturacion.FacturaLineas fl
         JOIN Catalogo.Tarjetas a ON a.ArticuloID = fl.ArticuloID
         LEFT JOIN (
-            SELECT ArticuloID, SUM(CantidadActual) AS Total
-            FROM Inventario.InventarioStock
-            GROUP BY ArticuloID
+            SELECT s2.ArticuloID, SUM(s2.CantidadActual) AS Total
+            FROM Inventario.InventarioStock s2
+            JOIN Inventario.Bodegas b2 ON b2.BodegaID = s2.BodegaID
+            WHERE b2.CentroCostoID = @FacCC
+            GROUP BY s2.ArticuloID
         ) s ON s.ArticuloID = fl.ArticuloID
         WHERE fl.FacturaID = @FacturaID
           AND fl.ArticuloID IS NOT NULL
@@ -4801,6 +4805,7 @@ BEGIN
             JOIN Inventario.Bodegas b ON b.BodegaID = s.BodegaID
             LEFT JOIN Inventario.Lotes l ON l.LoteID = s.LoteID
             WHERE s.ArticuloID = @ArticuloID AND s.CantidadActual > 0
+              AND b.CentroCostoID = @FacCC
               AND (l.Estado IS NULL OR l.Estado = 'APROBADO')
             ORDER BY ISNULL(l.FechaVencimiento, '9999-12-31') ASC, s.InventarioID ASC;
 
@@ -4939,6 +4944,135 @@ BEGIN
 END
 
 GO
+/****** Object:  StoredProcedure [Integracion].[sp_ProcesarEntradaCompraVisions] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE Integracion.sp_ProcesarEntradaCompraVisions
+    @EventoEntranteID BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @CentroCostoID INT, @CodigoArticuloVisions NVARCHAR(30), @Cantidad DECIMAL(18,4),
+            @Procesado BIT, @CostoVisions DECIMAL(18,4), @NombreVisions NVARCHAR(255),
+            @PrecioVisions DECIMAL(18,4), @TipDoc NVARCHAR(20), @NroDoc NVARCHAR(50);
+
+    SELECT
+        @CentroCostoID          = CentroCostoID,
+        @CodigoArticuloVisions  = CodigoArticuloVisions,
+        @Cantidad               = Cantidad,
+        @Procesado              = Procesado,
+        @CostoVisions           = CostoArticuloVisions,
+        @NombreVisions          = NombreArticuloVisions,
+        @PrecioVisions          = PrecioArticuloVisions,
+        @TipDoc                 = TipDoc,
+        @NroDoc                 = NroDoc
+    FROM Integracion.EventosEntrantes
+    WHERE EventoEntranteID = @EventoEntranteID;
+
+    IF @Procesado = 1 RETURN;
+
+    -- 1. Mapeo explicito.
+    DECLARE @ArticuloID INT;
+    SELECT @ArticuloID = ArticuloID
+    FROM Integracion.MapeoArticulos
+    WHERE CodigoArticuloVisions = @CodigoArticuloVisions
+      AND CentroCostoID = @CentroCostoID
+      AND Estado = 1;
+
+    -- 2. Auto-resolver por Referencia si no hay mapeo manual.
+    IF @ArticuloID IS NULL
+    BEGIN
+        SELECT @ArticuloID = ArticuloID
+        FROM Catalogo.Tarjetas
+        WHERE Referencia = @CodigoArticuloVisions AND Estado = 1;
+
+        IF @ArticuloID IS NOT NULL
+            MERGE Integracion.MapeoArticulos AS d
+            USING (SELECT @ArticuloID    AS ArticuloID,
+                          @CentroCostoID AS CentroCostoID,
+                          @CodigoArticuloVisions AS CodigoArticuloVisions) AS s
+            ON d.ArticuloID = s.ArticuloID AND d.CentroCostoID = s.CentroCostoID
+            WHEN NOT MATCHED THEN
+                INSERT (ArticuloID, CentroCostoID, CodigoArticuloVisions, Estado)
+                VALUES (@ArticuloID, @CentroCostoID, @CodigoArticuloVisions, 1);
+    END
+
+    -- 3. Sin mapeo: dejar pendiente para revision del admin.
+    IF @ArticuloID IS NULL
+    BEGIN
+        MERGE Integracion.ArticulosPendientesMapeo AS destino
+        USING (SELECT @CentroCostoID          AS CentroCostoID,
+                      @CodigoArticuloVisions   AS CodigoArticuloVisions) AS origen
+        ON destino.CentroCostoID = origen.CentroCostoID
+           AND destino.CodigoArticuloVisions = origen.CodigoArticuloVisions
+        WHEN MATCHED THEN UPDATE SET
+            NombreVisions     = @NombreVisions,
+            CostoVisions      = @CostoVisions,
+            PrecioVisions     = @PrecioVisions,
+            CantidadDetectada = @Cantidad,
+            FechaDetectado    = SYSUTCDATETIME(),
+            Resuelto          = 0,
+            FechaResuelto     = NULL
+        WHEN NOT MATCHED THEN
+            INSERT (CentroCostoID, CodigoArticuloVisions, NombreVisions,
+                    CostoVisions, PrecioVisions, CantidadDetectada)
+            VALUES (@CentroCostoID, @CodigoArticuloVisions, @NombreVisions,
+                    @CostoVisions, @PrecioVisions, @Cantidad);
+        RETURN;
+    END
+
+    DECLARE @BodegaVentaID INT = (
+        SELECT BodegaVentaVisionsID FROM Organizacion.CentrosCosto
+        WHERE CentroCostoID = @CentroCostoID);
+    IF @BodegaVentaID IS NULL
+        THROW 54001, 'El Centro de Costo no tiene configurada una Bodega de Venta Visions.', 1;
+
+    DECLARE @TipoEntrada INT = (
+        SELECT TipoMovID FROM Kardex.TiposMovimientoKardex WHERE Codigo = 'ENTRADA_COMPRA');
+    DECLARE @UsuarioSistemaID INT = (
+        SELECT UsuarioID FROM Seguridad.Usuarios WHERE Username = 'sistema.sync');
+    DECLARE @Costo DECIMAL(18,4) = COALESCE(@CostoVisions, 0);
+
+    BEGIN TRANSACTION;
+
+    -- Sumar stock sin FEFO: entradas directas van a fila sin lote.
+    MERGE Inventario.InventarioStock AS dest
+    USING (SELECT @ArticuloID AS ArticuloID, @BodegaVentaID AS BodegaID) AS src
+    ON dest.ArticuloID = src.ArticuloID AND dest.BodegaID = src.BodegaID AND dest.LoteID IS NULL
+    WHEN MATCHED THEN
+        UPDATE SET CantidadActual = CantidadActual + @Cantidad,
+                   FechaUltimaActualizacion = SYSUTCDATETIME()
+    WHEN NOT MATCHED THEN
+        INSERT (ArticuloID, BodegaID, LoteID, CantidadActual, CostoUnitarioLote, FechaUltimaActualizacion)
+        VALUES (@ArticuloID, @BodegaVentaID, NULL, @Cantidad, @Costo, SYSUTCDATETIME());
+
+    DECLARE @NuevoSaldo DECIMAL(18,4) = (
+        SELECT SUM(CantidadActual) FROM Inventario.InventarioStock
+        WHERE ArticuloID = @ArticuloID AND BodegaID = @BodegaVentaID);
+
+    INSERT INTO Kardex.KardexMovimientos
+        (ArticuloID, BodegaID, LoteID, TipoMovID, CentroCostoID,
+         Cantidad, CostoUnitario, CantidadSaldo, CostoPromedioSaldo,
+         ObservacionDetallada, UsuarioID)
+    VALUES
+        (@ArticuloID, @BodegaVentaID, NULL, @TipoEntrada, @CentroCostoID,
+         @Cantidad, @Costo, @NuevoSaldo, @Costo,
+         CONCAT('Entrada compra Visions - ', ISNULL(@TipDoc,''), ' ',
+                ISNULL(@NroDoc,''), ' - Evento #', @EventoEntranteID),
+         @UsuarioSistemaID);
+
+    UPDATE Integracion.EventosEntrantes
+    SET Procesado = 1, FechaProcesado = SYSUTCDATETIME()
+    WHERE EventoEntranteID = @EventoEntranteID;
+
+    COMMIT TRANSACTION;
+END
+
+
 /****** Object:  StoredProcedure [Integracion].[sp_ProcesarEventoEntrante]    Script Date: 1/09/2026 5:35:42 p. m. ******/
 SET ANSI_NULLS ON
 GO
@@ -7405,8 +7539,8 @@ VALUES
     (6, 'MTO', 'Por Cliente (Make to Order)');
 SET IDENTITY_INSERT Produccion.TiposProduccion OFF;
 
--- sp_DescontarStockFactura_Receta: descuenta insumos de receta en vez de stock PT
-CREATE PROCEDURE Facturacion.sp_DescontarStockFactura_Receta
+-- sp_DescontarStockFactura_Receta v2: hibrido PT-stock / insumos-receta por articulo
+CREATE OR ALTER PROCEDURE Facturacion.sp_DescontarStockFactura_Receta
     @FacturaID INT,
     @UsuarioID INT
 AS
@@ -7423,132 +7557,342 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM Facturacion.FacturaLineas WHERE FacturaID = @FacturaID)
         THROW 57003, 'La factura no tiene lineas de articulos.', 1;
 
-    -- Falla si alguna linea PT no tiene receta activa
-    DECLARE @SinReceta NVARCHAR(2000);
-    SELECT @SinReceta = STUFF((
-        SELECT '; ' + (a.Referencia + ' - ' + a.Nombre)
-        FROM Facturacion.FacturaLineas fl
-        JOIN Catalogo.Tarjetas a ON a.ArticuloID = fl.ArticuloID
-        WHERE fl.FacturaID = @FacturaID
-          AND fl.ArticuloID IS NOT NULL
-          AND NOT EXISTS (
-              SELECT 1 FROM Produccion.RecetaBOM r
-              WHERE r.ProductoTerminadoID = fl.ArticuloID AND r.Estado = 1
-          )
-        FOR XML PATH(''), TYPE
-    ).value('.', 'NVARCHAR(MAX)'), 1, 2, '');
-
-    IF @SinReceta IS NOT NULL
-    BEGIN
-        DECLARE @MsgReceta NVARCHAR(2200) =
-            'Modo Venta desde Receta activo: los siguientes articulos no tienen receta activa: ' + @SinReceta;
-        THROW 57010, @MsgReceta, 1;
-    END
-
-    -- Calcular insumos a descontar: consumo = qty_insumo * (qty_vendida / rendimiento_base)
-    DECLARE @InsumosADescontar TABLE (
-        ArticuloID    INT,
-        CantidadTotal DECIMAL(18,4)
-    );
-
-    INSERT INTO @InsumosADescontar (ArticuloID, CantidadTotal)
-    SELECT
-        bd.InsumoID,
-        SUM(bd.CantidadRequerida * (fl.Cantidad / r.CantidadRendimientoBase)) AS CantidadTotal
-    FROM Facturacion.FacturaLineas fl
-    JOIN Produccion.RecetaBOM r ON r.ProductoTerminadoID = fl.ArticuloID AND r.Estado = 1
-    JOIN Produccion.RecetaBOM_Detalle bd ON bd.RecetaID = r.RecetaID
-    WHERE fl.FacturaID = @FacturaID
-      AND fl.ArticuloID IS NOT NULL
-    GROUP BY bd.InsumoID;
-
-    -- Validar stock de insumos
-    DECLARE @InsumosInsuficientes NVARCHAR(2000);
-    SELECT @InsumosInsuficientes = STUFF((
-        SELECT '; ' + (a.Referencia + ' - ' + a.Nombre
-            + ' (necesario: ' + CAST(CAST(i.CantidadTotal AS DECIMAL(18,4)) AS NVARCHAR(20))
-            + ', disponible: ' + CAST(ISNULL(s.Total, 0) AS NVARCHAR(20)) + ')')
-        FROM @InsumosADescontar i
-        JOIN Catalogo.Tarjetas a ON a.ArticuloID = i.ArticuloID
-        LEFT JOIN (
-            SELECT ArticuloID, SUM(CantidadActual) AS Total
-            FROM Inventario.InventarioStock
-            GROUP BY ArticuloID
-        ) s ON s.ArticuloID = i.ArticuloID
-        WHERE i.CantidadTotal > ISNULL(s.Total, 0)
-        FOR XML PATH(''), TYPE
-    ).value('.', 'NVARCHAR(MAX)'), 1, 2, '');
-
-    IF @InsumosInsuficientes IS NOT NULL
-    BEGIN
-        DECLARE @MsgStock NVARCHAR(2200) = 'Stock insuficiente en insumos: ' + @InsumosInsuficientes;
-        THROW 57004, @MsgStock, 1;
-    END
-
+    DECLARE @FacCC      INT = (SELECT CentroCostoID FROM Facturacion.Facturas WHERE FacturaID = @FacturaID);
     DECLARE @TipoSalida INT = (SELECT TipoMovID FROM Kardex.TiposMovimientoKardex WHERE Codigo = 'SALIDA_VENTA_FACTURA');
+
+    -- Variables del cursor principal
+    DECLARE @ArticuloID    INT;
+    DECLARE @CantidadLinea DECIMAL(18,4);
+    DECLARE @StockPT       DECIMAL(18,4);
+
+    -- Variables rama A (PT en stock)
+    DECLARE @Pendiente1 DECIMAL(18,4);
+    DECLARE @InvID1     INT;
+    DECLARE @LoteID1    INT;
+    DECLARE @BodegaID1  INT;
+    DECLARE @CC1        INT;
+    DECLARE @CantLote1  DECIMAL(18,4);
+    DECLARE @Costo1     DECIMAL(18,4);
+    DECLARE @Tomar1     DECIMAL(18,4);
+    DECLARE @Saldo1     DECIMAL(18,4);
+
+    -- Variables rama B (insumos de receta)
+    DECLARE @NombreArt  NVARCHAR(200);
+    DECLARE @MsgSR      NVARCHAR(2200);
+    DECLARE @InsumoID   INT;
+    DECLARE @CantInsumo DECIMAL(18,4);
+    DECLARE @PendIns    DECIMAL(18,4);
+    DECLARE @InvID2     INT;
+    DECLARE @LoteID2    INT;
+    DECLARE @BodegaID2  INT;
+    DECLARE @CC2        INT;
+    DECLARE @CantLote2  DECIMAL(18,4);
+    DECLARE @Costo2     DECIMAL(18,4);
+    DECLARE @Tomar2     DECIMAL(18,4);
+    DECLARE @Saldo2     DECIMAL(18,4);
+    DECLARE @InsInsuf   NVARCHAR(2000);
+    DECLARE @MsgI       NVARCHAR(2200);
+
+    -- Tabla de insumos por articulo; se limpia con DELETE antes de cada uso
+    DECLARE @InsumosArt TABLE (ArticuloID INT, CantidadTotal DECIMAL(18,4));
 
     BEGIN TRANSACTION;
 
-    DECLARE @ArticuloID INT, @CantidadLinea DECIMAL(18,4);
+    DECLARE curLineas CURSOR LOCAL FAST_FORWARD FOR
+        SELECT ArticuloID, Cantidad
+        FROM Facturacion.FacturaLineas
+        WHERE FacturaID = @FacturaID AND ArticuloID IS NOT NULL;
 
-    DECLARE curInsumos CURSOR LOCAL FAST_FORWARD FOR
-        SELECT ArticuloID, CantidadTotal FROM @InsumosADescontar;
-
-    OPEN curInsumos;
-    FETCH NEXT FROM curInsumos INTO @ArticuloID, @CantidadLinea;
+    OPEN curLineas;
+    FETCH NEXT FROM curLineas INTO @ArticuloID, @CantidadLinea;
 
     WHILE @@FETCH_STATUS = 0
     BEGIN
-        DECLARE @Pendiente DECIMAL(18,4) = @CantidadLinea;
-        DECLARE @InvID INT, @LoteID INT, @BodegaID INT, @CentroCostoID INT,
-                @CantidadLote DECIMAL(18,4), @CostoLote DECIMAL(18,4);
+        SELECT @StockPT = ISNULL(SUM(s.CantidadActual), 0)
+        FROM Inventario.InventarioStock s
+        JOIN Inventario.Bodegas b ON b.BodegaID = s.BodegaID
+        WHERE s.ArticuloID = @ArticuloID AND b.CentroCostoID = @FacCC;
 
-        DECLARE curLotes CURSOR LOCAL FAST_FORWARD FOR
-            SELECT s.InventarioID, s.LoteID, s.BodegaID, b.CentroCostoID, s.CantidadActual, s.CostoUnitarioLote
-            FROM Inventario.InventarioStock s
-            JOIN Inventario.Bodegas b ON b.BodegaID = s.BodegaID
-            LEFT JOIN Inventario.Lotes l ON l.LoteID = s.LoteID
-            WHERE s.ArticuloID = @ArticuloID AND s.CantidadActual > 0
-              AND (l.Estado IS NULL OR l.Estado = 'APROBADO')
-            ORDER BY ISNULL(l.FechaVencimiento, '9999-12-31') ASC, s.InventarioID ASC;
-
-        OPEN curLotes;
-        FETCH NEXT FROM curLotes INTO @InvID, @LoteID, @BodegaID, @CentroCostoID, @CantidadLote, @CostoLote;
-
-        WHILE @@FETCH_STATUS = 0 AND @Pendiente > 0
+        IF @StockPT >= @CantidadLinea
         BEGIN
-            DECLARE @Tomar DECIMAL(18,4) = CASE WHEN @CantidadLote >= @Pendiente THEN @Pendiente ELSE @CantidadLote END;
+            -- ── Rama A: PT en stock (OP ya manejo insumos) ──────────────────
+            SET @Pendiente1 = @CantidadLinea;
 
-            UPDATE Inventario.InventarioStock
-            SET CantidadActual = CantidadActual - @Tomar, FechaUltimaActualizacion = SYSUTCDATETIME()
-            WHERE InventarioID = @InvID;
+            DECLARE curLotesPT CURSOR LOCAL FAST_FORWARD FOR
+                SELECT s.InventarioID, s.LoteID, s.BodegaID, b.CentroCostoID, s.CantidadActual, s.CostoUnitarioLote
+                FROM Inventario.InventarioStock s
+                JOIN Inventario.Bodegas b ON b.BodegaID = s.BodegaID
+                LEFT JOIN Inventario.Lotes l ON l.LoteID = s.LoteID
+                WHERE s.ArticuloID = @ArticuloID AND s.CantidadActual > 0
+                  AND b.CentroCostoID = @FacCC
+                  AND (l.Estado IS NULL OR l.Estado = 'APROBADO')
+                ORDER BY ISNULL(l.FechaVencimiento, '9999-12-31') ASC, s.InventarioID ASC;
 
-            DECLARE @NuevoSaldo DECIMAL(18,4) = (
-                SELECT SUM(CantidadActual) FROM Inventario.InventarioStock
-                WHERE ArticuloID = @ArticuloID AND BodegaID = @BodegaID
-            );
+            OPEN curLotesPT;
+            FETCH NEXT FROM curLotesPT INTO @InvID1, @LoteID1, @BodegaID1, @CC1, @CantLote1, @Costo1;
 
-            INSERT INTO Kardex.KardexMovimientos
-                (ArticuloID, BodegaID, LoteID, TipoMovID, CentroCostoID, Cantidad, CostoUnitario,
-                 CantidadSaldo, CostoPromedioSaldo, ObservacionDetallada, UsuarioID)
-            VALUES
-                (@ArticuloID, @BodegaID, @LoteID, @TipoSalida, @CentroCostoID, @Tomar, @CostoLote,
-                 @NuevoSaldo, @CostoLote,
-                 CONCAT('Factura #', @FacturaID, ' (insumo receta)'), @UsuarioID);
+            WHILE @@FETCH_STATUS = 0 AND @Pendiente1 > 0
+            BEGIN
+                SET @Tomar1 = CASE WHEN @CantLote1 >= @Pendiente1 THEN @Pendiente1 ELSE @CantLote1 END;
 
-            SET @Pendiente -= @Tomar;
-            FETCH NEXT FROM curLotes INTO @InvID, @LoteID, @BodegaID, @CentroCostoID, @CantidadLote, @CostoLote;
+                UPDATE Inventario.InventarioStock
+                SET CantidadActual = CantidadActual - @Tomar1, FechaUltimaActualizacion = SYSUTCDATETIME()
+                WHERE InventarioID = @InvID1;
+
+                SET @Saldo1 = (
+                    SELECT SUM(CantidadActual) FROM Inventario.InventarioStock
+                    WHERE ArticuloID = @ArticuloID AND BodegaID = @BodegaID1
+                );
+
+                INSERT INTO Kardex.KardexMovimientos
+                    (ArticuloID, BodegaID, LoteID, TipoMovID, CentroCostoID,
+                     Cantidad, CostoUnitario, CantidadSaldo, CostoPromedioSaldo, ObservacionDetallada, UsuarioID)
+                VALUES
+                    (@ArticuloID, @BodegaID1, @LoteID1, @TipoSalida, @CC1,
+                     @Tomar1, @Costo1, @Saldo1, @Costo1,
+                     CONCAT('Factura #', @FacturaID, ' (PT stock)'), @UsuarioID);
+
+                SET @Pendiente1 -= @Tomar1;
+                FETCH NEXT FROM curLotesPT INTO @InvID1, @LoteID1, @BodegaID1, @CC1, @CantLote1, @Costo1;
+            END
+            CLOSE curLotesPT; DEALLOCATE curLotesPT;
+
+            -- BUG-2 fix: detectar descuento parcial por modificacion concurrente
+            IF @Pendiente1 > 0
+                THROW 57011, 'Stock insuficiente al descontar PT: posible modificacion concurrente.', 1;
         END
-        CLOSE curLotes; DEALLOCATE curLotes;
+        ELSE
+        BEGIN
+            -- ── Rama B: sin stock de PT — descuenta insumos de la receta ────
+            IF NOT EXISTS (
+                SELECT 1 FROM Produccion.RecetaBOM
+                WHERE ProductoTerminadoID = @ArticuloID AND Estado = 1
+            )
+            BEGIN
+                -- BUG-3 fix: mensaje coincide con filtro C# (.Contains("no tiene receta activa"))
+                SET @NombreArt = (SELECT Referencia + ' - ' + Nombre FROM Catalogo.Tarjetas WHERE ArticuloID = @ArticuloID);
+                SET @MsgSR = 'No tiene receta activa para: ' + ISNULL(@NombreArt, CAST(@ArticuloID AS NVARCHAR(10)));
+                THROW 57010, @MsgSR, 1;
+            END
 
-        FETCH NEXT FROM curInsumos INTO @ArticuloID, @CantidadLinea;
+            DELETE FROM @InsumosArt;
+
+            -- BUG-1 fix: usar TOP 1 RecetaID igual que C# (evita sumar insumos de multiples recetas activas)
+            INSERT INTO @InsumosArt (ArticuloID, CantidadTotal)
+            SELECT
+                bd.InsumoID,
+                SUM(bd.CantidadRequerida * (@CantidadLinea / r.CantidadRendimientoBase))
+            FROM Produccion.RecetaBOM r
+            JOIN Produccion.RecetaBOM_Detalle bd ON bd.RecetaID = r.RecetaID
+            WHERE r.RecetaID = (
+                SELECT TOP 1 RecetaID
+                FROM Produccion.RecetaBOM
+                WHERE ProductoTerminadoID = @ArticuloID AND Estado = 1
+                ORDER BY RecetaID
+            )
+            GROUP BY bd.InsumoID;
+
+            SET @InsInsuf = NULL;
+            SELECT @InsInsuf = STUFF((
+                SELECT '; ' + (a.Referencia + ' - ' + a.Nombre
+                    + ' (nec: ' + CAST(CAST(i.CantidadTotal AS DECIMAL(18,2)) AS NVARCHAR(20))
+                    + ', disp: ' + CAST(ISNULL(s.Total,0) AS NVARCHAR(20)) + ')')
+                FROM @InsumosArt i
+                JOIN Catalogo.Tarjetas a ON a.ArticuloID = i.ArticuloID
+                LEFT JOIN (
+                    SELECT s2.ArticuloID, SUM(s2.CantidadActual) AS Total
+                    FROM Inventario.InventarioStock s2
+                    JOIN Inventario.Bodegas b2 ON b2.BodegaID = s2.BodegaID
+                    WHERE b2.CentroCostoID = @FacCC
+                    GROUP BY s2.ArticuloID
+                ) s ON s.ArticuloID = i.ArticuloID
+                WHERE i.CantidadTotal > ISNULL(s.Total, 0)
+                FOR XML PATH(''), TYPE
+            ).value('.', 'NVARCHAR(MAX)'), 1, 2, '');
+
+            IF @InsInsuf IS NOT NULL
+            BEGIN
+                SET @MsgI = 'Stock insuficiente en insumos: ' + @InsInsuf;
+                THROW 57004, @MsgI, 1;
+            END
+
+            DECLARE curIns CURSOR LOCAL FAST_FORWARD FOR
+                SELECT ArticuloID, CantidadTotal FROM @InsumosArt;
+
+            OPEN curIns;
+            FETCH NEXT FROM curIns INTO @InsumoID, @CantInsumo;
+
+            WHILE @@FETCH_STATUS = 0
+            BEGIN
+                SET @PendIns = @CantInsumo;
+
+                DECLARE curLotesIns CURSOR LOCAL FAST_FORWARD FOR
+                    SELECT s.InventarioID, s.LoteID, s.BodegaID, b.CentroCostoID, s.CantidadActual, s.CostoUnitarioLote
+                    FROM Inventario.InventarioStock s
+                    JOIN Inventario.Bodegas b ON b.BodegaID = s.BodegaID
+                    LEFT JOIN Inventario.Lotes l ON l.LoteID = s.LoteID
+                    WHERE s.ArticuloID = @InsumoID AND s.CantidadActual > 0
+                      AND b.CentroCostoID = @FacCC
+                      AND (l.Estado IS NULL OR l.Estado = 'APROBADO')
+                    ORDER BY ISNULL(l.FechaVencimiento, '9999-12-31') ASC, s.InventarioID ASC;
+
+                OPEN curLotesIns;
+                FETCH NEXT FROM curLotesIns INTO @InvID2, @LoteID2, @BodegaID2, @CC2, @CantLote2, @Costo2;
+
+                WHILE @@FETCH_STATUS = 0 AND @PendIns > 0
+                BEGIN
+                    SET @Tomar2 = CASE WHEN @CantLote2 >= @PendIns THEN @PendIns ELSE @CantLote2 END;
+
+                    UPDATE Inventario.InventarioStock
+                    SET CantidadActual = CantidadActual - @Tomar2, FechaUltimaActualizacion = SYSUTCDATETIME()
+                    WHERE InventarioID = @InvID2;
+
+                    SET @Saldo2 = (
+                        SELECT SUM(CantidadActual) FROM Inventario.InventarioStock
+                        WHERE ArticuloID = @InsumoID AND BodegaID = @BodegaID2
+                    );
+
+                    INSERT INTO Kardex.KardexMovimientos
+                        (ArticuloID, BodegaID, LoteID, TipoMovID, CentroCostoID,
+                         Cantidad, CostoUnitario, CantidadSaldo, CostoPromedioSaldo, ObservacionDetallada, UsuarioID)
+                    VALUES
+                        (@InsumoID, @BodegaID2, @LoteID2, @TipoSalida, @CC2,
+                         @Tomar2, @Costo2, @Saldo2, @Costo2,
+                         CONCAT('Factura #', @FacturaID, ' (insumo receta)'), @UsuarioID);
+
+                    SET @PendIns -= @Tomar2;
+                    FETCH NEXT FROM curLotesIns INTO @InvID2, @LoteID2, @BodegaID2, @CC2, @CantLote2, @Costo2;
+                END
+                CLOSE curLotesIns; DEALLOCATE curLotesIns;
+                IF @PendIns > 0
+                    THROW 57012, 'Stock insuficiente al descontar insumo receta: posible modificacion concurrente.', 1;
+
+                FETCH NEXT FROM curIns INTO @InsumoID, @CantInsumo;
+            END
+            CLOSE curIns; DEALLOCATE curIns;
+        END
+
+        FETCH NEXT FROM curLineas INTO @ArticuloID, @CantidadLinea;
     END
-    CLOSE curInsumos; DEALLOCATE curInsumos;
+    CLOSE curLineas; DEALLOCATE curLineas;
 
     UPDATE Facturacion.Facturas SET StockDescontado = 1 WHERE FacturaID = @FacturaID;
-
     COMMIT TRANSACTION;
-
     SELECT @FacturaID AS FacturaID;
 END;
+GO
+
+-- ============================================================
+-- MIGRACIONES INCREMENTALES (seguras para BDs ya existentes)
+-- Ejecutar siempre que se aplique este script a una BD existente
+-- ============================================================
+
+-- Integracion.AgentesSync: IntervalSeconds (sep-2026)
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID('Integracion.AgentesSync') AND name = 'IntervalSeconds'
+)
+BEGIN
+    ALTER TABLE Integracion.AgentesSync ADD IntervalSeconds INT NOT NULL DEFAULT(0);
+    PRINT 'Migración: IntervalSeconds agregado a Integracion.AgentesSync.';
+END
+GO
+
+-- Integracion.AgentesSync: SincAntsaActivo (sep-2026)
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID('Integracion.AgentesSync') AND name = 'SincAntsaActivo'
+)
+BEGIN
+    ALTER TABLE Integracion.AgentesSync ADD SincAntsaActivo BIT NOT NULL DEFAULT(0);
+    PRINT 'Migración: SincAntsaActivo agregado a Integracion.AgentesSync.';
+END
+GO
+
+-- ============================================================
+-- Índices de rendimiento - performance_indexes (sep-2026)
+-- Todos usan IF NOT EXISTS (seguros de re-ejecutar).
+-- ============================================================
+
+-- Facturacion.FacturaLineas
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_FacturaLineas_FacturaID' AND object_id = OBJECT_ID('Facturacion.FacturaLineas'))
+    CREATE NONCLUSTERED INDEX IX_FacturaLineas_FacturaID ON Facturacion.FacturaLineas (FacturaID) INCLUDE (ArticuloID, Cantidad, PrecioUnitario);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_FacturaLineas_ArticuloID' AND object_id = OBJECT_ID('Facturacion.FacturaLineas'))
+    CREATE NONCLUSTERED INDEX IX_FacturaLineas_ArticuloID ON Facturacion.FacturaLineas (ArticuloID) INCLUDE (FacturaID, Cantidad, PrecioUnitario);
+GO
+
+-- Facturacion.Facturas
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Facturas_ClienteID_Fecha' AND object_id = OBJECT_ID('Facturacion.Facturas'))
+    CREATE NONCLUSTERED INDEX IX_Facturas_ClienteID_Fecha ON Facturacion.Facturas (ClienteID, Fecha DESC) INCLUDE (CentroCostoID, TipDoc, NroDoc, StockDescontado);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Facturas_CentroCosto_Fecha' AND object_id = OBJECT_ID('Facturacion.Facturas'))
+    CREATE NONCLUSTERED INDEX IX_Facturas_CentroCosto_Fecha ON Facturacion.Facturas (CentroCostoID, Fecha DESC) INCLUDE (ClienteID, TipDoc, StockDescontado);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Facturas_CC_VisionsConfirmado' AND object_id = OBJECT_ID('Facturacion.Facturas'))
+    CREATE NONCLUSTERED INDEX IX_Facturas_CC_VisionsConfirmado ON Facturacion.Facturas (CentroCostoID, VisionsConfirmado) INCLUDE (FacturaID, Fecha, NroDoc, TipDoc);
+GO
+
+-- Facturacion.Pagos
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Pagos_FacturaID' AND object_id = OBJECT_ID('Facturacion.Pagos'))
+    CREATE NONCLUSTERED INDEX IX_Pagos_FacturaID ON Facturacion.Pagos (FacturaID) INCLUDE (Monto);
+GO
+
+-- Crm.Cotizaciones
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Cotizaciones_ClienteID_Fecha' AND object_id = OBJECT_ID('Crm.Cotizaciones'))
+    CREATE NONCLUSTERED INDEX IX_Cotizaciones_ClienteID_Fecha ON Crm.Cotizaciones (ClienteID, Fecha DESC) INCLUDE (Estado, ValidoHasta, CentroCostoID);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Cotizaciones_Estado_ValidoHasta' AND object_id = OBJECT_ID('Crm.Cotizaciones'))
+    CREATE NONCLUSTERED INDEX IX_Cotizaciones_Estado_ValidoHasta ON Crm.Cotizaciones (Estado, ValidoHasta) INCLUDE (ClienteID, CentroCostoID);
+GO
+
+-- Crm.CotizacionLineas
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_CotizacionLineas_CotizacionID' AND object_id = OBJECT_ID('Crm.CotizacionLineas'))
+    CREATE NONCLUSTERED INDEX IX_CotizacionLineas_CotizacionID ON Crm.CotizacionLineas (CotizacionID) INCLUDE (ArticuloID, Cantidad, PrecioUnitario);
+GO
+
+-- Crm.Clientes
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Clientes_FechaCreacion' AND object_id = OBJECT_ID('Crm.Clientes'))
+    CREATE NONCLUSTERED INDEX IX_Clientes_FechaCreacion ON Crm.Clientes (FechaCreacion DESC);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Clientes_Departamento' AND object_id = OBJECT_ID('Crm.Clientes'))
+    CREATE NONCLUSTERED INDEX IX_Clientes_Departamento ON Crm.Clientes (Departamento) INCLUDE (ClienteID, Nombre, NIT);
+GO
+
+-- Crm.Interacciones
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Interacciones_ClienteID_Fecha' AND object_id = OBJECT_ID('Crm.Interacciones'))
+    CREATE NONCLUSTERED INDEX IX_Interacciones_ClienteID_Fecha ON Crm.Interacciones (ClienteID, Fecha DESC);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Interacciones_Fecha' AND object_id = OBJECT_ID('Crm.Interacciones'))
+    CREATE NONCLUSTERED INDEX IX_Interacciones_Fecha ON Crm.Interacciones (Fecha DESC);
+GO
+
+-- Catalogo.Tarjetas
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tarjetas_Estado_Nombre' AND object_id = OBJECT_ID('Catalogo.Tarjetas'))
+    CREATE NONCLUSTERED INDEX IX_Tarjetas_Estado_Nombre ON Catalogo.Tarjetas (Estado, Nombre) INCLUDE (ArticuloID, Referencia, TipoArticuloID, PresentacionCodigo, MarcaCodigo, GrupoMenorCodigo);
+GO
+
+-- Compras.OrdenesCompra
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_OrdenesCompra_Estado_Fecha' AND object_id = OBJECT_ID('Compras.OrdenesCompra'))
+    CREATE NONCLUSTERED INDEX IX_OrdenesCompra_Estado_Fecha ON Compras.OrdenesCompra (EstadoOC, FechaEmision DESC);
+GO
+
+-- Integracion.EventosEntrantes
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_EventosEntrantes_Articulo_CC' AND object_id = OBJECT_ID('Integracion.EventosEntrantes'))
+    CREATE NONCLUSTERED INDEX IX_EventosEntrantes_Articulo_CC ON Integracion.EventosEntrantes (CodigoArticuloVisions, CentroCostoID) INCLUDE (Cantidad, TipoEvento, Procesado);
+GO
+
+-- Integracion.EventosSalientes
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_EventosSalientes_Estado_CC' AND object_id = OBJECT_ID('Integracion.EventosSalientes'))
+    CREATE NONCLUSTERED INDEX IX_EventosSalientes_Estado_CC ON Integracion.EventosSalientes (Estado, CentroCostoID) INCLUDE (EventoID, ArticuloID, TipoEvento, FechaCreacion);
+GO
+
+-- Kardex.KardexMovimientos
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_KardexMovimientos_Fecha_ArticuloID' AND object_id = OBJECT_ID('Kardex.KardexMovimientos'))
+    CREATE NONCLUSTERED INDEX IX_KardexMovimientos_Fecha_ArticuloID ON Kardex.KardexMovimientos (Fecha DESC, ArticuloID) INCLUDE (BodegaID, TipoMovID, Cantidad, CantidadSaldo);
+GO
+
+-- Produccion.OrdenesProduccion
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_OrdenesProduccion_Estado_CC' AND object_id = OBJECT_ID('Produccion.OrdenesProduccion'))
+    CREATE NONCLUSTERED INDEX IX_OrdenesProduccion_Estado_CC ON Produccion.OrdenesProduccion (EstadoOPID, CentroCostoDestinoID) INCLUDE (OrdenProduccionID, FechaCreacion, ProductoTerminadoID);
 GO

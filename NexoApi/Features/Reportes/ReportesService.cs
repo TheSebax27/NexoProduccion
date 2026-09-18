@@ -20,18 +20,22 @@ public class ReportesService : IReportesService
 
     private static readonly ReporteInfo[] _reportes =
     [
+        new("stock_actual",         "Stock Actual",
+            "Existencias actuales por artículo con estado de stock.", ["SKU","Articulo","Stock","StockMinimo","Estado"]),
+        new("clientes_todos",       "Todos los Clientes",
+            "Lista completa de clientes con tipo y ciudad.", ["Cliente","NIT","Tipo","Ciudad","Responsable","Estado"]),
         new("ventas_por_cliente",   "Ventas por Cliente",
             "Total facturado y documentos por cliente en el período.", ["Cliente","NIT","TotalFacturado","NumDocumentos","UltimaFactura"]),
         new("ventas_por_articulo",  "Ventas por Artículo",
             "Cantidad vendida y valor total por artículo.", ["SKU","Articulo","CantidadVendida","TotalFacturado"]),
+        new("clientes_nuevos",      "Clientes por Período",
+            "Clientes registrados en el período con ciudad y tipo.", ["Cliente","NIT","Tipo","Ciudad","FechaRegistro"]),
         new("tickets_por_estado",   "Tickets por Estado/Prioridad",
             "Conteo de tickets agrupados por estado y prioridad.", ["Estado","Prioridad","Total"]),
         new("oportunidades_embudo", "Embudo de Ventas",
             "Oportunidades activas por etapa con valor estimado.", ["Etapa","Total","ValorEstimado"]),
         new("nps_resumen",          "NPS por Período",
             "Puntuaciones de satisfacción promedio y distribución.", ["Mes","Anio","Promedio","Total","Promotores","Detractores"]),
-        new("clientes_nuevos",      "Clientes Nuevos",
-            "Clientes registrados en el período con ciudad y tipo.", ["Cliente","NIT","Tipo","Ciudad","FechaRegistro"]),
     ];
 
     public IEnumerable<ReporteInfo> ListarReportes() => _reportes;
@@ -45,8 +49,28 @@ public class ReportesService : IReportesService
 
         var sql = req.Tipo switch
         {
+            "stock_actual" => @"
+                SELECT TOP (@Limite) t.Referencia AS SKU, t.Nombre AS Articulo,
+                    CAST(t.Existencias AS DECIMAL(18,2)) AS Stock,
+                    CAST(t.StockMinimo AS DECIMAL(18,2)) AS StockMinimo,
+                    CASE WHEN t.Existencias = 0 THEN 'Sin Stock'
+                         WHEN t.Existencias < t.StockMinimo THEN 'Bajo Stock'
+                         ELSE 'OK' END AS Estado
+                FROM Catalogo.Tarjetas t
+                WHERE t.Estado = 1
+                ORDER BY t.Existencias ASC",
+
+            "clientes_todos" => @"
+                SELECT TOP (@Limite) c.Nombre AS Cliente, ISNULL(c.NIT,'') AS NIT,
+                    ISNULL(c.TipoCliente,'') AS Tipo, ISNULL(c.Ciudad,'') AS Ciudad,
+                    ISNULL(u.Nombres + ' ' + u.Apellidos,'') AS Responsable,
+                    CASE WHEN c.Estado = 1 THEN 'Activo' ELSE 'Inactivo' END AS Estado
+                FROM Crm.Clientes c
+                LEFT JOIN Seguridad.Usuarios u ON u.UsuarioID = c.ResponsableID
+                ORDER BY c.Nombre",
+
             "ventas_por_cliente" => @"
-                SELECT TOP (@Limite) c.Nombre AS Cliente, c.NIT,
+                SELECT TOP (@Limite) c.Nombre AS Cliente, ISNULL(c.NIT,'') AS NIT,
                     ISNULL(SUM(fl.Cantidad * fl.PrecioUnitario), 0) AS TotalFacturado,
                     COUNT(DISTINCT f.FacturaID) AS NumDocumentos,
                     MAX(f.Fecha) AS UltimaFactura
@@ -67,6 +91,14 @@ public class ReportesService : IReportesService
                 WHERE f.Fecha BETWEEN @Desde AND @Hasta
                 GROUP BY a.ArticuloID, a.Referencia, a.Nombre
                 ORDER BY TotalFacturado DESC",
+
+            "clientes_nuevos" => @"
+                SELECT TOP (@Limite) c.Nombre AS Cliente, ISNULL(c.NIT,'') AS NIT,
+                    ISNULL(c.TipoCliente,'') AS Tipo, ISNULL(c.Ciudad,'') AS Ciudad,
+                    ISNULL(c.FechaCreacion, c.FechaModificacion) AS FechaRegistro
+                FROM Crm.Clientes c
+                WHERE ISNULL(c.FechaCreacion, c.FechaModificacion) BETWEEN @Desde AND @Hasta
+                ORDER BY ISNULL(c.FechaCreacion, c.FechaModificacion) DESC",
 
             "tickets_por_estado" => @"
                 SELECT Estado, Prioridad, COUNT(*) AS Total
@@ -96,13 +128,6 @@ public class ReportesService : IReportesService
                 WHERE FechaRespuesta BETWEEN @Desde AND @Hasta
                 GROUP BY YEAR(FechaRespuesta), MONTH(FechaRespuesta)
                 ORDER BY Anio DESC, Mes DESC",
-
-            "clientes_nuevos" => @"
-                SELECT TOP (@Limite) c.Nombre AS Cliente, c.NIT, c.TipoCliente AS Tipo,
-                    ISNULL(c.Ciudad, '') AS Ciudad, c.FechaCreacion AS FechaRegistro
-                FROM Crm.Clientes c
-                WHERE c.FechaCreacion BETWEEN @Desde AND @Hasta
-                ORDER BY c.FechaCreacion DESC",
 
             _ => throw new ArgumentException($"Tipo de reporte no reconocido: {req.Tipo}")
         };

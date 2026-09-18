@@ -44,6 +44,18 @@ public class TareaInicializarVisions
                 );");
 
             await connection.ExecuteAsync(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'NEXO_EntradasExportadas')
+                CREATE TABLE dbo.NEXO_EntradasExportadas (
+                    CENTROCOSTO  INT           NOT NULL,
+                    TIPDOC       NVARCHAR(20)  NOT NULL,
+                    NRODOC       NVARCHAR(50)  NOT NULL,
+                    ORDEN        INT           NOT NULL,
+                    REFERENCIA   NVARCHAR(30)  NOT NULL,
+                    CANTIDAD     DECIMAL(18,4) NOT NULL,
+                    CONSTRAINT PK_NEXO_EntradasExportadas PRIMARY KEY (CENTROCOSTO, TIPDOC, NRODOC, ORDEN, REFERENCIA)
+                );");
+
+            await connection.ExecuteAsync(@"
                 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'NEXO_EntradasInventario')
                 CREATE TABLE dbo.NEXO_EntradasInventario (
                     Id              BIGINT        NOT NULL IDENTITY PRIMARY KEY,

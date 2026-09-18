@@ -23,6 +23,7 @@ public interface ICatalogoService
     Task<int> CrearArticuloAsync(CrearArticuloRequest request);
     Task<ArticulosPaginadosResponse> ListarArticulosAsync(int? tipoArticuloId, string? texto, bool? estado = null, int pagina = 1, int tamano = 100, int? centroCostoId = null);
     Task<IEnumerable<ArticuloItem>> ListarTodosArticulosAsync(int? tipoArticuloId = null, bool? estado = null);
+    Task<int> ContarArticulosAsync(bool? estado = null);
     Task<IEnumerable<ArticuloItem>> BuscarArticulosAsync(string? q, bool? soloTerminados = null, int max = 30);
     Task<ArticuloItem?> ObtenerArticuloAsync(int articuloId);
     Task ActualizarArticuloAsync(int articuloId, ActualizarArticuloRequest request, int usuarioId, string nombreUsuario);
@@ -122,6 +123,12 @@ public class CatalogoService : ICatalogoService
     public async Task ActualizarCentroCostoAsync(int centroCostoId, ActualizarCentroCostoRequest r)
     {
         using var connection = _db.CreateConnection();
+        connection.Open();
+        using var txn = connection.BeginTransaction();
+
+        var tieneVisionsPrevio = await connection.ExecuteScalarAsync<bool>(
+            "SELECT ISNULL(TieneVisions, 0) FROM Organizacion.CentrosCosto WHERE CentroCostoID = @Id",
+            new { Id = centroCostoId }, txn);
 
         const string sql = @"
             UPDATE Organizacion.CentrosCosto
@@ -142,10 +149,50 @@ public class CatalogoService : ICatalogoService
             r.IdentificadorClienteVisions,
             r.BodegaVentaVisionsID,
             r.PrefijosDocumentoVentaVisions
-        });
+        }, txn);
 
         if (filas == 0)
             throw new KeyNotFoundException($"No existe el centro de costo {centroCostoId}.");
+
+        // Backfill automático: CC recién activado para Visions → mapear y encolar todos los artículos activos.
+        // Dentro de la misma transacción: si el backfill falla, el UPDATE también se revierte.
+        if (r.TieneVisions && !tieneVisionsPrevio)
+            await BackfillArticulosParaCcAsync(connection, txn, centroCostoId);
+
+        txn.Commit();
+    }
+
+    private static async Task BackfillArticulosParaCcAsync(
+        System.Data.IDbConnection connection, System.Data.IDbTransaction txn, int centroCostoId)
+    {
+        await connection.ExecuteAsync(@"
+            INSERT INTO Integracion.MapeoArticulos (ArticuloID, CentroCostoID, CodigoArticuloVisions, Estado)
+            SELECT t.ArticuloID, @CcId, t.Referencia, 1
+            FROM Catalogo.Tarjetas t
+            WHERE t.Estado = 1
+              AND NOT EXISTS (
+                  SELECT 1 FROM Integracion.MapeoArticulos ma
+                  WHERE ma.ArticuloID = t.ArticuloID AND ma.CentroCostoID = @CcId);
+
+            INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
+            SELECT 'SINCRONIZAR_ARTICULO', @CcId, ma.ArticuloID,
+                   ISNULL(stk.Total, 0),
+                   ISNULL(t.CostoPromedio, 0)
+            FROM Integracion.MapeoArticulos ma
+            JOIN Catalogo.Tarjetas t ON t.ArticuloID = ma.ArticuloID
+            LEFT JOIN (
+                SELECT s.ArticuloID, SUM(s.CantidadActual) AS Total
+                FROM Inventario.InventarioStock s
+                JOIN Inventario.Bodegas b ON b.BodegaID = s.BodegaID
+                WHERE b.CentroCostoID = @CcId
+                GROUP BY s.ArticuloID
+            ) stk ON stk.ArticuloID = ma.ArticuloID
+            WHERE ma.CentroCostoID = @CcId AND ma.Estado = 1
+              AND NOT EXISTS (
+                  SELECT 1 FROM Integracion.EventosSalientes e
+                  WHERE e.ArticuloID = ma.ArticuloID AND e.CentroCostoID = @CcId
+                    AND e.TipoEvento = 'SINCRONIZAR_ARTICULO' AND e.Estado IN ('PENDIENTE','CONFIRMADO'));",
+            new { CcId = centroCostoId }, txn);
     }
 
     // ================= Bodegas =================
@@ -363,6 +410,14 @@ public class CatalogoService : ICatalogoService
         return new ArticulosPaginadosResponse(items, total, pagina, tamano);
     }
 
+    public async Task<int> ContarArticulosAsync(bool? estado = null)
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM Catalogo.Tarjetas WHERE (@Estado IS NULL OR Estado = @Estado)",
+            new { Estado = estado });
+    }
+
     public async Task<IEnumerable<ArticuloItem>> ListarTodosArticulosAsync(int? tipoArticuloId = null, bool? estado = null)
     {
         using var connection = _db.CreateConnection();
@@ -383,7 +438,8 @@ public class CatalogoService : ICatalogoService
               AND (@Estado IS NULL OR a.Estado = @Estado)";
 
         return await connection.QueryAsync<ArticuloItem>(@"
-            SELECT a.ArticuloID, a.Referencia, a.Nombre, a.Descripcion, ta.Nombre AS TipoArticulo,
+            SELECT TOP 2000
+                   a.ArticuloID, a.Referencia, a.Nombre, a.Descripcion, ta.Nombre AS TipoArticulo,
                    a.CostoPromedio, a.StockMinimo, a.PuntoReorden, a.Estado,
                    ISNULL(stk.Existencias, 0) AS Existencias,
                    a.DiasVidaUtil, p.Fracciones,
@@ -410,7 +466,7 @@ public class CatalogoService : ICatalogoService
                    a.ArticuloID, a.Referencia, a.Nombre,
                    CAST(NULL AS NVARCHAR(MAX)) AS Descripcion,
                    ta.Nombre AS TipoArticulo,
-                   CAST(0 AS DECIMAL(18,2)) AS CostoPromedio,
+                   a.CostoPromedio,
                    a.StockMinimo,
                    CAST(0 AS DECIMAL(18,2)) AS PuntoReorden,
                    a.Estado,

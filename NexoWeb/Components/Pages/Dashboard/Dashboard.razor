@@ -99,7 +99,7 @@ else if (_cargando)
     <div class="flex items-center justify-center py-20">
         <div class="text-center">
             <MudProgressCircular Indeterminate="true" Size="Size.Large" Class="mb-4" />
-            <p class="text-sm" style="color: var(--nexo-text-secondary)">Cargando datos...</p>
+            <p class="text-sm" style="color: var(--mud-palette-text-secondary)">Cargando datos...</p>
         </div>
     </div>
 }
@@ -162,7 +162,7 @@ else
                         <div class="nexo-kpi__icon"><MudIcon Icon="@Icons.Material.Filled.Category" Size="Size.Small" /></div>
                         <span class="nexo-kpi-delta" style="color:var(--mud-palette-text-secondary)">catálogo</span>
                     </div>
-                    <div class="nexo-kpi__value" style="font-size:1.6rem">@_productosTerminados.Count</div>
+                    <div class="nexo-kpi__value" style="font-size:1.6rem">@_totalArticulosActivos</div>
                     <div class="nexo-kpi__label">Productos activos</div>
                     <div class="nexo-kpi__sub">En catálogo</div>
                 </div>
@@ -588,7 +588,7 @@ else
                     <MudDateRangePicker @bind-DateRange="_rangoFact" @bind-DateRange:after="OnRangoFactCambiadoAsync"
                                         Label="Período" Variant="Variant.Outlined" Margin="Margin.Dense"
                                         PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy"
-                                        Style="max-width:280px;width:100%;" />
+                                        Style="max-width:280px;min-width:230px;" />
                 </div>
                 <div class="nexo-kpi-grid mb-4">
                     <div class="nexo-kpi nexo-kpi--blue">
@@ -1383,7 +1383,7 @@ else
                     <MudDateRangePicker @bind-DateRange="_rangoFin" @bind-DateRange:after="OnRangoFinCambiadoAsync"
                                         Label="Período" Variant="Variant.Outlined" Margin="Margin.Dense"
                                         PickerVariant="PickerVariant.Dialog" DateFormat="dd/MM/yyyy"
-                                        Style="max-width:280px;width:100%;" />
+                                        Style="max-width:280px;min-width:230px;" />
                 </div>
 
                 @* KPIs financieros *@
@@ -1611,6 +1611,7 @@ else
     private string[] _labelsPerdidas = Array.Empty<string>();
     private DateRange _rangoPerdidas = new(DateTime.Today.AddDays(-30), DateTime.Today);
     private List<ArticuloItem> _productosTerminados = new();
+    private int _totalArticulosActivos;
     private int _articuloSeleccionadoId;
     private List<TendenciaCostoPunto> _tendencia = new();
     private List<ChartSeries> _seriesTendencia = new() { new ChartSeries { Name = "Costo Unitario", Data = Array.Empty<double>() } };
@@ -1736,10 +1737,11 @@ else
             var tareaDistribucion  = ApiClient.GetAsync<List<DistribucionCentroCostoItem>>("api/dashboard/distribucion-centro-costo");
             var tareaPerdidas      = ApiClient.GetAsync<List<PerdidaPorMotivoItem>>(
                 $"api/dashboard/perdidas-por-motivo?desde={_rangoPerdidas.Start:yyyy-MM-dd}&hasta={_rangoPerdidas.End:yyyy-MM-dd}");
-            var tareaProductos     = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos");
-            var tareaCumplimiento  = ApiClient.GetAsync<List<CumplimientoCentroCostoItem>>("api/dashboard/cumplimiento-planificacion");
+            var tareaProductos       = ApiClient.GetAsync<List<ArticuloItem>>("api/catalogo/articulos/todos?estado=true");
+            var tareaConteoArticulos = ApiClient.GetAsync<int>("api/catalogo/articulos/count?estado=true");
+            var tareaCumplimiento    = ApiClient.GetAsync<List<CumplimientoCentroCostoItem>>("api/dashboard/cumplimiento-planificacion");
 
-            await Task.WhenAll(tareaPlanVsReal, tareaVariacion, tareaDistribucion, tareaPerdidas, tareaProductos, tareaCumplimiento);
+            await Task.WhenAll(tareaPlanVsReal, tareaVariacion, tareaDistribucion, tareaPerdidas, tareaProductos, tareaConteoArticulos, tareaCumplimiento);
 
             _planVsReal = await tareaPlanVsReal ?? new();
             ActualizarGraficoPlanVsReal();
@@ -1758,7 +1760,8 @@ else
             _perdidas = await tareaPerdidas ?? new();
             ActualizarGraficoPerdidas();
 
-            _productosTerminados = (await tareaProductos ?? new()).Where(a => a.TipoArticulo == "Producto Terminado").ToList();
+            _productosTerminados    = (await tareaProductos ?? new()).Where(a => a.TipoArticulo == "Producto Terminado").ToList();
+            _totalArticulosActivos  = await tareaConteoArticulos;
             _cumplimiento = await tareaCumplimiento ?? new();
 
             _totalOrdenesFinalizadas = _cumplimiento.Sum(c => c.TotalOrdenesFinalizadas);

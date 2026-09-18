@@ -57,4 +57,7 @@ public interface INexoApiClient
     // Adicionales (toppings) bidireccional
     Task<AdicionalesSyncResponse> ListarAdicionalesSyncAsync(CancellationToken ct);
     Task SincronizarAdicionalesDesdeVisionsAsync(AdicionalesSyncDesdeVisionsRequest request, CancellationToken ct);
+
+    // Solicitar fan-out de catalogo completo al iniciar (genera SINCRONIZAR_ARTICULO para articulos faltantes)
+    Task SolicitarCatalogoCompletoAsync(CancellationToken ct);
 }

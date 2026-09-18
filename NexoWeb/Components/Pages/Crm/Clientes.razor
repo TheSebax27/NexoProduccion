@@ -9,14 +9,23 @@
 
 <PageTitle>Clientes - NEXO</PageTitle>
 
-<div class="d-flex align-center justify-space-between mb-4">
-    <div class="d-flex align-center" style="gap:0.25rem">
-        <MudText Typo="Typo.h5">Clientes</MudText>
+<div class="nexo-page-hero">
+    <div class="nexo-page-hero__left">
+        <div class="nexo-page-hero__accent"></div>
+        <div>
+            <p class="nexo-page-hero__module">CRM</p>
+            <h1 class="nexo-page-hero__title">Clientes</h1>
+        </div>
     </div>
-    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Map"
-               OnClick="AbrirMapaAsync" Size="Size.Small">
-        Ver mapa
-    </MudButton>
+    <div class="d-flex gap-2">
+        <ExportButton Endpoint="api/crm/clientes/exportar/excel"
+                      EndpointPdf="api/crm/clientes/exportar/pdf"
+                      NombreArchivo="clientes" />
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Map"
+                   OnClick="AbrirMapaAsync" Size="Size.Small">
+            Ver mapa
+        </MudButton>
+    </div>
 </div>
 <InfoAyuda Texto="Registra los clientes de la empresa, con seguimiento comercial: de dónde vinieron, qué tipo de cliente son y quién los atiende. Usa 'Gestionar' para ver contactos, bitácora, historial completo y documentos de cada uno." />
 
@@ -68,7 +77,12 @@
 }
 else if (!_clientes.Any())
 {
-    <MudText>No hay clientes que coincidan con el filtro.</MudText>
+    <NexoEmptyState
+        Icono="@Icons.Material.Outlined.People"
+        Titulo="Sin clientes"
+        Descripcion="@(_filtroBusqueda is not null || _filtroResponsableId is not null || _filtroTipoCliente is not null ? "Ningún cliente coincide con el filtro." : "Aún no hay clientes registrados.")"
+        BotonTexto="@(_filtroBusqueda is null && _filtroResponsableId is null && _filtroTipoCliente is null ? "Nuevo Cliente" : null)"
+        BotonOnClick="@(_filtroBusqueda is null && _filtroResponsableId is null && _filtroTipoCliente is null ? AbrirCreacionAsync : default)" />
 }
 else if (Preferencias.VistaListado == "tarjetas")
 {
@@ -126,7 +140,7 @@ else
             <MudTh>Contactos</MudTh>
             <MudTh>Última Interacción</MudTh>
             <MudTh>Estado</MudTh>
-            <MudTh>Accion</MudTh>
+            <MudTh>Acción</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Nombre">

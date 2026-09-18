@@ -27,7 +27,7 @@
     @* â”€â”€ Sidebar de navegacion â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ *@
     <MudPaper Class="nexo-settings-sidebar pa-2" Elevation="1">
 
-        <div class="nexo-settings-nav-group">Personal</div>
+        <div class="nexo-settings-nav-group">Cuenta</div>
 
         <div class="nexo-settings-nav-item @(_seccion == "perfil" ? "ns-active" : "")"
              @onclick='() => _seccion = "perfil"'>
@@ -35,16 +35,16 @@
             <span>Mi perfil</span>
         </div>
 
+        <div class="nexo-settings-nav-item @(_seccion == "sesion" ? "ns-active" : "")"
+             @onclick='() => _seccion = "sesion"'>
+            <MudIcon Icon="@Icons.Material.Outlined.LockOpen" Size="Size.Small" />
+            <span>Seguridad</span>
+        </div>
+
         <div class="nexo-settings-nav-item @(_seccion == "apariencia" ? "ns-active" : "")"
              @onclick='() => _seccion = "apariencia"'>
             <MudIcon Icon="@Icons.Material.Outlined.Palette" Size="Size.Small" />
             <span>Apariencia</span>
-        </div>
-
-        <div class="nexo-settings-nav-item @(_seccion == "sesion" ? "ns-active" : "")"
-             @onclick='() => _seccion = "sesion"'>
-            <MudIcon Icon="@Icons.Material.Outlined.LockOpen" Size="Size.Small" />
-            <span>Sesion</span>
         </div>
 
         <div class="nexo-settings-nav-item @(_seccion == "menu" ? "ns-active" : "")"
@@ -55,9 +55,12 @@
 
         <div class="nexo-settings-nav-item @(_seccion == "produccion" ? "ns-active" : "")"
              @onclick='() => _seccion = "produccion"'>
-            <MudIcon Icon="@Icons.Material.Outlined.Factory" Size="Size.Small" />
-            <span>Producción</span>
+            <MudIcon Icon="@Icons.Material.Outlined.Tune" Size="Size.Small" />
+            <span>Preferencias</span>
         </div>
+
+        <div class="nexo-settings-nav-divider"></div>
+        <div class="nexo-settings-nav-group">Soporte</div>
 
         <div class="nexo-settings-nav-item @(_seccion == "ayuda" ? "ns-active" : "")"
              @onclick='() => _seccion = "ayuda"'>
@@ -85,7 +88,7 @@
                 <div class="nexo-settings-nav-item @(_seccion == "inventario" ? "ns-active" : "")"
                      @onclick='() => _seccion = "inventario"'>
                     <MudIcon Icon="@Icons.Material.Outlined.Inventory2" Size="Size.Small" />
-                    <span>Inventario</span>
+                    <span>Módulos</span>
                 </div>
 
                 <div class="nexo-settings-nav-item @(_seccion == "integraciones" ? "ns-active" : "")"
@@ -94,24 +97,24 @@
                     <span>Integraciones</span>
                 </div>
 
-                <div class="nexo-settings-nav-item"
+                <div class="nexo-settings-nav-item ns-subitem"
                      @onclick='() => Navegacion.NavigateTo("/settings/email")'>
                     <MudIcon Icon="@Icons.Material.Outlined.Email" Size="Size.Small" />
                     <span>Email</span>
                     <MudIcon Icon="@Icons.Material.Outlined.ChevronRight" Size="Size.Small" Class="ns-chevron" />
                 </div>
 
-                <div class="nexo-settings-nav-item"
+                <div class="nexo-settings-nav-item ns-subitem"
                      @onclick='() => Navegacion.NavigateTo("/settings/whatsapp")'>
                     <MudIcon Icon="@Icons.Material.Outlined.Chat" Size="Size.Small" />
                     <span>WhatsApp</span>
                     <MudIcon Icon="@Icons.Material.Outlined.ChevronRight" Size="Size.Small" Class="ns-chevron" />
                 </div>
 
-                <div class="nexo-settings-nav-item"
+                <div class="nexo-settings-nav-item ns-subitem"
                      @onclick='() => Navegacion.NavigateTo("/settings/automatizacion")'>
                     <MudIcon Icon="@Icons.Material.Outlined.Autorenew" Size="Size.Small" />
-                    <span>Automatizacion CRM</span>
+                    <span>Automatización CRM</span>
                     <MudIcon Icon="@Icons.Material.Outlined.ChevronRight" Size="Size.Small" Class="ns-chevron" />
                 </div>
             </Authorized>
@@ -274,8 +277,8 @@
                 <div class="nexo-chart-header mb-4">
                     <MudIcon Icon="@Icons.Material.Outlined.LockOpen" Size="Size.Small" Class="nexo-chart-header__icon" />
                     <div>
-                        <div class="nexo-chart-header__title">Sesion</div>
-                        <div class="nexo-chart-header__sub">Control de cuanto tiempo permanece activa tu sesion</div>
+                        <div class="nexo-chart-header__title">Seguridad</div>
+                        <div class="nexo-chart-header__sub">Control de acceso y duración de tu sesión</div>
                     </div>
                 </div>
 
@@ -347,10 +350,10 @@
         {
             <MudPaper Class="pa-5">
                 <div class="nexo-chart-header mb-4">
-                    <MudIcon Icon="@Icons.Material.Outlined.Factory" Size="Size.Small" Class="nexo-chart-header__icon" />
+                    <MudIcon Icon="@Icons.Material.Outlined.Tune" Size="Size.Small" Class="nexo-chart-header__icon" />
                     <div>
-                        <div class="nexo-chart-header__title">Producción</div>
-                        <div class="nexo-chart-header__sub">Automatiza la generación de códigos para que no tengas que escribirlos cada vez.</div>
+                        <div class="nexo-chart-header__title">Preferencias</div>
+                        <div class="nexo-chart-header__sub">Ajustes personales del módulo de producción — solo afectan a tu usuario.</div>
                     </div>
                 </div>
 
@@ -550,8 +553,8 @@
                         <div class="nexo-chart-header mb-4">
                             <MudIcon Icon="@Icons.Material.Outlined.Inventory2" Size="Size.Small" Class="nexo-chart-header__icon" />
                             <div>
-                                <div class="nexo-chart-header__title">Inventario y Produccion</div>
-                                <div class="nexo-chart-header__sub">Controla como se manejan los lotes y las fechas de vencimiento</div>
+                                <div class="nexo-chart-header__title">Módulos</div>
+                                <div class="nexo-chart-header__sub">Configuración global de inventario, producción y facturación</div>
                             </div>
                         </div>
 
@@ -636,7 +639,7 @@
                             <div>
                                 <div style="font-weight:600; font-size:0.9rem">Activar Venta desde Receta</div>
                                 <div style="font-size:0.78rem; color:var(--n-text-3)">
-                                    Aplica a facturas de NEXO y de Visions (mismo punto de descuento).
+                                    Aplica a facturas de NEXO y de Visions. <strong>No usar junto con Órdenes de Producción manuales</strong> — los modos son excluyentes.
                                 </div>
                             </div>
                             <MudSwitch T="bool" Value="ConfiguracionEmpresa.VentaDesdeReceta"
@@ -845,9 +848,9 @@
         if (!nuevoValor)
         {
             var confirm = await DialogService.ShowMessageBox(
-                "Desactivar integracion con Visions",
-                "Al desactivar Visions se ocultaran el Mapeo de Articulos, la configuracion Visions en Centros de Costo y todas las menciones relacionadas. Los datos guardados no se eliminan y puedes volver a activarlo cuando quieras. Confirmas?",
-                yesText: "Si, desactivar", cancelText: "Cancelar");
+                "Desactivar integración con Visions",
+                "Al desactivar Visions se ocultarán el Mapeo de Artículos, la configuración Visions en Centros de Costo y todas las menciones relacionadas. Los datos guardados no se eliminan y puedes volver a activarlo cuando quieras. ¿Confirmas?",
+                yesText: "Sí, desactivar", cancelText: "Cancelar");
 
             if (confirm != true) return;
         }

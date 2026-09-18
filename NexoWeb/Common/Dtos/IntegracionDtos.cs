@@ -30,7 +30,8 @@ public record EstadoIntegracionResponse(
     int EventosPendientes,
     int EventosProcesadosHoy,
     int VentasImportadasHoy,
-    int EventosConError
+    int EventosConError,
+    int ArticulosFaltantesVisions = 0
 )
 {
     public bool HayActualizacion =>

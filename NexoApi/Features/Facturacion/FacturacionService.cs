@@ -237,21 +237,68 @@ public class FacturacionService : IFacturacionService
         const string sql = @"
             SELECT fl.ArticuloID, a.Referencia AS SkuArticulo, a.Nombre AS NombreArticulo,
                    fl.Cantidad AS CantidadFacturada,
-                   ISNULL((SELECT SUM(s.CantidadActual) FROM Inventario.InventarioStock s WHERE s.ArticuloID = fl.ArticuloID), 0) AS StockDisponible
+                   ISNULL((SELECT SUM(s.CantidadActual) FROM Inventario.InventarioStock s
+                            JOIN Inventario.Bodegas b ON b.BodegaID = s.BodegaID
+                            WHERE s.ArticuloID = fl.ArticuloID AND b.CentroCostoID = f.CentroCostoID), 0) AS StockDisponible
             FROM Facturacion.FacturaLineas fl
+            JOIN Facturacion.Facturas f ON f.FacturaID = fl.FacturaID
             JOIN Catalogo.Tarjetas a ON a.ArticuloID = fl.ArticuloID
             WHERE fl.FacturaID = @FacturaId AND fl.ArticuloID IS NOT NULL
             UNION ALL
             SELECT ci.ArticuloID, a.Referencia AS SkuArticulo, a.Nombre AS NombreArticulo,
                    fl.Cantidad * ci.Cantidad AS CantidadFacturada,
-                   ISNULL((SELECT SUM(s.CantidadActual) FROM Inventario.InventarioStock s WHERE s.ArticuloID = ci.ArticuloID), 0) AS StockDisponible
+                   ISNULL((SELECT SUM(s.CantidadActual) FROM Inventario.InventarioStock s
+                            JOIN Inventario.Bodegas b ON b.BodegaID = s.BodegaID
+                            WHERE s.ArticuloID = ci.ArticuloID AND b.CentroCostoID = f.CentroCostoID), 0) AS StockDisponible
             FROM Facturacion.FacturaLineas fl
+            JOIN Facturacion.Facturas f ON f.FacturaID = fl.FacturaID
             JOIN Marketing.ComboItems ci ON ci.ComboID = fl.ComboID
             JOIN Catalogo.Tarjetas a ON a.ArticuloID = ci.ArticuloID
             WHERE fl.FacturaID = @FacturaId AND fl.ComboID IS NOT NULL
             ORDER BY SkuArticulo";
 
-        return await connection.QueryAsync<FacturaLineaStockItem>(sql, new { FacturaId = facturaId });
+        var lineas = (await connection.QueryAsync<FacturaLineaStockItem>(sql, new { FacturaId = facturaId })).ToList();
+
+        var ventaDesdeReceta = await connection.ExecuteScalarAsync<bool>(
+            "SELECT ISNULL(VentaDesdeReceta, 0) FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
+
+        if (ventaDesdeReceta && lineas.Any(l => l.EsInsuficiente))
+        {
+            var ccId = await connection.ExecuteScalarAsync<int>(
+                "SELECT CentroCostoID FROM Facturacion.Facturas WHERE FacturaID = @FacturaId",
+                new { FacturaId = facturaId });
+
+            // Stock efectivo desde receta: MIN(stock_insumo * rendimiento / cantidad_requerida) para todos los insumos.
+            // Equivale a cuantas unidades del PT se pueden producir con el stock actual de insumos.
+            const string sqlReceta = @"
+                SELECT MIN(FLOOR(
+                    ISNULL((SELECT SUM(s.CantidadActual)
+                            FROM Inventario.InventarioStock s
+                            JOIN Inventario.Bodegas b ON b.BodegaID = s.BodegaID
+                            WHERE s.ArticuloID = rd.InsumoID AND b.CentroCostoID = @CcId), 0)
+                    * r.CantidadRendimientoBase / NULLIF(rd.CantidadRequerida, 0)
+                ))
+                FROM Produccion.RecetaBOM r
+                JOIN Produccion.RecetaBOM_Detalle rd ON rd.RecetaID = r.RecetaID
+                WHERE r.ProductoTerminadoID = @ArticuloID AND r.Estado = 1
+                  AND r.RecetaID = (
+                      SELECT TOP 1 RecetaID FROM Produccion.RecetaBOM
+                      WHERE ProductoTerminadoID = @ArticuloID AND Estado = 1
+                      ORDER BY RecetaID)";
+
+            for (var i = 0; i < lineas.Count; i++)
+            {
+                if (!lineas[i].EsInsuficiente) continue;
+
+                var stockReceta = await connection.ExecuteScalarAsync<decimal?>(
+                    sqlReceta, new { CcId = ccId, lineas[i].ArticuloID });
+
+                if (stockReceta.HasValue && stockReceta.Value > lineas[i].StockDisponible)
+                    lineas[i] = lineas[i] with { StockDisponible = stockReceta.Value };
+            }
+        }
+
+        return lineas;
     }
 
     public async Task DescontarStockAsync(int facturaId, int usuarioId)
@@ -414,6 +461,10 @@ public class FacturacionService : IFacturacionService
     {
         using var conn = _db.CreateConnection();
 
+        var ccId = await conn.ExecuteScalarAsync<int>(
+            "SELECT ISNULL(CentroCostoID, 0) FROM Facturacion.Facturas WHERE FacturaID = @facturaId",
+            new { facturaId });
+
         var lineasPT = await conn.QueryAsync<LineaPTCruda>("""
             SELECT fl.ArticuloID, a.Referencia AS SKU, a.Nombre, fl.Cantidad,
                    (SELECT TOP 1 r.RecetaID FROM Produccion.RecetaBOM r
@@ -456,11 +507,12 @@ public class FacturacionService : IFacturacionService
             var insumoIds = insumos.Select(i => i.ArticuloID).Distinct().ToList();
             var stocks = insumoIds.Count == 0 ? []
                 : (await conn.QueryAsync<StockCrudo>("""
-                    SELECT ArticuloID, ISNULL(SUM(CantidadActual), 0) AS StockTotal
-                    FROM Inventario.InventarioStock
-                    WHERE ArticuloID IN @ids
-                    GROUP BY ArticuloID
-                    """, new { ids = insumoIds })).ToList();
+                    SELECT s.ArticuloID, ISNULL(SUM(s.CantidadActual), 0) AS StockTotal
+                    FROM Inventario.InventarioStock s
+                    JOIN Inventario.Bodegas b ON b.BodegaID = s.BodegaID
+                    WHERE s.ArticuloID IN @ids AND (@ccId = 0 OR b.CentroCostoID = @ccId)
+                    GROUP BY s.ArticuloID
+                    """, new { ids = insumoIds, ccId })).ToList();
 
             var stockDict = stocks.ToDictionary(s => s.ArticuloID, s => s.StockTotal);
 
@@ -530,10 +582,21 @@ public class FacturacionService : IFacturacionService
 
         if (resultado.Any(r => r.Exitoso))
         {
-            try { await DescontarStockAsync(facturaId, usuarioId); }
+            using var conn2 = _db.CreateConnection();
+
+            // AutoProducir siempre usa sp_DescontarStockFactura (sin receta):
+            // el ciclo OP ya dedujo los insumos y añadió el PT al stock;
+            // aquí solo hay que descontar el PT de la factura.
+            // Llamar a DescontarStockAsync aquí provocaría doble descuento de
+            // insumos cuando VentaDesdeReceta = ON.
+            try
+            {
+                await conn2.ExecuteAsync(
+                    "EXEC Facturacion.sp_DescontarStockFactura @FacturaID, @UsuarioID",
+                    new { FacturaID = facturaId, UsuarioID = usuarioId });
+            }
             catch { /* best-effort */ }
 
-            using var conn2 = _db.CreateConnection();
             await conn2.ExecuteAsync(
                 "UPDATE Facturacion.Facturas SET ProduccionAutoEjecutada=1 WHERE FacturaID=@facturaId",
                 new { facturaId });

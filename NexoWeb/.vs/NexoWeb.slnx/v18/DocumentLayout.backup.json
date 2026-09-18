@@ -3,20 +3,36 @@
   "WorkspaceRootPath": "C:\\Produccion\\NexoWeb\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\integraciondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\integraciondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\maquinariadtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\maquinariadtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\automaciondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\automaciondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\dashboarddtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\dashboarddtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\auth\\customauthstateprovider.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\auth\\customauthstateprovider.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\auth\\configuracionempresastate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\auth\\configuracionempresastate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\auth\\calendariobroadcast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\auth\\calendariobroadcast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\dashboarddtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\dashboarddtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\traspasos\\creartraspasodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\traspasos\\creartraspasodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\integraciondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\integraciondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\automaciondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\automaciondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\auth\\modulosvisiblesstate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -37,10 +53,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\crm\\cotizaciones.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\crm\\cotizaciones.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\traspasos\\creartraspasodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\traspasos\\creartraspasodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\logisticadtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -81,10 +93,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\auth\\configuracionempresastate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\auth\\configuracionempresastate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\inventariodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -259,55 +267,55 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "MaquinariaDtos.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\MaquinariaDtos.cs",
+              "RelativeDocumentMoniker": "Common\\Dtos\\MaquinariaDtos.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\MaquinariaDtos.cs",
+              "RelativeToolTip": "Common\\Dtos\\MaquinariaDtos.cs",
+              "ViewState": "AgIAAB8AAAAAAAAAAAAQwDMAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-14T15:53:36.109Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "CustomAuthStateProvider.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Auth\\CustomAuthStateProvider.cs",
+              "RelativeDocumentMoniker": "Common\\Auth\\CustomAuthStateProvider.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Auth\\CustomAuthStateProvider.cs",
+              "RelativeToolTip": "Common\\Auth\\CustomAuthStateProvider.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB4AAAA+AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-14T15:53:01.097Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
               "Title": "IntegracionDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\IntegracionDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\IntegracionDtos.cs",
               "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\IntegracionDtos.cs",
               "RelativeToolTip": "Common\\Dtos\\IntegracionDtos.cs",
-              "ViewState": "AgIAAAwAAAAAAAAAAAAowBwAAAAeAAAAAAAAAA==",
+              "ViewState": "AgIAABEAAAAAAAAAAAAwwBwAAAAeAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-10T19:05:39.673Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-10T19:05:39.673Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "DashboardDtos.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\DashboardDtos.cs",
-              "RelativeDocumentMoniker": "Common\\Dtos\\DashboardDtos.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\DashboardDtos.cs",
-              "RelativeToolTip": "Common\\Dtos\\DashboardDtos.cs",
-              "ViewState": "AgIAABUAAAAAAAAAAAAmwCMAAAAQAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-04T14:36:44.637Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 5,
               "Title": "CrearTraspasoDialog.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
               "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
               "RelativeToolTip": "Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
-              "ViewState": "AgIAAAIAAAAAAAAAAAAAABoAAAAZAAAAAAAAAA==",
+              "ViewState": "AgIAACwAAAAAAAAAAAAAABoAAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2026-08-28T22:54:19.272Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "AutomacionDtos.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\AutomacionDtos.cs",
-              "RelativeDocumentMoniker": "Common\\Dtos\\AutomacionDtos.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\AutomacionDtos.cs",
-              "RelativeToolTip": "Common\\Dtos\\AutomacionDtos.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-28T22:54:08.466Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 15,
               "Title": "FormulariosDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\FormulariosDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\FormulariosDtos.cs",
@@ -319,7 +327,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 12,
               "Title": "Cotizaciones.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Crm\\Cotizaciones.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Crm\\Cotizaciones.razor",
@@ -331,7 +339,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 16,
               "Title": "FormPublico.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Formularios\\FormPublico.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Formularios\\FormPublico.razor",
@@ -343,7 +351,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 9,
               "Title": "NexoApiClient.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\ApiClient\\NexoApiClient.cs",
               "RelativeDocumentMoniker": "Common\\ApiClient\\NexoApiClient.cs",
@@ -356,18 +364,6 @@
             {
               "$type": "Document",
               "DocumentIndex": 4,
-              "Title": "ModulosVisiblesState.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Auth\\ModulosVisiblesState.cs",
-              "RelativeDocumentMoniker": "Common\\Auth\\ModulosVisiblesState.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Auth\\ModulosVisiblesState.cs",
-              "RelativeToolTip": "Common\\Auth\\ModulosVisiblesState.cs",
-              "ViewState": "AgIAACgAAAAAAAAAAAAWwDMAAAAQAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-20T15:05:19.389Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
               "Title": "CalendarioBroadcast.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Auth\\CalendarioBroadcast.cs",
               "RelativeDocumentMoniker": "Common\\Auth\\CalendarioBroadcast.cs",
@@ -379,7 +375,55 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 1,
+              "Title": "DashboardDtos.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\DashboardDtos.cs",
+              "RelativeDocumentMoniker": "Common\\Dtos\\DashboardDtos.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\DashboardDtos.cs",
+              "RelativeToolTip": "Common\\Dtos\\DashboardDtos.cs",
+              "ViewState": "AgIAABkAAAAAAAAAAAAYwCMAAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T14:36:44.637Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "AutomacionDtos.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\AutomacionDtos.cs",
+              "RelativeDocumentMoniker": "Common\\Dtos\\AutomacionDtos.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\AutomacionDtos.cs",
+              "RelativeToolTip": "Common\\Dtos\\AutomacionDtos.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-28T22:54:08.466Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ConfiguracionEmpresaState.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Auth\\ConfiguracionEmpresaState.cs",
+              "RelativeDocumentMoniker": "Common\\Auth\\ConfiguracionEmpresaState.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Auth\\ConfiguracionEmpresaState.cs",
+              "RelativeToolTip": "Common\\Auth\\ConfiguracionEmpresaState.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAABAAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T15:47:16.177Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "ModulosVisiblesState.cs",
+              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Auth\\ModulosVisiblesState.cs",
+              "RelativeDocumentMoniker": "Common\\Auth\\ModulosVisiblesState.cs",
+              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Auth\\ModulosVisiblesState.cs",
+              "RelativeToolTip": "Common\\Auth\\ModulosVisiblesState.cs",
+              "ViewState": "AgIAACgAAAAAAAAAAAAWwDMAAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-20T15:05:19.389Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
               "Title": "ListaOrdenesCompra.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Compras\\ListaOrdenesCompra.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Compras\\ListaOrdenesCompra.razor",
@@ -391,7 +435,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 18,
               "Title": "Proyectos.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Proyectos\\Proyectos.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Proyectos\\Proyectos.razor",
@@ -403,7 +447,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 19,
               "Title": "MetasVenta.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Planificacion\\MetasVenta.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Planificacion\\MetasVenta.razor",
@@ -415,7 +459,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 11,
               "Title": "CrearOrden.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Produccion\\CrearOrden.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Produccion\\CrearOrden.razor",
@@ -427,7 +471,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 13,
               "Title": "LogisticaDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\LogisticaDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\LogisticaDtos.cs",
@@ -439,7 +483,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 14,
               "Title": "GastosOperativos.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Finanzas\\GastosOperativos.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Finanzas\\GastosOperativos.razor",
@@ -451,7 +495,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 22,
               "Title": "launchSettings.json",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Properties\\launchSettings.json",
               "RelativeDocumentMoniker": "Properties\\launchSettings.json",
@@ -463,7 +507,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 20,
               "Title": "ClienteWorkspace.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Crm\\ClienteWorkspace.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Crm\\ClienteWorkspace.razor",
@@ -475,19 +519,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
-              "Title": "ConfiguracionEmpresaState.cs",
-              "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Auth\\ConfiguracionEmpresaState.cs",
-              "RelativeDocumentMoniker": "Common\\Auth\\ConfiguracionEmpresaState.cs",
-              "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Auth\\ConfiguracionEmpresaState.cs",
-              "RelativeToolTip": "Common\\Auth\\ConfiguracionEmpresaState.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-26T15:47:16.177Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 21,
+              "DocumentIndex": 23,
               "Title": "InventarioDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\InventarioDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\InventarioDtos.cs",
@@ -499,7 +531,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 17,
               "Title": "Tickets.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Soporte\\Tickets.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Soporte\\Tickets.razor",
@@ -511,7 +543,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
+              "DocumentIndex": 24,
               "Title": "ComprasDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\ComprasDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\ComprasDtos.cs",
@@ -523,7 +555,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 21,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Program.cs",
               "RelativeDocumentMoniker": "Program.cs",
@@ -535,7 +567,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 23,
+              "DocumentIndex": 25,
               "Title": "AuthDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\AuthDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\AuthDtos.cs",
@@ -547,7 +579,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 24,
+              "DocumentIndex": 26,
               "Title": "ReconnectModal.razor.js",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\publish\\wwwroot\\Components\\Layout\\ReconnectModal.razor.js",
               "RelativeDocumentMoniker": "publish\\wwwroot\\Components\\Layout\\ReconnectModal.razor.js",
@@ -559,7 +591,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 25,
+              "DocumentIndex": 27,
               "Title": "IntegracionVisions.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Admin\\IntegracionVisions.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Admin\\IntegracionVisions.razor",
@@ -571,7 +603,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 26,
+              "DocumentIndex": 28,
               "Title": "GestionFacturaDialog.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Facturacion\\GestionFacturaDialog.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Facturacion\\GestionFacturaDialog.razor",
@@ -583,7 +615,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 27,
+              "DocumentIndex": 29,
               "Title": "Facturas.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Facturacion\\Facturas.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Facturacion\\Facturas.razor",
@@ -595,7 +627,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 28,
+              "DocumentIndex": 30,
               "Title": "FacturacionDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\FacturacionDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\FacturacionDtos.cs",
@@ -607,7 +639,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 29,
+              "DocumentIndex": 31,
               "Title": "ComboDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\ComboDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\ComboDtos.cs",
@@ -619,7 +651,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 31,
+              "DocumentIndex": 33,
               "Title": "Campanas.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Crm\\Campanas.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Crm\\Campanas.razor",
@@ -631,7 +663,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 34,
+              "DocumentIndex": 36,
               "Title": "Horarios.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Rrhh\\Horarios.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Rrhh\\Horarios.razor",
@@ -643,7 +675,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 35,
+              "DocumentIndex": 37,
               "Title": "StockHelper.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Helpers\\StockHelper.cs",
               "RelativeDocumentMoniker": "Common\\Helpers\\StockHelper.cs",
@@ -655,7 +687,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 36,
+              "DocumentIndex": 38,
               "Title": "CalendarioEventoDialog.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Planificacion\\CalendarioEventoDialog.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Planificacion\\CalendarioEventoDialog.razor",
@@ -667,7 +699,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 37,
+              "DocumentIndex": 39,
               "Title": "Calendario.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Planificacion\\Calendario.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Planificacion\\Calendario.razor",
@@ -679,7 +711,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 30,
+              "DocumentIndex": 32,
               "Title": "CatalogoDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\CatalogoDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\CatalogoDtos.cs",
@@ -691,7 +723,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 33,
+              "DocumentIndex": 35,
               "Title": "CampanaEditor.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Crm\\CampanaEditor.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Crm\\CampanaEditor.razor",
@@ -703,7 +735,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 32,
+              "DocumentIndex": 34,
               "Title": "EmailDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\EmailDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\EmailDtos.cs",
@@ -715,7 +747,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 39,
+              "DocumentIndex": 41,
               "Title": "Dashboard.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Dashboard\\Dashboard.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Dashboard\\Dashboard.razor",
@@ -727,7 +759,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 38,
+              "DocumentIndex": 40,
               "Title": "Articulos.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Catalogo\\Articulos.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Catalogo\\Articulos.razor",
@@ -739,7 +771,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 40,
+              "DocumentIndex": 42,
               "Title": "AuthStateService.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Auth\\AuthStateService.cs",
               "RelativeDocumentMoniker": "Common\\Auth\\AuthStateService.cs",
@@ -751,7 +783,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 41,
+              "DocumentIndex": 43,
               "Title": "PreferenciasState.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Auth\\PreferenciasState.cs",
               "RelativeDocumentMoniker": "Common\\Auth\\PreferenciasState.cs",
@@ -763,7 +795,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 44,
+              "DocumentIndex": 46,
               "Title": "ReconnectModal.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Layout\\ReconnectModal.razor",
               "RelativeDocumentMoniker": "Components\\Layout\\ReconnectModal.razor",
@@ -775,7 +807,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 47,
+              "DocumentIndex": 49,
               "Title": "Routes.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Routes.razor",
               "RelativeDocumentMoniker": "Components\\Routes.razor",
@@ -787,7 +819,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 45,
+              "DocumentIndex": 47,
               "Title": "MainLayout.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Layout\\MainLayout.razor",
               "RelativeDocumentMoniker": "Components\\Layout\\MainLayout.razor",
@@ -799,7 +831,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 48,
+              "DocumentIndex": 50,
               "Title": "Error.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Error.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Error.razor",
@@ -811,7 +843,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 49,
+              "DocumentIndex": 51,
               "Title": "NexoTheme.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\NexoTheme.cs",
               "RelativeDocumentMoniker": "Components\\NexoTheme.cs",
@@ -823,7 +855,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 50,
+              "DocumentIndex": 52,
               "Title": "InicializadorSesion.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Layout\\InicializadorSesion.razor",
               "RelativeDocumentMoniker": "Components\\Layout\\InicializadorSesion.razor",
@@ -835,7 +867,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 42,
+              "DocumentIndex": 44,
               "Title": "Login.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Auth\\Login.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Auth\\Login.razor",
@@ -847,7 +879,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 43,
+              "DocumentIndex": 45,
               "Title": "ResetearPasswordDialog.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Admin\\ResetearPasswordDialog.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Admin\\ResetearPasswordDialog.razor",
@@ -859,7 +891,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 52,
+              "DocumentIndex": 54,
               "Title": "tailwind.css",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\wwwroot\\tailwind.css",
               "RelativeDocumentMoniker": "wwwroot\\tailwind.css",
@@ -871,7 +903,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 46,
+              "DocumentIndex": 48,
               "Title": "AuthLayout.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Layout\\AuthLayout.razor",
               "RelativeDocumentMoniker": "Components\\Layout\\AuthLayout.razor",
@@ -883,7 +915,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 51,
+              "DocumentIndex": 53,
               "Title": "INexoApiClient.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\ApiClient\\INexoApiClient.cs",
               "RelativeDocumentMoniker": "Common\\ApiClient\\INexoApiClient.cs",
@@ -895,7 +927,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 53,
+              "DocumentIndex": 55,
               "Title": "App.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\App.razor",
               "RelativeDocumentMoniker": "Components\\App.razor",

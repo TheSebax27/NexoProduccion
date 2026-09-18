@@ -188,7 +188,7 @@
                     <MudSelectItem T="int?" Value="@((int?)iva.IvaID)">@iva.Descripcion (@iva.Iva%)</MudSelectItem>
                 }
             </MudSelect>
-            @if (_ivaId.HasValue && !IvaEsExcluidoOExento)
+            @if (_ivaId.HasValue && !IvaEsExcluidoOExento && !EsIcoSeleccionado)
             {
                 <MudSelect T="string?" Value="_impuestoConsumoCode" ValueChanged="OnImpuestoConsumoChanged"
                            Label="Impuesto 2 — Consumo (opcional)" Clearable="true" Class="mb-3" Placeholder="Ninguno">
@@ -304,9 +304,11 @@
             : GruposMenores.Where(gm => gm.GrupoMayor == _grupoMayorCodigo);
 
     private IEnumerable<IvaItem> IvasPrimarios => Ivas.Where(i =>
-        (i.Iva == 0 || i.Iva == 5 || i.Iva == 16 || i.Iva == 19) &&
-        !ImpuestosConsumo.Any(ic => (i.Descripcion ?? "").StartsWith(ic.Codigo)));
+        i.TipoImpuesto == "ICO" ||
+        ((i.Iva == 0 || i.Iva == 5 || i.Iva == 16 || i.Iva == 19) &&
+         !ImpuestosConsumo.Any(ic => (i.Descripcion ?? "").StartsWith(ic.Codigo))));
     private bool    IvaEsExcluidoOExento => _ivaId.HasValue && _ivaValor == 0;
+    private bool    EsIcoSeleccionado    => _ivaId.HasValue && Ivas.FirstOrDefault(i => i.IvaID == _ivaId)?.TipoImpuesto == "ICO";
     private decimal TotalImpuestoPct     => (_ivaValor ?? 0) + (_impuestoConsumoCode is not null ? (_impuestoPorcentaje ?? 0) : 0);
     private decimal? CostoConImpuesto    => _costo is > 0 ? _costo.Value * (1 + TotalImpuestoPct / 100) : _costo;
 
@@ -499,7 +501,7 @@
         var iva = Ivas.FirstOrDefault(i => i.IvaID == ivaId);
         if (iva is null) return;
         _ivaValor = (short)iva.Iva; _ivaDescripcion = iva.Descripcion; _ivaSiNo = iva.Iva > 0 ? "SI" : "NO";
-        if (iva.Iva == 0) { _impuestoConsumoCode = null; _impuestoPorcentaje = null; _iva2 = null; _ivaDescripcion2 = null; }
+        if (iva.Iva == 0 || iva.TipoImpuesto == "ICO") { _impuestoConsumoCode = null; _impuestoPorcentaje = null; _iva2 = null; _ivaDescripcion2 = null; }
         OnCostoChanged();
     }
 

@@ -1,5 +1,35 @@
-/* Tablero Kanban de tareas -- 3 columnas, sin drag&drop (botones de mover
-   para no depender de eventos HTML5 dragstart/dragover no probados visualmente). */
+/* ── Tabs dentro del dialog: borde inferior simple, sin pill flotante ── */
+::deep .nexo-proyecto-tabs .mud-tabs-tabbar {
+  background: transparent !important;
+  border-bottom: 1px solid var(--n-border, rgba(0,0,0,0.10)) !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin-bottom: 16px !important;
+  box-shadow: none !important;
+  display: flex !important;
+  width: 100% !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+::deep .nexo-proyecto-tabs .mud-tab {
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  border-radius: 0 !important;
+  padding: 8px 14px !important;
+  min-width: unset !important;
+  color: var(--n-text-2, #6B6B8A) !important;
+}
+::deep .nexo-proyecto-tabs .mud-tab.mud-tab-active {
+  color: var(--n-purple, #7C5CFF) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+::deep .nexo-proyecto-tabs .mud-tab-slider {
+  background: var(--n-purple, #7C5CFF) !important;
+  height: 2px !important;
+}
+
+/* ── Tablero Kanban de tareas -- 3 columnas ─────────────────────────────── */
 .nexo-kanban {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -72,5 +102,22 @@
 @media (max-width: 700px) {
   .nexo-kanban {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ── Dark mode kanban ──────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .nexo-kanban__columna {
+    background: rgba(255,255,255,0.05) !important;
+  }
+  :root:not([data-theme="light"]) .nexo-kanban__tarjeta {
+    background: rgba(255,255,255,0.09) !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.30) !important;
+  }
+  :root:not([data-theme="light"]) .nexo-kanban__tarjeta-titulo {
+    color: rgba(255,255,255,0.92) !important;
+  }
+  :root:not([data-theme="light"]) ::deep .nexo-proyecto-tabs .mud-tabs-tabbar {
+    border-bottom-color: rgba(255,255,255,0.10) !important;
   }
 }

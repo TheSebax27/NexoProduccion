@@ -291,6 +291,26 @@ public class IntegracionController : ControllerBase
         return Ok(new { mensaje = "Número de factura actualizado desde Visions." });
     }
 
+    /// <summary>Llamado por el Agente al iniciar. NEXO genera EventosSalientes SINCRONIZAR_ARTICULO
+    /// para todos los articulos que este CC deberia tener pero aun no tiene evento pendiente.
+    /// Idempotente: NOT EXISTS previene duplicados.</summary>
+    [HttpPost("sync/solicitar-catalogo-completo")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> SolicitarCatalogoCompleto()
+    {
+        await _service.SolicitarSyncCatalogoCompletoAsync(CentroCostoDelAgente);
+        return Ok(new { mensaje = "Solicitud de catalogo completo procesada." });
+    }
+
+    /// <summary>Llamado desde la UI web (admin). Solicita sync de catalogo completo para el CC indicado.</summary>
+    [HttpPost("sync/solicitar-catalogo-completo-admin")]
+    [Authorize(Roles = "Administracion")]
+    public async Task<ActionResult> SolicitarCatalogoCompletoAdmin([FromQuery] int centroCostoId)
+    {
+        await _service.SolicitarSyncCatalogoCompletoAsync(centroCostoId);
+        return Ok(new { mensaje = "Solicitud de catalogo completo procesada." });
+    }
+
     /// <summary>Llamado por el Agente cuando detecta un cambio de precio/nombre en TARJETA de Visions.
     /// Actualiza Catalogo.Tarjetas en NEXO si el cambio de Visions es mas reciente.</summary>
     [HttpPost("sync/articulo-desde-visions")]

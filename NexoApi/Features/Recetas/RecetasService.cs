@@ -127,6 +127,9 @@ public class RecetasService : IRecetasService
             VALUES
                 (@RecetaID, @InsumoID, @CantidadRequerida, @PorcentajeMermaEstandar, @CentroTrabajoID, @Orden)";
 
+        if (detalle.Any(d => d.CantidadRequerida <= 0))
+            throw new InvalidOperationException("Todos los insumos deben tener CantidadRequerida mayor a 0.");
+
         foreach (var linea in detalle)
         {
             await connection.ExecuteAsync(sqlDetalle, new
@@ -180,9 +183,11 @@ public class RecetasService : IRecetasService
 
         const string sql = @"
             SELECT d.RecetaDetalleID, d.InsumoID, a.Nombre AS Insumo, d.CantidadRequerida,
-                   ISNULL(a.PresentacionCodigo, '') AS Unidad, d.PorcentajeMermaEstandar, d.CentroTrabajoID, d.Orden
+                   ISNULL(p.Presentacion, ISNULL(a.PresentacionCodigo, '')) AS Unidad,
+                   d.PorcentajeMermaEstandar, d.CentroTrabajoID, d.Orden
             FROM Produccion.RecetaBOM_Detalle d
             JOIN Catalogo.Tarjetas a ON a.ArticuloID = d.InsumoID
+            LEFT JOIN Catalogo.Presentacion p ON p.Codigo = a.PresentacionCodigo
             WHERE d.RecetaID = @RecetaId
             ORDER BY d.Orden";
 

@@ -68,7 +68,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var resp = await Api.GetAsync<ClientesPaginadosResponse>("api/crm/clientes/paginados?pagina=1&tamano=2000");
+        var resp = await Api.GetAsync<ClientesPaginadosResponse>("api/crm/clientes/paginados?pagina=1&tamano=500");
         _clientes = resp?.Items ?? [];
         _grupoDept = _clientes
             .Where(c => !string.IsNullOrWhiteSpace(c.Departamento))

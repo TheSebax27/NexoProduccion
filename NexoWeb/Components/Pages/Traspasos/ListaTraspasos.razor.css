@@ -77,9 +77,9 @@
     white-space: nowrap;
 }
 .tra-estado--pendiente  { background: rgba(0,0,0,.07); color: var(--n-text-3); }
-.tra-estado--en_transito{ background: rgba(255,152,0,.15); color: rgb(185,110,0); }
-.tra-estado--recibido   { background: rgba(76,175,80,.15); color: rgb(40,120,44); }
-.tra-estado--cancelado  { background: rgba(244,67,54,.1); color: rgb(200,30,30); }
+.tra-estado--en_transito{ background: rgba(255,152,0,.15); color: var(--n-warning); }
+.tra-estado--recibido   { background: rgba(76,175,80,.15); color: var(--n-success); }
+.tra-estado--cancelado  { background: var(--n-error-bg); color: var(--n-error); }
 
 /* ── Botones de acción en tabla ────────────────────────────────────── */
 .tra-acciones { display: flex; gap: .35rem; }

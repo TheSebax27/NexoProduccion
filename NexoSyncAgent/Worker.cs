@@ -49,8 +49,6 @@ public class Worker : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            var espera = _backoffActual > TimeSpan.Zero ? _backoffActual : _intervalo;
-
             try
             {
                 using var scope = _serviceProvider.CreateScope();
@@ -166,6 +164,21 @@ public class Worker : BackgroundService
                     var tareaVentas = scope.ServiceProvider.GetRequiredService<TareaExportarVentas>();
                     await tareaVentas.EjecutarAsync(centroCostoVisions!.Value, stoppingToken, fechaInicioSyncVentas);
 
+                    // 7b. Entradas de inventario Visions → NEXO (MOVDETALLEE, TIPOMOV ECO).
+                    //     Va inmediatamente despues de ventas: mismo flujo pero en sentido entrada.
+                    //     Excluye documentos que vinieron de OC de NEXO (ya tienen Kardex).
+                    //     Aislado en try/catch: si la migracion SQL aun no se ejecuto en NEXO,
+                    //     el fallo no interrumpe el resto del ciclo.
+                    try
+                    {
+                        var tareaEntradasVisions = scope.ServiceProvider.GetRequiredService<TareaExportarEntradasVisions>();
+                        await tareaEntradasVisions.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
+                    }
+                    catch (Exception exEnt)
+                    {
+                        _logger.LogWarning(exEnt, "Sync entradas Visions→NEXO omitido (migracion SQL pendiente?)");
+                    }
+
                     // 8. Eventos NEXO → Visions: SINCRONIZAR_ARTICULO, AJUSTE_INVENTARIO,
                     //    BAJA_INVENTARIO, ENTRADA_PRODUCCION, CONSUMO_INSUMO.
                     //    Va despues de ventas: NEXO ya recibio todo lo de Visions y sus eventos
@@ -210,7 +223,7 @@ public class Worker : BackgroundService
                 _logger.LogError(ex, "Fallo inesperado en la ronda de sincronizacion");
             }
 
-            await Task.Delay(espera, stoppingToken);
+            await Task.Delay(_backoffActual > TimeSpan.Zero ? _backoffActual : _intervalo, stoppingToken);
         }
     }
 

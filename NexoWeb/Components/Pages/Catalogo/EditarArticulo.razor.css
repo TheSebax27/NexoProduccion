@@ -85,9 +85,9 @@
     gap: 0.25rem;
     padding: 0.2rem 0.6rem;
     border-radius: 20px;
-    background: rgba(16,185,129,0.10);
+    background: var(--n-success-bg-2);
     font-size: 0.75rem;
-    color: #10B981;
+    color: var(--n-success);
 }
 
 .na-costo-impuesto-badge {
@@ -96,10 +96,10 @@
     gap: 0.35rem;
     padding: 0.25rem 0.65rem;
     border-radius: 20px;
-    background: rgba(14,165,233,0.10);
-    border: 1px solid rgba(14,165,233,0.18);
+    background: var(--n-info-bg);
+    border: 1px solid var(--n-info-border);
     font-size: 0.75rem;
-    color: #0EA5E9;
+    color: var(--n-info);
 }
 
 .na-costo-promedio-badge {
@@ -111,7 +111,7 @@
     background: rgba(245,158,11,0.08);
     border: 1px solid rgba(245,158,11,0.2);
     font-size: 0.8rem;
-    color: #D97706;
+    color: var(--n-warning);
 }
 
 .na-iva-empty {

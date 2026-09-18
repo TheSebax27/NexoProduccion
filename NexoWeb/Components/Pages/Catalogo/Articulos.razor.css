@@ -157,8 +157,8 @@
 }
 
 .art-estado--inactivo {
-    background: rgba(239,68,68,0.09);
-    color: #DC2626;
+    background: var(--n-error-bg);
+    color: var(--n-error);
 }
 
 /* ── Tabla ───────────────────────────────────────────────────────── */

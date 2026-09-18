@@ -83,6 +83,9 @@ public interface IIntegracionService
     // SINCANTSA en Visions: bloquear ventas sin inventario
     Task<bool> ObtenerSincAntsaAsync(int agenteSyncId);
     Task SetSincAntsaAsync(int agenteSyncId, bool activo);
+
+    // Catalogo completo NEXO → Visions: genera EventosSalientes para articulos que faltan en este CC
+    Task SolicitarSyncCatalogoCompletoAsync(int centroCostoId);
 }
 
 public class IntegracionService : IIntegracionService
@@ -137,7 +140,9 @@ public class IntegracionService : IIntegracionService
             JOIN Catalogo.Tarjetas a ON a.ArticuloID = e.ArticuloID
             LEFT JOIN Catalogo.TiposArticulo ta ON ta.TipoArticuloID = a.TipoArticuloID
             WHERE e.Estado = 'PENDIENTE' AND e.CentroCostoID = @CentroCostoId
-              AND a.Referencia IS NOT NULL AND a.Referencia <> ''";
+              AND a.Referencia IS NOT NULL AND a.Referencia <> ''
+            ORDER BY e.EventoID
+            OFFSET 0 ROWS FETCH NEXT 200 ROWS ONLY";
 
         return await connection.QueryAsync<EventoPendienteItem>(sql, new { CentroCostoId = centroCostoId });
     }
@@ -219,12 +224,14 @@ public class IntegracionService : IIntegracionService
         var parametros = new DynamicParameters();
         parametros.Add("EventoEntranteID", eventoEntranteId);
 
-        // NOTA DEVOLUCION = cliente devuelve mercancía → el stock debe SUMARSE, no restarse.
-        // Usa un SP dedicado que invierte la dirección del movimiento de inventario.
-        var esDevolucionCliente = r.TipDoc == "NOTA DEVOLUCION";
-        var spNombre = esDevolucionCliente
-            ? "Integracion.sp_ProcesarDevolucionVisions"
-            : "Integracion.sp_ProcesarEventoEntrante";
+        // ENTRADA_COMPRA = mercancía recibida en Visions (FRMENTRADAS) → stock SUMA.
+        // NOTA DEVOLUCION = cliente devuelve mercancía → stock SUMA.
+        // Cualquier otro tipo (VENTA) → stock RESTA via sp_ProcesarEventoEntrante.
+        var spNombre = r.TipoEvento == "ENTRADA_COMPRA"
+            ? "Integracion.sp_ProcesarEntradaCompraVisions"
+            : r.TipDoc == "NOTA DEVOLUCION"
+                ? "Integracion.sp_ProcesarDevolucionVisions"
+                : "Integracion.sp_ProcesarEventoEntrante";
 
         try
         {
@@ -588,7 +595,12 @@ public class IntegracionService : IIntegracionService
         const string sql = @"
             INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
             SELECT 'SINCRONIZAR_ARTICULO', @CentroCostoID, @ArticuloID,
-                   ISNULL((SELECT SUM(s.CantidadActual) FROM Inventario.InventarioStock s WHERE s.ArticuloID = @ArticuloID), 0),
+                   ISNULL((
+                       SELECT SUM(s.CantidadActual)
+                       FROM Inventario.InventarioStock s
+                       JOIN Inventario.Bodegas b ON b.BodegaID = s.BodegaID
+                       WHERE s.ArticuloID = @ArticuloID AND b.CentroCostoID = @CentroCostoID
+                   ), 0),
                    a.CostoPromedio
             FROM Catalogo.Tarjetas a WHERE a.ArticuloID = @ArticuloID";
 
@@ -760,11 +772,22 @@ public class IntegracionService : IIntegracionService
                 "SELECT COUNT(*) FROM Integracion.EventosSalientes WHERE Estado = 'ERROR' AND CentroCostoID = @Id",
                 new { Id = ag.CentroCostoID });
 
+            var articulosFaltantes = await connection.ExecuteScalarAsync<int>(@"
+                SELECT COUNT(DISTINCT ma_otros.ArticuloID)
+                FROM Integracion.MapeoArticulos ma_otros
+                JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = ma_otros.CentroCostoID
+                WHERE cc.TieneVisions = 1 AND ma_otros.Estado = 1
+                  AND ma_otros.CentroCostoID <> @Id
+                  AND NOT EXISTS (
+                      SELECT 1 FROM Integracion.MapeoArticulos ma_este
+                      WHERE ma_este.ArticuloID = ma_otros.ArticuloID AND ma_este.CentroCostoID = @Id AND ma_este.Estado = 1)",
+                new { Id = ag.CentroCostoID });
+
             resultado.Add(new EstadoIntegracionResponse(
                 ag.AgenteSyncID, ag.Descripcion, ag.CentroCostoID, ag.NombreCentroCosto,
                 ag.Activo, ag.UltimoLatido, ag.VersionAgente,
                 _config.GetValue<string>("Sync:AgentVersion") ?? "1.0.0",
-                pendientes, procesadosHoy, ventasHoy, conError));
+                pendientes, procesadosHoy, ventasHoy, conError, articulosFaltantes));
         }
 
         return resultado;
@@ -1451,6 +1474,32 @@ public class IntegracionService : IIntegracionService
                               Cantidad = r.ExistenciasActuales!.Value, Costo = r.Costo ?? 0m });
             }
 
+            // Fan-out: mapear y emitir SINCRONIZAR_ARTICULO para todos los otros CentroCostos
+            // con TieneVisions=1. El agente de cada punto recibe el evento y crea/actualiza
+            // el articulo en su propio TARJETA. Sin esto, articulos creados en un punto
+            // nunca llegarian a los demas puntos de venta.
+            await connection.ExecuteAsync(@"
+                INSERT INTO Integracion.MapeoArticulos (ArticuloID, CentroCostoID, CodigoArticuloVisions, Estado, FechaCreacion)
+                SELECT @ArticuloID, cc.CentroCostoID, @Codigo, 1, GETDATE()
+                FROM Organizacion.CentrosCosto cc
+                WHERE cc.TieneVisions = 1 AND cc.CentroCostoID <> @OriginCC
+                  AND NOT EXISTS (
+                      SELECT 1 FROM Integracion.MapeoArticulos ma2
+                      WHERE ma2.ArticuloID = @ArticuloID AND ma2.CentroCostoID = cc.CentroCostoID AND ma2.Estado = 1);
+
+                INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
+                SELECT 'SINCRONIZAR_ARTICULO', ma.CentroCostoID, ma.ArticuloID, 0, ISNULL(t.CostoPromedio, 0)
+                FROM Integracion.MapeoArticulos ma
+                JOIN Catalogo.Tarjetas t ON t.ArticuloID = ma.ArticuloID
+                JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = ma.CentroCostoID
+                WHERE ma.ArticuloID = @ArticuloID AND ma.Estado = 1
+                  AND cc.TieneVisions = 1 AND cc.CentroCostoID <> @OriginCC
+                  AND NOT EXISTS (
+                      SELECT 1 FROM Integracion.EventosSalientes e
+                      WHERE e.ArticuloID = @ArticuloID AND e.CentroCostoID = ma.CentroCostoID
+                        AND e.TipoEvento = 'SINCRONIZAR_ARTICULO' AND e.Estado IN ('PENDIENTE','CONFIRMADO'));",
+                new { ArticuloID = articuloId.Value, Codigo = r.ReferenciaVisions, OriginCC = ccId.Value });
+
             _logger.LogInformation("Articulo {Ref} auto-creado en NEXO desde SINCRONIZAR_ARTICULO", r.ReferenciaVisions);
             return;
         }
@@ -1519,8 +1568,42 @@ public class IntegracionService : IIntegracionService
             });
 
         if (filas > 0)
+        {
             _logger.LogInformation(
                 "Articulo {ID} actualizado desde Visions (ref {Ref})", articuloId, r.ReferenciaVisions);
+
+            // Fan-out: al actualizar desde un punto VISIONS, crear mapeos y eventos
+            // SINCRONIZAR_ARTICULO para todos los demas CentroCostos con TieneVisions=1.
+            // Esto propaga gradualmente articulos existentes a puntos que aun no los tienen,
+            // sin necesidad de un script de migracion masivo.
+            var originCcId = await connection.ExecuteScalarAsync<int?>(
+                @"SELECT CentroCostoID FROM Organizacion.CentrosCosto
+                  WHERE TieneVisions = 1 AND IdentificadorClienteVisions = @CentroCostoVisions",
+                new { r.CentroCostoVisions });
+
+            if (originCcId.HasValue)
+                await connection.ExecuteAsync(@"
+                    INSERT INTO Integracion.MapeoArticulos (ArticuloID, CentroCostoID, CodigoArticuloVisions, Estado, FechaCreacion)
+                    SELECT @ArticuloID, cc.CentroCostoID, @Codigo, 1, GETDATE()
+                    FROM Organizacion.CentrosCosto cc
+                    WHERE cc.TieneVisions = 1 AND cc.CentroCostoID <> @OriginCC
+                      AND NOT EXISTS (
+                          SELECT 1 FROM Integracion.MapeoArticulos ma2
+                          WHERE ma2.ArticuloID = @ArticuloID AND ma2.CentroCostoID = cc.CentroCostoID AND ma2.Estado = 1);
+
+                    INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
+                    SELECT 'SINCRONIZAR_ARTICULO', ma.CentroCostoID, ma.ArticuloID, 0, ISNULL(t.CostoPromedio, 0)
+                    FROM Integracion.MapeoArticulos ma
+                    JOIN Catalogo.Tarjetas t ON t.ArticuloID = ma.ArticuloID
+                    JOIN Organizacion.CentrosCosto cc ON cc.CentroCostoID = ma.CentroCostoID
+                    WHERE ma.ArticuloID = @ArticuloID AND ma.Estado = 1
+                      AND cc.TieneVisions = 1 AND cc.CentroCostoID <> @OriginCC
+                      AND NOT EXISTS (
+                          SELECT 1 FROM Integracion.EventosSalientes e
+                          WHERE e.ArticuloID = @ArticuloID AND e.CentroCostoID = ma.CentroCostoID
+                            AND e.TipoEvento = 'SINCRONIZAR_ARTICULO' AND e.Estado IN ('PENDIENTE','CONFIRMADO'));",
+                    new { ArticuloID = articuloId, Codigo = r.ReferenciaVisions, OriginCC = originCcId.Value });
+        }
     }
 
     public async Task<IEnumerable<ClienteParaSyncDto>> ListarClientesParaSyncAsync(DateTime? desde, int centroCostoId)
@@ -1767,10 +1850,16 @@ public class IntegracionService : IIntegracionService
         catch (Exception exPago) { _logger.LogError(exPago, "NEXO: pago automático falló para FacturaID={FacturaId}; confirmación Visions ya registrada", facturaId); }
 
         // Descontar stock automáticamente ahora que Visions confirmó.
+        // Respetar el flag VentaDesdeReceta igual que en DescontarStockAsync de NEXO.
         try
         {
+            var ventaDesdeReceta = await connection.ExecuteScalarAsync<bool>(
+                "SELECT ISNULL(VentaDesdeReceta, 0) FROM Organizacion.ConfiguracionEmpresa WHERE ConfiguracionID = 1");
+            var spDescuento = ventaDesdeReceta
+                ? "Facturacion.sp_DescontarStockFactura_Receta"
+                : "Facturacion.sp_DescontarStockFactura";
             await connection.ExecuteAsync(
-                "EXEC Facturacion.sp_DescontarStockFactura @FacturaID, @UsuarioID",
+                $"EXEC {spDescuento} @FacturaID, @UsuarioID",
                 new { FacturaID = facturaId, UsuarioID = 0 });
         }
         catch { /* mejor esfuerzo: si falla (ej. stock insuficiente) no bloquear */ }
@@ -1886,5 +1975,48 @@ public class IntegracionService : IIntegracionService
             new { Activo = activo, AgenteSyncId = agenteSyncId });
         if (filas == 0)
             throw new KeyNotFoundException($"No existe el agente {agenteSyncId}.");
+    }
+
+    public async Task SolicitarSyncCatalogoCompletoAsync(int centroCostoId)
+    {
+        using var connection = _db.CreateConnection();
+
+        // Paso 1: crear mapeos para este CC con todos los articulos ya mapeados en otros CC Visions.
+        // MIN(CodigoArticuloVisions) garantiza un unico codigo por ArticuloID aunque el mismo articulo
+        // tenga codigos distintos en diferentes CC origen (evita duplicados en el INSERT).
+        await connection.ExecuteAsync(@"
+            INSERT INTO Integracion.MapeoArticulos
+                (ArticuloID, CentroCostoID, CodigoArticuloVisions, Estado, FechaCreacion)
+            SELECT ma.ArticuloID, @CcId, MIN(ma.CodigoArticuloVisions), 1, GETDATE()
+            FROM Integracion.MapeoArticulos ma
+            JOIN Organizacion.CentrosCosto cc_origen ON cc_origen.CentroCostoID = ma.CentroCostoID
+            WHERE cc_origen.TieneVisions = 1
+              AND ma.Estado = 1
+              AND ma.CentroCostoID <> @CcId
+              AND NOT EXISTS (
+                  SELECT 1 FROM Integracion.MapeoArticulos ma2
+                  WHERE ma2.ArticuloID = ma.ArticuloID AND ma2.CentroCostoID = @CcId AND ma2.Estado = 1)
+            GROUP BY ma.ArticuloID;",
+            new { CcId = centroCostoId });
+
+        // Paso 2: generar SINCRONIZAR_ARTICULO para articulos mapeados en este CC sin evento pendiente.
+        var insertados = await connection.ExecuteAsync(@"
+            INSERT INTO Integracion.EventosSalientes
+                (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
+            SELECT 'SINCRONIZAR_ARTICULO', ma.CentroCostoID, ma.ArticuloID, 0, ISNULL(t.CostoPromedio, 0)
+            FROM Integracion.MapeoArticulos ma
+            JOIN Catalogo.Tarjetas t ON t.ArticuloID = ma.ArticuloID
+            WHERE ma.CentroCostoID = @CcId AND ma.Estado = 1
+              AND NOT EXISTS (
+                  SELECT 1 FROM Integracion.EventosSalientes e
+                  WHERE e.ArticuloID    = ma.ArticuloID
+                    AND e.CentroCostoID = ma.CentroCostoID
+                    AND e.TipoEvento    = 'SINCRONIZAR_ARTICULO'
+                    AND e.Estado IN ('PENDIENTE', 'CONFIRMADO'));",
+            new { CcId = centroCostoId });
+
+        _logger.LogInformation(
+            "SolicitarSyncCatalogoCompleto CC {CC}: {N} eventos SINCRONIZAR_ARTICULO generados.",
+            centroCostoId, insertados);
     }
 }

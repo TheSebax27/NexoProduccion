@@ -2,12 +2,13 @@
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
+@inject IDialogService DialogService
 
 <MudDialog>
     <DialogContent>
         <MudText Typo="Typo.subtitle2" Class="mb-3">@Empleado.Nombres @Empleado.Apellidos</MudText>
 
-        <MudTabs>
+        <MudTabs Class="nexo-bi-tabs">
             <MudTabPanel Text="Historial Laboral">
                 <MudText Typo="Typo.caption" Class="mb-3" Style="color: var(--n-text-3, #9B9BB4);">
                     Se registra automático cuando cambia el Cargo o el Centro de Costo del empleado.
@@ -326,6 +327,12 @@
 
     private async Task EliminarDocumentoAsync(EmpleadoDocumentoItem documento)
     {
+        var ok = await DialogService.ShowMessageBox(
+            "Eliminar documento",
+            $"¿Eliminar \"{documento.NombreArchivo}\"? Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+        if (ok != true) return;
+
         try
         {
             await ApiClient.DeleteAsync($"api/rrhh/empleados/documentos/{documento.DocumentoID}");

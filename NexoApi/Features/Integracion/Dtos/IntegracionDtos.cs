@@ -173,7 +173,8 @@ public record EstadoIntegracionResponse(
     int EventosPendientes,
     int EventosProcesadosHoy,
     int VentasImportadasHoy,
-    int EventosConError
+    int EventosConError,
+    int ArticulosFaltantesVisions
 );
 
 // Enviado por el Agente cuando no puede aplicar un evento en Visions.

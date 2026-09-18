@@ -102,6 +102,7 @@ public class FormulariosService : IFormulariosService
     public async Task GuardarCamposAsync(int formId, GuardarCamposRequest req)
     {
         using var con = _db.CreateConnection();
+        con.Open();
         using var tx = con.BeginTransaction();
         await con.ExecuteAsync("DELETE FROM Formularios.Campos WHERE FormularioID = @FormID",
             new { FormID = formId }, tx);

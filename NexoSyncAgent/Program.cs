@@ -15,6 +15,7 @@ builder.Services.AddScoped<TareaInicializarVisions>();
 builder.Services.AddScoped<TareaSincronizarConfiguracion>();
 builder.Services.AddScoped<TareaAplicarEntradasInventario>();
 builder.Services.AddScoped<TareaExportarVentas>();
+builder.Services.AddScoped<TareaExportarEntradasVisions>();
 builder.Services.AddScoped<TareaSincronizarCatalogos>();
 builder.Services.AddScoped<TareaSincronizarFacturasNexoVisions>();
 builder.Services.AddScoped<TareaImportarCambiosTarjeta>();

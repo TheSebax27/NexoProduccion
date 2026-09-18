@@ -234,7 +234,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 7,
           "Children": [
             {
               "$type": "Bookmark",
@@ -261,6 +261,10 @@
               "Name": "ST:1496678418:0:{81164725-9a96-4ece-a4cb-440d8fd285e5}"
             },
             {
+              "$type": "Bookmark",
+              "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            },
+            {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "MaquinariaDtos.cs",
@@ -268,7 +272,7 @@
               "RelativeDocumentMoniker": "Common\\Dtos\\MaquinariaDtos.cs",
               "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\MaquinariaDtos.cs",
               "RelativeToolTip": "Common\\Dtos\\MaquinariaDtos.cs",
-              "ViewState": "AgIAAB0AAAAAAAAAAAAAAC0AAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAB8AAAAAAAAAAAAQwCgAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-09-14T15:53:36.109Z",
               "EditorCaption": ""
@@ -283,8 +287,7 @@
               "RelativeToolTip": "Common\\Auth\\CustomAuthStateProvider.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAB4AAAA+AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-14T15:53:01.097Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-14T15:53:01.097Z"
             },
             {
               "$type": "Document",
@@ -296,8 +299,7 @@
               "RelativeToolTip": "Common\\Dtos\\IntegracionDtos.cs",
               "ViewState": "AgIAABEAAAAAAAAAAAAwwBwAAAAeAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-10T19:05:39.673Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-10T19:05:39.673Z"
             },
             {
               "$type": "Document",
@@ -309,8 +311,7 @@
               "RelativeToolTip": "Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
               "ViewState": "AgIAACwAAAAAAAAAAAAAABoAAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-08-28T22:54:19.272Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-28T22:54:19.272Z"
             },
             {
               "$type": "Document",
@@ -370,8 +371,7 @@
               "RelativeToolTip": "Common\\Auth\\CalendarioBroadcast.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-11T23:07:42.354Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-11T23:07:42.354Z"
             },
             {
               "$type": "Document",
@@ -383,8 +383,7 @@
               "RelativeToolTip": "Common\\Dtos\\DashboardDtos.cs",
               "ViewState": "AgIAABkAAAAAAAAAAAAYwCMAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-04T14:36:44.637Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-04T14:36:44.637Z"
             },
             {
               "$type": "Document",
@@ -408,12 +407,7 @@
               "RelativeToolTip": "Common\\Auth\\ConfiguracionEmpresaState.cs",
               "ViewState": "AgIAAAkAAAAAAAAAAAAAABAAAAAkAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-26T15:47:16.177Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+              "WhenOpened": "2026-08-26T15:47:16.177Z"
             },
             {
               "$type": "Document",

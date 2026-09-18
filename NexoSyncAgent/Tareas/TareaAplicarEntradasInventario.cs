@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿using System.Data;
+using Dapper;
 using NexoSyncAgent.NexoApiClient;
 using NexoSyncAgent.VisionsData;
 
@@ -61,16 +62,14 @@ public class TareaAplicarEntradasInventario
         AplicarEntradaInventario(evento);
     }
 
-    // Crea o actualiza el articulo en dbo.TARJETA sincronizando nombre, costo,
-    // precio publico, existencias minimas y el stock actual de NEXO (Cantidad
-    // en el evento = SUM de Inventario.InventarioStock en el momento del evento).
+    // Crea o actualiza el articulo en dbo.TARJETA.
+    // TR_TARJETA_NexoCambios se suprime automaticamente: el trigger verifica
+    // APP_NAME() = 'NexoSyncAgent' y retorna sin insertar en NEXO_TarjetasCambios.
+    // VisionsConnectionFactory siempre fuerza ese ApplicationName. Compatible SQL 2008+.
     private void SincronizarArticulo(NexoApiClient.Dtos.EventoPendienteItem evento)
     {
         using var connection = _visionsDb.CreateConnection();
         connection.Open();
-        // Marcar la sesion como agente NEXO para que TR_TARJETA_NexoCambios ignore este write
-        // y no cree un eco que volveria a sincronizarse de Visions a NEXO.
-        connection.Execute("EXEC sys.sp_set_session_context N'nexo_agente', N'1'");
 
         // Resolver TipoID numérico de Visions desde el Codigo ('PT','MP','IN','SER').
         // Si viene null o no se encuentra en TIPOPRODUCTO_TIPOS, se deja VV3 sin cambiar (COALESCE).
@@ -106,9 +105,23 @@ public class TareaAplicarEntradasInventario
                   PCREDITO = CASE WHEN @PCredito IS NOT NULL THEN @PCredito ELSE ISNULL(PCREDITO, 0) END,
                   UPUBLICO = CASE WHEN @UPublico IS NOT NULL THEN @UPublico ELSE ISNULL(UPUBLICO, 0) END,
                   UBODEGA  = CASE WHEN @UBodega  IS NOT NULL THEN @UBodega  ELSE ISNULL(UBODEGA,  0) END,
-                  UCREDITO = CASE WHEN @UCredito IS NOT NULL THEN @UCredito ELSE ISNULL(UCREDITO, 0) END
+                  UCREDITO = CASE WHEN @UCredito IS NOT NULL THEN @UCredito ELSE ISNULL(UCREDITO, 0) END,
+                  FULTV = ISNULL(FULTV, CAST('2000-01-01' AS date)),
+                  FULTC = ISNULL(FULTC, CAST('2000-01-01' AS date)),
+                  NOTA  = ISNULL(NOTA,  N''),
+                  DFI   = ISNULL(DFI,   CAST('2000-01-01' AS date)),
+                  DFF   = ISNULL(DFF,   CAST('2000-01-01' AS date))
               WHEN NOT MATCHED THEN
-                  INSERT (CENTROCOSTO, REFERENCIA, DETALLE, COSTO, PPUBLICO, PBODEGA, PCREDITO, UPUBLICO, UBODEGA, UCREDITO, EXISTENCIASMINIMAS, FRACCIONES, CANTIDAD, PRESENTACION, EXISTENCIAS, MARCA, VF4, UBICA4, GRUPOMENOR, IVASINO, IVAVALOR, IVADESCRIPCION, VV3)
+                  INSERT (CENTROCOSTO, REFERENCIA, DETALLE, COSTO, PPUBLICO, PBODEGA, PCREDITO, UPUBLICO, UBODEGA, UCREDITO,
+                          EXISTENCIASMINIMAS, FRACCIONES, CANTIDAD, PRESENTACION, EXISTENCIAS, MARCA,
+                          VF1, VV1, VF2, VV2, VF3, VF4, VV3, VV4,
+                          GRUPOMENOR, IVASINO, IVAVALOR, IVADESCRIPCION, UBICA4,
+                          BARRAS, VALORIZADO, FRACCIONA, TIPOTARJETA,
+                          ROTA1, ROTA2, SUGERIDO, FISICOE, FISICOF, COMBO,
+                          FULTV, FULTC, REVISAR, NOTA, PESO, DFI, DFF, DPO, DVA, PESAR,
+                          MARGEN1, MARGEN2, MARGEN3, PUC, BODEGA,
+                          UBICA, UBICA1, UBICA2, UBICA3,
+                          INTERNO, INVENTA, ADVIERTE)
                   VALUES (
                       @CentroCosto,
                       @Referencia,
@@ -126,13 +139,21 @@ public class TareaAplicarEntradasInventario
                       ISNULL(@Presentacion, ''),
                       ISNULL(@Existencias, 0),
                       ISNULL(@Marca, ''),
+                      0, 0, 0, 0, 0,
                       ISNULL(@Iva2, 0),
-                      ISNULL(@IvaDescripcion2, ''),
+                      ISNULL(@TipoProductoID, 1),
+                      0,
                       ISNULL(@GrupoMenor, ''),
                       ISNULL(@IvaSiNo, 'SI'),
                       ISNULL(@IvaValor, 19),
                       ISNULL(@IvaDescripcion, 'IVA 19%'),
-                      ISNULL(@TipoProductoID, 1));",
+                      ISNULL(@IvaDescripcion2, ''),
+                      '', 0, '', '',
+                      0, 0, 0, 0, 0, 0,
+                      CAST('2000-01-01' AS date), CAST('2000-01-01' AS date), 0, N'', 0, CAST('2000-01-01' AS date), CAST('2000-01-01' AS date), 0, 0, '',
+                      0, 0, 0, '', '',
+                      0, '', '', '',
+                      0, 0, 0);",
             new
             {
                 CentroCosto = evento.CentroCostoVisions,
@@ -160,8 +181,8 @@ public class TareaAplicarEntradasInventario
             });
 
         // Marcar en NEXO_TarjetasCambios para que TareaDetectarArticulosFaltantes
-        // no reenvie este articulo a NEXO en el mismo ciclo (era la causa de la doble pasada).
-        // El trigger ya fue suprimido por SESSION_CONTEXT, asi que no quedo rastro automatico.
+        // no reenvie este articulo a NEXO en el mismo ciclo (doble pasada).
+        // El trigger no inserto nada (APP_NAME supresion), este INSERT es el unico rastro.
         connection.Execute(@"
             IF NOT EXISTS (SELECT 1 FROM dbo.NEXO_TarjetasCambios
                            WHERE CENTROCOSTO = @CC AND REFERENCIA = @Ref)
@@ -182,8 +203,6 @@ public class TareaAplicarEntradasInventario
     {
         using var connection = _visionsDb.CreateConnection();
         connection.Open();
-        // Marcar la sesion como agente para que TR_TARJETA_NexoCambios no genere eco
-        connection.Execute("EXEC sys.sp_set_session_context N'nexo_agente', N'1'");
         using var transaction = connection.BeginTransaction();
 
         try

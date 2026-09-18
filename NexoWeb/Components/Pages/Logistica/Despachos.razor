@@ -4,11 +4,18 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @using NexoWeb.Common.Dtos
+@using NexoWeb.Components.Pages.Facturacion
 
 <PageTitle>Despachos - NEXO</PageTitle>
 
-<div class="d-flex align-center mb-4" style="gap: 0.25rem;">
-    <MudText Typo="Typo.h5">Despachos</MudText>
+<div class="nexo-page-hero">
+    <div class="nexo-page-hero__left">
+        <div class="nexo-page-hero__accent"></div>
+        <div>
+            <p class="nexo-page-hero__module">Logística</p>
+            <h1 class="nexo-page-hero__title">Despachos</h1>
+        </div>
+    </div>
 </div>
 <InfoAyuda Texto="Registra despachos de Producto Terminado a clientes, con su guía. Al crear un despacho se descuenta el stock (FEFO) de la bodega de origen automáticamente -- no se puede crear si no hay stock suficiente. 'Confirmar Entrega' cuando el cliente reciba la mercancía, o 'Anular' para revertir el stock si fue un error." />
 
@@ -36,7 +43,12 @@
 }
 else if (_despachos.Count == 0)
 {
-    <MudText>No hay despachos registrados.</MudText>
+    <NexoEmptyState
+        Icono="@Icons.Material.Outlined.LocalShipping"
+        Titulo="Sin despachos"
+        Descripcion="@(_filtroEstado is not null ? "Ningún despacho coincide con el filtro." : "Aún no hay despachos registrados.")"
+        BotonTexto="@(_filtroEstado is null ? "Nuevo Despacho" : null)"
+        BotonOnClick="@(_filtroEstado is null ? AbrirCreacionAsync : default)" />
 }
 else
 {
@@ -72,6 +84,13 @@ else
                         Anular
                     </MudButton>
                 }
+                @if (context.Estado == "ENTREGADO")
+                {
+                    <MudButton Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Receipt"
+                               OnClick="@(() => GenerarFacturaDesdeDespachoAsync(context))">
+                        Facturar
+                    </MudButton>
+                }
             </MudTd>
         </RowTemplate>
     </MudTable>
@@ -81,6 +100,7 @@ else
     private List<DespachoItem> _despachos = new();
     private List<CentroCostoItem> _centrosCosto = new();
     private List<BodegaItem> _bodegas = new();
+    private List<CentroCostoBasicoItem> _centrosCostoFactura = new();
     private bool _cargando = true;
     private bool _creando;
     private string? _errorCarga;
@@ -106,6 +126,9 @@ else
             _despachos = await tareaDespachos ?? new();
             _centrosCosto = await tareaCentrosCosto ?? new();
             _bodegas = await tareaBodegas ?? new();
+            _centrosCostoFactura = _centrosCosto
+                .Select(c => new CentroCostoBasicoItem(c.CentroCostoID, c.Nombre, c.TieneVisions))
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -205,6 +228,39 @@ else
             await ApiClient.PostAsync<AnularDespachoRequest, object?>($"api/logistica/despachos/{despacho.DespachoID}/anular", request);
             Snackbar.Add("Despacho anulado. El stock fue devuelto a la bodega de origen.", Severity.Success);
             await CargarDespachosAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task GenerarFacturaDesdeDespachoAsync(DespachoItem despacho)
+    {
+        var ccTieneVisions = _centrosCostoFactura
+            .FirstOrDefault(c => c.CentroCostoID == despacho.CentroCostoID)?.TieneVisions ?? false;
+
+        var parametros = new DialogParameters<FacturaDialog>
+        {
+            { x => x.CombosActivos, new List<ComboItem>() },
+            { x => x.CentrosCosto, _centrosCostoFactura },
+            { x => x.UsaVisions, ccTieneVisions },
+            { x => x.ClienteIdPre, despacho.ClienteID },
+            { x => x.ClienteNombrePre, despacho.Cliente },
+            { x => x.CentroCostoIdPre, despacho.CentroCostoID }
+        };
+
+        var dialogo = await DialogService.ShowAsync<FacturaDialog>(
+            $"Factura — {despacho.NumeroGuia}", parametros,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+        var resultado = await dialogo.Result;
+        if (resultado is null || resultado.Canceled) return;
+
+        try
+        {
+            var request = (CrearFacturaRequest)resultado.Data!;
+            await ApiClient.PostAsync<CrearFacturaRequest, object?>("api/facturacion/facturas", request);
+            Snackbar.Add("Factura creada correctamente.", Severity.Success);
         }
         catch (HttpRequestException ex)
         {

@@ -71,7 +71,9 @@ public class TraspasosService : ITraspasosService
             JOIN Inventario.Bodegas bo ON bo.BodegaID = t.BodegaOrigenID
             JOIN Inventario.Bodegas bd ON bd.BodegaID = t.BodegaDestinoID
             WHERE (@Estado IS NULL OR t.EstadoTraspaso = @Estado)
-            ORDER BY t.FechaCreacion DESC";
+              AND t.FechaCreacion >= DATEADD(MONTH, -6, SYSUTCDATETIME())
+            ORDER BY t.FechaCreacion DESC
+            OFFSET 0 ROWS FETCH NEXT 500 ROWS ONLY";
 
         return await connection.QueryAsync<TraspasoResumen>(sql, new { Estado = estado });
     }

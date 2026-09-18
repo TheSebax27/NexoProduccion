@@ -14,7 +14,7 @@ public class TareaExportarVentas
     // El orden de parámetros debe coincidir exactamente con el orden de columnas del SELECT.
     // Dapper mapea records por posición, no por nombre.
     private record VentaPendiente(
-        short CENTROCOSTO, string TIPDOC, string NRODOC, decimal ORDEN, string REFERENCIA, decimal CANTIDAD, DateTime FECDOC,
+        short CENTROCOSTO, string TIPDOC, string NRODOC, int ORDEN, string REFERENCIA, decimal CANTIDAD, DateTime FECDOC,
         string? DetalleTarjeta, decimal? CostoTarjeta, decimal? PPublicoTarjeta,
         string? MarcaCodigo, string? IvaSiNo, decimal? IvaValor, string? IvaDescripcion,
         decimal? Iva2, string? IvaDescripcion2,
@@ -52,7 +52,7 @@ public class TareaExportarVentas
         using var connection = _visionsDb.CreateConnection();
 
         const string sqlVentasNuevas = @"
-            SELECT m.CENTROCOSTO, m.TIPDOC, m.NRODOC, m.ORDEN, m.REFERENCIA,
+            SELECT m.CENTROCOSTO, m.TIPDOC, m.NRODOC, CAST(m.ORDEN AS INT) AS ORDEN, m.REFERENCIA,
                    -- Visions separa unidades sueltas (CANTIDAD) y cajas (CANTIDADCAJA).
                    -- Para ventas por caja, CANTIDAD=0 y CANTIDADCAJA=1; hay que sumarlas.
                    CAST(m.CANTIDAD + (m.CANTIDADCAJA * ISNULL(NULLIF(t.FRACCIONES, 0), 1)) AS DECIMAL(18,4)) AS CANTIDAD,

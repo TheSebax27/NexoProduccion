@@ -285,20 +285,20 @@
             // Cada 2 minutos: "casi en tiempo real" sin recargar la API cada
             // pocos segundos ni ser una fuente de distraccion constante.
             _timerNotificaciones = new System.Timers.Timer(120_000);
-            _timerNotificaciones.Elapsed += async (_, _) => await CargarNotificacionesAsync();
-            _timerNotificaciones.AutoReset = true;
+            _timerNotificaciones.AutoReset = false;
+            _timerNotificaciones.Elapsed += async (_, _) => { await CargarNotificacionesAsync(); _timerNotificaciones?.Start(); };
             _timerNotificaciones.Start();
 
             // Cada 30 minutos: alerta si se está acercando al límite diario de Gmail (500/día).
             _timerEmailAlert = new System.Timers.Timer(1_800_000);
-            _timerEmailAlert.Elapsed += async (_, _) => await VerificarContadorEmailAsync();
-            _timerEmailAlert.AutoReset = true;
+            _timerEmailAlert.AutoReset = false;
+            _timerEmailAlert.Elapsed += async (_, _) => { await VerificarContadorEmailAsync(); _timerEmailAlert?.Start(); };
             _timerEmailAlert.Start();
 
             // Cada 45 minutos: renueva el JWT si MantenerSesionActiva está activo.
             _timerRenovarToken = new System.Timers.Timer(2_700_000);
-            _timerRenovarToken.Elapsed += async (_, _) => await RenovarTokenSiActivoAsync();
-            _timerRenovarToken.AutoReset = true;
+            _timerRenovarToken.AutoReset = false;
+            _timerRenovarToken.Elapsed += async (_, _) => { await RenovarTokenSiActivoAsync(); _timerRenovarToken?.Start(); };
             _timerRenovarToken.Start();
         }
     }

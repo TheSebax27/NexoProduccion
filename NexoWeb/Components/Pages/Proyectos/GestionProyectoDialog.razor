@@ -2,6 +2,7 @@
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
+@inject IDialogService DialogService
 
 <MudDialog>
     <DialogContent>
@@ -14,7 +15,7 @@
             </MudChip>
         </MudText>
 
-        <MudTabs>
+        <MudTabs Class="nexo-proyecto-tabs">
             <MudTabPanel Text="Tareas (Kanban)">
                 <MudForm @ref="_formTarea" Class="mb-3">
                     <div class="d-flex align-center flex-wrap mb-2" style="gap: 0.5rem;">
@@ -466,6 +467,12 @@
 
     private async Task EliminarDocumentoAsync(ProyectoDocumentoItem documento)
     {
+        var ok = await DialogService.ShowMessageBox(
+            "Eliminar documento",
+            $"¿Eliminar \"{documento.NombreArchivo}\"? Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+        if (ok != true) return;
+
         try
         {
             await ApiClient.DeleteAsync($"api/proyectos/documentos/{documento.DocumentoID}");

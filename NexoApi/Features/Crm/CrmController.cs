@@ -1,6 +1,8 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NexoApi.Common.Export;
+using NexoApi.Features.Configuracion;
 using NexoApi.Features.Crm.Dtos;
 
 namespace NexoApi.Features.Crm;
@@ -11,10 +13,12 @@ namespace NexoApi.Features.Crm;
 public class CrmController : ControllerBase
 {
     private readonly ICrmService _service;
+    private readonly IConfiguracionService _config;
 
-    public CrmController(ICrmService service)
+    public CrmController(ICrmService service, IConfiguracionService config)
     {
         _service = service;
+        _config  = config;
     }
 
     private int UsuarioActualId =>
@@ -415,5 +419,26 @@ public class CrmController : ControllerBase
     {
         var afectadas = await _service.ExpireCotizacionesVencidasAsync();
         return Ok(new { mensaje = $"{afectadas} cotización(es) marcada(s) como VENCIDA.", afectadas });
+    }
+
+    // ── Exportar clientes ────────────────────────────────────────────────────
+
+    [HttpGet("clientes/exportar/excel")]
+    public async Task<IActionResult> ExportarClientesExcel()
+    {
+        var clientes = await _service.ListarClientesAsync(null, null, null, null);
+        var bytes    = ExportService.GenerarExcelClientes(clientes);
+        return File(bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"clientes_{DateTime.Now:yyyyMMdd}.xlsx");
+    }
+
+    [HttpGet("clientes/exportar/pdf")]
+    public async Task<IActionResult> ExportarClientesPdf()
+    {
+        var clientes = await _service.ListarClientesAsync(null, null, null, null);
+        var empresa  = await _config.ObtenerEmpresaAsync();
+        var bytes    = ExportService.GenerarPdfClientes(clientes, empresa.NombreEmpresa);
+        return File(bytes, "application/pdf", $"clientes_{DateTime.Now:yyyyMMdd}.pdf");
     }
 }

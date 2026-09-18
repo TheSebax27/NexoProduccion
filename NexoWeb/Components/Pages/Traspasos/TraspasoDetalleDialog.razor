@@ -6,17 +6,17 @@
         @if (!SoloLectura)
         {
             <MudAlert Severity="Severity.Warning" Class="mb-4">
-                Esta accion actualizara el stock en la bodega destino de forma permanente.
+                Esta acción actualizará el stock en la bodega destino de forma permanente.
             </MudAlert>
         }
 
         <MudText Typo="Typo.subtitle2" Class="mb-2">
-            @(SoloLectura ? "Articulos del traspaso:" : "Articulos a recibir:")
+            @(SoloLectura ? "Artículos del traspaso:" : "Artículos a recibir:")
         </MudText>
 
         <MudTable Items="Detalle" Dense="true" Striped="true">
             <HeaderContent>
-                <MudTh>Articulo</MudTh>
+                <MudTh>Artículo</MudTh>
                 <MudTh Style="text-align:right">Cantidad Enviada</MudTh>
                 @if (SoloLectura)
                 {
@@ -25,7 +25,7 @@
                 <MudTh Style="text-align:right">Costo Unit.</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Articulo">@context.Articulo</MudTd>
+                <MudTd DataLabel="Artículo">@context.Articulo</MudTd>
                 <MudTd DataLabel="Cantidad Enviada" Style="text-align:right">@context.CantidadEnviada.ToString("N2")</MudTd>
                 @if (SoloLectura)
                 {
