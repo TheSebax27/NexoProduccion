@@ -27,6 +27,16 @@
 </div>
 <InfoAyuda Texto="Registro de salidas: facturas pendientes, emitidas y anuladas. Crea, confirma y anula documentos de venta desde un solo lugar." />
 
+@if (_stockFallidoCount > 0)
+{
+    <MudAlert Severity="Severity.Warning" Class="mb-2"
+              Icon="@Icons.Material.Filled.WarningAmber"
+              ContentAlignment="HorizontalAlignment.Left">
+        <strong>@_stockFallidoCount factura(s) confirmadas en Visions con stock sin descontar.</strong>
+        Busca el ícono <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Size="Size.Small" Color="Color.Warning" /> en la columna Inv. y usa "Reintentar" para corregirlo.
+    </MudAlert>
+}
+
 @* ── Workspace tabs ── *@
 <MudTabs @bind-ActivePanelIndex="_tabActivo" Elevation="0" Rounded="true"
          ApplyEffectsToContainer="true" Class="nexo-bi-tabs mb-2">
@@ -171,23 +181,16 @@
                               Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search"
                               Immediate="true" DebounceInterval="400"
                               Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                <MudSelect T="string?" Value="_filtroTipDoc" ValueChanged="OnFiltroTipDocAsync"
-                           Label="Tipo doc" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
-                    @foreach (var td in TiposDocumento.Todos)
-                    { <MudSelectItem T="string?" Value="@td">@td</MudSelectItem> }
-                </MudSelect>
+                <AppSelect TValue="string?" Value="_filtroTipDoc" ValueChanged="OnFiltroTipDocAsync"
+                           Label="Tipo doc"
+                           Items="@(TiposDocumento.Todos.Select(td => new AppSelectItem<string?>(td, td)))" />
                 <ClienteAutocomplete Value="_filtroCliente" ValueChanged="OnFiltroClienteAsync" Label="Cliente" />
-                <MudSelect T="int?" Value="_filtroCentroCostoId" ValueChanged="OnFiltroCCAsync"
-                           Label="Centro de Costo" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
-                    @foreach (var cc in _centrosCosto)
-                    { <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem> }
-                </MudSelect>
-                <MudSelect T="string?" Value="_filtroEstado" ValueChanged="OnFiltroEstadoAsync"
-                           Label="Estado" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
-                    <MudSelectItem T="string?" Value="@("PENDIENTE")">Pendiente</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("PARCIAL")">Pago parcial</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("PAGADA")">Pagada</MudSelectItem>
-                </MudSelect>
+                <AppSelect TValue="int?" Value="_filtroCentroCostoId" ValueChanged="OnFiltroCCAsync"
+                           Label="Centro de Costo"
+                           Items="@(_centrosCosto.Select(cc => new AppSelectItem<int?>(cc.Nombre, (int?)cc.CentroCostoID)))" />
+                <AppSelect TValue="string?" Value="_filtroEstado" ValueChanged="OnFiltroEstadoAsync"
+                           Label="Estado"
+                           Items="@(new AppSelectItem<string?>[]{ new("Pendiente","PENDIENTE"), new("Pago parcial","PARCIAL"), new("Pagada","PAGADA") })" />
                 <MudDatePicker Date="_filtroDesde"
                                DateChanged="@(async v => { _filtroDesde = v; _pagina = 1; await CargarHistorialAsync(); })"
                                Label="Desde" DateFormat="dd/MM/yyyy"
@@ -251,7 +254,9 @@
                     </MudTd>
                     <MudTd DataLabel="Inv.">
                         @if (context.StockDescontado)
-                        { <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" /> }
+                        { <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Title="Stock descontado" /> }
+                        else if (context.VisionsConfirmado)
+                        { <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Color="Color.Warning" Size="Size.Small" Title="Stock pendiente — descuento falló" /> }
                         else
                         { <MudIcon Icon="@Icons.Material.Filled.RadioButtonUnchecked" Color="Color.Default" Size="Size.Small" /> }
                     </MudTd>
@@ -263,6 +268,14 @@
                     </MudTd>
                     <MudTd DataLabel="Accion" Style="display:flex;gap:4px;align-items:center">
                         <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(context))">Gestionar</MudButton>
+                        @if (context.VisionsConfirmado && !context.StockDescontado)
+                        {
+                            <MudButton Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined"
+                                       StartIcon="@Icons.Material.Filled.Refresh"
+                                       OnClick="@(() => ReintentarStockAsync(context))">
+                                Reintentar
+                            </MudButton>
+                        }
                         @if (!context.StockDescontado && !context.VisionsConfirmado)
                         {
                             <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error"
@@ -311,10 +324,19 @@
                         <div class="nexo-ec__footer">
                             <div style="display:flex;gap:4px;align-items:center">
                                 @if (f.StockDescontado) { <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Title="Inventario descontado" /> }
+                                else if (f.VisionsConfirmado) { <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Color="Color.Warning" Size="Size.Small" Title="Stock pendiente — descuento falló" /> }
                                 @if (f.VisionsConfirmado) { <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Success" Size="Size.Small" Title="Confirmado en Visions" /> }
                             </div>
                             <div style="display:flex;gap:4px">
                                 <MudButton Size="Size.Small" OnClick="@(() => AbrirGestionAsync(f))">Gestionar</MudButton>
+                                @if (f.VisionsConfirmado && !f.StockDescontado)
+                                {
+                                    <MudButton Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined"
+                                               StartIcon="@Icons.Material.Filled.Refresh"
+                                               OnClick="@(() => ReintentarStockAsync(f))">
+                                        Reintentar
+                                    </MudButton>
+                                }
                                 @if (!f.StockDescontado && !f.VisionsConfirmado)
                                 {
                                     <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error"
@@ -335,11 +357,10 @@
                  BadgeColor="Color.Warning">
         <div class="d-flex justify-space-between align-center my-2">
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
-                <MudSelect T="string?" Value="_devFiltroTipo" ValueChanged="@(async v => { _devFiltroTipo = v; await CargarDevolucionesAsync(); })"
-                           Label="Tipo" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:160px">
-                    <MudSelectItem T="string?" Value="@("CLIENTE")">Cliente</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("PROVEEDOR")">Proveedor</MudSelectItem>
-                </MudSelect>
+                <AppSelect TValue="string?" Value="_devFiltroTipo"
+                           ValueChanged="@(async (string? v) => { _devFiltroTipo = v; await CargarDevolucionesAsync(); })"
+                           Label="Tipo" Style="min-width:160px"
+                           Items="@(new AppSelectItem<string?>[]{ new("Cliente","CLIENTE"), new("Proveedor","PROVEEDOR") })" />
                 <MudDatePicker Date="_devDesde"
                                DateChanged="@(async v => { _devDesde = v; await CargarDevolucionesAsync(); })"
                                Label="Desde" DateFormat="dd/MM/yyyy" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:140px" />
@@ -469,13 +490,10 @@
         <MudPaper Elevation="0" Class="pa-3 mb-3"
                   Style="border:1px solid var(--mud-palette-lines-default); border-radius:8px">
             <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end">
-                <MudSelect T="string?" Value="_vTipDoc"
-                           ValueChanged="@(async v => { _vTipDoc = v; _vPagina=1; await CargarVentasVisionsAsync(); })"
-                           Label="Tipo documento" Clearable="true" Variant="Variant.Outlined"
-                           Margin="Margin.Dense" Style="min-width:160px">
-                    @foreach (var td in TiposDocumento.Todos)
-                    { <MudSelectItem T="string?" Value="@td">@td</MudSelectItem> }
-                </MudSelect>
+                <AppSelect TValue="string?" Value="_vTipDoc"
+                           ValueChanged="@(async (string? v) => { _vTipDoc = v; _vPagina=1; await CargarVentasVisionsAsync(); })"
+                           Label="Tipo documento" Style="min-width:160px"
+                           Items="@(TiposDocumento.Todos.Select(td => new AppSelectItem<string?>(td, td)))" />
                 <MudDatePicker Date="_vDesde"
                                DateChanged="@(async v => { _vDesde = v; _vPagina=1; await CargarVentasVisionsAsync(); })"
                                Label="Desde" DateFormat="dd/MM/yyyy"
@@ -549,6 +567,7 @@
     private List<CentroCostoBasicoItem> _centrosCosto = new();
     private string? _errorCarga;
     private int _tabActivo;
+    private int _stockFallidoCount;
 
     // ── Tab Devoluciones ──
     private List<DevolucionItem> _devoluciones = new();
@@ -620,8 +639,10 @@
         var tareaPend     = CargarPendientesAsync();
         var tareaHist     = CargarHistorialAsync();
         var tareaVisions  = CargarVentasVisionsAsync();
+        var tareaAlertas  = ApiClient.GetAsync<int>("api/facturacion/stock-fallido-count");
 
-        await Task.WhenAll(tareaCombos, tareaCentros, tareaPend, tareaHist, tareaVisions);
+        await Task.WhenAll(tareaCombos, tareaCentros, tareaPend, tareaHist, tareaVisions, tareaAlertas);
+        _stockFallidoCount = await tareaAlertas;
 
         _combosActivos = (await tareaCombos ?? new()).Where(c => c.Estado != "Inactivo").ToList();
         _centrosCosto = (await tareaCentros ?? new())
@@ -778,6 +799,21 @@
             $"{venta.TipDoc} {venta.NroDoc} — Líneas",
             parametros,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+    }
+
+    private async Task ReintentarStockAsync(FacturaItem factura)
+    {
+        try
+        {
+            await ApiClient.PostAsync($"api/facturacion/facturas/{factura.FacturaID}/descontar-stock");
+            Snackbar.Add("Stock descontado correctamente.", Severity.Success);
+            await CargarHistorialAsync();
+            _stockFallidoCount = await ApiClient.GetAsync<int>("api/facturacion/stock-fallido-count");
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add($"Error al descontar stock: {ex.Message}", Severity.Error);
+        }
     }
 
     private async Task EliminarFacturaAsync(FacturaItem factura)

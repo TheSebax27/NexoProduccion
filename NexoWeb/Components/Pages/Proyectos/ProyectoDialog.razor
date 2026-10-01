@@ -10,12 +10,8 @@
                                  ValueChanged="@(c => { _clienteSeleccionado = c; _clienteId = c?.ClienteID; })"
                                  Label="Cliente" />
 
-            <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Clearable="true" Class="mb-3">
-                @foreach (var cc in CentrosCosto)
-                {
-                    <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
-                }
-            </MudSelect>
+            <AppSelect TValue="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Class="mb-3"
+                       Items="@(CentrosCosto.Select(cc => new AppSelectItem<int?>(cc.Nombre, (int?)cc.CentroCostoID)))" />
 
             <MudTextField @bind-Value="_descripcion" Label="Descripcion" Lines="2" Class="mb-3" />
 
@@ -24,20 +20,13 @@
 
             <MudNumericField T="decimal" @bind-Value="_presupuesto" Label="Presupuesto ($)" Class="mb-3" />
 
-            <MudSelect T="string" @bind-Value="_prioridad" Label="Prioridad" Class="mb-3">
-                <MudSelectItem Value="@("ALTA")">Alta</MudSelectItem>
-                <MudSelectItem Value="@("MEDIA")">Media</MudSelectItem>
-                <MudSelectItem Value="@("BAJA")">Baja</MudSelectItem>
-            </MudSelect>
+            <AppSelect TValue="string" @bind-Value="_prioridad" Label="Prioridad" Class="mb-3"
+                       Items="@(new AppSelectItem<string>[]{ new("Alta","ALTA"), new("Media","MEDIA"), new("Baja","BAJA") })" />
 
             @if (EsEdicion)
             {
-                <MudSelect T="string" @bind-Value="_estado" Label="Estado" Class="mb-3">
-                    <MudSelectItem Value="@("PLANEADO")">Planeado</MudSelectItem>
-                    <MudSelectItem Value="@("EN_CURSO")">En Curso</MudSelectItem>
-                    <MudSelectItem Value="@("FINALIZADO")">Finalizado</MudSelectItem>
-                    <MudSelectItem Value="@("CANCELADO")">Cancelado</MudSelectItem>
-                </MudSelect>
+                <AppSelect TValue="string" @bind-Value="_estado" Label="Estado" Class="mb-3"
+                           Items="@(new AppSelectItem<string>[]{ new("Planeado","PLANEADO"), new("En Curso","EN_CURSO"), new("Finalizado","FINALIZADO"), new("Cancelado","CANCELADO") })" />
             }
         </MudForm>
     </DialogContent>

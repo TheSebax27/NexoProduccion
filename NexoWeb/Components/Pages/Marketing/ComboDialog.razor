@@ -58,11 +58,8 @@
                     <MudTextField @bind-Value="_nombre" Label="Nombre del combo" Required Disabled="SoloVer" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
-                    <MudSelect T="string" @bind-Value="_estado" Label="Estado" Disabled="SoloVer">
-                        <MudSelectItem Value="@("Borrador")">Borrador</MudSelectItem>
-                        <MudSelectItem Value="@("Activo")">Activo</MudSelectItem>
-                        <MudSelectItem Value="@("Inactivo")">Inactivo</MudSelectItem>
-                    </MudSelect>
+                    <AppSelect TValue="string" @bind-Value="_estado" Label="Estado" Disabled="SoloVer"
+                               Items="@(new AppSelectItem<string>[]{ new("Borrador","Borrador"), new("Activo","Activo"), new("Inactivo","Inactivo") })" />
                 </MudItem>
                 <MudItem xs="12">
                     <MudTextField @bind-Value="_descripcion" Label="Descripción" Lines="2" Disabled="SoloVer" />
@@ -78,10 +75,8 @@
 
                 <!-- Precio -->
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="string" @bind-Value="_modoPrecio" Label="Modo de precio" Disabled="SoloVer">
-                        <MudSelectItem Value="@("MANUAL")">Manual — yo defino el precio</MudSelectItem>
-                        <MudSelectItem Value="@("CALCULADO")">Calculado — suma de artículos con descuento</MudSelectItem>
-                    </MudSelect>
+                    <AppSelect TValue="string" @bind-Value="_modoPrecio" Label="Modo de precio" Disabled="SoloVer"
+                               Items="@(new AppSelectItem<string>[]{ new("Manual — yo defino el precio","MANUAL"), new("Calculado — suma de artículos con descuento","CALCULADO") })" />
                 </MudItem>
                 <MudItem xs="12" sm="3">
                     @if (_modoPrecio == "MANUAL")

@@ -40,27 +40,16 @@
                       Variant="Variant.Outlined" Margin="Margin.Dense" />
     </MudItem>
     <MudItem xs="12" sm="4">
-        <MudSelect T="int?" Value="_filtroResponsableId" ValueChanged="OnFiltroCambiadoAsync" Label="Responsable" Clearable="true">
-            @foreach (var e in _empleados)
-            {
-                <MudSelectItem T="int?" Value="@e.EmpleadoID">@e.Nombres @e.Apellidos</MudSelectItem>
-            }
-        </MudSelect>
+        <AppSelect TValue="int?" Value="_filtroResponsableId" ValueChanged="OnFiltroCambiadoAsync" Label="Responsable"
+                   Items="@(_empleados.Select(e => new AppSelectItem<int?>($"{e.Nombres} {e.Apellidos}", (int?)e.EmpleadoID)))" />
     </MudItem>
     <MudItem xs="12" sm="2">
-        <MudSelect T="string" Value="_filtroTipoCliente" ValueChanged="OnFiltroTipoCambiadoAsync" Label="Tipo de Cliente" Clearable="true">
-            <MudSelectItem Value="@("Empresa")">Empresa</MudSelectItem>
-            <MudSelectItem Value="@("Persona Natural")">Persona Natural</MudSelectItem>
-        </MudSelect>
+        <AppSelect TValue="string" Value="_filtroTipoCliente" ValueChanged="OnFiltroTipoCambiadoAsync" Label="Tipo de Cliente"
+                   Items="@(new AppSelectItem<string>[]{ new("Empresa","Empresa"), new("Persona Natural","Persona Natural") })" />
     </MudItem>
     <MudItem xs="12" sm="2">
-        <MudSelect T="string" Value="_filtroFuenteContacto" ValueChanged="OnFiltroFuenteCambiadoAsync" Label="Fuente del Contacto" Clearable="true">
-            <MudSelectItem Value="@("Referido")">Referido</MudSelectItem>
-            <MudSelectItem Value="@("Redes Sociales")">Redes Sociales</MudSelectItem>
-            <MudSelectItem Value="@("Llamada en Frio")">Llamada en Frío</MudSelectItem>
-            <MudSelectItem Value="@("Pagina Web")">Página Web</MudSelectItem>
-            <MudSelectItem Value="@("Otro")">Otro</MudSelectItem>
-        </MudSelect>
+        <AppSelect TValue="string" Value="_filtroFuenteContacto" ValueChanged="OnFiltroFuenteCambiadoAsync" Label="Fuente del Contacto"
+                   Items="@(new AppSelectItem<string>[]{ new("Referido","Referido"), new("Redes Sociales","Redes Sociales"), new("Llamada en Frío","Llamada en Frio"), new("Página Web","Pagina Web"), new("Otro","Otro") })" />
     </MudItem>
 </MudGrid>
 

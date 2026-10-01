@@ -27,8 +27,43 @@ public class TareaSincronizarPedidos
 
     public async Task EjecutarAsync(CancellationToken ct)
     {
+        // Limpiar pedidos eliminados en NEXO del staging de Visions.
+        // TareaSincronizarFacturasNexoVisions también hace esta limpieza, pero si esa tarea
+        // falla (está en su propio try/catch), los pedidos eliminados nunca se borrarían.
+        // Hacerlo aquí de forma independiente garantiza que los pedidos se limpian siempre.
+        await LimpiarPedidosEliminadosAsync(ct);
         await ExportarPedidosNuevosAsync(ct);
         await SincronizarNumerosDesdeVisionsAsync(ct);
+    }
+
+    private async Task LimpiarPedidosEliminadosAsync(CancellationToken ct)
+    {
+        var pendientes = await _apiClient.ListarPendientesLimpiezaVisionsAsync(ct);
+        var pedidosEliminados = pendientes.Where(p => p.Tipo == "PEDIDO").ToList();
+        if (pedidosEliminados.Count == 0) return;
+
+        _logger.LogInformation("Limpiando {N} pedidos eliminados del staging de Visions", pedidosEliminados.Count);
+        using var connection = _visionsDb.CreateConnection();
+
+        foreach (var p in pedidosEliminados)
+        {
+            if (ct.IsCancellationRequested) break;
+            try
+            {
+                await connection.ExecuteAsync(
+                    "DELETE FROM dbo.NEXO_PedidosLineas WHERE PedidoID = @Id",
+                    new { Id = p.EntidadID });
+                await connection.ExecuteAsync(
+                    "DELETE FROM dbo.NEXO_Pedidos WHERE PedidoID = @Id",
+                    new { Id = p.EntidadID });
+                await _apiClient.MarcarLimpiezaVisionsCompletadaAsync(p.LimpiezaID, ct);
+                _logger.LogInformation("Pedido NEXO {ID} eliminado del staging de Visions", p.EntidadID);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al limpiar pedido NEXO {ID} del staging de Visions", p.EntidadID);
+            }
+        }
     }
 
     // Fase 1: escribir pedidos nuevos al staging de Visions

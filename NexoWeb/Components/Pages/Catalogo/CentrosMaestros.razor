@@ -119,13 +119,9 @@
         <div class="d-flex align-center justify-space-between mb-3">
             <div class="d-flex align-center gap-3">
                 <MudText Typo="Typo.subtitle1">Bodegas</MudText>
-                <MudSelect T="int?" Value="_filtroCCBodegas" ValueChanged="OnFiltroBodegasCambiadoAsync"
-                           Label="Filtrar por CC" Placeholder="Todos" Clearable="true" Style="min-width:180px;">
-                    @foreach (var cc in _centrosCosto)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)cc.CentroCostoID)">@cc.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" Value="_filtroCCBodegas" ValueChanged="OnFiltroBodegasCambiadoAsync"
+                           Label="Filtrar por CC" Placeholder="Todos" Style="min-width:180px;"
+                           Items="@(_centrosCosto.Select(cc => new AppSelectItem<int?>(cc.Nombre, (int?)cc.CentroCostoID)))" />
             </div>
             <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Add"
                        OnClick="AbrirCrearBodegaAsync" Disabled="_centrosCosto.Count == 0" Size="Size.Small">

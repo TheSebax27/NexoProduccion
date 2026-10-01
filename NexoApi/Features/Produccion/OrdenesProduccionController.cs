@@ -136,4 +136,15 @@ public class OrdenesProduccionController : ControllerBase
         var afectadas = await _service.MarcarRetrasadasAsync();
         return Ok(new { mensaje = $"{afectadas} orden(es) marcada(s) como Retrasada.", afectadas });
     }
+
+    [HttpGet("control-consumos/faltantes")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<FaltanteMaterialItem>>> ListarFaltantes()
+        => Ok(await _service.ListarFaltantesMaterialesAsync());
+
+    [HttpGet("control-consumos/desviaciones")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<DesviacionConsumoItem>>> ListarDesviaciones(
+        [FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
+        => Ok(await _service.ListarDesviacionesConsumoAsync(desde, hasta));
 }

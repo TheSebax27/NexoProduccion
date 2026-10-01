@@ -11,13 +11,8 @@
                                       Label="Articulo (Producto Terminado)" Required="true"
                                       SoloTerminados="true" />
 
-                <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Required="true"
-                           RequiredError="Selecciona un centro de costo" Class="mb-3">
-                    @foreach (var cc in CentrosCosto)
-                    {
-                        <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Class="mb-3"
+                           Items="@(CentrosCosto.Select(cc => new AppSelectItem<int?>(cc.Nombre, (int?)cc.CentroCostoID)))" />
 
                 <MudDatePicker @bind-Date="_periodo" Label="Mes" Editable="true"
                                HelperText="Cualquier dia del mes que proyectas -- solo se usa el mes" Class="mb-3" />
@@ -51,6 +46,8 @@
 
     [Parameter] public DemandaProyectadaItem? Demanda { get; set; }
     [Parameter] public List<CentroCostoItem> CentrosCosto { get; set; } = new();
+    [Parameter] public ArticuloItem? ArticuloSugerido { get; set; }
+    [Parameter] public decimal CantidadSugerida { get; set; }
 
     private bool EsEdicion => Demanda is not null;
 
@@ -69,6 +66,13 @@
         {
             _cantidadProyectada = Demanda.CantidadProyectada;
             _notas = Demanda.Notas;
+        }
+        else if (ArticuloSugerido is not null)
+        {
+            _articuloSeleccionado = ArticuloSugerido;
+            _articuloId = ArticuloSugerido.ArticuloID;
+            _cantidadProyectada = CantidadSugerida;
+            _periodo = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(1);
         }
     }
 

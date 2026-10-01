@@ -44,23 +44,15 @@ else
             <!-- Segmento -->
             <MudPaper Class="pa-4 mb-4" Elevation="2">
                 <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight:600">Segmento de destinatarios</MudText>
-                <MudSelect T="string" Value="_segmentoTipo" Label="Tipo de segmento" Variant="Variant.Outlined" Class="mb-3"
-                           ValueChanged="@(async (string v) => { _segmentoTipo = v; _segmentoValor = null; await ContarDestinatarios(); })">
-                    <MudSelectItem Value="@("TODOS")">Todos los clientes con email</MudSelectItem>
-                    <MudSelectItem Value="@("TIPO_CLIENTE")">Por tipo de cliente</MudSelectItem>
-                    <MudSelectItem Value="@("FUENTE")">Por fuente de contacto</MudSelectItem>
-                    <MudSelectItem Value="@("FRIOS")">Clientes fríos (sin contacto reciente)</MudSelectItem>
-                    <MudSelectItem Value="@("CON_COTIZACION")">Con cotización activa</MudSelectItem>
-                </MudSelect>
+                <AppSelect TValue="string" Value="_segmentoTipo" Label="Tipo de segmento" Class="mb-3"
+                           ValueChanged="@(async (string v) => { _segmentoTipo = v; _segmentoValor = null; await ContarDestinatarios(); })"
+                           Items="@(new AppSelectItem<string>[]{ new("Todos los clientes con email","TODOS"), new("Por tipo de cliente","TIPO_CLIENTE"), new("Por fuente de contacto","FUENTE"), new("Clientes fríos (sin contacto reciente)","FRIOS"), new("Con cotización activa","CON_COTIZACION") })" />
 
                 @if (_segmentoTipo == "TIPO_CLIENTE")
                 {
-                    <MudSelect T="string" Value="_segmentoValor" Label="Tipo" Variant="Variant.Outlined" Class="mb-3"
-                               ValueChanged="@(async (string v) => { _segmentoValor = v; await ContarDestinatarios(); })">
-                        <MudSelectItem Value="@("Particular")">Particular</MudSelectItem>
-                        <MudSelectItem Value="@("Empresa")">Empresa</MudSelectItem>
-                        <MudSelectItem Value="@("Distribuidor")">Distribuidor</MudSelectItem>
-                    </MudSelect>
+                    <AppSelect TValue="string" Value="_segmentoValor" Label="Tipo" Class="mb-3"
+                               ValueChanged="@(async (string v) => { _segmentoValor = v; await ContarDestinatarios(); })"
+                               Items="@(new AppSelectItem<string>[]{ new("Particular","Particular"), new("Empresa","Empresa"), new("Distribuidor","Distribuidor") })" />
                 }
                 else if (_segmentoTipo == "FUENTE")
                 {

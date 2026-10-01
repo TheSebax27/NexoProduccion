@@ -17,11 +17,8 @@
                 <MudNumericField @bind-Value="_tolerancia" Label="Tolerancia tardanza (min)" Min="0" Max="120" />
             </MudItem>
             <MudItem xs="12" sm="8">
-                <MudSelect T="string" @bind-Value="_tipoCiclo" Label="Tipo de ciclo">
-                    <MudSelectItem Value="@("FIJO")">Fijo — misma hora todos los dias</MudSelectItem>
-                    <MudSelectItem Value="@("SEMANA_AB")">Semana A/B — 2 semanas alternadas</MudSelectItem>
-                    <MudSelectItem Value="@("SEMANA_4")">Semana A/B/C/D — 4 semanas alternadas</MudSelectItem>
-                </MudSelect>
+                <AppSelect TValue="string" @bind-Value="_tipoCiclo" Label="Tipo de ciclo"
+                           Items="@(new AppSelectItem<string>[]{ new("Fijo — misma hora todos los dias","FIJO"), new("Semana A/B — 2 semanas alternadas","SEMANA_AB"), new("Semana A/B/C/D — 4 semanas alternadas","SEMANA_4") })" />
             </MudItem>
             <MudItem xs="12" sm="4" Class="d-flex align-center">
                 <MudSwitch @bind-Value="_registraSalida" Color="Color.Primary"

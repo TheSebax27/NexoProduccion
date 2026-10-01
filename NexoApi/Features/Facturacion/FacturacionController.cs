@@ -75,6 +75,10 @@ public class FacturacionController : ControllerBase
     public async Task<ActionResult<IEnumerable<FacturaLineaStockItem>>> ObtenerStockLineas(int id)
         => Ok(await _service.ObtenerStockLineasAsync(id));
 
+    [HttpGet("stock-fallido-count")]
+    public async Task<ActionResult<int>> StockFallidoCount()
+        => Ok(await _service.ContarStockFallidoAsync());
+
     [HttpPost("facturas/{id:int}/descontar-stock")]
     public async Task<ActionResult> DescontarStock(int id)
     {
@@ -121,4 +125,9 @@ public class FacturacionController : ControllerBase
         }
         catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
+
+    [HttpGet("ultimo-precio")]
+    public async Task<ActionResult<UltimoPrecioItem?>> UltimoPrecio(
+        [FromQuery] int clienteId, [FromQuery] int articuloId)
+        => Ok(await _service.ObtenerUltimoPrecioAsync(clienteId, articuloId));
 }

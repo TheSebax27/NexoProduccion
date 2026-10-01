@@ -8,22 +8,12 @@
 
             @if (!EsEdicion)
             {
-                <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Required="true"
-                           RequiredError="Selecciona un centro de costo" Placeholder="Seleccionar..." Class="mb-3">
-                    @foreach (var centro in CentrosCosto)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)centro.CentroCostoID)">@centro.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Placeholder="Seleccionar..." Class="mb-3"
+                           Items="@(CentrosCosto.Select(centro => new AppSelectItem<int?>(centro.Nombre, (int?)centro.CentroCostoID)))" />
             }
 
-            <MudSelect T="string" @bind-Value="_tipoBodega" Label="Tipo de Bodega" Required="true"
-                       RequiredError="Selecciona un tipo" Class="mb-3">
-                <MudSelectItem Value="@("MATERIA_PRIMA")">Materia Prima</MudSelectItem>
-                <MudSelectItem Value="@("PRODUCTO_TERMINADO")">Producto Terminado</MudSelectItem>
-                <MudSelectItem Value="@("WIP")">WIP (En Proceso)</MudSelectItem>
-                <MudSelectItem Value="@("TRANSITO")">Transito</MudSelectItem>
-            </MudSelect>
+            <AppSelect TValue="string" @bind-Value="_tipoBodega" Label="Tipo de Bodega" Class="mb-3"
+                       Items="@(new AppSelectItem<string>[]{ new("Materia Prima","MATERIA_PRIMA"), new("Producto Terminado","PRODUCTO_TERMINADO"), new("WIP (En Proceso)","WIP"), new("Transito","TRANSITO") })" />
 
             <MudSwitch T="bool" @bind-Value="_esVirtual" Color="Color.Info" Label="Es Virtual (no fisica)" Class="mb-2" />
 

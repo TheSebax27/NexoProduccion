@@ -23,32 +23,18 @@
                                   Lines="4" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudSelect @bind-Value="_categoria" Label="Categoría *" Variant="Variant.Outlined"
-                               Required="true" RequiredError="Selecciona una categoría">
-                        @foreach (var cat in _categorias)
-                        {
-                            <MudSelectItem Value="@cat">@cat</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="string" @bind-Value="_categoria" Label="Categoría *"
+                               Items="@(_categorias.Select(cat => new AppSelectItem<string>(cat, cat)))" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudSelect @bind-Value="_prioridad" Label="Prioridad *" Variant="Variant.Outlined"
-                               Required="true" RequiredError="Selecciona una prioridad">
-                        <MudSelectItem Value="@("BAJA")">Baja</MudSelectItem>
-                        <MudSelectItem Value="@("MEDIA")">Media</MudSelectItem>
-                        <MudSelectItem Value="@("ALTA")">Alta</MudSelectItem>
-                        <MudSelectItem Value="@("CRITICA")">Crítica</MudSelectItem>
-                    </MudSelect>
+                    <AppSelect TValue="string" @bind-Value="_prioridad" Label="Prioridad *"
+                               Items="@(new AppSelectItem<string>[]{ new("Baja","BAJA"), new("Media","MEDIA"), new("Alta","ALTA"), new("Crítica","CRITICA") })" />
                 </MudItem>
                 @if (EsModo("editar"))
                 {
                     <MudItem xs="12" sm="6">
-                        <MudSelect @bind-Value="_estado" Label="Estado" Variant="Variant.Outlined">
-                            <MudSelectItem Value="@("ABIERTO")">Abierto</MudSelectItem>
-                            <MudSelectItem Value="@("EN_PROGRESO")">En Progreso</MudSelectItem>
-                            <MudSelectItem Value="@("RESUELTO")">Resuelto</MudSelectItem>
-                            <MudSelectItem Value="@("CERRADO")">Cerrado</MudSelectItem>
-                        </MudSelect>
+                        <AppSelect TValue="string" @bind-Value="_estado" Label="Estado"
+                                   Items="@(new AppSelectItem<string>[]{ new("Abierto","ABIERTO"), new("En Progreso","EN_PROGRESO"), new("Resuelto","RESUELTO"), new("Cerrado","CERRADO") })" />
                     </MudItem>
                 }
                 <MudItem xs="12" sm="6">

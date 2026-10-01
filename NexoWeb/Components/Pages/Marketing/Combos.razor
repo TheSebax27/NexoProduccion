@@ -26,12 +26,8 @@
 <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="4">
-            <MudSelect T="string?" @bind-Value="_filtroEstado" Label="Estado" Clearable="true"
-                       Placeholder="Todos">
-                <MudSelectItem T="string?" Value="@("Activo")">Activo</MudSelectItem>
-                <MudSelectItem T="string?" Value="@("Inactivo")">Inactivo</MudSelectItem>
-                <MudSelectItem T="string?" Value="@("Borrador")">Borrador</MudSelectItem>
-            </MudSelect>
+            <AppSelect TValue="string?" @bind-Value="_filtroEstado" Label="Estado" Placeholder="Todos"
+                       Items="@(new AppSelectItem<string?>[]{ new("Activo","Activo"), new("Inactivo","Inactivo"), new("Borrador","Borrador") })" />
         </MudItem>
         <MudItem xs="12" sm="4" Class="d-flex align-end">
             <MudButton Variant="Variant.Outlined" OnClick="CargarAsync">Filtrar</MudButton>

@@ -20,12 +20,9 @@
                Disabled="_creando">
         Nuevo Despacho
     </MudButton>
-    <MudSelect T="string" Value="_filtroEstado" ValueChanged="OnFiltroEstadoCambiadoAsync"
-               Label="Estado" Clearable="true" Style="max-width: 200px;">
-        <MudSelectItem Value="@("DESPACHADO")">Despachado</MudSelectItem>
-        <MudSelectItem Value="@("ENTREGADO")">Entregado</MudSelectItem>
-        <MudSelectItem Value="@("ANULADO")">Anulado</MudSelectItem>
-    </MudSelect>
+    <AppSelect TValue="string" Value="_filtroEstado" ValueChanged="OnFiltroEstadoCambiadoAsync"
+               Label="Estado" Style="max-width: 200px;"
+               Items="@(new AppSelectItem<string>[]{ new("Despachado","DESPACHADO"), new("Entregado","ENTREGADO"), new("Anulado","ANULADO") })" />
 </div>
 
 @if (_errorCarga is not null)

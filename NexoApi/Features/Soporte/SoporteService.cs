@@ -6,7 +6,7 @@ namespace NexoApi.Features.Soporte;
 
 public interface ISoporteService
 {
-    Task<IEnumerable<TicketItem>> ListarTicketsAsync(string? estado, string? prioridad, int? asignadoA, int? reportadoPor);
+    Task<IEnumerable<TicketItem>> ListarTicketsAsync(string? estado, string? prioridad, int? asignadoA, int? reportadoPor, int? clienteId = null);
     Task<TicketItem?> ObtenerTicketAsync(int ticketId);
     Task<int> CrearTicketAsync(CrearTicketRequest request, int usuarioId);
     Task ActualizarTicketAsync(int ticketId, ActualizarTicketRequest request);
@@ -25,7 +25,7 @@ public class SoporteService : ISoporteService
     public SoporteService(IDbConnectionFactory db) => _db = db;
 
     public async Task<IEnumerable<TicketItem>> ListarTicketsAsync(
-        string? estado, string? prioridad, int? asignadoA, int? reportadoPor)
+        string? estado, string? prioridad, int? asignadoA, int? reportadoPor, int? clienteId = null)
     {
         using var con = _db.CreateConnection();
         const string sql = @"
@@ -45,12 +45,13 @@ public class SoporteService : ISoporteService
               AND (@Prioridad   IS NULL OR t.Prioridad = @Prioridad)
               AND (@AsignadoA   IS NULL OR t.AsignadoA = @AsignadoA)
               AND (@ReportadoPor IS NULL OR t.ReportadoPor = @ReportadoPor)
+              AND (@ClienteID   IS NULL OR t.ClienteID = @ClienteID)
             ORDER BY
                 CASE t.Prioridad WHEN 'CRITICA' THEN 1 WHEN 'ALTA' THEN 2 WHEN 'MEDIA' THEN 3 ELSE 4 END,
                 t.FechaCreacion DESC";
 
         return await con.QueryAsync<TicketItem>(sql,
-            new { Estado = estado, Prioridad = prioridad, AsignadoA = asignadoA, ReportadoPor = reportadoPor });
+            new { Estado = estado, Prioridad = prioridad, AsignadoA = asignadoA, ReportadoPor = reportadoPor, ClienteID = clienteId });
     }
 
     public async Task<TicketItem?> ObtenerTicketAsync(int ticketId)

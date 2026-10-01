@@ -301,12 +301,8 @@ else
                                      HelperText="Número de clientes distintos contactados en el mes" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="string" @bind-Value="_tipoCosto" Label="Tipo de mensaje predominante"
-                               Variant="Variant.Outlined" Margin="Margin.Dense">
-                        <MudSelectItem Value=@("utilidad")>Utilidad (cotizaciones, pedidos)</MudSelectItem>
-                        <MudSelectItem Value=@("marketing")>Marketing (promociones)</MudSelectItem>
-                        <MudSelectItem Value=@("mixto")>Mixto (ambos)</MudSelectItem>
-                    </MudSelect>
+                    <AppSelect TValue="string" @bind-Value="_tipoCosto" Label="Tipo de mensaje predominante"
+                               Items="@(new AppSelectItem<string>[]{ new("Utilidad (cotizaciones, pedidos)","utilidad"), new("Marketing (promociones)","marketing"), new("Mixto (ambos)","mixto") })" />
                 </MudItem>
             </MudGrid>
 

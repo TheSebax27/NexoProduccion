@@ -17,47 +17,13 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="6">
-                    <MudSelect @bind-Value="_tipoEvento" Label="Tipo de evento" Required="true">
-                        <MudSelectItem Value="@("Reunion")">
-                            <div class="d-flex align-center" style="gap:8px">
-                                <div style="width:10px;height:10px;border-radius:50%;background:#7C5CFF;flex-shrink:0"></div>
-                                Reunión
-                            </div>
-                        </MudSelectItem>
-                        <MudSelectItem Value="@("Deadline")">
-                            <div class="d-flex align-center" style="gap:8px">
-                                <div style="width:10px;height:10px;border-radius:50%;background:#F59E0B;flex-shrink:0"></div>
-                                Deadline
-                            </div>
-                        </MudSelectItem>
-                        <MudSelectItem Value="@("Capacitacion")">
-                            <div class="d-flex align-center" style="gap:8px">
-                                <div style="width:10px;height:10px;border-radius:50%;background:#10B981;flex-shrink:0"></div>
-                                Capacitación
-                            </div>
-                        </MudSelectItem>
-                        <MudSelectItem Value="@("Entrega")">
-                            <div class="d-flex align-center" style="gap:8px">
-                                <div style="width:10px;height:10px;border-radius:50%;background:#3B82F6;flex-shrink:0"></div>
-                                Entrega
-                            </div>
-                        </MudSelectItem>
-                        <MudSelectItem Value="@("Urgente")">
-                            <div class="d-flex align-center" style="gap:8px">
-                                <div style="width:10px;height:10px;border-radius:50%;background:#EF4444;flex-shrink:0"></div>
-                                Urgente
-                            </div>
-                        </MudSelectItem>
-                    </MudSelect>
+                    <AppSelect TValue="string" @bind-Value="_tipoEvento" Label="Tipo de evento"
+                               Items="@(new AppSelectItem<string>[]{ new("Reunión","Reunion"), new("Deadline","Deadline"), new("Capacitación","Capacitacion"), new("Entrega","Entrega"), new("Urgente","Urgente") })" />
                 </MudItem>
 
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Clearable="true">
-                        @foreach (var cc in CentrosCosto)
-                        {
-                            <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="int?" @bind-Value="_centroCostoId" Label="Centro de Costo"
+                               Items="@(CentrosCosto.Select(cc => new AppSelectItem<int?>(cc.Nombre, (int?)cc.CentroCostoID)))" />
                 </MudItem>
 
                 <MudItem xs="12" sm="6">

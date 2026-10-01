@@ -110,6 +110,30 @@ public record StockLineaItem(
     string Articulo, string Unidad,
     decimal CantidadRequerida, decimal StockDisponible);
 
+public record FaltanteMaterialItem(
+    int     OrdenProduccionID,
+    string  CodigoOP,
+    string  Producto,
+    string  Estado,
+    string  Insumo,
+    string  Unidad,
+    decimal CantidadRequerida,
+    decimal StockDisponible,
+    decimal Faltante
+);
+
+public record DesviacionConsumoItem(
+    int       OrdenProduccionID,
+    string    CodigoOP,
+    string    Producto,
+    DateTime? FechaFin,
+    string    Insumo,
+    string    Unidad,
+    decimal   CantidadTeorica,
+    decimal   CantidadReal,
+    decimal   Desviacion
+);
+
 public record EmpleadoRecetaItem(int EmpleadoID, string Nombres, string Apellidos, string? Cargo, decimal? TarifaHora, decimal? HorasEstimadasPorLote, string? Notas);
 public record EmpleadoOrdenItem(int EmpleadoID, string Nombres, string Apellidos, string? Cargo, decimal? TarifaHora, decimal? HorasReales, string? Notas);
 public record EmpleadoOrdenInput(int EmpleadoID, decimal? HorasReales, string? Notas);

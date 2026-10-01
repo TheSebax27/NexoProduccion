@@ -62,10 +62,14 @@ public class AsistenciaService(IDbConnectionFactory db) : IAsistenciaService
             var token = cfg.TokenActual;
             if (string.IsNullOrEmpty(token))
             {
-                token = GenerarTokenAleatorio();
+                // Solo actualiza si sigue NULL — primera escritura gana, las demás leen lo que quedó
+                var candidato = GenerarTokenAleatorio();
                 using var conn = db.CreateConnection();
                 await conn.ExecuteAsync(
-                    "UPDATE Rrhh.QrAsistenciaConfig SET TokenActual = @token", new { token });
+                    "UPDATE Rrhh.QrAsistenciaConfig SET TokenActual = @candidato WHERE TokenActual IS NULL",
+                    new { candidato });
+                token = await conn.ExecuteScalarAsync<string>(
+                    "SELECT TokenActual FROM Rrhh.QrAsistenciaConfig") ?? candidato;
             }
             return new TokenQrResponse(token, 0, "SINGLE_USE");
         }
@@ -233,23 +237,29 @@ public class AsistenciaService(IDbConnectionFactory db) : IAsistenciaService
 
     public async Task MarcarQrAsync(int usuarioId, MarcarQrRequest request)
     {
-        if (!await ValidarTokenAsync(request.Token))
-            throw new InvalidOperationException("El codigo QR no es valido o ya expiro. Escanea el codigo nuevamente.");
+        var cfg = await ObtenerConfigAsync();
+
+        if (cfg.ModoQr == "SINGLE_USE")
+        {
+            // Validación y rotación atómica: solo 1 request concurrente puede hacer el UPDATE
+            var nuevoToken = GenerarTokenAleatorio();
+            using var connRotar = db.CreateConnection();
+            var rows = await connRotar.ExecuteAsync(
+                "UPDATE Rrhh.QrAsistenciaConfig SET TokenActual = @nuevoToken WHERE TokenActual = @token",
+                new { nuevoToken, token = request.Token });
+            if (rows == 0)
+                throw new InvalidOperationException("El codigo QR no es valido o ya fue usado. Escanea el nuevo codigo.");
+        }
+        else
+        {
+            if (!await ValidarTokenAsync(request.Token))
+                throw new InvalidOperationException("El codigo QR no es valido o ya expiro. Escanea el codigo nuevamente.");
+        }
 
         var empleadoId = await EmpleadoDeUsuarioAsync(usuarioId)
             ?? throw new InvalidOperationException("Tu usuario no esta vinculado a ningun empleado.");
 
-        await MarcarInternoAsync(empleadoId, request.Tipo, DateTime.Now, "QR", adminId: null, nota: null);
-
-        // SINGLE_USE: rotar token inmediatamente tras el marcaje exitoso
-        var cfg = await ObtenerConfigAsync();
-        if (cfg.ModoQr == "SINGLE_USE")
-        {
-            var nuevoToken = GenerarTokenAleatorio();
-            using var conn = db.CreateConnection();
-            await conn.ExecuteAsync(
-                "UPDATE Rrhh.QrAsistenciaConfig SET TokenActual = @nuevoToken", new { nuevoToken });
-        }
+        await MarcarInternoAsync(empleadoId, request.Tipo, DateTime.UtcNow, "QR", adminId: null, nota: null);
     }
 
     public async Task MarcarManualAsync(int registradorId, MarcarManualRequest request)

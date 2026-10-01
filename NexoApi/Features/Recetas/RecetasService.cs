@@ -163,9 +163,10 @@ public class RecetasService : IRecetasService
 
         const string sql = @"
             SELECT r.RecetaID, r.ProductoTerminadoID, a.Nombre AS ProductoTerminado, r.NombreReceta, r.Version,
-                   r.CantidadRendimientoBase, ISNULL(a.PresentacionCodigo, '') AS UnidadRendimiento, r.Estado
+                   r.CantidadRendimientoBase, ISNULL(p.Presentacion, ISNULL(a.PresentacionCodigo, '')) AS UnidadRendimiento, r.Estado
             FROM Produccion.RecetaBOM r
             JOIN Catalogo.Tarjetas a ON a.ArticuloID = r.ProductoTerminadoID
+            LEFT JOIN Catalogo.Presentacion p ON p.Codigo = a.PresentacionCodigo
             WHERE (@ProductoTerminadoId IS NULL OR r.ProductoTerminadoID = @ProductoTerminadoId)
               AND (@SoloActivas = 0 OR r.Estado = 1)
             ORDER BY a.Nombre, r.Version DESC";
@@ -183,7 +184,7 @@ public class RecetasService : IRecetasService
 
         const string sql = @"
             SELECT d.RecetaDetalleID, d.InsumoID, a.Nombre AS Insumo, d.CantidadRequerida,
-                   ISNULL(p.Presentacion, ISNULL(a.PresentacionCodigo, '')) AS Unidad,
+                   ISNULL(NULLIF(ISNULL(p.Presentacion, a.PresentacionCodigo), ''), 'Sin unidad') AS Unidad,
                    d.PorcentajeMermaEstandar, d.CentroTrabajoID, d.Orden
             FROM Produccion.RecetaBOM_Detalle d
             JOIN Catalogo.Tarjetas a ON a.ArticuloID = d.InsumoID

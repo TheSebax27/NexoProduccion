@@ -17,12 +17,14 @@ public interface IFacturacionService
     Task<IEnumerable<FacturaLineaStockItem>> ObtenerStockLineasAsync(int facturaId);
     Task DescontarStockAsync(int facturaId, int usuarioId);
     Task ConfirmarVisionsAsync(int facturaId);
+    Task<int> ContarStockFallidoAsync();
 
     Task<IEnumerable<PagoItem>> ListarPagosAsync(int facturaId);
     Task<int> CrearPagoAsync(CrearPagoRequest request, int usuarioId);
 
     Task<List<VerificarProduccionItem>> VerificarProduccionFacturaAsync(int facturaId);
     Task<List<AutoProducirResultItem>> AutoProducirFacturaAsync(int facturaId, int usuarioId);
+    Task<UltimoPrecioItem?> ObtenerUltimoPrecioAsync(int clienteId, int articuloId);
 }
 
 public class FacturacionService : IFacturacionService
@@ -276,7 +278,7 @@ public class FacturacionService : IFacturacionService
                             FROM Inventario.InventarioStock s
                             JOIN Inventario.Bodegas b ON b.BodegaID = s.BodegaID
                             WHERE s.ArticuloID = rd.InsumoID AND b.CentroCostoID = @CcId), 0)
-                    * r.CantidadRendimientoBase / NULLIF(rd.CantidadRequerida, 0)
+                    * r.CantidadRendimientoBase / NULLIF(rd.CantidadRequerida * (1 + rd.PorcentajeMermaEstandar / 100.0), 0)
                 ))
                 FROM Produccion.RecetaBOM r
                 JOIN Produccion.RecetaBOM_Detalle rd ON rd.RecetaID = r.RecetaID
@@ -299,6 +301,13 @@ public class FacturacionService : IFacturacionService
         }
 
         return lineas;
+    }
+
+    public async Task<int> ContarStockFallidoAsync()
+    {
+        using var connection = _db.CreateConnection();
+        return await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM Facturacion.Facturas WHERE VisionsConfirmado = 1 AND StockDescontado = 0");
     }
 
     public async Task DescontarStockAsync(int facturaId, int usuarioId)
@@ -330,9 +339,10 @@ public class FacturacionService : IFacturacionService
 
         try
         {
-            await connection.ExecuteAsync(
-                $"EXEC {spName} @FacturaID, @UsuarioID",
-                new { FacturaID = facturaId, UsuarioID = usuarioId });
+            var p = new DynamicParameters();
+            p.Add("FacturaID", facturaId);
+            p.Add("UsuarioID", usuarioId);
+            await connection.ExecuteAsync(spName, p, commandType: System.Data.CommandType.StoredProcedure);
         }
         catch (Exception ex) when (ex.Message.Contains("ya fue descontado", StringComparison.OrdinalIgnoreCase))
         {
@@ -603,5 +613,24 @@ public class FacturacionService : IFacturacionService
         }
 
         return resultado;
+    }
+
+    public async Task<UltimoPrecioItem?> ObtenerUltimoPrecioAsync(int clienteId, int articuloId)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT TOP 1
+                fl.PrecioUnitario AS Precio,
+                f.Fecha,
+                f.NroDoc
+            FROM Facturacion.FacturaLineas fl
+            JOIN Facturacion.Facturas f ON f.FacturaID = fl.FacturaID
+            WHERE f.ClienteID = @ClienteId
+              AND fl.ArticuloID = @ArticuloId
+              AND fl.PrecioUnitario > 0
+              AND f.TipDoc IN ('FACTURA','REMISION')
+            ORDER BY f.Fecha DESC, f.FacturaID DESC";
+        return await connection.QuerySingleOrDefaultAsync<UltimoPrecioItem>(
+            sql, new { ClienteId = clienteId, ArticuloId = articuloId });
     }
 }

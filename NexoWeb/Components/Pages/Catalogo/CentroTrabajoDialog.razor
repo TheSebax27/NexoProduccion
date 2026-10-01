@@ -5,13 +5,8 @@
         <MudForm @ref="_form" Model="@this">
             @if (!EsEdicion)
             {
-                <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Required="true"
-                           RequiredError="Selecciona un centro de costo" Placeholder="Seleccionar..." Class="mb-3">
-                    @foreach (var centro in CentrosCosto)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)centro.CentroCostoID)">@centro.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Placeholder="Seleccionar..." Class="mb-3"
+                           Items="@(CentrosCosto.Select(centro => new AppSelectItem<int?>(centro.Nombre, (int?)centro.CentroCostoID)))" />
             }
 
             <MudTextField @bind-Value="_nombre" Label="Nombre" Required="true"

@@ -38,13 +38,8 @@
                                   Variant="Variant.Outlined" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudSelect T="string?" @bind-Value="_tipoIdentificacion" Label="Tipo de Documento"
-                               Variant="Variant.Outlined" FullWidth="true" Clearable="true">
-                        @foreach (var t in _tiposId)
-                        {
-                            <MudSelectItem T="string?" Value="@t.Codigo">@(t.Detalle ?? t.Codigo)</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="string?" @bind-Value="_tipoIdentificacion" Label="Tipo de Documento"
+                               Items="@(_tiposId.Select(t => new AppSelectItem<string?>(t.Detalle ?? t.Codigo, t.Codigo)))" />
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <div class="d-flex align-center gap-2">
@@ -66,13 +61,8 @@
                                   Variant="Variant.Outlined" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudSelect T="string?" @bind-Value="_pais" Label="País"
-                               Variant="Variant.Outlined" FullWidth="true">
-                        @foreach (var p in _paises)
-                        {
-                            <MudSelectItem T="string?" Value="@p.Codigo1">@p.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="string?" @bind-Value="_pais" Label="País"
+                               Items="@(_paises.Select(p => new AppSelectItem<string?>(p.Nombre, p.Codigo1)))" />
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudAutocomplete T="DeptItem?" Label="Departamento *"
@@ -132,13 +122,8 @@
                                   Variant="Variant.Outlined" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudSelect T="string?" @bind-Value="_pais" Label="País"
-                               Variant="Variant.Outlined" FullWidth="true">
-                        @foreach (var p in _paises)
-                        {
-                            <MudSelectItem T="string?" Value="@p.Codigo1">@p.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="string?" @bind-Value="_pais" Label="País"
+                               Items="@(_paises.Select(p => new AppSelectItem<string?>(p.Nombre, p.Codigo1)))" />
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudAutocomplete T="DeptItem?" Label="Departamento *"

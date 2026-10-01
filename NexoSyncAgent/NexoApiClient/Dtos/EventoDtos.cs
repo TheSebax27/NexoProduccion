@@ -135,7 +135,15 @@ public record SyncArticuloDesdeVisionsRequest(
     string? TipoProductoCodigo = null,
     decimal? ExistenciasActuales = null,
     decimal? ExistenciasMinimas = null,
-    decimal? Fracciones = null
+    decimal? Fracciones = null,
+    string? ImagenBase64 = null,
+    string? ImagenContentType = null
+);
+
+public record ArticuloImagenActualizadaDto(
+    string Referencia,
+    string ImagenBase64,
+    string ContentType
 );
 
 // ──────────── Clientes para sync NEXO → Visions ────────────

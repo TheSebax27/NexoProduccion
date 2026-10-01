@@ -24,9 +24,12 @@ builder.Services.AddScoped<TareaSincronizarClientes>();
 builder.Services.AddScoped<TareaSincronizarProveedores>();
 builder.Services.AddScoped<TareaSincronizarPedidos>();
 builder.Services.AddScoped<TareaSincronizarAdicionales>();
+builder.Services.AddScoped<TareaExportarImagenesAVisions>();
 
 // HttpClient tipado: cada vez que alguien pida INexoApiClient, le dan un
 // NexoApiClient ya configurado con la URL base y el header de autenticacion.
+builder.Services.AddTransient<RetryHandler>();
+
 builder.Services.AddHttpClient<INexoApiClient, NexoApiClient>((sp, client) =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
@@ -69,7 +72,8 @@ builder.Services.AddHttpClient<INexoApiClient, NexoApiClient>((sp, client) =>
             RemoteCertificateValidationCallback = (_, _, _, _) => true
         };
     return handler;
-});
+})
+.AddHttpMessageHandler<RetryHandler>();
 
 builder.Services.AddHostedService<Worker>();
 

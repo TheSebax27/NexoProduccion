@@ -33,13 +33,9 @@
                    Variant="Variant.Outlined" Style="max-width:160px" />
     <MudDatePicker Label="Hasta" Date="_hasta" DateChanged="@(d => OnFiltroChanged(_desde, d))"
                    Variant="Variant.Outlined" Style="max-width:160px" />
-    <MudSelect T="string?" Value="_filtroCategoria" ValueChanged="OnCategoriaChanged"
-               Label="Categoría" Clearable="true" Variant="Variant.Outlined" Style="max-width:220px">
-        @foreach (var cat in CategoriasParaFiltro)
-        {
-            <MudSelectItem T="string?" Value="@cat">@cat</MudSelectItem>
-        }
-    </MudSelect>
+    <AppSelect TValue="string?" Value="_filtroCategoria" ValueChanged="OnCategoriaChanged"
+               Label="Categoría" Style="max-width:220px"
+               Items="@(CategoriasParaFiltro.Select(cat => new AppSelectItem<string?>(cat, cat)))" />
     <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="AbrirCreacionAsync"
                StartIcon="@Icons.Material.Filled.Add" Class="ml-auto">
         Registrar gasto

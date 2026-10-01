@@ -87,17 +87,23 @@ public class AuditoriaMiddleware
     {
         var usuarioIdTexto = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
         int? usuarioId = int.TryParse(usuarioIdTexto, out var id) ? id : null;
+        var nombreUsuario = context.User.FindFirstValue(ClaimTypes.Name)
+                         ?? context.User.FindFirstValue("nombre")
+                         ?? context.User.FindFirstValue(ClaimTypes.Email);
 
-        // El segmento con el ID (si la ruta trae uno, ej. /api/crm/clientes/42)
-        // se usa como RegistroID; si no hay ninguno (ej. un POST de creacion),
-        // queda "nuevo".
+        // IP: preferir X-Forwarded-For (detrás de proxy/nginx) sobre RemoteIpAddress
+        var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+              ?? context.Connection.RemoteIpAddress?.ToString();
+        if (!string.IsNullOrEmpty(ip) && ip.Contains(','))
+            ip = ip.Split(',')[0].Trim(); // solo la primera IP del chain
+
         var segmentos = ruta.Trim('/').Split('/');
         var registroId = segmentos.LastOrDefault(s => int.TryParse(s, out _)) ?? "nuevo";
 
         using var connection = db.CreateConnection();
         const string sql = @"
-            INSERT INTO Auditoria.LogAuditoria (EsquemaTabla, RegistroID, Accion, UsuarioID, ValoresNuevos)
-            VALUES (@EsquemaTabla, @RegistroID, @Accion, @UsuarioID, @ValoresNuevos)";
+            INSERT INTO Auditoria.LogAuditoria (EsquemaTabla, RegistroID, Accion, UsuarioID, NombreUsuario, IP, ValoresNuevos)
+            VALUES (@EsquemaTabla, @RegistroID, @Accion, @UsuarioID, @NombreUsuario, @IP, @ValoresNuevos)";
 
         await connection.ExecuteAsync(sql, new
         {
@@ -105,6 +111,8 @@ public class AuditoriaMiddleware
             RegistroID = registroId,
             Accion = MapearAccion(context.Request.Method),
             UsuarioID = usuarioId,
+            NombreUsuario = nombreUsuario,
+            IP = ip,
             ValoresNuevos = payload
         });
     }

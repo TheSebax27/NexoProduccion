@@ -27,14 +27,10 @@
                       @bind-Value:after="Cargar" />
     </MudItem>
     <MudItem xs="12" sm="4">
-        <MudSelect T="string" @bind-Value="_categoriaFiltro" Label="Categoría"
-                   Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true"
-                   @bind-Value:after="Cargar">
-            @foreach (var cat in _categorias)
-            {
-                <MudSelectItem Value="@cat">@cat</MudSelectItem>
-            }
-        </MudSelect>
+        <AppSelect TValue="string" Value="_categoriaFiltro"
+                   ValueChanged="@(async (string v) => { _categoriaFiltro = v; await Cargar(); })"
+                   Label="Categoría"
+                   Items="@(_categorias.Select(cat => new AppSelectItem<string>(cat, cat)))" />
     </MudItem>
     <MudItem xs="12" sm="3" Class="d-flex align-center">
         <MudButton Variant="Variant.Filled" Color="Color.Success"

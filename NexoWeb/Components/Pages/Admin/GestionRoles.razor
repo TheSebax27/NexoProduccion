@@ -6,6 +6,7 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
+
 <PageTitle>Roles y Modulos — NEXO ERP</PageTitle>
 
 <div class="nexo-page-hero">
@@ -115,19 +116,14 @@
                 Los toggles muestran el estado <b>actual efectivo</b>; los que tienen badge "override" tienen configuracion propia.
             </MudText>
 
-            <MudSelect T="int?" Label="Usuario" Variant="Variant.Outlined"
+            <AppSelect TValue="int?"
+                       Label="Usuario"
+                       Placeholder="Selecciona un usuario..."
+                       Items="@(_usuarios.Select(u => new AppSelectItem<int?>(
+                                    $"{u.NombreCompleto} ({u.Rol})", (int?)u.UsuarioID)))"
                        Value="_usuarioSeleccionado"
                        ValueChanged="CargarModulosUsuario"
-                       Placeholder="Selecciona un usuario..."
-                       AnchorOrigin="Origin.BottomLeft"
-                       Style="max-width:420px" Class="mb-4">
-                @foreach (var u in _usuarios)
-                {
-                    <MudSelectItem T="int?" Value="@((int?)u.UsuarioID)">
-                        @u.NombreCompleto (@u.Rol)
-                    </MudSelectItem>
-                }
-            </MudSelect>
+                       Style="max-width:420px" Class="mb-4" />
 
             @if (_cargandoModulosUsuario)
             {
@@ -270,6 +266,7 @@
         public int UsuarioID { get; set; }
         public string Nombres { get; set; } = "";
         public string Apellidos { get; set; } = "";
+        public string Username { get; set; } = "";
         public string Rol { get; set; } = "";
     }
 
@@ -291,8 +288,12 @@
         try
         {
             var lista = await Api.GetAsync<List<UsuarioItemApi>>("api/auth/usuarios") ?? [];
-            _usuarios = lista.Select(u => new UsuarioSimple(
-                u.UsuarioID, $"{u.Nombres} {u.Apellidos}", u.Rol)).ToList();
+            _usuarios = lista.Select(u =>
+            {
+                var nombre = $"{u.Nombres} {u.Apellidos}".Trim();
+                if (string.IsNullOrEmpty(nombre)) nombre = u.Username;
+                return new UsuarioSimple(u.UsuarioID, nombre, u.Rol);
+            }).ToList();
         }
         catch { /* silencioso */ }
     }

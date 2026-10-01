@@ -13,11 +13,8 @@
     <DialogContent>
         <MudGrid Spacing="2">
             <MudItem xs="12" sm="6">
-                <MudSelect T="string" @bind-Value="_tipo" Label="Tipo de mantenimiento *">
-                    <MudSelectItem Value="@("Preventivo")">Preventivo</MudSelectItem>
-                    <MudSelectItem Value="@("Correctivo")">Correctivo</MudSelectItem>
-                    <MudSelectItem Value="@("Predictivo")">Predictivo</MudSelectItem>
-                </MudSelect>
+                <AppSelect TValue="string" @bind-Value="_tipo" Label="Tipo de mantenimiento *"
+                           Items="@(new AppSelectItem<string>[]{ new("Preventivo","Preventivo"), new("Correctivo","Correctivo"), new("Predictivo","Predictivo") })" />
             </MudItem>
             <MudItem xs="12" sm="6">
                 <MudDatePicker @bind-Date="_fechaDt" Label="Fecha realizado *"
@@ -49,13 +46,9 @@
 
             <MudItem xs="12">
                 <MudDivider Class="my-1" />
-                <MudSelect T="string?" @bind-Value="_nuevoEstado" Label="Cambiar estado de la máquina"
-                           Placeholder="No cambiar" Clearable>
-                    <MudSelectItem T="string?" Value="@("Activa")">Activa</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("EnMantenimiento")">En Mantenimiento</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("Inactiva")">Inactiva</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("BajaDefinitiva")">Baja Definitiva</MudSelectItem>
-                </MudSelect>
+                <AppSelect TValue="string?" @bind-Value="_nuevoEstado" Label="Cambiar estado de la máquina"
+                           Placeholder="No cambiar"
+                           Items="@(new AppSelectItem<string?>[]{ new("Activa","Activa"), new("En Mantenimiento","EnMantenimiento"), new("Inactiva","Inactiva"), new("Baja Definitiva","BajaDefinitiva") })" />
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
                     Opcional — si quieres actualizar el estado de la máquina junto con el registro.
                 </MudText>

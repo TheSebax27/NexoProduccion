@@ -12,24 +12,16 @@
     <DialogContent>
         <MudGrid Spacing="2">
             <MudItem xs="12" sm="6">
-                <MudSelect T="string" @bind-Value="_tipo" Label="Tipo de devolución" Variant="Variant.Outlined"
-                           Margin="Margin.Dense" Required="true">
-                    <MudSelectItem T="string" Value="@("CLIENTE")">Cliente devuelve mercancía</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("PROVEEDOR")">Devolucion a proveedor</MudSelectItem>
-                </MudSelect>
+                <AppSelect TValue="string" @bind-Value="_tipo" Label="Tipo de devolución"
+                           Items="@(new AppSelectItem<string>[]{ new("Cliente devuelve mercancía","CLIENTE"), new("Devolucion a proveedor","PROVEEDOR") })" />
             </MudItem>
             <MudItem xs="12" sm="6">
                 <MudDatePicker @bind-Date="_fecha" Label="Fecha" DateFormat="dd/MM/yyyy"
                                Variant="Variant.Outlined" Margin="Margin.Dense" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Variant="Variant.Outlined"
-                           Margin="Margin.Dense" Required="true" Placeholder="Seleccione CC">
-                    @foreach (var cc in _centrosCosto)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)cc.CentroCostoID)">@cc.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Placeholder="Seleccione CC"
+                           Items="@(_centrosCosto.Select(cc => new AppSelectItem<int?>(cc.Nombre, (int?)cc.CentroCostoID)))" />
             </MudItem>
             <MudItem xs="12" sm="6">
                 <MudTextField @bind-Value="_nroDoc" Label="Nro. Documento (opcional)"
@@ -44,13 +36,8 @@
                 }
                 else
                 {
-                    <MudSelect T="int?" @bind-Value="_proveedorId" Label="Proveedor" Variant="Variant.Outlined"
-                               Margin="Margin.Dense" Clearable="true">
-                        @foreach (var p in _proveedores)
-                        {
-                            <MudSelectItem T="int?" Value="@((int?)p.ProveedorID)">@p.RazonSocial</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="int?" @bind-Value="_proveedorId" Label="Proveedor"
+                               Items="@(_proveedores.Select(p => new AppSelectItem<int?>(p.RazonSocial, (int?)p.ProveedorID)))" />
                 }
             </MudItem>
             <MudItem xs="12">

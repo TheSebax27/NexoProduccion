@@ -91,39 +91,19 @@ else
                         </div>
                     </div>
                     <div class="nexo-section__body">
-                        <MudSelect T="int?" @bind-Value="_tipoArticuloId" Label="Tipo de artículo" Required="true"
-                                   RequiredError="El tipo es obligatorio"
-                                   Variant="Variant.Outlined" Class="mb-4">
-                            @foreach (var t in _tiposArticulo)
-                            {
-                                <MudSelectItem T="int?" Value="@((int?)t.TipoArticuloID)">@t.Nombre</MudSelectItem>
-                            }
-                        </MudSelect>
-                        <MudSelect T="string?" @bind-Value="_marcaCodigo" Label="Marca" Clearable="true"
-                                   Placeholder="Sin marca" Variant="Variant.Outlined" Class="mb-4">
-                            @foreach (var m in _marcas)
-                            {
-                                <MudSelectItem T="string?" Value="@m.Codigo">@m.Codigo — @m.Nombre</MudSelectItem>
-                            }
-                        </MudSelect>
+                        <AppSelect TValue="int?" @bind-Value="_tipoArticuloId" Label="Tipo de artículo" Class="mb-4"
+                                   Items="@(_tiposArticulo.Select(t => new AppSelectItem<int?>(t.Nombre, (int?)t.TipoArticuloID)))" />
+                        <AppSelect TValue="string?" @bind-Value="_marcaCodigo" Label="Marca" Placeholder="Sin marca" Class="mb-4"
+                                   Items="@(_marcas.Select(m => new AppSelectItem<string?>($"{m.Codigo} — {m.Nombre}", m.Codigo)))" />
                         <div class="na-field-row na-field-row--2">
-                            <MudSelect T="string?" Value="_grupoMayorCodigo" ValueChanged="OnGrupoMayorChanged"
-                                       Label="Grupo mayor" Clearable="true" Placeholder="Sin grupo mayor"
-                                       Variant="Variant.Outlined">
-                                @foreach (var gm in _gruposMayores)
-                                {
-                                    <MudSelectItem T="string?" Value="@gm.Codigo">@gm.Codigo — @gm.Nombre</MudSelectItem>
-                                }
-                            </MudSelect>
-                            <MudSelect T="string?" Value="_grupoMenorCodigo" ValueChanged="OnGrupoMenorChanged"
-                                       Label="Grupo menor" Clearable="true" Variant="Variant.Outlined"
+                            <AppSelect TValue="string?" Value="_grupoMayorCodigo" ValueChanged="OnGrupoMayorChanged"
+                                       Label="Grupo mayor" Placeholder="Sin grupo mayor"
+                                       Items="@(_gruposMayores.Select(gm => new AppSelectItem<string?>($"{gm.Codigo} — {gm.Nombre}", gm.Codigo)))" />
+                            <AppSelect TValue="string?" Value="_grupoMenorCodigo" ValueChanged="OnGrupoMenorChanged"
+                                       Label="Grupo menor"
                                        Placeholder="@(string.IsNullOrEmpty(_grupoMayorCodigo) ? "Selecciona grupo mayor primero" : "Sin grupo menor")"
-                                       Disabled="@(string.IsNullOrEmpty(_grupoMayorCodigo))">
-                                @foreach (var gm in GruposMenoresFiltrados)
-                                {
-                                    <MudSelectItem T="string?" Value="@gm.Codigo">@gm.Codigo — @gm.Nombre</MudSelectItem>
-                                }
-                            </MudSelect>
+                                       Disabled="@(string.IsNullOrEmpty(_grupoMayorCodigo))"
+                                       Items="@(GruposMenoresFiltrados.Select(gm => new AppSelectItem<string?>($"{gm.Codigo} — {gm.Nombre}", gm.Codigo)))" />
                         </div>
                     </div>
                 </div>
@@ -145,19 +125,10 @@ else
                     </div>
                     <div class="nexo-section__body">
                         <div class="d-flex align-center mb-4" style="gap:0.5rem;">
-                            <MudSelect T="string?" Value="_presentacionCodigo" ValueChanged="OnPresentacionChanged"
-                                       Label="Presentación" Clearable="true"
-                                       Placeholder="Sin presentación" Variant="Variant.Outlined"
-                                       Style="flex:1;">
-                                @foreach (var p in _presentaciones)
-                                {
-                                    <MudSelectItem T="string?" Value="@p.Codigo">
-                                        @p.Codigo — @p.Presentacion
-                                        @if (p.Fracciones is > 0)
-                                        { <span style="color:var(--n-text-3)"> (@p.Fracciones.Value.ToString("N0") und)</span> }
-                                    </MudSelectItem>
-                                }
-                            </MudSelect>
+                            <AppSelect TValue="string?" Value="_presentacionCodigo" ValueChanged="OnPresentacionChanged"
+                                       Label="Presentación" Placeholder="Sin presentación"
+                                       Style="flex:1;"
+                                       Items="@(_presentaciones.Select(p => new AppSelectItem<string?>($"{p.Codigo} — {p.Presentacion}{(p.Fracciones is > 0 ? $" ({p.Fracciones!.Value.ToString("N0")} und)" : "")}", p.Codigo)))" />
                             <MudTooltip Text="Nueva presentación">
                                 <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
                                                OnClick="AbrirCrearPresentacionAsync" />
@@ -216,24 +187,14 @@ else
                         </div>
                     </div>
                     <div class="nexo-section__body">
-                        <MudSelect T="int?" Value="_ivaId" ValueChanged="OnIvaChanged"
-                                   Label="Impuesto 1 — IVA" Clearable="true" Placeholder="Sin IVA"
-                                   Variant="Variant.Outlined" Class="mb-4">
-                            @foreach (var iva in IvasPrimarios)
-                            {
-                                <MudSelectItem T="int?" Value="@((int?)iva.IvaID)">@iva.Descripcion (@iva.Iva%)</MudSelectItem>
-                            }
-                        </MudSelect>
-                        @if (_ivaId.HasValue && !IvaEsExcluidoOExento)
+                        <AppSelect TValue="int?" Value="_ivaId" ValueChanged="OnIvaChanged"
+                                   Label="Impuesto 1 — IVA" Placeholder="Sin IVA" Class="mb-4"
+                                   Items="@(IvasPrimarios.Select(iva => new AppSelectItem<int?>($"{iva.Descripcion} ({iva.Iva}%)", (int?)iva.IvaID)))" />
+                        @if (_ivaId.HasValue && !IvaEsExcluidoOExento && !EsIcoSeleccionado)
                         {
-                            <MudSelect T="string?" Value="_impuestoConsumoCode" ValueChanged="OnImpuestoConsumoChanged"
-                                       Label="Impuesto 2 — Consumo (opcional)" Clearable="true" Placeholder="Ninguno"
-                                       Variant="Variant.Outlined" Class="mb-3">
-                                @foreach (var ic in ImpuestosConsumo)
-                                {
-                                    <MudSelectItem T="string?" Value="@ic.Codigo">@ic.Nombre (0%)</MudSelectItem>
-                                }
-                            </MudSelect>
+                            <AppSelect TValue="string?" Value="_impuestoConsumoCode" ValueChanged="OnImpuestoConsumoChanged"
+                                       Label="Impuesto 2 — Consumo (opcional)" Placeholder="Ninguno" Class="mb-3"
+                                       Items="@(ImpuestosConsumo.Select(ic => new AppSelectItem<string?>($"{ic.Nombre} (0%)", ic.Codigo)))" />
                             @if (_impuestoConsumoCode is not null)
                             {
                                 <MudNumericField T="decimal?" @bind-Value="_impuestoPorcentaje"
@@ -649,20 +610,20 @@ else
                 <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Style="color:#F59E0B; font-size:1.25rem;" />
             </div>
             <div style="flex:1;">
-                <div class="nexo-section__title">Adicionales</div>
+                <div class="nexo-section__title">Acompañamientos</div>
                 <div class="nexo-section__sub">Artículos opcionales o extras que se pueden agregar a este artículo</div>
             </div>
         </div>
         <div class="nexo-section__body">
             <div class="d-flex align-center" style="gap:16px; flex-wrap:wrap;">
                 <MudSwitch T="bool" Value="_esAdicional"
-                           Label="Este artículo puede ser adicional de otros"
+                           Label="Este artículo puede ser acompañamiento de otros"
                            Color="Color.Primary"
                            ValueChanged="OnEsAdicionalChangedAsync" />
                 <MudButton Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.Tune"
                            OnClick="AbrirAdicionalesDialogAsync">
-                    Gestionar adicionales (@_cantidadAdicionales)
+                    Gestionar acompañamientos (@_cantidadAdicionales)
                 </MudButton>
             </div>
         </div>
@@ -714,9 +675,10 @@ else
             : _gruposMenores.Where(g => g.GrupoMayor == _grupoMayorCodigo);
 
     private IEnumerable<IvaItem> IvasPrimarios => _ivas.Where(i =>
-        (i.Iva == 0 || i.Iva == 5 || i.Iva == 16 || i.Iva == 19) &&
+        i.TipoImpuesto != "ICO" &&
         !ImpuestosConsumo.Any(ic => (i.Descripcion ?? "").StartsWith(ic.Codigo)));
     private bool     IvaEsExcluidoOExento => _ivaId.HasValue && _ivaValor == 0;
+    private bool     EsIcoSeleccionado    => _ivaId.HasValue && _ivas.FirstOrDefault(i => i.IvaID == _ivaId)?.TipoImpuesto == "ICO";
     private decimal  TotalImpuestoPct     => (_ivaValor ?? 0) + (_impuestoConsumoCode is not null ? (_impuestoPorcentaje ?? 0) : 0);
     private decimal? CostoConImpuesto     => _costo is > 0 ? _costo.Value * (1 + TotalImpuestoPct / 100) : _costo;
 
@@ -846,7 +808,8 @@ else
         _ivaDescripcion2    = a.IvaDescripcion2;
 
         if (_ivaValor.HasValue)
-            _ivaId = _ivas.FirstOrDefault(i => i.Iva == _ivaValor && i.Descripcion == _ivaDescripcion)?.IvaID;
+            _ivaId = (_ivas.FirstOrDefault(i => i.Iva == _ivaValor && i.Descripcion == _ivaDescripcion)
+                   ?? _ivas.FirstOrDefault(i => i.Iva == _ivaValor && i.TipoImpuesto != "ICO"))?.IvaID;
 
         if (_iva2.HasValue && _ivaDescripcion2 is not null)
         {
@@ -887,7 +850,9 @@ else
 
     // ── Precios (base = costo con impuestos) ──────────────────────────────
     private decimal CalcPorc(decimal? precio) =>
-        CostoConImpuesto is > 0 ? Math.Round(((precio ?? 0) - CostoConImpuesto.Value) / CostoConImpuesto.Value * 100, 2) : 0;
+        CostoConImpuesto is > 0 && precio is > 0
+            ? Math.Round((precio.Value - CostoConImpuesto.Value) / CostoConImpuesto.Value * 100, 2)
+            : 0;
 
     private void OnCostoChanged()
     {
@@ -1163,7 +1128,7 @@ else
         {
             { x => x.ArticuloID, ArticuloId }
         };
-        var dialogo = await DialogService.ShowAsync<AdicionalesDialog>("Adicionales",
+        var dialogo = await DialogService.ShowAsync<AdicionalesDialog>("Acompañamientos",
             params_,
             new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true });
         var result = await dialogo.Result;

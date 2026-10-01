@@ -100,7 +100,10 @@
         @if (AuthState.EstaLogueado)
         {
             @* Notificaciones -- resumen real (sin stock / bajo stock / produccion
-               en proceso), se refresca solo cada 2 minutos para no ser invasivo. *@
+               en proceso), se refresca solo cada 2 minutos para no ser invasivo.
+               El overlay (nexo-notif-overlay) vive FUERA del AppBar en MudLayout:
+               el backdrop-filter del AppBar haría que position:fixed;inset:0 aquí
+               solo cubriera el AppBar (68px) y no la pantalla completa. *@
             <div class="nexo-topbar__notif" style="position:relative; z-index:var(--nexo-z-notif-container);">
                 <div style="position:relative; display:inline-flex;">
                     <MudBadge Content="@(_notificaciones.Total > 0 ? (object)_notificaciones.Total : null)"
@@ -114,10 +117,9 @@
                 </div>
                 @if (_notifAbierta)
                 {
-                    <div style="position:fixed; inset:0; z-index:var(--nexo-z-notif-overlay);"
-                         @onclick="() => _notifAbierta = false"></div>
                     <div class="nexo-topbar__notif-panel"
-                         style="position:fixed; top:60px; right:8px; z-index:var(--nexo-z-notif-panel); width:min(320px,calc(100vw - 16px));">
+                         style="position:fixed; top:76px; right:8px; z-index:var(--nexo-z-notif-panel); width:min(320px,calc(100vw - 16px));"
+                         @onclick:stopPropagation="true">
                         <div class="nexo-topbar__notif-panel-title">Notificaciones</div>
                         @if (_notificaciones.Items.Count == 0)
                         {
@@ -163,13 +165,8 @@
                 }
             </div>
 
-            @* Avatar + nombre + rol -- ahora es un menu con mini-ajustes (cambiar
-               nombre/foto), ver Components/Shared/PerfilMenu.razor.
-               z-index:1003 coloca el activador por encima del backdrop de
-               notificaciones (z-index:1000 dentro del stacking-context 1001),
-               de modo que el primer clic siempre aterriza en el perfil y no
-               en el backdrop. El onclick adicional garantiza que el panel de
-               notificaciones se cierre antes de que el MudMenu abra. *@
+            @* Avatar + nombre + rol: el onclick cierra notificaciones antes de
+               que MudMenu abra. z-index via variable para quedar sobre el overlay. *@
             <div style="position:relative; z-index:var(--nexo-z-avatar); display:inline-flex; align-items:center;"
                  @onclick="() => _notifAbierta = false">
                 <PerfilMenu />
@@ -177,6 +174,15 @@
         }
 
     </MudAppBar>
+
+    @* Overlay full-viewport para cerrar notificaciones al hacer click fuera.
+       Vive aquí (FUERA del AppBar) porque el backdrop-filter del AppBar crearía
+       un nuevo containing-block para position:fixed, haciendo que inset:0 cubriera
+       solo el AppBar (68px) en vez de la pantalla completa. *@
+    @if (_notifAbierta)
+    {
+        <div class="nexo-notif-overlay" @onclick="() => _notifAbierta = false"></div>
+    }
 
     @* ══ SIDEBAR ════════════════════════════════════════════════ *@
     @* Persistent: empuja el contenido en lugar de sobreponerlo y nunca
@@ -396,10 +402,12 @@
             {
                 "" or "/" => "Dashboard",
                 "/produccion/ordenes"       => "Órdenes de Producción",
-                "/produccion/recetas"       => "Recetas (BOM)",
+                "/produccion/recetas"           => "Recetas (BOM)",
+                "/produccion/control-consumos" => "Control de Consumos",
                 "/inventario/stock"         => "Consulta de Stock",
                 "/inventario/kardex"        => "Kardex",
                 "/inventario/bajas"         => "Registrar Baja",
+                "/inventario/mermas"        => "Análisis de Mermas",
                 "/inventario/traspasos"     => "Traspasos",
                 "/facturacion"              => "Salidas",
                 "/compras/ordenes"          => "Entradas",
@@ -409,6 +417,7 @@
                 "/catalogo/clientes"        => "Clientes",
                 "/catalogo/proveedores"     => "Proveedores",
                 "/admin/usuarios"           => "Usuarios",
+                "/admin/audit-log"          => "Audit Log",
                 _                          => "NEXO ERP"
             };
         }

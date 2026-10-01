@@ -660,12 +660,8 @@
                             </div>
                         </div>
 
-                        <MudSelect T="string" @bind-Value="_modoNroDoc" Label="Modo de numeración"
-                                   Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3">
-                            <MudSelectItem Value=@("Manual")>Manual — el usuario escribe el número</MudSelectItem>
-                            <MudSelectItem Value=@("Secuencial")>Secuencial — contador propio de NEXO</MudSelectItem>
-                            <MudSelectItem Value=@("Aleatorio")>Aleatorio — 10 dígitos aleatorios</MudSelectItem>
-                        </MudSelect>
+                        <AppSelect TValue="string" @bind-Value="_modoNroDoc" Label="Modo de numeración" Class="mb-3"
+                                   Items="@(new AppSelectItem<string>[]{ new("Manual — el usuario escribe el número","Manual"), new("Secuencial — contador propio de NEXO","Secuencial"), new("Aleatorio — 10 dígitos aleatorios","Aleatorio") })" />
 
                         @if (_modoNroDoc == "Secuencial")
                         {

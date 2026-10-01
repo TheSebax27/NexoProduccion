@@ -26,28 +26,16 @@
     <ArticuloAutocomplete Value="_articuloSeleccionado"
                           ValueChanged="@(a => _articuloSeleccionado = a)"
                           Label="Artículo" />
-    <MudSelect T="int?" @bind-Value="_bodegaId" Label="Bodega" Variant="Variant.Outlined"
-               Clearable="true" Style="flex:1; min-width:150px;">
-        @foreach (var b in _bodegas)
-        {
-            <MudSelectItem T="int?" Value="@((int?)b.BodegaID)">@b.Nombre</MudSelectItem>
-        }
-    </MudSelect>
+    <AppSelect TValue="int?" @bind-Value="_bodegaId" Label="Bodega" Style="flex:1; min-width:150px;"
+               Items="@(_bodegas.Select(b => new AppSelectItem<int?>(b.Nombre, (int?)b.BodegaID)))" />
     <MudDatePicker @bind-Date="_desde" Label="Desde" DateFormat="dd/MM/yyyy"
                    PickerVariant="PickerVariant.Dialog" Variant="Variant.Outlined"
                    Style="flex:1; min-width:140px;" />
     <MudDatePicker @bind-Date="_hasta" Label="Hasta" DateFormat="dd/MM/yyyy"
                    PickerVariant="PickerVariant.Dialog" Variant="Variant.Outlined"
                    Style="flex:1; min-width:140px;" />
-    <MudSelect T="string" @bind-Value="_filtroCategoria" Label="Tipo" Variant="Variant.Outlined"
-               Clearable="true" Style="flex:1; min-width:130px;">
-        <MudSelectItem T="string" Value="@("Entrada")">Entradas</MudSelectItem>
-        <MudSelectItem T="string" Value="@("Salida")">Salidas</MudSelectItem>
-        <MudSelectItem T="string" Value="@("Producción")">Producción</MudSelectItem>
-        <MudSelectItem T="string" Value="@("Ajuste")">Ajustes</MudSelectItem>
-        <MudSelectItem T="string" Value="@("Baja")">Bajas / Pérdidas</MudSelectItem>
-        <MudSelectItem T="string" Value="@("Traspaso")">Traspasos</MudSelectItem>
-    </MudSelect>
+    <AppSelect TValue="string" @bind-Value="_filtroCategoria" Label="Tipo" Style="flex:1; min-width:130px;"
+               Items="@(new AppSelectItem<string>[]{ new("Entradas","Entrada"), new("Salidas","Salida"), new("Producción","Producción"), new("Ajustes","Ajuste"), new("Bajas / Pérdidas","Baja"), new("Traspasos","Traspaso") })" />
     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConsultarAsync"
                Disabled="_cargando" StartIcon="@Icons.Material.Filled.Search"
                Style="flex-shrink:0; align-self:flex-end; height:56px; padding: 0 1.5rem;">
@@ -250,6 +238,9 @@ else
 }
 
 @code {
+    [SupplyParameterFromQuery(Name = "articuloId")]
+    public int? ArticuloIdParam { get; set; }
+
     private List<KardexMovimientoItem> _movimientos = new();
     private ArticuloItem? _articuloSeleccionado;
     private List<BodegaItem>   _bodegas   = new();
@@ -285,6 +276,11 @@ else
         try
         {
             _bodegas = await ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas") ?? new();
+            if (ArticuloIdParam.HasValue)
+            {
+                var art = await ApiClient.GetAsync<ArticuloItem>($"api/catalogo/articulos/{ArticuloIdParam}");
+                if (art is not null) { _articuloSeleccionado = art; await ConsultarAsync(); }
+            }
         }
         catch { }
     }
@@ -313,12 +309,15 @@ else
         return signo + texto;
     }
 
-    // Usa UnidadesPorEmbalaje (no unidad == "cja") porque Unidad = PresentacionCodigo
+    // Usa UnidadesPorEmbalaje (no unidad == "cja") porque Unidad = PresentacionCodigo.
+    // Omite el código de unidad si es puramente numérico (ej. "07") para evitar
+    // que parezca parte del número: "-65,000 07" se leería como decimal.
     private static string FormatearCantidad(decimal cantidad, string? unidad, decimal? unidadesPorEmbalaje)
     {
         if (unidadesPorEmbalaje is > 0)
             return StockHelper.FormatearCajaUnidades(cantidad, unidadesPorEmbalaje.Value);
-        return $"{cantidad:N3} {unidad}".Trim();
+        var sufijo = string.IsNullOrWhiteSpace(unidad) || unidad.All(char.IsDigit) ? "" : " " + unidad;
+        return $"{cantidad:N3}{sufijo}";
     }
 
     private static RenderFragment ChipTipo(KardexMovimientoItem mov) => builder =>

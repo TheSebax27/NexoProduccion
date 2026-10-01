@@ -22,26 +22,13 @@
 
 <MudGrid Class="mb-4">
     <MudItem xs="12" sm="4">
-        <MudAutocomplete T="ClienteItem"
-                         Value="_filtroCliente"
-                         ValueChanged="OnFiltroClienteCambiadoAsync"
-                         Label="Filtrar por cliente"
-                         SearchFunc="BuscarClienteFiltroAsync"
-                         ToStringFunc="@(c => c?.Nombre ?? "")"
-                         Placeholder="Nombre o NIT…"
-                         MinCharacters="1"
-                         Clearable="true"
-                         CoerceValue="true"
-                         AdornmentIcon="@Icons.Material.Outlined.Search" />
+        <ClienteAutocomplete Value="_filtroCliente"
+                             ValueChanged="OnFiltroClienteCambiadoAsync"
+                             Label="Filtrar por cliente" />
     </MudItem>
     <MudItem xs="12" sm="4">
-        <MudSelect T="string" Value="_filtroEstado" ValueChanged="OnFiltroEstadoCambiadoAsync" Label="Estado" Clearable="true">
-            <MudSelectItem Value="@("BORRADOR")">Borrador</MudSelectItem>
-            <MudSelectItem Value="@("ENVIADA")">Enviada</MudSelectItem>
-            <MudSelectItem Value="@("ACEPTADA")">Aceptada</MudSelectItem>
-            <MudSelectItem Value="@("RECHAZADA")">Rechazada</MudSelectItem>
-            <MudSelectItem Value="@("VENCIDA")">Vencida</MudSelectItem>
-        </MudSelect>
+        <AppSelect TValue="string" Value="_filtroEstado" ValueChanged="OnFiltroEstadoCambiadoAsync" Label="Estado"
+                   Items="@(new AppSelectItem<string>[]{ new("Borrador","BORRADOR"), new("Enviada","ENVIADA"), new("Aceptada","ACEPTADA"), new("Rechazada","RECHAZADA"), new("Vencida","VENCIDA") })" />
     </MudItem>
 </MudGrid>
 
@@ -262,15 +249,6 @@ else
         {
             _cargando = false;
         }
-    }
-
-    private async Task<IEnumerable<ClienteItem>> BuscarClienteFiltroAsync(string texto, CancellationToken ct)
-    {
-        var url = string.IsNullOrWhiteSpace(texto)
-            ? "api/crm/clientes/paginados?pagina=1&tamano=15"
-            : $"api/crm/clientes/paginados?texto={Uri.EscapeDataString(texto)}&pagina=1&tamano=15";
-        var resp = await ApiClient.GetAsync<ClientesPaginadosResponse>(url);
-        return resp?.Items ?? new();
     }
 
     private async Task CargarCotizacionesAsync()

@@ -44,7 +44,7 @@ public class Worker : BackgroundService
         using (var scope = _serviceProvider.CreateScope())
         {
             var tareaInit = scope.ServiceProvider.GetRequiredService<TareaInicializarVisions>();
-            await tareaInit.EjecutarAsync();
+            await tareaInit.EjecutarAsync(stoppingToken);
         }
 
         while (!stoppingToken.IsCancellationRequested)
@@ -90,6 +90,18 @@ public class Worker : BackgroundService
                     await Task.Delay(_backoffActual, stoppingToken);
                     continue;
                 }
+                catch (Exception exLatido)
+                {
+                    // Cualquier otro fallo en el latido (ej. JsonException, respuesta inesperada del servidor).
+                    // Se salta el ciclo completo para evitar ejecutar tareas de sync sin confirmacion de conectividad.
+                    _backoffActual = CalcularBackoff(_backoffActual, _intervalo);
+                    _logger.LogError(
+                        exLatido,
+                        "Error inesperado en latido. Saltando ciclo. Reintentando en {Backoff:mm\\:ss} min.",
+                        _backoffActual);
+                    await Task.Delay(_backoffActual, stoppingToken);
+                    continue;
+                }
 
                 // 2. Sincronizar configuracion (prefijos de venta, activo/inactivo).
                 //    Si el admin cambio el intervalo desde la web, se aplica aqui.
@@ -122,7 +134,18 @@ public class Worker : BackgroundService
                     var tareaImportarTarjeta = scope.ServiceProvider.GetRequiredService<TareaImportarCambiosTarjeta>();
                     await tareaImportarTarjeta.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
 
-                    // 5b. Adicionales (toppings) NEXO → Visions.
+                    // 5b. Imagenes NEXO → Visions (opcional, no critico).
+                    try
+                    {
+                        var tareaImagenes = scope.ServiceProvider.GetRequiredService<TareaExportarImagenesAVisions>();
+                        await tareaImagenes.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
+                    }
+                    catch (Exception exImg)
+                    {
+                        _logger.LogWarning(exImg, "Sync de imagenes NEXO→Visions fallo (no critico)");
+                    }
+
+                    // 5c. Adicionales (toppings) NEXO → Visions.
                     //     Va despues de cambios de TARJETA: los articulos referenciados
                     //     ya existen en Visions. Unidireccional, NEXO es la fuente de verdad.
                     //     Aislado en su propio try/catch: si las tablas aun no existen en NEXO
@@ -134,7 +157,11 @@ public class Worker : BackgroundService
                     }
                     catch (Exception exAd)
                     {
-                        _logger.LogWarning(exAd, "Sync adicionales omitido (tablas aun no creadas?)");
+                        if (exAd.Message.Contains("Invalid object name", StringComparison.OrdinalIgnoreCase)
+                         || exAd.Message.Contains("no existe", StringComparison.OrdinalIgnoreCase))
+                            _logger.LogWarning(exAd, "Sync adicionales omitido (tablas aun no creadas?)");
+                        else
+                            _logger.LogError(exAd, "Error en sync adicionales");
                     }
 
                     // 6. Clientes Visions → NEXO y NEXO → Visions.
@@ -172,11 +199,15 @@ public class Worker : BackgroundService
                     try
                     {
                         var tareaEntradasVisions = scope.ServiceProvider.GetRequiredService<TareaExportarEntradasVisions>();
-                        await tareaEntradasVisions.EjecutarAsync(centroCostoVisions!.Value, stoppingToken);
+                        await tareaEntradasVisions.EjecutarAsync(centroCostoVisions!.Value, stoppingToken, fechaInicioSyncVentas);
                     }
                     catch (Exception exEnt)
                     {
-                        _logger.LogWarning(exEnt, "Sync entradas Visions→NEXO omitido (migracion SQL pendiente?)");
+                        if (exEnt.Message.Contains("Invalid object name", StringComparison.OrdinalIgnoreCase)
+                         || exEnt.Message.Contains("no existe", StringComparison.OrdinalIgnoreCase))
+                            _logger.LogWarning(exEnt, "Sync entradas Visions→NEXO omitido (migracion SQL pendiente?)");
+                        else
+                            _logger.LogError(exEnt, "Error en sync entradas Visions→NEXO");
                     }
 
                     // 8. Eventos NEXO → Visions: SINCRONIZAR_ARTICULO, AJUSTE_INVENTARIO,

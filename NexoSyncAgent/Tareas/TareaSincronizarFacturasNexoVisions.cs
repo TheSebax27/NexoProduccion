@@ -111,6 +111,13 @@ public class TareaSincronizarFacturasNexoVisions
         if (existente > 0)
             return; // ya fue enviado en ciclo anterior
 
+        var lineasMapeadas = factura.Lineas.Where(l => l.ReferenciaVisions is not null).ToList();
+        if (lineasMapeadas.Count == 0)
+        {
+            _logger.LogWarning("Factura {FacturaID} omitida: ninguna línea tiene ReferenciaVisions (artículos sin mapeo Visions).", factura.FacturaID);
+            return;
+        }
+
         await connection.ExecuteAsync(
             @"INSERT INTO dbo.NEXO_FacturasPendientes
                 (FacturaID, NIT, NombreCliente, Fecha, TipDoc, TotalNexo, Estado, FechaEnvio)
@@ -127,9 +134,8 @@ public class TareaSincronizarFacturasNexoVisions
             });
 
         var orden = 0;
-        foreach (var linea in factura.Lineas)
+        foreach (var linea in lineasMapeadas)
         {
-            if (linea.ReferenciaVisions is null) continue;
             orden++;
             var subtotal = linea.Cantidad * linea.PrecioUnitario;
 

@@ -16,7 +16,8 @@ public record ClienteItem(
     string? Departamento, string? Ciudad,
     string? TipoIdentificacion, string? CodigoDept, string? CodigoMuni,
     int? DigitoVerificacion = null,
-    string? TipoIdentificacionDetalle = null
+    string? TipoIdentificacionDetalle = null,
+    string? Notas = null
 );
 
 public record CrearClienteRequest(
@@ -36,7 +37,7 @@ public record ActualizarClienteRequest(
     string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
     string? Departamento, string? Ciudad,
     string? TipoIdentificacion = null, string? CodigoDept = null, string? CodigoMuni = null,
-    int? DigitoVerificacion = null
+    int? DigitoVerificacion = null, string? Notas = null
 );
 
 // Catálogo de referencia
@@ -79,7 +80,17 @@ public record LeadItem(
     string? TipoIdentificacion,
     string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
     string? Departamento, string? Ciudad,
-    string? CodigoDept, string? CodigoMuni, int? DigitoVerificacion
+    string? CodigoDept, string? CodigoMuni, int? DigitoVerificacion,
+    int? Score = null
+);
+
+public record DuplicadoCandidatoItem(
+    string Tipo,
+    int ID,
+    string Nombre,
+    string? NIT,
+    string? Empresa,
+    string? Etapa
 );
 public record CrearLeadRequest(
     string Nombre, string? Empresa, string? Telefono, string? Email,
@@ -108,17 +119,24 @@ public record ClienteFrioItem(int ClienteID, string ExternalId, string Nombre, s
 
 public record CambiarEtapaLeadRequest(string Etapa);
 
+// ---------- Notas de Lead ----------
+public record NotaLeadItem(
+    int NotaID, int LeadID, string Texto, string Tipo,
+    string? EtapaOrigen, string? EtapaDestino, string? Usuario, DateTime Fecha);
+public record CrearNotaLeadRequest(string Texto, string Tipo = "MANUAL", string? EtapaOrigen = null, string? EtapaDestino = null);
+
 // ---------- Pipeline unificado (Leads + Oportunidades en una sola vista) ----------
 // Tipo: "LEAD" para registros de Crm.Leads sin oportunidad vinculada.
 //       "OPORTUNIDAD" para registros de Crm.Oportunidades.
 // Etapas Lead:        NUEVO | CONTACTADO | CALIFICADO | DESCARTADO
 // Etapas Oportunidad: PROSPECCION | PROPUESTA | NEGOCIACION | GANADA | PERDIDA
 public record PipelineItem(
-    string Tipo, int ID, int? LeadID, int? OportunidadID, int? ClienteID,
+    string Tipo, int ID, int? LeadID, int? OportunidadID, int? ClienteID, string? ExternalIdCliente,
     string Nombre, string? Empresa, string? Telefono, string? Email, string Etapa,
     decimal? ValorEstimado, string? ConfianzaCierre,
     int? ResponsableID, string? Responsable, string? Notas,
-    DateTime FechaCreacion, DateTime? FechaCierreEsperada, DateTime? FechaCierre
+    DateTime FechaCreacion, DateTime? FechaCierreEsperada, DateTime? FechaCierre,
+    int? Score = null
 );
 public record CrearOportunidadDesdeLeadRequest(
     string? Nombre, decimal ValorEstimado, string ConfianzaCierre,
@@ -175,6 +193,17 @@ public record ConvertirCotizacionResponse(int FacturaId);
 public record CotizacionPdfData(
     int CotizacionID, string Cliente, DateTime Fecha, DateTime? ValidoHasta,
     string Estado, string? Notas, string Empresa, List<CotizacionLineaItem> Lineas
+);
+
+// ---------- Métricas del Pipeline ----------
+public record PipelineEtapaConteo(string Etapa, string Etiqueta, int Count);
+public record PipelineMetricasDto(
+    int LeadsActivos,
+    List<PipelineEtapaConteo> LeadsPorEtapa,
+    decimal ValorTotalOportunidades,
+    int OportunidadesActivas,
+    double TasaConversion,
+    double? DiasPromedioCierre
 );
 
 // ---------- Segmentación automática de clientes ----------

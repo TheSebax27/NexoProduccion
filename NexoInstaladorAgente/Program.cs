@@ -120,7 +120,13 @@ Verde("[OK]");
 Paso("Escribiendo configuracion...         ");
 try
 {
-    File.WriteAllText(Path.Combine(Carpeta, "appsettings.json"), appsettingsJson, Encoding.UTF8);
+    var settingsPath = Path.Combine(Carpeta, "appsettings.json");
+    if (File.Exists(settingsPath))
+    {
+        var backup = settingsPath + $".bak_{DateTime.Now:yyyyMMddHHmmss}";
+        File.Copy(settingsPath, backup, overwrite: true);
+    }
+    File.WriteAllText(settingsPath, appsettingsJson, Encoding.UTF8);
 }
 catch (Exception ex) { Fallo($"No se pudo escribir la configuracion: {ex.Message}"); return; }
 Verde("[OK]");

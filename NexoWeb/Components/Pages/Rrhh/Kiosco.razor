@@ -12,6 +12,7 @@
     .kiosco { display:flex; flex-direction:column; align-items:center; justify-content:center;
               min-height:100vh; background:#0f172a; color:#f1f5f9; text-align:center; padding:2rem; }
     .k-time { font-size:4rem; font-weight:700; letter-spacing:.1em; font-variant-numeric:tabular-nums; }
+    @@media (max-width:480px) { .k-time { font-size:2.5rem; } .k-qr img { width:200px; height:200px; } }
     .k-date { font-size:1.2rem; color:#94a3b8; margin-bottom:1.5rem; }
     .k-qr   { background:#fff; padding:16px; border-radius:16px; margin:1.5rem 0;
               box-shadow:0 20px 60px rgba(0,0,0,.5); }
@@ -33,7 +34,16 @@
     <div class="k-date">@_fecha</div>
 
     <div class="k-qr">
-        <img src="@_qrSrc" alt="QR de asistencia" />
+        @if (!string.IsNullOrEmpty(_qrSrc))
+        {
+            <img src="@_qrSrc" alt="QR de asistencia" />
+        }
+        else
+        {
+            <div style="width:280px;height:280px;display:flex;align-items:center;justify-content:center;color:#64748b;">
+                <MudProgressCircular Indeterminate />
+            </div>
+        }
     </div>
 
     <MudText Typo="Typo.body1" Style="color:#e2e8f0">

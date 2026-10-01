@@ -31,22 +31,13 @@
                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                   Immediate="true" DebounceInterval="400" OnDebounceIntervalElapsed="CargarAsync"
                   Style="flex:2; min-width:200px;" />
-    <MudSelect T="int?" Value="_filtroCentroCostoId" ValueChanged="OnCentroCostoCambiadoAsync"
-               Label="Centro de Costo" Variant="Variant.Outlined" Clearable="true"
-               Style="flex:1; min-width:160px;">
-        @foreach (var cc in _centrosCosto)
-        {
-            <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
-        }
-    </MudSelect>
-    <MudSelect T="int?" @bind-Value="_filtroBodegaId" @bind-Value:after="CargarAsync"
-               Label="Bodega" Variant="Variant.Outlined" Clearable="true"
-               Style="flex:1; min-width:160px;">
-        @foreach (var b in _bodegasFiltradas)
-        {
-            <MudSelectItem T="int?" Value="@b.BodegaID">@b.Nombre</MudSelectItem>
-        }
-    </MudSelect>
+    <AppSelect TValue="int?" Value="_filtroCentroCostoId" ValueChanged="OnCentroCostoCambiadoAsync"
+               Label="Centro de Costo" Style="flex:1; min-width:160px;"
+               Items="@(_centrosCosto.Select(cc => new AppSelectItem<int?>(cc.Nombre, (int?)cc.CentroCostoID)))" />
+    <AppSelect TValue="int?" Value="_filtroBodegaId"
+               ValueChanged="@(async (int? v) => { _filtroBodegaId = v; await CargarAsync(); })"
+               Label="Bodega" Style="flex:1; min-width:160px;"
+               Items="@(_bodegasFiltradas.Select(b => new AppSelectItem<int?>(b.Nombre, (int?)b.BodegaID)))" />
     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CargarAsync"
                StartIcon="@Icons.Material.Filled.Refresh" Style="flex-shrink:0;">
         Actualizar
@@ -79,6 +70,16 @@
                 <span class="inv-kpi__value">@_grupos.Count(g => g.RequierePedido && g.CantidadTotal > 0)</span>
             </div>
         }
+        @{
+            var agotaProx = _grupos.Count(g => g.CantidadTotal > 0 && g.DiasAgotamiento is > 0 and <= 30);
+        }
+        @if (agotaProx > 0)
+        {
+            <div class="inv-kpi inv-kpi--warn">
+                <span class="inv-kpi__label">Se agota &lt;30d</span>
+                <span class="inv-kpi__value">@agotaProx</span>
+            </div>
+        }
     </div>
 }
 
@@ -105,7 +106,10 @@ else if (Preferencias.VistaListado == "tarjetas")
     <div class="inv-grid">
         @foreach (var g in _grupos)
         {
-            <div class="inv-card @(g.CantidadTotal <= 0 ? "inv-card--agotado" : g.RequierePedido ? "inv-card--warn" : "")">
+            <div class="inv-card @(g.CantidadTotal <= 0 ? "inv-card--agotado" : g.RequierePedido ? "inv-card--warn" : "")"
+                 style="cursor:pointer;"
+                 @onclick="@(() => Navegacion.NavigateTo($"/inventario/kardex?articuloId={g.ArticuloID}"))"
+                 title="Ver movimientos en kardex">
                 @if (g.TieneImagen)
                 {
                     <img src="@($"api/catalogo/articulos/{g.ArticuloID}/imagen?v={_cacheBust}")" alt=""
@@ -121,11 +125,11 @@ else if (Preferencias.VistaListado == "tarjetas")
                         <span>Bodega</span>
                         <strong>@g.Bodega</strong>
                     </div>
-                    @if (g.Unidad is not null)
+                    @if (g.Unidad is not null || g.PresentacionNombre is not null)
                     {
                         <div class="inv-card__row">
                             <span>Presentación</span>
-                            <span class="inv-pres">@g.Unidad</span>
+                            <span class="inv-pres">@(g.PresentacionNombre ?? g.Unidad)</span>
                         </div>
                     }
                     <div class="inv-card__row">
@@ -142,9 +146,17 @@ else if (Preferencias.VistaListado == "tarjetas")
                         <span>P. Venta</span>
                         <span class="inv-valor--verde">@g.PrecioVenta.ToString("C0")</span>
                     </div>
+                    @if (g.CantidadTotal > 0 && g.DiasAgotamiento is { } diasCard)
+                    {
+                        var colorCard2 = diasCard <= 7 ? "inv-valor--rojo" : diasCard <= 30 ? "inv-valor--naranja" : "inv-muted";
+                        <div class="inv-card__row">
+                            <span>Se agota en</span>
+                            <span class="@colorCard2">@diasCard días</span>
+                        </div>
+                    }
                     @if (g.Lotes.Count > 1)
                     {
-                        <button class="inv-lotes-btn" @onclick="@(() => ToggleExpand(g.Key))">
+                        <button class="inv-lotes-btn" @onclick="@(() => ToggleExpand(g.Key))" @onclick:stopPropagation="true">
                             @g.Lotes.Count lotes @(_expandidos.Contains(g.Key) ? "▲" : "▼")
                         </button>
                         @if (_expandidos.Contains(g.Key))
@@ -175,7 +187,7 @@ else if (Preferencias.VistaListado == "tarjetas")
                     }
                     @if (g.CantidadTotal <= 0 || g.RequierePedido)
                     {
-                        <div class="inv-card__alerta">
+                        <div class="inv-card__alerta" @onclick:stopPropagation="true">
                             <MudChip T="string"
                                      Color="@(g.CantidadTotal <= 0 ? Color.Error : Color.Warning)"
                                      Size="Size.Small"
@@ -189,7 +201,7 @@ else if (Preferencias.VistaListado == "tarjetas")
                     @if (GrupoTieneVencimientoAlerta(g))
                     {
                         var hayVencidos = g.Lotes.Any(l => ObtenerEstadoLote(l.FechaVencimiento) == EstadoLote.Vencido);
-                        <div class="inv-card__alerta">
+                        <div class="inv-card__alerta" @onclick:stopPropagation="true">
                             <MudChip T="string"
                                      Color="@(hayVencidos ? Color.Error : Color.Warning)"
                                      Size="Size.Small"
@@ -220,6 +232,7 @@ else
                     <th class="inv-table__num" title="Valor valorado al costo de cada lote">Valor stock</th>
                     <th class="inv-table__num" title="Costo promedio ponderado del catálogo">Costo prom.</th>
                     <th class="inv-table__num">P. Venta</th>
+                    <th class="inv-table__num" title="Días estimados para agotarse al ritmo de consumo actual (últimos 30 días)">Se agota en</th>
                     <th></th>
                 </tr>
             </thead>
@@ -252,12 +265,12 @@ else
                             {
                                 <div class="inv-pres">Caja · @g.UnidadesPorEmbalaje.Value.ToString("N0") und</div>
                                 <div class="inv-pres-sub" style="color:var(--n-text-3); font-size:.72rem;">
-                                    @(g.Unidad?.ToUpper() ?? "CJA")
+                                    @(g.PresentacionNombre ?? g.Unidad?.ToUpper() ?? "CJA")
                                 </div>
                             }
                             else if (g.Unidad is not null)
                             {
-                                <span class="inv-pres">@g.Unidad.ToUpper()</span>
+                                <span class="inv-pres">@(g.PresentacionNombre ?? g.Unidad.ToUpper())</span>
                                 <div class="inv-pres-sub" style="color:var(--n-text-3); font-size:.72rem;">Suelto</div>
                             }
                             else { <span class="inv-muted">—</span> }
@@ -276,6 +289,19 @@ else
                         <td class="inv-table__num">@g.ValorTotal.ToString("C0")</td>
                         <td class="inv-table__num inv-muted">@g.CostoPromedio.ToString("C0")</td>
                         <td class="inv-table__num inv-valor--verde">@g.PrecioVenta.ToString("C0")</td>
+                        <td class="inv-table__num">
+                            @if (g.CantidadTotal > 0 && g.DiasAgotamiento is { } dias)
+                            {
+                                var color = dias <= 7 ? "inv-valor--rojo" : dias <= 30 ? "inv-valor--naranja" : "inv-muted";
+                                <span class="@color" title="@($"Consumo prom. {g.Lotes.FirstOrDefault()?.ConsumoDiarioProm?.ToString("N3") ?? "—"}/día")">
+                                    @dias d
+                                </span>
+                            }
+                            else if (g.CantidadTotal > 0)
+                            {
+                                <span class="inv-muted" title="Sin movimientos en los últimos 30 días">—</span>
+                            }
+                        </td>
                         <td style="white-space:nowrap;">
                             @if (g.CantidadTotal <= 0 || g.RequierePedido)
                             {
@@ -352,7 +378,9 @@ else
         int BodegaID, string Bodega, int CentroCostoID, string CentroCosto,
         decimal CantidadTotal, decimal ValorTotal, bool RequierePedido, bool TieneImagen,
         List<StockConsolidadoItem> Lotes,
-        decimal CostoPromedio, decimal PrecioVenta
+        decimal CostoPromedio, decimal PrecioVenta,
+        int? DiasAgotamiento,
+        string? PresentacionNombre = null
     );
 
     private List<StockConsolidadoItem> _stock = new();
@@ -404,7 +432,7 @@ else
         try
         {
             var p = new List<string>();
-            if (!string.IsNullOrWhiteSpace(_filtroSku)) p.Add($"sku={Uri.EscapeDataString(_filtroSku)}");
+            if (!string.IsNullOrWhiteSpace(_filtroSku)) p.Add($"filtro={Uri.EscapeDataString(_filtroSku)}");
             if (_filtroCentroCostoId is not null) p.Add($"centroCostoId={_filtroCentroCostoId}");
             if (_filtroBodegaId is not null) p.Add($"bodegaId={_filtroBodegaId}");
 
@@ -418,13 +446,17 @@ else
                     var first = g.First();
                     var key = (first.ArticuloID, first.BodegaID, first.CentroCostoID);
                     var total = g.Sum(s => s.CantidadActual);
+                    var dias = first.ConsumoDiarioProm is > 0
+                        ? (int?)(total / first.ConsumoDiarioProm.Value)
+                        : null;
                     return new GrupoStock(key,
                         first.ArticuloID, first.SKU, first.Articulo, first.TipoArticulo,
                         first.Unidad, first.UnidadesPorEmbalaje,
                         first.BodegaID, first.Bodega, first.CentroCostoID, first.CentroCosto,
                         total, g.Sum(s => s.ValorTotal),
                         first.StockMinimo > 0 && total <= first.StockMinimo,
-                        first.TieneImagen, g.ToList(), first.CostoPromedio, first.PrecioVenta);
+                        first.TieneImagen, g.ToList(), first.CostoPromedio, first.PrecioVenta, dias,
+                        first.PresentacionNombre);
                 })
                 .ToList();
         }
@@ -446,12 +478,11 @@ else
         return g.TipoArticulo == "Producto Terminado" ? "Nueva producción" : "Requiere pedido";
     }
 
-    // Usa UnidadesPorEmbalaje (no Unidad=="cja") porque Unidad ahora es PresentacionCodigo
     private static string FormatearCantidad(decimal cantidad, string? unidad, decimal? unidadesPorEmbalaje)
     {
         if (unidadesPorEmbalaje is > 0)
             return StockHelper.FormatearCajaUnidades(cantidad, unidadesPorEmbalaje.Value);
-        return $"{cantidad:N2} {unidad}".Trim();
+        return cantidad.ToString("N2");
     }
 
     // Estado de vencimiento de un lote (solo aplica si ManejarVencimientos está activo)

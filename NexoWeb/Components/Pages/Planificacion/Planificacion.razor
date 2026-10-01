@@ -233,7 +233,108 @@
         }
     </MudTabPanel>
 
-    @* ════ Tab 2: Demanda Proyectada ════ *@
+    @* ════ Tab 2: Predicción de Demanda ════ *@
+    <MudTabPanel Text="Predicción" Icon="@Icons.Material.Outlined.AutoGraph">
+
+        <div class="d-flex align-center mt-2 mb-3" style="gap:1rem;flex-wrap:wrap">
+            <MudText Typo="Typo.body2" Style="color:var(--mud-palette-text-secondary)">
+                Media móvil de los últimos 3 meses completos del Kardex.
+                Próximo mes: <strong>@(new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(1).ToString("MMMM yyyy"))</strong>
+            </MudText>
+            @{
+                var hoyMes = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                var labelM3 = hoyMes.AddMonths(-3).ToString("MMM");
+                var labelM2 = hoyMes.AddMonths(-2).ToString("MMM");
+                var labelM1 = hoyMes.AddMonths(-1).ToString("MMM");
+            }
+        </div>
+
+        @if (_cargandoPrediccion)
+        { <MudProgressCircular Indeterminate="true" Class="ma-4" /> }
+        else if (_prediccion.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info">Sin movimientos en los últimos 3 meses. No hay datos para proyectar.</MudAlert>
+        }
+        else
+        {
+            <div class="d-flex align-center mb-3" style="gap:0.5rem;flex-wrap:wrap">
+                <MudTextField @bind-Value="_filtroPred" Label="Filtrar artículo" Immediate="true"
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              Style="max-width:280px" />
+                <MudChip T="string" Size="Size.Small"
+                         Color="@(_filtroPredTipo is null ? Color.Primary : Color.Default)"
+                         OnClick="@(() => { _filtroPredTipo = null; })" Variant="Variant.Outlined">Todos</MudChip>
+                @foreach (var tipo in _prediccion.Select(p => p.TipoArticulo).Distinct().OrderBy(t => t))
+                {
+                    <MudChip T="string" Size="Size.Small"
+                             Color="@(_filtroPredTipo == tipo ? Color.Primary : Color.Default)"
+                             OnClick="@(() => _filtroPredTipo = tipo)" Variant="Variant.Outlined">@tipo</MudChip>
+                }
+            </div>
+
+            <MudTable Items="_prediccionFiltrada" Hover="true" Dense="true" Striped="true" FixedHeader="true" Height="60vh">
+                <HeaderContent>
+                    <MudTh>Artículo</MudTh>
+                    <MudTh>Tipo</MudTh>
+                    <MudTh Style="text-align:right">@labelM3</MudTh>
+                    <MudTh Style="text-align:right">@labelM2</MudTh>
+                    <MudTh Style="text-align:right">@labelM1</MudTh>
+                    <MudTh Style="text-align:right">Media Móvil</MudTh>
+                    <MudTh Style="text-align:right">Tendencia</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    @{
+                        var tendencia = TendenciaPrediccion(context);
+                    }
+                    <MudTd DataLabel="Artículo">
+                        <div style="font-weight:500;font-size:.85rem">@context.Articulo</div>
+                        <div style="font-size:.72rem;color:var(--mud-palette-text-secondary)">@context.SKU</div>
+                    </MudTd>
+                    <MudTd DataLabel="Tipo">
+                        <MudChip T="string" Size="Size.Small" Style="font-size:0.68rem;height:20px">@context.TipoArticulo</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="@labelM3" Style="text-align:right;font-variant-numeric:tabular-nums;color:var(--mud-palette-text-secondary)">
+                        @context.ConsumoM3.ToString("N2")
+                    </MudTd>
+                    <MudTd DataLabel="@labelM2" Style="text-align:right;font-variant-numeric:tabular-nums;color:var(--mud-palette-text-secondary)">
+                        @context.ConsumoM2.ToString("N2")
+                    </MudTd>
+                    <MudTd DataLabel="@labelM1" Style="text-align:right;font-variant-numeric:tabular-nums">
+                        @context.ConsumoM1.ToString("N2")
+                    </MudTd>
+                    <MudTd DataLabel="Media Móvil" Style="text-align:right">
+                        <span style="font-weight:700;font-size:.9rem">@context.MediaMovil.ToString("N2")</span>
+                    </MudTd>
+                    <MudTd DataLabel="Tendencia" Style="text-align:right">
+                        @if (tendencia > 0)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small"
+                                     Style="color:var(--mud-palette-success)" Title="Consumo creciente" />
+                        }
+                        else if (tendencia < 0)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingDown" Size="Size.Small"
+                                     Style="color:var(--mud-palette-error)" Title="Consumo decreciente" />
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingFlat" Size="Size.Small"
+                                     Style="opacity:.4" Title="Consumo estable" />
+                        }
+                    </MudTd>
+                    <MudTd>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                                   OnClick="@(() => AbrirPrediccionComoProyeccionAsync(context))">
+                            Crear Proyección
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudTabPanel>
+
+    @* ════ Tab 3: Demanda Proyectada ════ *@
     <MudTabPanel Text="Demanda Proyectada" Icon="@Icons.Material.Filled.Factory">
 
         <div class="d-flex align-center mt-2 mb-4">
@@ -369,6 +470,19 @@
     private decimal _totalReal  => _metas.Sum(m => m.VentaReal);
     private double  _pctGlobal  => _totalMeta > 0 ? (double)(_totalReal / _totalMeta * 100) : 0;
 
+    // ── Predicción de Demanda ──
+    private List<PrediccionDemandaItem> _prediccion = new();
+    private bool _cargandoPrediccion = true;
+    private string? _filtroPred;
+    private string? _filtroPredTipo;
+
+    private IEnumerable<PrediccionDemandaItem> _prediccionFiltrada =>
+        _prediccion.Where(p =>
+            (string.IsNullOrWhiteSpace(_filtroPred) ||
+             p.Articulo.Contains(_filtroPred, StringComparison.OrdinalIgnoreCase) ||
+             p.SKU.Contains(_filtroPred, StringComparison.OrdinalIgnoreCase)) &&
+            (_filtroPredTipo is null || p.TipoArticulo == _filtroPredTipo));
+
     // ── Demanda Proyectada ──
     private List<DemandaProyectadaItem> _demanda  = new();
     private List<HistoricoCumplimientoItem> _historico = new();
@@ -432,8 +546,9 @@
         var t2 = ApiClient.GetAsync<List<MetaVentaItem>>("api/planificacion/metas-venta");
         var t3 = ApiClient.GetAsync<List<DemandaProyectadaItem>>("api/planificacion/demanda");
         var t4 = ApiClient.GetAsync<List<HistoricoCumplimientoItem>>("api/planificacion/historico-cumplimiento?meses=12");
+        var t5 = ApiClient.GetAsync<List<PrediccionDemandaItem>>("api/planificacion/prediccion-demanda");
 
-        try { await Task.WhenAll(t1, t2, t3, t4); } catch { }
+        try { await Task.WhenAll(t1, t2, t3, t4, t5); } catch { }
 
         try { _centrosCosto = await t1 ?? new(); } catch { }
 
@@ -444,6 +559,10 @@
         try { _demanda = await t3 ?? new(); _historico = await t4 ?? new(); }
         catch (Exception ex) { _errorDem = ex.Message; }
         finally { _cargandoDem = false; }
+
+        try { _prediccion = await t5 ?? new(); }
+        catch { }
+        finally { _cargandoPrediccion = false; }
     }
 
     // ── Metas ──
@@ -527,6 +646,41 @@
         {
             await ApiClient.PostAsync<CrearDemandaRequest, object?>("api/planificacion/demanda", (CrearDemandaRequest)r.Data!);
             Snackbar.Add("Proyeccion creada correctamente.", Severity.Success);
+            await CargarDemandaAsync();
+        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+    }
+
+    // ── Predicción ──
+    // Tendencia: compara M1 vs M3. >0 creciente, <0 decreciente, 0 estable.
+    private static int TendenciaPrediccion(PrediccionDemandaItem p)
+    {
+        if (p.ConsumoM3 == 0) return 0;
+        var delta = p.ConsumoM1 - p.ConsumoM3;
+        if (delta > p.ConsumoM3 * 0.1m) return 1;
+        if (delta < -p.ConsumoM3 * 0.1m) return -1;
+        return 0;
+    }
+
+    private async Task AbrirPrediccionComoProyeccionAsync(PrediccionDemandaItem pred)
+    {
+        var artSugerido = new ArticuloItem(
+            pred.ArticuloID, pred.SKU, pred.Articulo, null, pred.TipoArticulo,
+            0, 0, 0, true, 0, null, null, false, null, null);
+
+        var p = new DialogParameters<DemandaDialog>
+        {
+            { x => x.CentrosCosto, _centrosCosto },
+            { x => x.ArticuloSugerido, artSugerido },
+            { x => x.CantidadSugerida, pred.MediaMovil }
+        };
+        var d = await DialogService.ShowAsync<DemandaDialog>($"Proyección — {pred.Articulo}", p);
+        var r = await d.Result;
+        if (r is null || r.Canceled) return;
+        try
+        {
+            await ApiClient.PostAsync<CrearDemandaRequest, object?>("api/planificacion/demanda", (CrearDemandaRequest)r.Data!);
+            Snackbar.Add("Proyección creada correctamente.", Severity.Success);
             await CargarDemandaAsync();
         }
         catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }

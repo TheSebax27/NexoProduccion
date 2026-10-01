@@ -3,13 +3,8 @@
 <MudDialog>
     <DialogContent>
         <MudForm @ref="_form">
-            <MudSelect T="string?" @bind-Value="_grupoMayor" Label="Grupo Mayor" Required="true"
-                       RequiredError="Selecciona un Grupo Mayor" Class="mb-3">
-                @foreach (var gm in GruposMayores)
-                {
-                    <MudSelectItem T="string?" Value="@gm.Codigo">@gm.Codigo &mdash; @gm.Nombre</MudSelectItem>
-                }
-            </MudSelect>
+            <AppSelect TValue="string?" @bind-Value="_grupoMayor" Label="Grupo Mayor" Class="mb-3"
+                       Items="@(GruposMayores.Select(gm => new AppSelectItem<string?>($"{gm.Codigo} — {gm.Nombre}", gm.Codigo)))" />
             <MudTextField @bind-Value="_codigo" Label="Codigo" Required="true"
                           RequiredError="El codigo es obligatorio" Class="mb-3"
                           MaxLength="10" HelperText="Maximo 10 caracteres" />

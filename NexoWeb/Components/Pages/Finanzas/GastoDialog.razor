@@ -27,14 +27,8 @@
                                  Adornment="Adornment.Start" AdornmentText="$" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo"
-                           Variant="Variant.Outlined">
-                    <MudSelectItem T="int?" Value="@((int?)null)">🏢 Empresa en general</MudSelectItem>
-                    @foreach (var cc in CentrosCosto)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)cc.CentroCostoID)">@cc.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" @bind-Value="_centroCostoId" Label="Centro de Costo"
+                           Items="@(new[] { new AppSelectItem<int?>("🏢 Empresa en general", (int?)null) }.Concat(CentrosCosto.Select(cc => new AppSelectItem<int?>(cc.Nombre, (int?)cc.CentroCostoID))))" />
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudAutocomplete T="string?" @bind-Value="_proveedor"

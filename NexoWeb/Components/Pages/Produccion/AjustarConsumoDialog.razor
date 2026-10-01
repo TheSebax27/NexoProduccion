@@ -49,13 +49,8 @@
 
                     @if (_nuevaCantidad > _consumoSeleccionado.CantidadTeorica)
                     {
-                        <MudSelect T="int?" @bind-Value="_motivoExcesoId" Label="Motivo de exceso (requerido)" Class="mb-3" Required="true">
-                            <MudSelectItem T="int?" Value="@((int?)null)">-- Seleccione --</MudSelectItem>
-                            @foreach (var m in _motivos)
-                            {
-                                <MudSelectItem T="int?" Value="@((int?)m.MotivoExcesoID)">@m.Nombre</MudSelectItem>
-                            }
-                        </MudSelect>
+                        <AppSelect TValue="int?" @bind-Value="_motivoExcesoId" Label="Motivo de exceso (requerido)" Class="mb-3"
+                                   Items="@(new[] { new AppSelectItem<int?>("-- Seleccione --", (int?)null) }.Concat(_motivos.Select(m => new AppSelectItem<int?>(m.Nombre, (int?)m.MotivoExcesoID))))" />
                     }
 
                     <MudTextField @bind-Value="_observacion" Label="Observacion (opcional)" Lines="2" Class="mb-3" />

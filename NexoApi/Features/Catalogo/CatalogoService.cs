@@ -666,7 +666,7 @@ public class CatalogoService : ICatalogoService
         var datos = Convert.FromBase64String(r.Base64);
 
         var filas = await connection.ExecuteAsync(
-            "UPDATE Catalogo.Tarjetas SET Imagen = @Datos, ImagenContentType = @ContentType WHERE ArticuloID = @ArticuloId",
+            "UPDATE Catalogo.Tarjetas SET Imagen = @Datos, ImagenContentType = @ContentType, FechaImagenActualizada = GETUTCDATE() WHERE ArticuloID = @ArticuloId",
             new { ArticuloId = articuloId, Datos = datos, r.ContentType });
 
         if (filas == 0)

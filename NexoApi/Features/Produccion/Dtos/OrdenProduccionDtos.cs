@@ -62,3 +62,27 @@ public record ConsumoOpItem(
 );
 
 public record MotivoExcesoItem(int MotivoExcesoID, string Nombre);
+
+public record FaltanteMaterialItem(
+    int    OrdenProduccionID,
+    string CodigoOP,
+    string Producto,
+    string Estado,
+    string Insumo,
+    string Unidad,
+    decimal CantidadRequerida,
+    decimal StockDisponible,
+    decimal Faltante
+);
+
+public record DesviacionConsumoItem(
+    int      OrdenProduccionID,
+    string   CodigoOP,
+    string   Producto,
+    DateTime? FechaFin,
+    string   Insumo,
+    string   Unidad,
+    decimal  CantidadTeorica,
+    decimal  CantidadReal,
+    decimal  Desviacion
+);

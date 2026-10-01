@@ -130,11 +130,16 @@ public class TareaExportarVentas
             {
                 var idEventoExterno = $"{venta.CENTROCOSTO}-{venta.TIPDOC}-{venta.NRODOC}-{venta.ORDEN}-{venta.REFERENCIA}";
 
+                // TipoEvento siempre "VENTA": el constraint CK_EventosEntrantes_TipoEvento en NEXO
+                // solo acepta VENTA/AJUSTE_INVENTARIO/ENTRADA_COMPRA. El tipo real se discrimina
+                // por TipDoc en el servicio para elegir el SP correcto (NOTA/TIQUETE DEVOLUCION).
+                var tipoEvento = "VENTA";
+
                 var esJuridica = (venta.ClienteTipoTercero ?? "").Contains("JURIDICA", StringComparison.OrdinalIgnoreCase)
                     || !string.IsNullOrWhiteSpace(venta.ClienteEmpresa);
 
                 await _apiClient.RegistrarEventoEntranteAsync(new RegistrarEventoEntranteRequest(
-                    idEventoExterno, "VENTA", venta.REFERENCIA, venta.CANTIDAD, venta.FECDOC,
+                    idEventoExterno, tipoEvento, venta.REFERENCIA, venta.CANTIDAD, venta.FECDOC,
                     venta.DetalleTarjeta ?? "", venta.CostoTarjeta ?? 0m, venta.PPublicoTarjeta ?? 0m,
                     venta.NIT, venta.CLIENTE,
                     TipDoc:                  venta.TIPDOC,

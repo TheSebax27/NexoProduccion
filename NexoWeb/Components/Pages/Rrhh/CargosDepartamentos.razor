@@ -75,12 +75,8 @@
         <MudForm @ref="_formCargo" Class="mb-3">
             <div class="d-flex align-center flex-wrap mb-2" style="gap: 0.5rem;">
                 <MudTextField @bind-Value="_nombreCargo" Label="Nombre del Cargo" Style="flex: 2;" />
-                <MudSelect T="int?" @bind-Value="_departamentoIdCargo" Label="Departamento (opcional)" Clearable="true" Style="flex: 1;">
-                    @foreach (var d in _departamentos.Where(d => d.Estado))
-                    {
-                        <MudSelectItem T="int?" Value="@d.DepartamentoID">@d.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" @bind-Value="_departamentoIdCargo" Label="Departamento (opcional)" Style="flex: 1;"
+                           Items="@(_departamentos.Where(d => d.Estado).Select(d => new AppSelectItem<int?>(d.Nombre, (int?)d.DepartamentoID)))" />
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CrearCargoAsync">Agregar</MudButton>
             </div>
         </MudForm>

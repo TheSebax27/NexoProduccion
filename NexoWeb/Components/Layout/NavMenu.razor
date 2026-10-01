@@ -35,7 +35,13 @@
                     {
                         <MudNavLink Href="/facturacion"
                                     Icon="@Icons.Material.Filled.Receipt"
-                                    Class="nexo-nav-item">Salidas</MudNavLink>
+                                    Class="nexo-nav-item">
+                            Salidas
+                            @if (_stockFallidoCount > 0)
+                            {
+                                <span class="nexo-nav-alerta-badge" title="@_stockFallidoCount factura(s) con stock sin descontar">@_stockFallidoCount</span>
+                            }
+                        </MudNavLink>
                         <MudNavLink Href="/compras/ordenes"
                                     Icon="@Icons.Material.Filled.MoveToInbox"
                                     Class="nexo-nav-item">Entradas</MudNavLink>
@@ -160,6 +166,12 @@
                                     Icon="@Icons.Material.Filled.MenuBook"
                                     Class="nexo-nav-item">Recetas (BOM)</MudNavLink>
                     }
+                    @if (Modulos.EsVisible("PRODUCCION.CONTROL_CONSUMOS"))
+                    {
+                        <MudNavLink Href="/produccion/control-consumos"
+                                    Icon="@Icons.Material.Filled.Analytics"
+                                    Class="nexo-nav-item">Control de Consumos</MudNavLink>
+                    }
                     @if (Modulos.EsVisible("PRODUCCION.MAQUINARIA"))
                     {
                         <MudNavLink Href="/produccion/maquinaria"
@@ -205,6 +217,12 @@
                         <MudNavLink Href="/inventario/bajas"
                                     Icon="@Icons.Material.Filled.RemoveCircleOutline"
                                     Class="nexo-nav-item">Registrar Baja</MudNavLink>
+                    }
+                    @if (Modulos.EsVisible("INVENTARIO.MERMAS"))
+                    {
+                        <MudNavLink Href="/inventario/mermas"
+                                    Icon="@Icons.Material.Filled.TrendingDown"
+                                    Class="nexo-nav-item">Análisis de Mermas</MudNavLink>
                     }
                     @if (Modulos.EsVisible("INVENTARIO.TRASPASOS"))
                     {
@@ -306,6 +324,9 @@
                         <MudNavLink Href="/admin/roles"
                                     Icon="@Icons.Material.Filled.AdminPanelSettings"
                                     Class="nexo-nav-item">Roles y Módulos</MudNavLink>
+                        <MudNavLink Href="/admin/audit-log"
+                                    Icon="@Icons.Material.Outlined.ManageSearch"
+                                    Class="nexo-nav-item">Audit Log</MudNavLink>
                     </MudNavGroup>
                 </Authorized>
             </AuthorizeView>
@@ -319,6 +340,9 @@
     [Inject] private NexoWeb.Common.Auth.ConfiguracionEmpresaState ConfiguracionEmpresa { get; set; } = default!;
     [Inject] private NexoWeb.Common.Auth.ModulosVisiblesState Modulos { get; set; } = default!;
     [Inject] private NexoWeb.Common.Auth.AuthStateService Auth { get; set; } = default!;
+    [Inject] private INexoApiClient ApiClient { get; set; } = default!;
+
+    private int _stockFallidoCount;
 
     private static readonly List<string> _ordenDefault = new()
     {
@@ -345,6 +369,8 @@
         Auth.OnChange += RecargarModulos;
 
         await Modulos.CargarAsync(Auth.Rol, Auth.UsuarioId);
+        try { _stockFallidoCount = await ApiClient.GetAsync<int>("api/facturacion/stock-fallido-count"); }
+        catch { _stockFallidoCount = 0; }
     }
 
     private void OnEstadoCambio() => InvokeAsync(StateHasChanged);

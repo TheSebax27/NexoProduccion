@@ -20,12 +20,8 @@
                 <MudForm @ref="_formTarea" Class="mb-3">
                     <div class="d-flex align-center flex-wrap mb-2" style="gap: 0.5rem;">
                         <MudTextField @bind-Value="_tituloTarea" Label="Nueva tarea" Style="flex: 2; min-width: 160px;" />
-                        <MudSelect T="int?" @bind-Value="_responsableId" Label="Responsable" Clearable="true" Style="flex: 1; min-width: 140px;">
-                            @foreach (var e in Empleados)
-                            {
-                                <MudSelectItem T="int?" Value="@e.EmpleadoID">@e.Nombres @e.Apellidos</MudSelectItem>
-                            }
-                        </MudSelect>
+                        <AppSelect TValue="int?" @bind-Value="_responsableId" Label="Responsable" Style="flex: 1; min-width: 140px;"
+                                   Items="@(Empleados.Select(e => new AppSelectItem<int?>($"{e.Nombres} {e.Apellidos}", (int?)e.EmpleadoID)))" />
                         <MudDatePicker @bind-Date="_fechaLimiteTarea" Label="Fecha limite" Style="flex: 1; min-width: 140px;" />
                         <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" OnClick="AgregarTareaAsync" />
                     </div>
@@ -118,11 +114,8 @@
                             <MudTd DataLabel="Hito">@context.Nombre</MudTd>
                             <MudTd DataLabel="Fecha Objetivo">@context.FechaObjetivo.ToString("dd/MM/yyyy")</MudTd>
                             <MudTd DataLabel="Estado">
-                                <MudSelect T="string" Value="context.Estado" ValueChanged="@((string v) => CambiarEstadoHitoAsync(context, v))" Dense="true">
-                                    <MudSelectItem Value="@("PENDIENTE")">Pendiente</MudSelectItem>
-                                    <MudSelectItem Value="@("EN_PROGRESO")">En Progreso</MudSelectItem>
-                                    <MudSelectItem Value="@("COMPLETADO")">Completado</MudSelectItem>
-                                </MudSelect>
+                                <AppSelect TValue="string" Value="context.Estado" ValueChanged="@((string v) => CambiarEstadoHitoAsync(context, v))"
+                                           Items="@(new AppSelectItem<string>[]{ new("Pendiente","PENDIENTE"), new("En Progreso","EN_PROGRESO"), new("Completado","COMPLETADO") })" />
                             </MudTd>
                         </RowTemplate>
                     </MudTable>
@@ -132,22 +125,15 @@
             <MudTabPanel Text="Costos">
                 <MudForm @ref="_formCosto" Class="mb-3">
                     <div class="d-flex align-center mb-2" style="gap: 0.5rem;">
-                        <MudSelect T="string" @bind-Value="_tipoCosto" Label="Tipo" Style="flex: 1;">
-                            <MudSelectItem Value="@("MANO_OBRA")">Mano de Obra</MudSelectItem>
-                            <MudSelectItem Value="@("MATERIAL")">Material</MudSelectItem>
-                            <MudSelectItem Value="@("OTRO")">Otro</MudSelectItem>
-                        </MudSelect>
+                        <AppSelect TValue="string" @bind-Value="_tipoCosto" Label="Tipo" Style="flex: 1;"
+                                   Items="@(new AppSelectItem<string>[]{ new("Mano de Obra","MANO_OBRA"), new("Material","MATERIAL"), new("Otro","OTRO") })" />
                         <MudTextField @bind-Value="_descripcionCosto" Label="Descripcion" Style="flex: 2;" />
                         <MudNumericField T="decimal" @bind-Value="_valorCosto" Label="Valor ($)" Style="flex: 1;" />
                     </div>
                     @if (_tipoCosto == "MANO_OBRA")
                     {
-                        <MudSelect T="int?" @bind-Value="_empleadoIdCosto" Label="Empleado" Clearable="true" Class="mb-2">
-                            @foreach (var e in Empleados)
-                            {
-                                <MudSelectItem T="int?" Value="@e.EmpleadoID">@e.Nombres @e.Apellidos</MudSelectItem>
-                            }
-                        </MudSelect>
+                        <AppSelect TValue="int?" @bind-Value="_empleadoIdCosto" Label="Empleado" Class="mb-2"
+                                   Items="@(Empleados.Select(e => new AppSelectItem<int?>($"{e.Nombres} {e.Apellidos}", (int?)e.EmpleadoID)))" />
                     }
                     else if (_tipoCosto == "MATERIAL")
                     {
@@ -185,12 +171,8 @@
 
             <MudTabPanel Text="Documentos">
                 <div class="d-flex align-center flex-wrap mb-3" style="gap: 0.5rem;">
-                    <MudSelect T="string" @bind-Value="_tipoDocumento" Label="Tipo" Style="max-width: 200px;">
-                        <MudSelectItem Value="@("CONTRATO")">Contrato</MudSelectItem>
-                        <MudSelectItem Value="@("PLANO")">Plano</MudSelectItem>
-                        <MudSelectItem Value="@("COTIZACION")">Cotización</MudSelectItem>
-                        <MudSelectItem Value="@("OTRO")">Otro</MudSelectItem>
-                    </MudSelect>
+                    <AppSelect TValue="string" @bind-Value="_tipoDocumento" Label="Tipo" Style="max-width: 200px;"
+                               Items="@(new AppSelectItem<string>[]{ new("Contrato","CONTRATO"), new("Plano","PLANO"), new("Cotización","COTIZACION"), new("Otro","OTRO") })" />
                     <InputFile id="nexo-proyecto-doc-input" OnChange="OnDocumentoSeleccionadoAsync" style="display:none;" />
                     <label for="nexo-proyecto-doc-input" class="nexo-perfil-panel__btn-archivo">
                         Subir Documento

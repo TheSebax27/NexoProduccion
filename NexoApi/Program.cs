@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using NexoApi.Common.Data;
 using NexoApi.Common.Middleware;
 using NexoApi.Common.Security;
+using NexoApi.Features.Auditoria;
 using NexoApi.Features.Auth;
 using NexoApi.Features.Busqueda;
 using NexoApi.Features.Calendario;
@@ -105,6 +106,7 @@ builder.Services.AddSingleton<TenantConnectionService>();
 builder.Services.AddScoped<IDbConnectionFactory, TenantSqlConnectionFactory>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 
+builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOrdenesProduccionService, OrdenesProduccionService>();
 builder.Services.AddScoped<IInventarioService, InventarioService>();

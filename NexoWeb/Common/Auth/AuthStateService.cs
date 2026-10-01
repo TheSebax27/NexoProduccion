@@ -12,7 +12,11 @@ public class AuthStateService
 {
     private const string ClaveStorage = "nexo_sesion";
 
-    private readonly ProtectedSessionStorage _storage;
+    private readonly ProtectedSessionStorage _sessionStorage;
+    private readonly ProtectedLocalStorage _localStorage;
+
+    // true cuando la sesión fue guardada en localStorage (recordarme activado)
+    private bool _sesionPersistente;
 
     public string? Token { get; private set; }
     public int? UsuarioId { get; private set; }
@@ -35,31 +39,32 @@ public class AuthStateService
     // mostrarse u ocultarse solo), o cuando cambia el nombre/foto del perfil.
     public event Action? OnChange;
 
-    public AuthStateService(ProtectedSessionStorage storage)
+    public AuthStateService(ProtectedSessionStorage sessionStorage, ProtectedLocalStorage localStorage)
     {
-        _storage = storage;
+        _sessionStorage = sessionStorage;
+        _localStorage = localStorage;
     }
 
     // Se llama al arrancar cada circuito nuevo, para recuperar la sesion
-    // si el usuario solo recargo la pagina (F5) y no cerro realmente sesion.
+    // si el usuario solo recargo la pagina (F5) o cerro el navegador (recordarme).
     public async Task InicializarAsync()
     {
         try
         {
-            var resultado = await _storage.GetAsync<DatosSesion>(ClaveStorage);
-            if (resultado.Success && resultado.Value is not null)
+            // Primero intenta localStorage (recordarme); si no, sessionStorage
+            var resultadoLocal = await _localStorage.GetAsync<DatosSesion>(ClaveStorage);
+            if (resultadoLocal.Success && resultadoLocal.Value is not null)
             {
-                var datos = resultado.Value;
-                Token = datos.Token;
-                UsuarioId = datos.UsuarioId;
-                Nombres = datos.Nombres;
-                Apellidos = datos.Apellidos;
-                NombreCompleto = datos.NombreCompleto;
-                Rol = datos.Rol;
-                CentroCostoId = datos.CentroCostoId;
-                FotoPerfilBase64 = datos.FotoPerfilBase64;
-                FotoPerfilContentType = datos.FotoPerfilContentType;
-                ExpiraEn = datos.ExpiraEn;
+                CargarDatos(resultadoLocal.Value);
+                _sesionPersistente = true;
+                return;
+            }
+
+            var resultadoSession = await _sessionStorage.GetAsync<DatosSesion>(ClaveStorage);
+            if (resultadoSession.Success && resultadoSession.Value is not null)
+            {
+                CargarDatos(resultadoSession.Value);
+                _sesionPersistente = false;
             }
         }
         catch (InvalidOperationException)
@@ -69,7 +74,7 @@ public class AuthStateService
         }
     }
 
-    public async Task IniciarSesionAsync(LoginResponse respuesta)
+    public async Task IniciarSesionAsync(LoginResponse respuesta, bool recordarme = false)
     {
         Token = respuesta.AccessToken;
         UsuarioId = respuesta.UsuarioId;
@@ -81,6 +86,7 @@ public class AuthStateService
         FotoPerfilBase64 = respuesta.FotoPerfilBase64;
         FotoPerfilContentType = respuesta.FotoPerfilContentType;
         ExpiraEn = respuesta.ExpiraEn;
+        _sesionPersistente = recordarme;
 
         await GuardarSesionAsync();
 
@@ -106,8 +112,10 @@ public class AuthStateService
         FotoPerfilBase64 = null;
         FotoPerfilContentType = null;
         ExpiraEn = null;
+        _sesionPersistente = false;
 
-        await _storage.DeleteAsync(ClaveStorage);
+        await _sessionStorage.DeleteAsync(ClaveStorage);
+        await _localStorage.DeleteAsync(ClaveStorage);
 
         OnChange?.Invoke();
     }
@@ -142,8 +150,27 @@ public class AuthStateService
 
     public Task<string?> ObtenerTokenAsync() => Task.FromResult(Token);
 
-    private ValueTask GuardarSesionAsync() => _storage.SetAsync(ClaveStorage,
-        new DatosSesion(Token!, UsuarioId, Nombres!, Apellidos!, NombreCompleto!, Rol!, CentroCostoId, FotoPerfilBase64, FotoPerfilContentType, ExpiraEn));
+    private void CargarDatos(DatosSesion datos)
+    {
+        Token = datos.Token;
+        UsuarioId = datos.UsuarioId;
+        Nombres = datos.Nombres;
+        Apellidos = datos.Apellidos;
+        NombreCompleto = datos.NombreCompleto;
+        Rol = datos.Rol;
+        CentroCostoId = datos.CentroCostoId;
+        FotoPerfilBase64 = datos.FotoPerfilBase64;
+        FotoPerfilContentType = datos.FotoPerfilContentType;
+        ExpiraEn = datos.ExpiraEn;
+    }
+
+    private ValueTask GuardarSesionAsync()
+    {
+        var datos = new DatosSesion(Token!, UsuarioId, Nombres!, Apellidos!, NombreCompleto!, Rol!, CentroCostoId, FotoPerfilBase64, FotoPerfilContentType, ExpiraEn);
+        return _sesionPersistente
+            ? _localStorage.SetAsync(ClaveStorage, datos)
+            : _sessionStorage.SetAsync(ClaveStorage, datos);
+    }
 
     private record DatosSesion(
         string Token, int? UsuarioId, string Nombres, string Apellidos, string NombreCompleto, string Rol, int? CentroCostoId,

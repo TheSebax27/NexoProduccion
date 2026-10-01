@@ -40,6 +40,7 @@
                        placeholder="Ingresa tu usuario"
                        @bind="_username"
                        @bind:event="oninput"
+                       @onkeydown="HandleKeyDownAsync"
                        disabled="@_cargando" />
             </div>
         </div>
@@ -58,6 +59,7 @@
                        placeholder="••••••••"
                        @bind="_password"
                        @bind:event="oninput"
+                       @onkeydown="HandleKeyDownAsync"
                        disabled="@_cargando" />
                 <button type="button"
                         class="lf__eye"
@@ -145,6 +147,12 @@
     private string? _error;
     private bool _cargando;
 
+    private async Task HandleKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !_cargando)
+            await EntrarAsync();
+    }
+
     private async Task EntrarAsync()
     {
         _error = null;
@@ -160,7 +168,7 @@
                 return;
             }
 
-            await AuthState.IniciarSesionAsync(respuesta);
+            await AuthState.IniciarSesionAsync(respuesta, _recordarme);
             Navegacion.NavigateTo("/", forceLoad: false);
         }
         catch (Exception)

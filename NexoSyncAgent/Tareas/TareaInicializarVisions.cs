@@ -17,7 +17,7 @@ public class TareaInicializarVisions
         _logger = logger;
     }
 
-    public async Task EjecutarAsync()
+    public async Task EjecutarAsync(CancellationToken ct = default)
     {
         try
         {
@@ -97,6 +97,8 @@ public class TareaInicializarVisions
             await connection.ExecuteAsync(@"
                 IF OBJECT_ID('dbo.TR_TARJETA_NexoCambios', 'TR') IS NULL
                     EXEC('CREATE TRIGGER dbo.TR_TARJETA_NexoCambios ON dbo.TARJETA AFTER UPDATE AS SELECT 1')");
+            try
+            {
             await connection.ExecuteAsync(@"
                 ALTER TRIGGER dbo.TR_TARJETA_NexoCambios ON dbo.TARJETA AFTER UPDATE
                 AS
@@ -120,18 +122,16 @@ public class TareaInicializarVisions
                         VALUES (origen.CENTROCOSTO, origen.REFERENCIA, origen.DETALLE, origen.COSTO,
                                 origen.PPUBLICO, origen.VV3, origen.FechaCambio, 0);
                 END");
-
-            // Clientes de NEXO para que Visions los tenga disponibles como referencia de clientes.
-            await connection.ExecuteAsync(@"
-                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'NEXO_Clientes')
-                CREATE TABLE dbo.NEXO_Clientes (
-                    NIT       NVARCHAR(30)  NOT NULL PRIMARY KEY,
-                    Nombre    NVARCHAR(200) NOT NULL,
-                    Telefono  NVARCHAR(50)  NULL,
-                    Email     NVARCHAR(200) NULL,
-                    Direccion NVARCHAR(300) NULL,
-                    FechaSync DATETIME      NOT NULL DEFAULT GETDATE()
-                );");
+            }
+            catch (Exception exTrigger)
+            {
+                // El trigger queda como stub "SELECT 1" — el flujo Visions→NEXO no funcionara
+                // hasta que el permiso DDL sea otorgado. El resto de la inicializacion continua.
+                _logger.LogError(exTrigger,
+                    "No se pudo crear/actualizar TR_TARJETA_NexoCambios. " +
+                    "Los cambios de precio/nombre en Visions NO se sincronizaran a NEXO. " +
+                    "Verificar que el usuario de BD tiene permisos ALTER TRIGGER.");
+            }
 
             // Rastreo de facturas confirmadas por Visions que ya se sincronizaron de vuelta a NEXO.
             // Se usa como dedup: si FechaSyncBack no es NULL, ya fue procesada y no se repite.
@@ -183,23 +183,46 @@ public class TareaInicializarVisions
                 AS
                 SET NOCOUNT OFF;
                 UPDATE [dbo].[TARJETA] SET
-                    [CENTROCOSTO]=@CENTROCOSTO, [DETALLE]=@DETALLE, [MARCA]=@MARCA,
-                    [COSTO]=@COSTO, [GRUPOMENOR]=@GRUPOMENOR, [BARRAS]=@BARRAS,
-                    [IVASINO]=@IVASINO, [IVAVALOR]=@IVAVALOR,
-                    [EXISTENCIAS]=@EXISTENCIAS, [EXISTENCIASMINIMAS]=@EXISTENCIASMINIMAS,
-                    [FRACCIONES]=@FRACCIONES, [CANTIDAD]=@CANTIDAD,
-                    [PRESENTACION]=@PRESENTACION, [VALORIZADO]=@VALORIZADO,
-                    [PPUBLICO]=@PPUBLICO, [PBODEGA]=@PBODEGA, [PCREDITO]=@PCREDITO,
-                    [UPUBLICO]=@UPUBLICO, [UBODEGA]=@UBODEGA, [UCREDITO]=@UCREDITO,
-                    [FRACCIONA]=@FRACCIONA,
-                    [VF1]=@VF1, [VV1]=@VV1, [VF2]=@VF2, [VV2]=@VV2,
-                    [VF3]=@VF3, [VV3]=@VV3, [VF4]=@VF4, [VV4]=@VV4,
-                    [TIPOTARJETA]=@TIPOTARJETA,
-                    [ROTA1]=@ROTA1, [ROTA2]=@ROTA2, [SUGERIDO]=@SUGERIDO,
-                    [FISICOE]=@FISICOE, [FISICOF]=@FISICOF, [COMBO]=@COMBO,
-                    [FULTV]=@FULTV, [FULTC]=@FULTC, [REVISAR]=@REVISAR,
-                    [NOTA]=@NOTA, [PESO]=@PESO, [DFI]=@DFI, [DFF]=@DFF,
-                    [DPO]=@DPO, [DVA]=@DVA, [PESAR]=@PESAR
+                    [CENTROCOSTO]=@CENTROCOSTO,
+                    [DETALLE]=ISNULL(@DETALLE,''),
+                    [MARCA]=ISNULL(@MARCA,''),
+                    [COSTO]=ISNULL(@COSTO,0),
+                    [GRUPOMENOR]=ISNULL(@GRUPOMENOR,''),
+                    [BARRAS]=ISNULL(@BARRAS,''),
+                    [IVASINO]=ISNULL(@IVASINO,'SI'),
+                    [IVAVALOR]=ISNULL(@IVAVALOR,19),
+                    [EXISTENCIAS]=ISNULL(@EXISTENCIAS,0),
+                    [EXISTENCIASMINIMAS]=ISNULL(@EXISTENCIASMINIMAS,0),
+                    [FRACCIONES]=ISNULL(@FRACCIONES,0),
+                    [CANTIDAD]=ISNULL(@CANTIDAD,0),
+                    [PRESENTACION]=ISNULL(@PRESENTACION,''),
+                    [VALORIZADO]=ISNULL(@VALORIZADO,0),
+                    [PPUBLICO]=ISNULL(@PPUBLICO,0),
+                    [PBODEGA]=ISNULL(@PBODEGA,0),
+                    [PCREDITO]=ISNULL(@PCREDITO,0),
+                    [UPUBLICO]=ISNULL(@UPUBLICO,0),
+                    [UBODEGA]=ISNULL(@UBODEGA,0),
+                    [UCREDITO]=ISNULL(@UCREDITO,0),
+                    [FRACCIONA]=ISNULL(@FRACCIONA,''),
+                    [VF1]=ISNULL(@VF1,0), [VV1]=ISNULL(@VV1,0),
+                    [VF2]=ISNULL(@VF2,0), [VV2]=ISNULL(@VV2,0),
+                    [VF3]=ISNULL(@VF3,0), [VV3]=ISNULL(@VV3,0),
+                    [VF4]=ISNULL(@VF4,0), [VV4]=ISNULL(@VV4,0),
+                    [TIPOTARJETA]=ISNULL(@TIPOTARJETA,''),
+                    [ROTA1]=ISNULL(@ROTA1,0), [ROTA2]=ISNULL(@ROTA2,0),
+                    [SUGERIDO]=ISNULL(@SUGERIDO,0),
+                    [FISICOE]=ISNULL(@FISICOE,0), [FISICOF]=ISNULL(@FISICOF,0),
+                    [COMBO]=ISNULL(@COMBO,0),
+                    [FULTV]=ISNULL(@FULTV,'2000-01-01'),
+                    [FULTC]=ISNULL(@FULTC,'2000-01-01'),
+                    [REVISAR]=ISNULL(@REVISAR,''),
+                    [NOTA]=ISNULL(@NOTA,N''),
+                    [PESO]=ISNULL(@PESO,0),
+                    [DFI]=ISNULL(@DFI,'2000-01-01'),
+                    [DFF]=ISNULL(@DFF,'2099-12-31'),
+                    [DPO]=ISNULL(@DPO,0),
+                    [DVA]=ISNULL(@DVA,0),
+                    [PESAR]=ISNULL(@PESAR,'')
                 WHERE [CENTROCOSTO] = @CENTROCOSTO AND [REFERENCIA] = @REFERENCIA");
 
             // Tabla de tipos de producto (igual que en NEXO). Se guarda TipoID en TARJETA.VV3.
@@ -378,6 +401,26 @@ public class TareaInicializarVisions
                     VALUES (1905, 'NEXO', '1', 'MANEJAN NEXO', 'HABILITAR')
                 ELSE IF EXISTS (SELECT 1 FROM dbo.PARAMETROS WHERE CONSECUTIVO = 1905 AND VALOR = '0')
                     UPDATE dbo.PARAMETROS SET VALOR = '1' WHERE CONSECUTIVO = 1905;");
+
+            // Sanear NULLs heredados de versiones anteriores del agente.
+            // FechaCambio NULL en NEXO_TarjetasCambios impide que Dapper mapee DateTime y el batch falla.
+            var cambiosReparados = await connection.ExecuteAsync(@"
+                UPDATE dbo.NEXO_TarjetasCambios
+                SET FechaCambio = GETDATE()
+                WHERE Procesado = 0 AND FechaCambio IS NULL;");
+            if (cambiosReparados > 0)
+                _logger.LogWarning("SaneamientoNulls: {N} registros en NEXO_TarjetasCambios tenian FechaCambio NULL — corregidos. Se procesaran en el proximo ciclo.", cambiosReparados);
+
+            // Fechas NULL en TARJETA hacen que Visions no muestre el articulo en ventas/inventario.
+            var tarjetasReparadas = await connection.ExecuteAsync(@"
+                UPDATE dbo.TARJETA
+                SET FULTV = ISNULL(FULTV, '2000-01-01'),
+                    FULTC = ISNULL(FULTC, '2000-01-01'),
+                    DFI   = ISNULL(DFI,   '2000-01-01'),
+                    DFF   = ISNULL(DFF,   '2099-12-31')
+                WHERE FULTV IS NULL OR FULTC IS NULL OR DFI IS NULL OR DFF IS NULL;");
+            if (tarjetasReparadas > 0)
+                _logger.LogWarning("SaneamientoNulls: {N} articulos en TARJETA tenian fechas NULL — corregidos.", tarjetasReparadas);
 
             _logger.LogInformation("Tablas NEXO_* verificadas/creadas en Visions correctamente");
         }

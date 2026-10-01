@@ -153,6 +153,8 @@ public record ResolverArticuloPendienteRequest(
     string? SkuNuevo, string? NombreNuevo, decimal? PrecioVentaNuevo, decimal? StockMinimoNuevo
 );
 
+public record ResolverTodosResponse(int Total, int Resueltos, int Errores);
+
 // ---------- Latido / monitoreo del agente ----------
 
 // Respuesta al POST /latido -- confirma que la API recibio el heartbeat.
@@ -207,7 +209,8 @@ public record EventoActividadItem(
     decimal Cantidad,
     string? MensajeError,
     DateTime FechaCreacion,
-    DateTime? FechaEnvio
+    DateTime? FechaEnvio,
+    int IntentosEnvio = 0
 );
 
 public record ActividadAgenteResponse(
@@ -285,7 +288,9 @@ public record SyncArticuloDesdeVisionsRequest(
     string? TipoProductoCodigo = null,
     decimal? ExistenciasActuales = null,
     decimal? ExistenciasMinimas = null,
-    decimal? Fracciones = null
+    decimal? Fracciones = null,
+    string? ImagenBase64 = null,
+    string? ImagenContentType = null
 );
 
 // ──────────── Clientes para sync NEXO → Visions ────────────
@@ -392,3 +397,5 @@ public record PendienteLimpiezaVisions(int LimpiezaID, string Tipo, int EntidadI
 
 public record SincAntsaResponse(bool Activo);
 public record SetSincAntsaRequest(bool Activo);
+
+public record ArticuloImagenParaSyncDto(string Referencia, string ImagenBase64, string ContentType);

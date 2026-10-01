@@ -61,20 +61,10 @@
                               Variant="Variant.Outlined" Clearable="true" Immediate="true"
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                               Style="min-width:280px" Margin="Margin.Dense" />
-                <MudSelect @bind-Value="_filtroEstado" Label="Estado" Variant="Variant.Outlined"
-                           Clearable="true" Style="min-width:160px" Dense="true" T="string">
-                    <MudSelectItem Value="@("ABIERTO")">Abierto</MudSelectItem>
-                    <MudSelectItem Value="@("EN_PROGRESO")">En Progreso</MudSelectItem>
-                    <MudSelectItem Value="@("RESUELTO")">Resuelto</MudSelectItem>
-                    <MudSelectItem Value="@("CERRADO")">Cerrado</MudSelectItem>
-                </MudSelect>
-                <MudSelect @bind-Value="_filtroPrioridad" Label="Prioridad" Variant="Variant.Outlined"
-                           Clearable="true" Style="min-width:140px" Dense="true" T="string">
-                    <MudSelectItem Value="@("BAJA")">Baja</MudSelectItem>
-                    <MudSelectItem Value="@("MEDIA")">Media</MudSelectItem>
-                    <MudSelectItem Value="@("ALTA")">Alta</MudSelectItem>
-                    <MudSelectItem Value="@("CRITICA")">Crítica</MudSelectItem>
-                </MudSelect>
+                <AppSelect TValue="string" @bind-Value="_filtroEstado" Label="Estado" Style="min-width:160px"
+                           Items="@(new AppSelectItem<string>[]{ new("Abierto","ABIERTO"), new("En Progreso","EN_PROGRESO"), new("Resuelto","RESUELTO"), new("Cerrado","CERRADO") })" />
+                <AppSelect TValue="string" @bind-Value="_filtroPrioridad" Label="Prioridad" Style="min-width:140px"
+                           Items="@(new AppSelectItem<string>[]{ new("Baja","BAJA"), new("Media","MEDIA"), new("Alta","ALTA"), new("Crítica","CRITICA") })" />
                 <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="Cargar"
                            StartIcon="@Icons.Material.Filled.Refresh">Actualizar</MudButton>
             </div>

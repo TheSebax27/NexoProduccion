@@ -13,7 +13,6 @@
            OnClick="@(() => Navigation.NavigateTo("/crm/clientes"))" Class="mb-2">
     Clientes
 </MudButton>
-<InfoAyuda Texto="Vista 360° del cliente: datos de contacto, historial de compras, interacciones, ausencias de campaña y acciones de seguimiento." />
 
 @if (_errorCarga is not null)
 {
@@ -29,20 +28,23 @@ else if (_cliente is null)
 }
 else
 {
-    <div class="d-flex align-center flex-wrap mb-2" style="gap: 0.4rem;">
-        <MudText Typo="Typo.h5">@_cliente.Nombre</MudText>
-        <MudSpacer />
-        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="AbrirEdicionAsync">Editar</MudButton>
-    </div>
-
-    <div class="d-flex flex-wrap mb-4" style="gap: 0.4rem;">
+    <MudPaper Class="pa-4 mb-4">
+        <div class="d-flex align-center flex-wrap mb-3" style="gap:0.75rem">
+            <div style="width:44px;height:44px;border-radius:50%;background:var(--mud-palette-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.15rem;flex-shrink:0">
+                @(_cliente.Nombre.Length > 0 ? _cliente.Nombre[0].ToString().ToUpper() : "C")
+            </div>
+            <div style="flex:1;min-width:0">
+                <MudText Typo="Typo.h5" Style="line-height:1.2">@_cliente.Nombre</MudText>
+                @if (_cliente.NIT is not null)
+                {
+                    <MudText Typo="Typo.body2" Style="opacity:.6">NIT: @_cliente.NIT</MudText>
+                }
+            </div>
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="AbrirEdicionAsync">Editar</MudButton>
+        </div>
         <MudChip T="string" Size="Size.Small" Color="@(_cliente.Estado ? Color.Success : Color.Error)">
             @(_cliente.Estado ? "Activo" : "Inactivo")
         </MudChip>
-        @if (_cliente.NIT is not null)
-        {
-            <MudChip T="string" Size="Size.Small">NIT: @_cliente.NIT</MudChip>
-        }
         <MudChip T="string" Size="Size.Small">Responsable: @(_cliente.Responsable ?? "Sin asignar")</MudChip>
         @if (_cliente.ProximoContacto is not null)
         {
@@ -72,9 +74,9 @@ else
                 Próxima compra: @_prediccion.ProximaCompraEsperada.Value.ToString("dd MMM") (@labelDias)
             </MudChip>
         }
-    </div>
+    </MudPaper>
 
-    <MudPaper Class="pa-4">
+    <MudPaper Class="pa-0">
         <MudTabs Class="nexo-bi-tabs">
             <MudTabPanel Text="Contactos">
                 <MudForm @ref="_formContacto" Class="mb-3">
@@ -120,12 +122,8 @@ else
 
             <MudTabPanel Text="Bitacora">
                 <MudForm @ref="_formInteraccion" Class="mb-3">
-                    <MudSelect T="string" @bind-Value="_tipoInteraccion" Label="Tipo" Required="true" Class="mb-2">
-                        <MudSelectItem Value="@("Llamada")">Llamada</MudSelectItem>
-                        <MudSelectItem Value="@("Correo")">Correo</MudSelectItem>
-                        <MudSelectItem Value="@("Reunion")">Reunión</MudSelectItem>
-                        <MudSelectItem Value="@("Otro")">Otro</MudSelectItem>
-                    </MudSelect>
+                    <AppSelect TValue="string" @bind-Value="_tipoInteraccion" Label="Tipo" Class="mb-2"
+                               Items="@(new AppSelectItem<string>[]{ new("Llamada","Llamada"), new("Correo","Correo"), new("Reunión","Reunion"), new("Otro","Otro") })" />
                     <MudTextField @bind-Value="_notasInteraccion" Label="Notas" Lines="3" Required="true"
                                   RequiredError="Escribe una nota" Class="mb-2" />
                     <MudDatePicker @bind-Date="_proximoContactoInteraccion" Label="Agendar proximo contacto (opcional)" Class="mb-2" />
@@ -152,6 +150,37 @@ else
                                 </MudText>
                             </div>
                             <MudText Typo="Typo.body2" Class="mt-1">@i.Notas</MudText>
+                        </div>
+                    }
+                }
+                @if (_notasLead.Count > 0)
+                {
+                    <MudDivider Class="my-3" />
+                    <MudText Typo="Typo.caption" Class="mb-2" Style="opacity:.55;text-transform:uppercase;letter-spacing:.05em;font-size:0.7rem">
+                        Historial del lead original
+                    </MudText>
+                    @foreach (var nota in _notasLead)
+                    {
+                        var (hex, label) = nota.Tipo switch
+                        {
+                            "AVANCE_ETAPA" => ("var(--mud-palette-primary)", "↑ Avance"),
+                            "CONVERSION"   => ("#66BB6A", "✓ Conversión"),
+                            _              => ("var(--mud-palette-text-secondary)", "Nota")
+                        };
+                        <div style="border-left:3px solid @hex;padding:0.5rem 0.75rem;background:var(--mud-palette-background-grey);border-radius:0 6px 6px 0;margin-bottom:0.5rem">
+                            <div class="d-flex align-center flex-wrap mb-1" style="gap:0.4rem">
+                                <span style="font-size:0.67rem;font-weight:700;color:@hex;text-transform:uppercase;letter-spacing:.04em">@label</span>
+                                @if (!string.IsNullOrEmpty(nota.EtapaOrigen) && !string.IsNullOrEmpty(nota.EtapaDestino))
+                                {
+                                    <span style="font-size:0.67rem;opacity:.5">@nota.EtapaOrigen → @nota.EtapaDestino</span>
+                                }
+                                <span style="font-size:0.67rem;opacity:.45;margin-left:auto">@nota.Fecha.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                                @if (!string.IsNullOrEmpty(nota.Usuario))
+                                {
+                                    <span style="font-size:0.67rem;opacity:.45">· @nota.Usuario</span>
+                                }
+                            </div>
+                            <MudText Typo="Typo.body2">@nota.Texto</MudText>
                         </div>
                     }
                 }
@@ -188,12 +217,8 @@ else
 
             <MudTabPanel Text="Documentos">
                 <div class="d-flex align-center flex-wrap mb-3" style="gap: 0.5rem;">
-                    <MudSelect T="string" @bind-Value="_tipoDocumento" Label="Tipo" Style="max-width: 200px;">
-                        <MudSelectItem Value="@("RUT")">RUT</MudSelectItem>
-                        <MudSelectItem Value="@("CAMARA_COMERCIO")">Cámara de Comercio</MudSelectItem>
-                        <MudSelectItem Value="@("CONTRATO")">Contrato</MudSelectItem>
-                        <MudSelectItem Value="@("OTRO")">Otro</MudSelectItem>
-                    </MudSelect>
+                    <AppSelect TValue="string" @bind-Value="_tipoDocumento" Label="Tipo" Style="max-width: 200px;"
+                               Items="@(new AppSelectItem<string>[]{ new("RUT","RUT"), new("Cámara de Comercio","CAMARA_COMERCIO"), new("Contrato","CONTRATO"), new("Otro","OTRO") })" />
                     <InputFile id="nexo-cliente-doc-input" OnChange="OnDocumentoSeleccionadoAsync" style="display:none;" />
                     <label for="nexo-cliente-doc-input" class="nexo-perfil-panel__btn-archivo">
                         Subir Documento
@@ -222,6 +247,35 @@ else
                                 <MudButton Size="Size.Small" OnClick="@(() => DescargarDocumentoAsync(context))">Descargar</MudButton>
                                 <MudButton Size="Size.Small" Color="Color.Error" OnClick="@(() => EliminarDocumentoAsync(context))">Eliminar</MudButton>
                             </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudTabPanel>
+
+            <MudTabPanel Text="Tickets" Icon="@Icons.Material.Outlined.BugReport">
+                <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color:var(--n-text-3)">
+                    Tickets de soporte asociados a este cliente.
+                </MudText>
+                @if (_tickets.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Style="color:var(--n-text-3)">Sin tickets registrados.</MudText>
+                }
+                else
+                {
+                    <MudTable Items="_tickets" Dense="true" Hover="true" Elevation="0">
+                        <HeaderContent>
+                            <MudTh>Título</MudTh>
+                            <MudTh>Prioridad</MudTh>
+                            <MudTh>Estado</MudTh>
+                            <MudTh>Fecha</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Título">@context.Titulo</MudTd>
+                            <MudTd DataLabel="Prioridad">
+                                <MudChip T="string" Size="Size.Small" Color="@ColorPrioridad(context.Prioridad)">@context.Prioridad</MudChip>
+                            </MudTd>
+                            <MudTd DataLabel="Estado">@context.Estado</MudTd>
+                            <MudTd DataLabel="Fecha">@context.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy")</MudTd>
                         </RowTemplate>
                     </MudTable>
                 }
@@ -292,6 +346,18 @@ else
     private string _notasInteraccion = string.Empty;
     private DateTime? _proximoContactoInteraccion;
 
+    // Tickets
+    private List<TicketItem> _tickets = new();
+    private async Task CargarTicketsAsync() =>
+        _tickets = await ApiClient.GetAsync<List<TicketItem>>($"api/soporte/tickets?clienteId={_cliente!.ClienteID}") ?? new();
+    private static Color ColorPrioridad(string? p) => p switch
+    {
+        "CRITICA" => Color.Error,
+        "ALTA"    => Color.Warning,
+        "MEDIA"   => Color.Primary,
+        _         => Color.Default
+    };
+
     // Historial
     private List<EventoHistorialItem> _historial = new();
 
@@ -332,6 +398,7 @@ else
                 await CargarInteraccionesAsync();
                 await CargarHistorialAsync();
                 await CargarDocumentosAsync();
+                await CargarTicketsAsync();
                 await CargarSegmentoYCreditoAsync();
             }
         }
@@ -348,8 +415,13 @@ else
     private async Task CargarContactosAsync() =>
         _contactos = await ApiClient.GetAsync<List<ContactoItem>>($"api/crm/clientes/{_cliente!.ClienteID}/contactos") ?? new();
 
-    private async Task CargarInteraccionesAsync() =>
+    private List<NotaLeadItem> _notasLead = new();
+
+    private async Task CargarInteraccionesAsync()
+    {
         _interacciones = await ApiClient.GetAsync<List<InteraccionItem>>($"api/crm/clientes/{_cliente!.ClienteID}/interacciones") ?? new();
+        _notasLead = await ApiClient.GetAsync<List<NotaLeadItem>>($"api/crm/clientes/{_cliente!.ClienteID}/notas-lead") ?? new();
+    }
 
     private async Task CargarHistorialAsync() =>
         _historial = await ApiClient.GetAsync<List<EventoHistorialItem>>($"api/crm/clientes/{_cliente!.ClienteID}/historial") ?? new();
@@ -414,6 +486,24 @@ else
         {
             var request = new CrearInteraccionRequest(_cliente!.ClienteID, _tipoInteraccion, _notasInteraccion.Trim(), _proximoContactoInteraccion);
             await ApiClient.PostAsync<CrearInteraccionRequest, object?>("api/crm/interacciones", request);
+
+            if (_proximoContactoInteraccion.HasValue)
+            {
+                try
+                {
+                    var inicio = DateTime.SpecifyKind(_proximoContactoInteraccion.Value.Date.AddHours(9), DateTimeKind.Local).ToUniversalTime();
+                    var evReq = new CrearEventoRequest(
+                        $"Seguimiento: {_cliente.Nombre}",
+                        "SEGUIMIENTO", inicio, inicio.AddHours(1),
+                        null, null,
+                        _notasInteraccion.Trim(),
+                        null, new List<int>());
+                    await ApiClient.PostAsync<CrearEventoRequest, object?>("api/calendario/eventos", evReq);
+                    Snackbar.Add("Evento agendado en el calendario", Severity.Info);
+                }
+                catch { }
+            }
+
             _notasInteraccion = string.Empty;
             _proximoContactoInteraccion = null;
             await CargarInteraccionesAsync();

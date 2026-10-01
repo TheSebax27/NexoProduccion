@@ -166,8 +166,16 @@ public class CrmController : ControllerBase
     // ---------- Leads ----------
 
     [HttpGet("leads")]
-    public async Task<ActionResult<IEnumerable<LeadItem>>> ListarLeads([FromQuery] string? etapa)
-        => Ok(await _service.ListarLeadsAsync(etapa));
+    public async Task<ActionResult<IEnumerable<LeadItem>>> ListarLeads([FromQuery] string? etapa, [FromQuery] int? responsableId)
+        => Ok(await _service.ListarLeadsAsync(etapa, responsableId));
+
+    [HttpGet("leads/{id:int}")]
+    public async Task<ActionResult<LeadItem>> ObtenerLead(int id)
+    {
+        var lead = await _service.ObtenerLeadAsync(id);
+        if (lead is null) return NotFound(new { error = "Lead no encontrado" });
+        return Ok(lead);
+    }
 
     [HttpPost("leads")]
     public async Task<ActionResult> CrearLead(CrearLeadRequest request)
@@ -230,6 +238,21 @@ public class CrmController : ControllerBase
         }
     }
 
+    [HttpGet("leads/{id:int}/notas")]
+    public async Task<ActionResult<IEnumerable<NotaLeadItem>>> ListarNotasLead(int id)
+        => Ok(await _service.ListarNotasLeadAsync(id));
+
+    [HttpGet("clientes/{id:int}/notas-lead")]
+    public async Task<ActionResult<IEnumerable<NotaLeadItem>>> NotasLeadDeCliente(int id)
+        => Ok(await _service.ListarNotasLeadPorClienteAsync(id));
+
+    [HttpPost("leads/{id:int}/notas")]
+    public async Task<ActionResult> CrearNotaLead(int id, CrearNotaLeadRequest request)
+    {
+        var notaId = await _service.CrearNotaLeadAsync(id, request, UsuarioActualId);
+        return CreatedAtAction(nameof(ListarNotasLead), new { id }, new { notaId });
+    }
+
     // ---------- D) Clientes fríos ----------
 
     [HttpGet("clientes-frios")]
@@ -245,6 +268,10 @@ public class CrmController : ControllerBase
         [FromQuery] string? etapa, [FromQuery] int? responsableId)
         => Ok(await _service.ListarPipelineAsync(etapa, responsableId));
 
+    [HttpGet("pipeline/metricas")]
+    public async Task<ActionResult<PipelineMetricasDto>> ObtenerMetricasPipeline()
+        => Ok(await _service.ObtenerMetricasPipelineAsync());
+
     [HttpPost("pipeline/lead/{leadId:int}/oportunidad")]
     public async Task<ActionResult> CrearOportunidadDesdeLead(int leadId, CrearOportunidadDesdeLeadRequest request)
     {
@@ -258,8 +285,8 @@ public class CrmController : ControllerBase
     }
 
     [HttpGet("oportunidades")]
-    public async Task<ActionResult<IEnumerable<OportunidadItem>>> ListarOportunidades([FromQuery] string? etapa, [FromQuery] int? responsableId)
-        => Ok(await _service.ListarOportunidadesAsync(etapa, responsableId));
+    public async Task<ActionResult<IEnumerable<OportunidadItem>>> ListarOportunidades([FromQuery] string? etapa, [FromQuery] int? responsableId, [FromQuery] int? leadId)
+        => Ok(await _service.ListarOportunidadesAsync(etapa, responsableId, leadId));
 
     [HttpPost("oportunidades")]
     public async Task<ActionResult> CrearOportunidad(CrearOportunidadRequest request)
@@ -464,4 +491,9 @@ public class CrmController : ControllerBase
     [HttpGet("clientes/{id:int}/prediccion-compra")]
     public async Task<ActionResult<PrediccionCompraItem>> PrediccionCompra(int id)
         => Ok(await _service.PrediccionCompraAsync(id));
+
+    [HttpGet("duplicados")]
+    public async Task<ActionResult<IEnumerable<DuplicadoCandidatoItem>>> BuscarDuplicados(
+        [FromQuery] string? nombre, [FromQuery] string? nit)
+        => Ok(await _service.BuscarDuplicadosAsync(nombre, nit));
 }

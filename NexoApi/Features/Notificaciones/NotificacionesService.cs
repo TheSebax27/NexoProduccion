@@ -282,14 +282,67 @@ public class NotificacionesService : INotificacionesService
         }
         catch { }
 
+        // E — Artículos que se agotan en ≤7 días al ritmo actual
+        try
+        {
+            const string sqlPorAgotarse = @"
+                WITH Consumo AS (
+                    SELECT ArticuloID,
+                           CAST(SUM(ABS(Cantidad)) / 30.0 AS decimal(18,6)) AS ConsumoDiario
+                    FROM Kardex.KardexMovimientos
+                    WHERE Cantidad < 0
+                      AND Fecha >= DATEADD(day, -30, GETDATE())
+                    GROUP BY ArticuloID
+                ),
+                StockTotal AS (
+                    SELECT ArticuloID, SUM(CantidadActual) AS Stock
+                    FROM Inventario.vw_StockConsolidado
+                    GROUP BY ArticuloID
+                )
+                SELECT a.Nombre
+                FROM StockTotal st
+                JOIN Consumo c ON c.ArticuloID = st.ArticuloID
+                JOIN Catalogo.Tarjetas a ON a.ArticuloID = st.ArticuloID
+                WHERE st.Stock > 0
+                  AND c.ConsumoDiario > 0
+                  AND CAST(st.Stock / c.ConsumoDiario AS int) <= 7
+                ORDER BY CAST(st.Stock / c.ConsumoDiario AS int)";
+            var porAgotarse = (await connection.QueryAsync<string>(sqlPorAgotarse)).ToList();
+            if (porAgotarse.Count > 0)
+                items.Add(new NotificacionItem("PorAgotarse", "error",
+                    $"{porAgotarse.Count} artículo{(porAgotarse.Count == 1 ? "" : "s")} por agotarse en ≤7 días",
+                    ResumirNombres(porAgotarse), "/inventario/stock"));
+        }
+        catch { }
+
+        try
+        {
+            const string sqlOpVencidas = @"
+                SELECT o.Nombre + ' (' + ISNULL(c.Nombre, 'Sin cliente') + ')'
+                FROM Crm.Oportunidades o
+                LEFT JOIN Crm.Clientes c ON c.ClienteID = o.ClienteID
+                WHERE o.FechaCierreEsperada < CAST(GETDATE() AS DATE)
+                  AND o.Etapa NOT IN ('GANADA','PERDIDA')
+                ORDER BY o.FechaCierreEsperada";
+            var opVencidas = (await connection.QueryAsync<string>(sqlOpVencidas)).ToList();
+            if (opVencidas.Count > 0)
+                items.Add(new NotificacionItem("OportunidadesVencidas", "error",
+                    $"{opVencidas.Count} oportunidad{(opVencidas.Count == 1 ? "" : "es")} con cierre vencido",
+                    ResumirNombres(opVencidas), "/crm/pipeline"));
+        }
+        catch { }
+
         return new ResumenNotificaciones(items.Count, items);
     }
 
     private static string ResumirNombres(List<string> nombres)
     {
         const int max = 3;
-        return nombres.Count <= max
-            ? string.Join(", ", nombres)
-            : $"{string.Join(", ", nombres.Take(max))} y {nombres.Count - max} más";
+        if (nombres.Count <= max)
+            return string.Join(", ", nombres.Where(n => !string.IsNullOrWhiteSpace(n)));
+        // Prefer names with at least one letter (filter out bad data like "0 0 0")
+        var conLetras = nombres.Where(n => n.Any(char.IsLetter)).ToList();
+        var preview = (conLetras.Count >= max ? conLetras : nombres).Take(max).ToList();
+        return $"{string.Join(", ", preview)} y {nombres.Count - preview.Count} más";
     }
 }

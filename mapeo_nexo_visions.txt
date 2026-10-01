@@ -281,19 +281,21 @@ TABLAS NEXO_* EN VISIONS (creadas automaticamente por el agente al arrancar)
 
 Tabla                         Proposito
 ------------------------------ -------------------------------------------------------
-NEXO_ConfiguracionSync         Configuracion activa/prefijos de venta por CENTROCOSTO
-NEXO_VentasExportadas          Idempotencia: evita reimportar ventas ya procesadas
-NEXO_EntradasInventario        Log de entradas de inventario aplicadas desde NEXO
-NEXO_TarjetasCambios           Cola de cambios en TARJETA (llenada por trigger) para
+NEXO_ConfiguracionSync         Activo + TiposDocumentoVenta por CENTROCOSTO (PK=CENTROCOSTO)
+NEXO_VentasExportadas          Dedup: ventas de Visions ya exportadas a NEXO (PK compuesta)
+NEXO_EntradasExportadas        Dedup: entradas de Visions ya exportadas a NEXO (PK compuesta)
+NEXO_EntradasInventario        Log de entradas de inventario aplicadas desde NEXO a Visions
+NEXO_TarjetasCambios           Cola de cambios en TARJETA (llenada por trigger MERGE) para
                                sincronizar precios/nombre de vuelta a NEXO
-NEXO_Clientes                  Clientes de NEXO replicados para referencia en el POS
+NEXO_FacturasSalientes         Rastreo de facturas salientes NEXO → Visions (FechaSyncBack)
 NEXO_FacturasPendientes        Staging de facturas NEXO → Visions Salidas
-NEXO_FacturasPendientesLineas  Líneas de NEXO_FacturasPendientes
-NEXO_Pedidos                   Staging de pedidos (órdenes de compra) NEXO → Visions Entradas
-NEXO_PedidosLineas             Líneas de NEXO_Pedidos
-NEXO_FacturasSalientes         Log de facturas salientes (ventas Visions → NEXO)
+NEXO_FacturasPendientesLineas  Lineas de NEXO_FacturasPendientes
+NEXO_Pedidos                   Staging de pedidos (OC) NEXO → Visions Entradas
+NEXO_PedidosLineas             Lineas de NEXO_Pedidos
+TIPOPRODUCTO_TIPOS             Tipos de producto PT/MP/IN/SER; TipoID se guarda en TARJETA.VV3
 
 SPs creados automaticamente:
+  ACTUALIZARTARJETA              Agente actualiza TARJETA (WHERE @CENTROCOSTO+@REFERENCIA)
   NEXO_SP_FacturasPendientes     Devuelve facturas PENDIENTE (2 resultsets: cabeceras + lineas)
   NEXO_SP_ConfirmarFactura       Visions llama al confirmar una factura con su NroDoc
   NEXO_SP_PedidosPendientes      Devuelve pedidos PENDIENTE (2 resultsets: cabeceras + lineas)
@@ -302,6 +304,11 @@ SPs creados automaticamente:
 Trigger en Visions (creado automaticamente):
   TR_TARJETA_NexoCambios  AFTER UPDATE en dbo.TARJETA. MERGE en NEXO_TarjetasCambios
                           (upserta para no acumular filas duplicadas sin procesar).
+
+Script de instalacion manual / DR:
+  C:\Produccion\SQL_Finales\compat_nexovisions.sql
+  Fuente autoritativa: TareaInicializarVisions.cs (el agente ejecuta esto al arrancar).
+  Idempotente. Incluye todos los objetos de arriba + parametros 1518/1905 + saneamiento NULLs.
 
 --------------------------------------------------------------
 ARTÍCULOS PENDIENTES DE MAPEO (flujo automático)

@@ -17,12 +17,8 @@
     <MudPaper Elevation="0" Class="pa-3 mb-3" Style="border:1px solid var(--mud-palette-divider); border-radius:8px;">
         <MudGrid Spacing="2">
             <MudItem xs="12" sm="6">
-                <MudSelect T="string" @bind-Value="_nuevoTipo" Label="Tipo" Dense="true" Margin="Margin.Dense">
-                    <MudSelectItem Value="@("LLAMADA")">📞 Llamada</MudSelectItem>
-                    <MudSelectItem Value="@("EMAIL")">📧 Email</MudSelectItem>
-                    <MudSelectItem Value="@("REUNION")">🤝 Reunión</MudSelectItem>
-                    <MudSelectItem Value="@("TAREA")">✅ Tarea</MudSelectItem>
-                </MudSelect>
+                <AppSelect TValue="string" @bind-Value="_nuevoTipo" Label="Tipo"
+                           Items="@(new AppSelectItem<string>[]{ new("Llamada","LLAMADA"), new("Email","EMAIL"), new("Reunión","REUNION"), new("Tarea","TAREA") })" />
             </MudItem>
             <MudItem xs="12" sm="6">
                 <MudDatePicker @bind-Date="_nuevaFecha" Label="Vencimiento (opcional)" Dense="true" Margin="Margin.Dense" />

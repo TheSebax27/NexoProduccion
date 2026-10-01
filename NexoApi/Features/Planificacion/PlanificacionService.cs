@@ -18,6 +18,7 @@ public interface IPlanificacionService
     Task<IEnumerable<HistoricoCumplimientoItem>> ObtenerHistoricoCumplimientoAsync(int meses);
     Task<SugerenciaDemandaItem> ObtenerSugerenciaDemandaAsync(int articuloId, int centroCostoId, DateTime periodo);
     Task<IEnumerable<MetaVentaHistorialItem>> ListarHistorialMetaVentaAsync(int metaId);
+    Task<IEnumerable<PrediccionDemandaItem>> PrediccionDemandaAsync();
 }
 
 public class PlanificacionService : IPlanificacionService
@@ -323,5 +324,47 @@ public class PlanificacionService : IPlanificacionService
             ORDER BY h.FechaCambio DESC";
 
         return await connection.QueryAsync<MetaVentaHistorialItem>(sql, new { MetaId = metaId });
+    }
+
+    // ---------- Predicción de demanda — media móvil 3 meses ----------
+    // Calcula consumo de salidas (Cantidad < 0) de los últimos 3 meses calendario
+    // completos para cada artículo. Devuelve solo artículos con al menos una salida.
+    public async Task<IEnumerable<PrediccionDemandaItem>> PrediccionDemandaAsync()
+    {
+        using var connection = _db.CreateConnection();
+
+        // PrimerDiaMesActual calculado en C# para pasarlo como parámetro.
+        var hoyMes = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+
+        const string sql = @"
+            WITH Consumo AS (
+                SELECT km.ArticuloID,
+                       SUM(CASE WHEN km.Fecha >= DATEADD(month, -1, @HoyMes) AND km.Fecha < @HoyMes
+                                THEN ABS(km.Cantidad) ELSE 0 END) AS ConsumoM1,
+                       SUM(CASE WHEN km.Fecha >= DATEADD(month, -2, @HoyMes) AND km.Fecha < DATEADD(month, -1, @HoyMes)
+                                THEN ABS(km.Cantidad) ELSE 0 END) AS ConsumoM2,
+                       SUM(CASE WHEN km.Fecha >= DATEADD(month, -3, @HoyMes) AND km.Fecha < DATEADD(month, -2, @HoyMes)
+                                THEN ABS(km.Cantidad) ELSE 0 END) AS ConsumoM3
+                FROM Kardex.KardexMovimientos km
+                WHERE km.Cantidad < 0
+                  AND km.Fecha >= DATEADD(month, -3, @HoyMes)
+                  AND km.Fecha < @HoyMes
+                GROUP BY km.ArticuloID
+            )
+            SELECT a.ArticuloID,
+                   a.Referencia AS SKU,
+                   a.Nombre     AS Articulo,
+                   ta.Nombre    AS TipoArticulo,
+                   c.ConsumoM3,
+                   c.ConsumoM2,
+                   c.ConsumoM1,
+                   CAST((c.ConsumoM1 + c.ConsumoM2 + c.ConsumoM3) / 3.0 AS decimal(18,4)) AS MediaMovil
+            FROM Consumo c
+            JOIN Catalogo.Tarjetas a        ON a.ArticuloID = c.ArticuloID
+            JOIN Catalogo.TiposArticulo ta  ON ta.TipoArticuloID = a.TipoArticuloID
+            WHERE c.ConsumoM1 + c.ConsumoM2 + c.ConsumoM3 > 0
+            ORDER BY MediaMovil DESC";
+
+        return await connection.QueryAsync<PrediccionDemandaItem>(sql, new { HoyMes = hoyMes });
     }
 }

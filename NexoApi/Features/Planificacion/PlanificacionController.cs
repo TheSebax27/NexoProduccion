@@ -94,4 +94,10 @@ public class PlanificacionController : ControllerBase
     [HttpGet("historico-cumplimiento")]
     public async Task<ActionResult<IEnumerable<HistoricoCumplimientoItem>>> ObtenerHistoricoCumplimiento([FromQuery] int meses = 12)
         => Ok(await _service.ObtenerHistoricoCumplimientoAsync(meses));
+
+    // ---------- Predicción de demanda por media móvil ----------
+
+    [HttpGet("prediccion-demanda")]
+    public async Task<ActionResult<IEnumerable<PrediccionDemandaItem>>> PrediccionDemanda()
+        => Ok(await _service.PrediccionDemandaAsync());
 }

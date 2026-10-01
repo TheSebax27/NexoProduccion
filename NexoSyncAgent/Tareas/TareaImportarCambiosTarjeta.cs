@@ -6,9 +6,10 @@ using NexoSyncAgent.VisionsData;
 namespace NexoSyncAgent.Tareas;
 
 // Lee NEXO_TarjetasCambios (rellenada por el trigger TR_TARJETA_NexoCambios en Visions)
-// y envia los cambios de precio/nombre/marca/grupo a NEXO para mantener Catalogo.Tarjetas
+// y envia los cambios de precio/nombre/marca/grupo/imagen a NEXO para mantener Catalogo.Tarjetas
 // sincronizado. La API aplica el cambio solo si el timestamp de Visions es mas reciente
 // que FechaModificacion en NEXO (+ 5s de margen), evitando bucles de sincronizacion.
+// TARJETA.Imagen es varbinary(MAX) NOT NULL DEFAULT(0x); 0x = sin imagen.
 public class TareaImportarCambiosTarjeta
 {
     private readonly INexoApiClient _apiClient;
@@ -16,22 +17,39 @@ public class TareaImportarCambiosTarjeta
     private readonly ILogger<TareaImportarCambiosTarjeta> _logger;
 
     public TareaImportarCambiosTarjeta(
-        INexoApiClient apiClient, IVisionsConnectionFactory visionsDb, ILogger<TareaImportarCambiosTarjeta> logger)
+        INexoApiClient apiClient, IVisionsConnectionFactory visionsDb,
+        ILogger<TareaImportarCambiosTarjeta> logger)
     {
         _apiClient = apiClient;
         _visionsDb = visionsDb;
-        _logger = logger;
+        _logger    = logger;
+    }
+
+    private static string? DetectarMime(byte[] bytes)
+    {
+        if (bytes.Length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) return "image/jpeg";
+        if (bytes.Length >= 4 && bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47) return "image/png";
+        if (bytes.Length >= 3 && bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46) return "image/gif";
+        if (bytes.Length >= 4 && bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46) return "image/webp";
+        return bytes.Length > 0 ? "image/jpeg" : null;
     }
 
     public async Task EjecutarAsync(int centroCostoVisions, CancellationToken ct)
     {
         using var connection = _visionsDb.CreateConnection();
 
+        // Si la columna Imagen no existe (instalación antigua), usamos NULL para no romper la query.
+        var tieneImagen = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='TARJETA' AND COLUMN_NAME='Imagen'") > 0;
+        var colImagen = tieneImagen
+            ? "tar.Imagen AS ImagenBytes"
+            : "CAST(NULL AS VARBINARY(MAX)) AS ImagenBytes";
+
         // Tomar el cambio mas reciente por CENTROCOSTO+REFERENCIA (si hay varios pendientes).
-        // Se hace JOIN a dbo.TARJETA para obtener el estado actual de Marca, Grupo, IVA y
-        // Presentacion, ya que NEXO_TarjetasCambios solo guarda nombre/costo/precio.
+        // Se hace JOIN a dbo.TARJETA para obtener el estado actual de Marca, Grupo, IVA,
+        // Presentacion e Imagen, ya que NEXO_TarjetasCambios solo guarda nombre/costo/precio.
         var cambios = (await connection.QueryAsync<CambioPendiente>(
-            @"SELECT t.Id, t.CENTROCOSTO, t.REFERENCIA, t.DETALLE, t.COSTO, t.PPUBLICO, t.FechaCambio,
+            $@"SELECT t.Id, t.CENTROCOSTO, t.REFERENCIA, t.DETALLE, t.COSTO, t.PPUBLICO, t.FechaCambio,
                      NULLIF(tar.PBODEGA,  0)                              AS PBodega,
                      NULLIF(tar.PCREDITO, 0)                              AS PCredito,
                      NULLIF(tar.UPUBLICO, 0)                              AS UPublico,
@@ -49,7 +67,8 @@ public class TareaImportarCambiosTarjeta
                      tar.EXISTENCIAS                                       AS ExistenciasActuales,
                      tar.EXISTENCIASMINIMAS                                AS ExistenciasMinimas,
                      NULLIF(tar.FRACCIONES, 0)                             AS Fracciones,
-                     CAST(CASE WHEN tar.REFERENCIA IS NULL THEN 1 ELSE 0 END AS BIT) AS EliminadoEnVisions
+                     CAST(CASE WHEN tar.REFERENCIA IS NULL THEN 1 ELSE 0 END AS BIT) AS EliminadoEnVisions,
+                     {colImagen}
               FROM dbo.NEXO_TarjetasCambios t
               INNER JOIN (
                   SELECT CENTROCOSTO, REFERENCIA, MAX(Id) AS UltimoId
@@ -72,39 +91,49 @@ public class TareaImportarCambiosTarjeta
             {
                 if (cambio.EliminadoEnVisions)
                 {
-                    await _apiClient.InactivarArticuloDesdeVisionsAsync(cambio.REFERENCIA, ct);
-                    _logger.LogInformation("Articulo {Ref} ya no existe en Visions — inactivado en NEXO", cambio.REFERENCIA);
+                    await _apiClient.InactivarArticuloDesdeVisionsAsync(cambio.REFERENCIA, cambio.CENTROCOSTO.ToString(), ct);
+                    _logger.LogInformation("Articulo {Ref} ya no existe en Visions (CC {CC}) — inactivado en NEXO si no tiene otros centros", cambio.REFERENCIA, cambio.CENTROCOSTO);
                 }
                 else
                 {
+                    string? imagenBase64 = null;
+                    string? imagenContentType = null;
+                    var img = cambio.ImagenBytes;
+                    if (img != null && img.Length > 0)
+                    {
+                        imagenContentType = DetectarMime(img);
+                        imagenBase64      = Convert.ToBase64String(img);
+                    }
+
                     await _apiClient.SyncArticuloDesdeVisionsAsync(new SyncArticuloDesdeVisionsRequest(
-                        ReferenciaVisions:  cambio.REFERENCIA,
-                        CentroCostoVisions: cambio.CENTROCOSTO.ToString(),
-                        Nombre:             cambio.DETALLE ?? "",
-                        Costo:              cambio.COSTO,
-                        PPublico:           cambio.PPUBLICO,
-                        FechaCambio:        cambio.FechaCambio,
-                        MarcaCodigo:        cambio.MarcaCodigo ?? "",
-                        GrupoMenorCodigo:   cambio.GrupoMenorCodigo,
-                        PresentacionCodigo: cambio.PresentacionCodigo,
-                        IvaSiNo:            cambio.IvaSiNo ?? "SI",
-                        IvaValor:           cambio.IvaValor,
-                        IvaDescripcion:     cambio.IvaDescripcion,
-                        Iva2:               cambio.Iva2,
-                        IvaDescripcion2:    cambio.IvaDescripcion2,
-                        PBodega:            cambio.PBodega ?? 0m,
-                        PCredito:           cambio.PCredito ?? 0m,
-                        UPublico:           cambio.UPublico ?? 0m,
-                        UBodega:            cambio.UBodega,
-                        UCredito:           cambio.UCredito,
+                        ReferenciaVisions:   cambio.REFERENCIA,
+                        CentroCostoVisions:  cambio.CENTROCOSTO.ToString(),
+                        Nombre:              cambio.DETALLE ?? "",
+                        Costo:               cambio.COSTO,
+                        PPublico:            cambio.PPUBLICO,
+                        FechaCambio:         cambio.FechaCambio,
+                        MarcaCodigo:         cambio.MarcaCodigo ?? "",
+                        GrupoMenorCodigo:    cambio.GrupoMenorCodigo,
+                        PresentacionCodigo:  cambio.PresentacionCodigo,
+                        IvaSiNo:             cambio.IvaSiNo ?? "SI",
+                        IvaValor:            cambio.IvaValor,
+                        IvaDescripcion:      cambio.IvaDescripcion,
+                        Iva2:                cambio.Iva2,
+                        IvaDescripcion2:     cambio.IvaDescripcion2,
+                        PBodega:             cambio.PBodega ?? 0m,
+                        PCredito:            cambio.PCredito ?? 0m,
+                        UPublico:            cambio.UPublico ?? 0m,
+                        UBodega:             cambio.UBodega,
+                        UCredito:            cambio.UCredito,
                         TipoProductoCodigo:  cambio.TipoProductoCodigo,
                         ExistenciasActuales: cambio.ExistenciasActuales,
                         ExistenciasMinimas:  cambio.ExistenciasMinimas,
-                        Fracciones:          cambio.Fracciones), ct);
+                        Fracciones:          cambio.Fracciones,
+                        ImagenBase64:        imagenBase64,
+                        ImagenContentType:   imagenContentType), ct);
                     _logger.LogInformation("Cambio de TARJETA ({Ref}) sincronizado a NEXO", cambio.REFERENCIA);
                 }
 
-                // Marcar todos los registros de esta referencia como procesados.
                 await connection.ExecuteAsync(
                     "UPDATE dbo.NEXO_TarjetasCambios SET Procesado = 1 WHERE CENTROCOSTO = @CC AND REFERENCIA = @Ref AND Procesado = 0",
                     new { CC = cambio.CENTROCOSTO, Ref = cambio.REFERENCIA });
@@ -128,5 +157,6 @@ public class TareaImportarCambiosTarjeta
         decimal? ExistenciasActuales = null,
         decimal? ExistenciasMinimas = null,
         decimal? Fracciones = null,
-        bool EliminadoEnVisions = false);
+        bool EliminadoEnVisions = false,
+        byte[]? ImagenBytes = null);
 }

@@ -59,7 +59,13 @@ public class TareaAplicarEntradasInventario
             return;
         }
 
-        AplicarEntradaInventario(evento);
+        if (evento.TipoEvento is "AJUSTE_INVENTARIO" or "ENTRADA_INVENTARIO" or "ENTRADA_PRODUCCION" or "BAJA_INVENTARIO" or "CONSUMO_INSUMO")
+        {
+            AplicarEntradaInventario(evento);
+            return;
+        }
+
+        throw new NotSupportedException($"TipoEvento '{evento.TipoEvento}' desconocido para evento {evento.EventoID}. Actualizar el agente.");
     }
 
     // Crea o actualiza el articulo en dbo.TARJETA.
@@ -70,6 +76,7 @@ public class TareaAplicarEntradasInventario
     {
         using var connection = _visionsDb.CreateConnection();
         connection.Open();
+        using var transaction = connection.BeginTransaction();
 
         // Resolver TipoID numérico de Visions desde el Codigo ('PT','MP','IN','SER').
         // Si viene null o no se encuentra en TIPOPRODUCTO_TIPOS, se deja VV3 sin cambiar (COALESCE).
@@ -77,7 +84,7 @@ public class TareaAplicarEntradasInventario
         if (!string.IsNullOrWhiteSpace(evento.TipoProductoCodigo))
             tipoProductoID = connection.ExecuteScalar<int?>(
                 "SELECT TipoID FROM dbo.TIPOPRODUCTO_TIPOS WHERE Codigo = @Codigo",
-                new { Codigo = evento.TipoProductoCodigo });
+                new { Codigo = evento.TipoProductoCodigo }, transaction);
 
         connection.Execute(
             @"MERGE dbo.TARJETA AS destino
@@ -178,17 +185,20 @@ public class TareaAplicarEntradasInventario
                 IvaValor = evento.IvaValor,
                 IvaDescripcion = evento.IvaDescripcion,
                 TipoProductoID = tipoProductoID
-            });
+            }, transaction);
 
         // Marcar en NEXO_TarjetasCambios para que TareaDetectarArticulosFaltantes
         // no reenvie este articulo a NEXO en el mismo ciclo (doble pasada).
         // El trigger no inserto nada (APP_NAME supresion), este INSERT es el unico rastro.
+        // Dentro de la misma transaccion: si falla el INSERT de guardia, el MERGE de TARJETA
+        // tambien se revierte y el evento se reintenta en el siguiente ciclo.
         connection.Execute(@"
-            IF NOT EXISTS (SELECT 1 FROM dbo.NEXO_TarjetasCambios
-                           WHERE CENTROCOSTO = @CC AND REFERENCIA = @Ref)
-            INSERT INTO dbo.NEXO_TarjetasCambios
-                (CENTROCOSTO, REFERENCIA, DETALLE, COSTO, PPUBLICO, FechaCambio, Procesado)
-            VALUES (@CC, @Ref, @Detalle, @Costo, @PPub, GETDATE(), 1)",
+            MERGE dbo.NEXO_TarjetasCambios WITH (HOLDLOCK) AS dest
+            USING (SELECT @CC AS CENTROCOSTO, @Ref AS REFERENCIA) AS src
+            ON dest.CENTROCOSTO = src.CENTROCOSTO AND dest.REFERENCIA = src.REFERENCIA
+            WHEN NOT MATCHED THEN
+                INSERT (CENTROCOSTO, REFERENCIA, DETALLE, COSTO, PPUBLICO, FechaCambio, Procesado)
+                VALUES (@CC, @Ref, @Detalle, @Costo, @PPub, GETDATE(), 1);",
             new
             {
                 CC     = evento.CentroCostoVisions,
@@ -196,7 +206,9 @@ public class TareaAplicarEntradasInventario
                 Detalle = evento.NombreArticulo,
                 Costo  = evento.CostoUnitario,
                 PPub   = evento.PrecioVentaArticulo
-            });
+            }, transaction);
+
+        transaction.Commit();
     }
 
     private void AplicarEntradaInventario(NexoApiClient.Dtos.EventoPendienteItem evento)
@@ -207,34 +219,44 @@ public class TareaAplicarEntradasInventario
 
         try
         {
-            var filas = connection.Execute(
-                @"UPDATE dbo.TARJETA SET EXISTENCIAS = ISNULL(EXISTENCIAS,0) + @Cantidad
-                  WHERE CENTROCOSTO = @CentroCosto AND REFERENCIA = @Referencia",
-                new
-                {
-                    evento.Cantidad,
-                    CentroCosto = evento.CentroCostoVisions,
-                    Referencia = evento.ReferenciaVisions
-                },
-                transaction);
+            // Idempotencia: si NEXO_EntradasInventario ya tiene fila para este EventoID,
+            // el stock fue sumado en un ciclo anterior (confirm falló tras apply exitoso).
+            // No repetir el UPDATE — solo dejar que el caller confirme en NEXO.
+            var yaAplicado = connection.ExecuteScalar<int>(
+                "SELECT COUNT(1) FROM dbo.NEXO_EntradasInventario WHERE IdEventoOrigen = @Id",
+                new { Id = evento.EventoID }, transaction) > 0;
 
-            if (filas == 0)
-                throw new InvalidOperationException(
-                    $"La referencia {evento.ReferenciaVisions} no existe en TARJETA para el centro de costo {evento.CentroCostoVisions}.");
+            if (!yaAplicado)
+            {
+                var filas = connection.Execute(
+                    @"UPDATE dbo.TARJETA SET EXISTENCIAS = ISNULL(EXISTENCIAS,0) + @Cantidad
+                      WHERE CENTROCOSTO = @CentroCosto AND REFERENCIA = @Referencia",
+                    new
+                    {
+                        evento.Cantidad,
+                        CentroCosto = evento.CentroCostoVisions,
+                        Referencia = evento.ReferenciaVisions
+                    },
+                    transaction);
 
-            connection.Execute(
-                @"INSERT INTO dbo.NEXO_EntradasInventario
-                    (IdEventoOrigen, CENTROCOSTO, REFERENCIA, CANTIDAD, COSTO, Aplicado, FechaAplicado)
-                  VALUES (@IdEventoOrigen, @CentroCosto, @Referencia, @Cantidad, @Costo, 1, GETDATE())",
-                new
-                {
-                    IdEventoOrigen = evento.EventoID,
-                    CentroCosto = evento.CentroCostoVisions,
-                    Referencia = evento.ReferenciaVisions,
-                    evento.Cantidad,
-                    Costo = evento.CostoUnitario
-                },
-                transaction);
+                if (filas == 0)
+                    throw new InvalidOperationException(
+                        $"La referencia {evento.ReferenciaVisions} no existe en TARJETA para el centro de costo {evento.CentroCostoVisions}.");
+
+                connection.Execute(
+                    @"INSERT INTO dbo.NEXO_EntradasInventario
+                        (IdEventoOrigen, CENTROCOSTO, REFERENCIA, CANTIDAD, COSTO, Aplicado, FechaAplicado)
+                      VALUES (@IdEventoOrigen, @CentroCosto, @Referencia, @Cantidad, @Costo, 1, GETDATE())",
+                    new
+                    {
+                        IdEventoOrigen = evento.EventoID,
+                        CentroCosto = evento.CentroCostoVisions,
+                        Referencia = evento.ReferenciaVisions,
+                        evento.Cantidad,
+                        Costo = evento.CostoUnitario
+                    },
+                    transaction);
+            }
 
             transaction.Commit();
         }

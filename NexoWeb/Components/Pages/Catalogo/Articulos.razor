@@ -3,6 +3,7 @@
 @implements IDisposable
 @inject INexoApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 @inject NexoWeb.Common.Auth.PreferenciasState Preferencias
 @using NexoWeb.Common.Dtos
@@ -21,6 +22,12 @@
     <div class="art-header__actions">
         <VistaToggle OnCambio="StateHasChanged" />
         <ExportButton Endpoint="api/catalogo/articulos/exportar" NombreArchivo="articulos" />
+        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                   StartIcon="@Icons.Material.Filled.FileDownload"
+                   Disabled="_descargandoPlantilla"
+                   OnClick="DescargarPlantillaAsync">
+            @(_descargandoPlantilla ? "Descargando…" : "Descargar estructura")
+        </MudButton>
         <MudFileUpload T="IBrowserFile" FilesChanged="ImportarExcelAsync" Accept=".xlsx,.xls" MaximumFileCount="1">
             <ActivatorContent>
                 <MudButton Variant="Variant.Outlined" Color="Color.Success"
@@ -46,23 +53,12 @@
                   AdornmentIcon="@Icons.Material.Filled.Search" Immediate="false"
                   DebounceInterval="400" Variant="Variant.Outlined"
                   Style="flex:2; min-width:220px;" />
-    <MudSelect T="int?" Value="_filtroCentroCostoId" ValueChanged="OnFiltroCCCambiadoAsync"
-               Label="Centro de costo" Clearable="true" Variant="Variant.Outlined"
-               Style="flex:1; min-width:200px;"
-               AdornmentIcon="@Icons.Material.Filled.Store">
-        @foreach (var cc in _centrosCosto)
-        {
-            <MudSelectItem T="int?" Value="@((int?)cc.CentroCostoID)">@cc.Nombre</MudSelectItem>
-        }
-    </MudSelect>
-    <MudSelect T="int?" Value="_filtroTipoId" ValueChanged="OnFiltroTipoCambiadoAsync"
-               Label="Tipo de artículo" Clearable="true" Variant="Variant.Outlined"
-               Style="flex:1; min-width:180px;">
-        @foreach (var tipo in _tiposArticulo)
-        {
-            <MudSelectItem T="int?" Value="@tipo.TipoArticuloID">@tipo.Nombre</MudSelectItem>
-        }
-    </MudSelect>
+    <AppSelect TValue="int?" Value="_filtroCentroCostoId" ValueChanged="OnFiltroCCCambiadoAsync"
+               Label="Centro de costo" Style="flex:1; min-width:200px;"
+               Items="@(_centrosCosto.Select(cc => new AppSelectItem<int?>(cc.Nombre, (int?)cc.CentroCostoID)))" />
+    <AppSelect TValue="int?" Value="_filtroTipoId" ValueChanged="OnFiltroTipoCambiadoAsync"
+               Label="Tipo de artículo" Style="flex:1; min-width:180px;"
+               Items="@(_tiposArticulo.Select(tipo => new AppSelectItem<int?>(tipo.Nombre, (int?)tipo.TipoArticuloID)))" />
     <MudButton Variant="@(_filtroEstado == false ? Variant.Filled : Variant.Outlined)"
                Color="@(_filtroEstado == false ? Color.Warning : Color.Default)"
                StartIcon="@(_filtroEstado == false ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
@@ -329,6 +325,7 @@ else
     private string? _filtroTexto { get; set; }
 
     private bool _importando = false;
+    private bool _descargandoPlantilla = false;
 
     private List<ResumenTipoItem> _tiposResumen = new();
 
@@ -452,5 +449,22 @@ else
         {
             _importando = false;
         }
+    }
+
+    private async Task DescargarPlantillaAsync()
+    {
+        _descargandoPlantilla = true;
+        StateHasChanged();
+        try
+        {
+            var bytes  = await ApiClient.GetBytesAsync("api/catalogo/articulos/plantilla");
+            var base64 = Convert.ToBase64String(bytes);
+            await JS.InvokeVoidAsync("nexoDescargarArchivo",
+                "plantilla_articulos.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                base64);
+        }
+        catch { Snackbar.Add("No se pudo descargar la plantilla.", Severity.Error); }
+        finally { _descargandoPlantilla = false; StateHasChanged(); }
     }
 }

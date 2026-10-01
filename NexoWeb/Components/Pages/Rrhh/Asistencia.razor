@@ -36,15 +36,8 @@
 <MudPaper Class="pa-4 mb-4" Elevation="1">
     <MudGrid Spacing="2" AlignItems="AlignItems.End">
         <MudItem xs="12" sm="4">
-            <MudSelect T="int?" @bind-Value="_filtroEmpleadoId" Label="Empleado"
-                       Clearable Placeholder="Todos">
-                @foreach (var e in _empleados)
-                {
-                    <MudSelectItem T="int?" Value="@((int?)e.EmpleadoID)">
-                        @e.Nombres @e.Apellidos
-                    </MudSelectItem>
-                }
-            </MudSelect>
+            <AppSelect TValue="int?" @bind-Value="_filtroEmpleadoId" Label="Empleado" Placeholder="Todos"
+                       Items="@(_empleados.Select(e => new AppSelectItem<int?>($"{e.Nombres} {e.Apellidos}", (int?)e.EmpleadoID)))" />
         </MudItem>
         <MudItem xs="6" sm="3">
             <MudDatePicker @bind-Date="_desde" Label="Desde" DateFormat="dd/MM/yyyy" />

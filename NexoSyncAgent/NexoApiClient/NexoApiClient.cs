@@ -26,12 +26,15 @@ public class NexoApiClient : INexoApiClient
     public async Task ConfirmarEventoSalienteAsync(long eventoId, CancellationToken ct)
     {
         var respuesta = await _http.PostAsync($"api/integracion/eventos-salientes/{eventoId}/confirmar", null, ct);
+        if (respuesta.StatusCode == System.Net.HttpStatusCode.NotFound) return;
         respuesta.EnsureSuccessStatusCode();
     }
 
     public async Task RegistrarEventoEntranteAsync(RegistrarEventoEntranteRequest request, CancellationToken ct)
     {
         var respuesta = await _http.PostAsJsonAsync("api/integracion/eventos-entrantes", request, ct);
+
+        if (respuesta.StatusCode == System.Net.HttpStatusCode.Conflict) return;
 
         if (!respuesta.IsSuccessStatusCode)
         {
@@ -75,6 +78,7 @@ public class NexoApiClient : INexoApiClient
             $"api/integracion/eventos-salientes/{eventoId}/fallar",
             new { MensajeError = mensajeError },
             ct);
+        if (respuesta.StatusCode == System.Net.HttpStatusCode.NotFound) return;
         respuesta.EnsureSuccessStatusCode();
     }
 
@@ -166,10 +170,20 @@ public class NexoApiClient : INexoApiClient
         r.EnsureSuccessStatusCode();
     }
 
-    public async Task InactivarArticuloDesdeVisionsAsync(string referencia, CancellationToken ct)
+    public async Task InactivarArticuloDesdeVisionsAsync(string referencia, string centroCostoVisions, CancellationToken ct)
     {
-        var r = await _http.PostAsync($"api/integracion/sync/articulo-inactivar?referencia={Uri.EscapeDataString(referencia)}", null, ct);
+        var r = await _http.PostAsync($"api/integracion/sync/articulo-inactivar?referencia={Uri.EscapeDataString(referencia)}&centroCostoVisions={Uri.EscapeDataString(centroCostoVisions)}", null, ct);
         r.EnsureSuccessStatusCode();
+    }
+
+    public async Task<IEnumerable<ArticuloImagenActualizadaDto>> ListarArticulosConImagenActualizadaAsync(DateTime? desde, CancellationToken ct)
+    {
+        var url = desde.HasValue
+            ? $"api/integracion/sync/articulos-imagen-actualizados?desde={desde.Value:O}"
+            : "api/integracion/sync/articulos-imagen-actualizados";
+        var r = await _http.GetAsync(url, ct);
+        r.EnsureSuccessStatusCode();
+        return await r.Content.ReadFromJsonAsync<List<ArticuloImagenActualizadaDto>>(cancellationToken: ct) ?? [];
     }
 
     public async Task<List<ClienteParaSyncDto>> ListarClientesParaSyncAsync(DateTime? desde, CancellationToken ct)

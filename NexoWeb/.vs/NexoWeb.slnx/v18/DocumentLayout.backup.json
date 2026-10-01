@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\Produccion\\NexoWeb\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\traspasos\\creartraspasodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\traspasos\\creartraspasodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\maquinariadtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\dtos\\maquinariadtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -21,10 +25,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\auth\\calendariobroadcast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:common\\auth\\calendariobroadcast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\components\\pages\\traspasos\\creartraspasodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|solutionrelative:components\\pages\\traspasos\\creartraspasodialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{75C733E7-4E0A-8FC2-B1B6-59A91EFB35D9}|NexoWeb.csproj|c:\\produccion\\nexoweb\\common\\dtos\\integraciondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -234,7 +234,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 7,
+          "SelectedChildIndex": 10,
           "Children": [
             {
               "$type": "Bookmark",
@@ -266,20 +266,19 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "MaquinariaDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\MaquinariaDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\MaquinariaDtos.cs",
               "ToolTip": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\MaquinariaDtos.cs",
               "RelativeToolTip": "Common\\Dtos\\MaquinariaDtos.cs",
-              "ViewState": "AgIAAB8AAAAAAAAAAAAQwDMAAAAiAAAAAAAAAA==",
+              "ViewState": "AgIAADsAAAAAAAAAAAAAAEMAAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-14T15:53:36.109Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-14T15:53:36.109Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "CustomAuthStateProvider.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Auth\\CustomAuthStateProvider.cs",
               "RelativeDocumentMoniker": "Common\\Auth\\CustomAuthStateProvider.cs",
@@ -303,15 +302,16 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 0,
               "Title": "CrearTraspasoDialog.razor",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
               "RelativeDocumentMoniker": "Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
               "ToolTip": "C:\\Produccion\\NexoWeb\\Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
               "RelativeToolTip": "Components\\Pages\\Traspasos\\CrearTraspasoDialog.razor",
-              "ViewState": "AgIAACwAAAAAAAAAAAAAABoAAAAZAAAAAAAAAA==",
+              "ViewState": "AgIAACUAAAAAAAAAAAAwwD8AAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-08-28T22:54:19.272Z"
+              "WhenOpened": "2026-08-28T22:54:19.272Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -363,7 +363,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "CalendarioBroadcast.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Auth\\CalendarioBroadcast.cs",
               "RelativeDocumentMoniker": "Common\\Auth\\CalendarioBroadcast.cs",
@@ -375,7 +375,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "DashboardDtos.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Dtos\\DashboardDtos.cs",
               "RelativeDocumentMoniker": "Common\\Dtos\\DashboardDtos.cs",
@@ -399,7 +399,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "ConfiguracionEmpresaState.cs",
               "DocumentMoniker": "C:\\Produccion\\NexoWeb\\Common\\Auth\\ConfiguracionEmpresaState.cs",
               "RelativeDocumentMoniker": "Common\\Auth\\ConfiguracionEmpresaState.cs",

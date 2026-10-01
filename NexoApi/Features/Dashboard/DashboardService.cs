@@ -590,15 +590,31 @@ public class DashboardService : IDashboardService
     public async Task<IEnumerable<HorarioPicoItem>> ObtenerHorariosPicoAsync(int meses = 3)
     {
         using var connection = _db.CreateConnection();
+        // Combina facturas NEXO + ventas de Visions (EventosEntrantes).
+        // En EventosEntrantes cada fila = un ítem; COUNT(DISTINCT IdEventoExterno) = documentos únicos.
         return await connection.QueryAsync<HorarioPicoItem>(@"
-            SELECT DATEPART(HOUR, Fecha)    AS Hora,
-                   DATEPART(WEEKDAY, Fecha) AS DiaSemana,
-                   COUNT(*)                 AS Total
-            FROM Facturacion.Facturas
-            WHERE Estado <> 'ANULADA'
-              AND Fecha >= DATEADD(MONTH, -@Meses, CAST(GETDATE() AS date))
-            GROUP BY DATEPART(HOUR, Fecha), DATEPART(WEEKDAY, Fecha)
-            ORDER BY DATEPART(HOUR, Fecha), DATEPART(WEEKDAY, Fecha)",
+            SELECT Hora, DiaSemana, SUM(Total) AS Total
+            FROM (
+                SELECT DATEPART(HOUR,    CAST(Fecha AS datetime2)) AS Hora,
+                       DATEPART(WEEKDAY, CAST(Fecha AS datetime2)) AS DiaSemana,
+                       COUNT(*) AS Total
+                FROM Facturacion.Facturas
+                WHERE Fecha >= DATEADD(MONTH, -@Meses, CAST(GETDATE() AS date))
+                GROUP BY DATEPART(HOUR, CAST(Fecha AS datetime2)), DATEPART(WEEKDAY, CAST(Fecha AS datetime2))
+
+                UNION ALL
+
+                SELECT DATEPART(HOUR,    CAST(FechaEventoOrigen AS datetime2)) AS Hora,
+                       DATEPART(WEEKDAY, CAST(FechaEventoOrigen AS datetime2)) AS DiaSemana,
+                       COUNT(DISTINCT IdEventoExterno) AS Total
+                FROM Integracion.EventosEntrantes
+                WHERE TipDoc IS NOT NULL
+                  AND FechaEventoOrigen >= DATEADD(MONTH, -@Meses, CAST(GETDATE() AS date))
+                GROUP BY DATEPART(HOUR,    CAST(FechaEventoOrigen AS datetime2)),
+                         DATEPART(WEEKDAY, CAST(FechaEventoOrigen AS datetime2))
+            ) src
+            GROUP BY Hora, DiaSemana
+            ORDER BY Hora, DiaSemana",
             new { Meses = meses });
     }
 

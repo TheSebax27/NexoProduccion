@@ -86,31 +86,14 @@
                                   RequiredError="Los apellidos son obligatorios"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" />
 
-                    <MudSelect T="int?" @bind-Value="_cargoId" Label="Cargo" Clearable="true"
-                               Variant="Variant.Outlined" Margin="Margin.Dense">
-                        @foreach (var c in Cargos.Where(c => c.Estado))
-                        {
-                            <MudSelectItem T="int?" Value="@c.CargoID">
-                                @c.Nombre @(c.Departamento is not null ? $"({c.Departamento})" : "")
-                            </MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="int?" @bind-Value="_cargoId" Label="Cargo"
+                               Items="@(Cargos.Where(c => c.Estado).Select(c => new AppSelectItem<int?>($"{c.Nombre}{(c.Departamento is not null ? $" ({c.Departamento})" : "")}", (int?)c.CargoID)))" />
 
-                    <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Clearable="true"
-                               Variant="Variant.Outlined" Margin="Margin.Dense">
-                        @foreach (var cc in CentrosCosto)
-                        {
-                            <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="int?" @bind-Value="_centroCostoId" Label="Centro de Costo"
+                               Items="@(CentrosCosto.Select(cc => new AppSelectItem<int?>(cc.Nombre, (int?)cc.CentroCostoID)))" />
 
-                    <MudSelect T="int?" @bind-Value="_jefeDirectoId" Label="Jefe Directo" Clearable="true"
-                               Variant="Variant.Outlined" Margin="Margin.Dense">
-                        @foreach (var e in Empleados.Where(e => !EsEdicion || e.EmpleadoID != Empleado!.EmpleadoID))
-                        {
-                            <MudSelectItem T="int?" Value="@e.EmpleadoID">@e.Nombres @e.Apellidos</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="int?" @bind-Value="_jefeDirectoId" Label="Jefe Directo"
+                               Items="@(Empleados.Where(e => !EsEdicion || e.EmpleadoID != Empleado!.EmpleadoID).Select(e => new AppSelectItem<int?>($"{e.Nombres} {e.Apellidos}", (int?)e.EmpleadoID)))" />
 
                     <MudDatePicker @bind-Date="_fechaIngreso" Label="Fecha de Ingreso"
                                    Variant="Variant.Outlined" Margin="Margin.Dense"

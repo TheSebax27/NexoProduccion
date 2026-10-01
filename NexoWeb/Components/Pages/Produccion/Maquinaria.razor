@@ -30,22 +30,14 @@
 
 @* â”€â”€ Filtros â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ *@
 <div class="prod-filtros">
-    <MudSelect T="int?" @bind-Value="_filtroTipo" Label="Tipo" Variant="Variant.Outlined"
-               Clearable="true" Style="flex:1; min-width:160px;"
-               @bind-Value:after="CargarAsync">
-        @foreach (var t in _tipos)
-        {
-            <MudSelectItem T="int?" Value="@((int?)t.TipoMaquinariaID)">@t.Nombre</MudSelectItem>
-        }
-    </MudSelect>
-    <MudSelect T="string?" @bind-Value="_filtroEstado" Label="Estado" Variant="Variant.Outlined"
-               Clearable="true" Style="flex:1; min-width:160px;"
-               @bind-Value:after="CargarAsync">
-        <MudSelectItem T="string?" Value="@("Activa")">Activa</MudSelectItem>
-        <MudSelectItem T="string?" Value="@("EnMantenimiento")">En Mantenimiento</MudSelectItem>
-        <MudSelectItem T="string?" Value="@("Inactiva")">Inactiva</MudSelectItem>
-        <MudSelectItem T="string?" Value="@("BajaDefinitiva")">Baja Definitiva</MudSelectItem>
-    </MudSelect>
+    <AppSelect TValue="int?" Value="_filtroTipo"
+               ValueChanged="@(async (int? v) => { _filtroTipo = v; await CargarAsync(); })"
+               Label="Tipo" Style="flex:1; min-width:160px;"
+               Items="@(_tipos.Select(t => new AppSelectItem<int?>(t.Nombre, (int?)t.TipoMaquinariaID)))" />
+    <AppSelect TValue="string?" Value="_filtroEstado"
+               ValueChanged="@(async (string? v) => { _filtroEstado = v; await CargarAsync(); })"
+               Label="Estado" Style="flex:1; min-width:160px;"
+               Items="@(new AppSelectItem<string?>[]{ new("Activa","Activa"), new("En Mantenimiento","EnMantenimiento"), new("Inactiva","Inactiva"), new("Baja Definitiva","BajaDefinitiva") })" />
     <MudButton Variant="Variant.Filled" Color="Color.Primary"
                OnClick="CargarAsync" StartIcon="@Icons.Material.Filled.Refresh"
                Style="flex-shrink:0;">

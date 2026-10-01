@@ -47,25 +47,13 @@
                 }
 
                 <MudItem xs="@(EsEdicion ? 6 : 12)">
-                    <MudSelect T="int?" @bind-Value="_rolId" Label="Rol" Required="true"
-                               RequiredError="Selecciona un rol" Variant="Variant.Outlined"
-                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AdminPanelSettings">
-                        @foreach (var rol in Roles)
-                        {
-                            <MudSelectItem T="int?" Value="@((int?)rol.RolID)">@rol.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="int?" @bind-Value="_rolId" Label="Rol"
+                               Items="@(Roles.Select(rol => new AppSelectItem<int?>(rol.Nombre, (int?)rol.RolID)))" />
                 </MudItem>
 
                 <MudItem xs="@(EsEdicion ? 6 : 12)">
-                    <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de Costo" Clearable="true"
-                               Variant="Variant.Outlined"
-                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Business">
-                        @foreach (var centro in CentrosCosto)
-                        {
-                            <MudSelectItem T="int?" Value="@((int?)centro.CentroCostoID)">@centro.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="int?" @bind-Value="_centroCostoId" Label="Centro de Costo"
+                               Items="@(CentrosCosto.Select(centro => new AppSelectItem<int?>(centro.Nombre, (int?)centro.CentroCostoID)))" />
                 </MudItem>
 
                 @if (EsEdicion)

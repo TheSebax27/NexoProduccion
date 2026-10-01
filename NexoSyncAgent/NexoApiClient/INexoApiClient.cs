@@ -29,7 +29,10 @@ public interface INexoApiClient
 
     // Sync bidireccional articulos (Visions → NEXO)
     Task SyncArticuloDesdeVisionsAsync(SyncArticuloDesdeVisionsRequest request, CancellationToken ct);
-    Task InactivarArticuloDesdeVisionsAsync(string referencia, CancellationToken ct);
+    Task InactivarArticuloDesdeVisionsAsync(string referencia, string centroCostoVisions, CancellationToken ct);
+
+    // Imagenes para sync NEXO → Visions
+    Task<IEnumerable<ArticuloImagenActualizadaDto>> ListarArticulosConImagenActualizadaAsync(DateTime? desde, CancellationToken ct);
 
     // Clientes para sync NEXO → Visions
     Task<List<ClienteParaSyncDto>> ListarClientesParaSyncAsync(DateTime? desde, CancellationToken ct);

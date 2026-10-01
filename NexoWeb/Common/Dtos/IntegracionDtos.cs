@@ -18,6 +18,8 @@ public record ResolverArticuloPendienteRequest(
     string? SkuNuevo, string? NombreNuevo, decimal? PrecioVentaNuevo, decimal? StockMinimoNuevo
 );
 
+public record ResolverTodosResponse(int Total, int Resueltos, int Errores);
+
 public record EstadoIntegracionResponse(
     int AgenteSyncID,
     string Descripcion,
@@ -73,7 +75,8 @@ public record EventoActividadItem(
     decimal Cantidad,
     string? MensajeError,
     DateTime FechaCreacion,
-    DateTime? FechaEnvio
+    DateTime? FechaEnvio,
+    int IntentosEnvio = 0
 );
 
 public record ActividadAgenteResponse(

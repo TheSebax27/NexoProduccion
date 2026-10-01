@@ -25,6 +25,8 @@ public interface IOrdenesProduccionService
     Task<string> GenerarSiguienteCodigoOPAsync(string prefijo);
     Task<int> MarcarRetrasadasAsync();
     Task<string> GenerarSiguienteNumeroLoteAsync(string prefijo);
+    Task<IEnumerable<FaltanteMaterialItem>> ListarFaltantesMaterialesAsync();
+    Task<IEnumerable<DesviacionConsumoItem>> ListarDesviacionesConsumoAsync(DateTime? desde, DateTime? hasta);
 }
 
 public record StockLineaItem(string Articulo, string Unidad, decimal CantidadRequerida, decimal StockDisponible);
@@ -233,28 +235,18 @@ public class OrdenesProduccionService : IOrdenesProduccionService
         var resultado = await connection.QuerySingleAsync<CerrarResultado>(
             "Produccion.sp_CerrarOrdenProduccion", parametros, commandType: CommandType.StoredProcedure);
 
-        // Entrada del PT y salidas de insumos en Visions para los artículos que tengan mapeo activo.
+        // Entrada del PT en Visions para los artículos mapeados.
+        // Los insumos ya fueron descontados del inventario al registrar cada consumo (sp_IniciarConsumo),
+        // no se generan eventos de consumo aquí — CONSUMO_INSUMO no está en el CHECK de EventosSalientes.
         await connection.ExecuteAsync(@"
             INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
-            SELECT 'ENTRADA_PRODUCCION', ma.CentroCostoID, op.ProductoTerminadoID,
+            SELECT 'ENTRADA_PRODUCTO_TERMINADO', ma.CentroCostoID, op.ProductoTerminadoID,
                    @Cantidad, @CostoUnitario
             FROM Produccion.OrdenesProduccion op
             JOIN Integracion.MapeoArticulos ma ON ma.ArticuloID = op.ProductoTerminadoID AND ma.Estado = 1
             JOIN Organizacion.CentrosCosto cc  ON cc.CentroCostoID = ma.CentroCostoID AND cc.TieneVisions = 1
             WHERE op.OrdenProduccionID = @OrdenProduccionID",
             new { OrdenProduccionID = ordenProduccionId, Cantidad = r.CantidadProducidaReal, CostoUnitario = resultado.CostoUnitarioReal });
-
-        await connection.ExecuteAsync(@"
-            INSERT INTO Integracion.EventosSalientes (TipoEvento, CentroCostoID, ArticuloID, Cantidad, CostoUnitario)
-            SELECT 'CONSUMO_INSUMO', ma.CentroCostoID, c.ArticuloID,
-                   -c.CantidadReal, ISNULL(a.CostoPromedio, 0)
-            FROM Produccion.OrdenesProduccionConsumo c
-            JOIN Catalogo.Tarjetas a           ON a.ArticuloID   = c.ArticuloID
-            JOIN Integracion.MapeoArticulos ma  ON ma.ArticuloID  = c.ArticuloID AND ma.Estado = 1
-            JOIN Organizacion.CentrosCosto cc   ON cc.CentroCostoID = ma.CentroCostoID AND cc.TieneVisions = 1
-            WHERE c.OrdenProduccionID = @OrdenProduccionID
-              AND ISNULL(c.CantidadReal, 0) > 0",
-            new { OrdenProduccionID = ordenProduccionId });
 
         // Notificar al cliente si la orden tiene ClienteID y email
         _ = Task.Run(async () =>
@@ -332,12 +324,12 @@ public class OrdenesProduccionService : IOrdenesProduccionService
             SELECT
                 t.Nombre                                            AS Articulo,
                 ISNULL(t.PresentacionCodigo, '')                    AS Unidad,
-                CAST(
+                ISNULL(CAST(
                     rd.CantidadRequerida
                     * op.CantidadProgramada
                     / NULLIF(r.CantidadRendimientoBase, 0)
                     * (1 + rd.PorcentajeMermaEstandar / 100.0)
-                AS DECIMAL(18,4))                                   AS CantidadRequerida,
+                AS DECIMAL(18,4)), 0)                               AS CantidadRequerida,
                 ISNULL(SUM(s.CantidadActual), 0)                    AS StockDisponible
             FROM Produccion.OrdenesProduccion op
             JOIN Produccion.RecetaBOM r          ON r.RecetaID   = op.RecetaID
@@ -362,6 +354,79 @@ public class OrdenesProduccionService : IOrdenesProduccionService
             "SELECT COUNT(*) FROM Produccion.OrdenesProduccion WHERE CodigoOP LIKE @Patron",
             new { Patron = patron });
         return $"{prefijo}-{mesActual}-{(usados + 1):D3}";
+    }
+
+    public async Task<IEnumerable<FaltanteMaterialItem>> ListarFaltantesMaterialesAsync()
+    {
+        using var conn = _db.CreateConnection();
+        return await conn.QueryAsync<FaltanteMaterialItem>(@"
+            SELECT
+                op.OrdenProduccionID,
+                op.CodigoOP,
+                pt.Nombre  AS Producto,
+                e.Nombre   AS Estado,
+                t.Nombre   AS Insumo,
+                ISNULL(pres.Presentacion, t.PresentacionCodigo) AS Unidad,
+                CAST(ISNULL(
+                    rd.CantidadRequerida * op.CantidadProgramada
+                    / NULLIF(r.CantidadRendimientoBase, 0)
+                    * (1 + rd.PorcentajeMermaEstandar / 100.0), 0) AS DECIMAL(18,4)) AS CantidadRequerida,
+                ISNULL(SUM(s.CantidadActual), 0) AS StockDisponible,
+                CASE WHEN ISNULL(SUM(s.CantidadActual), 0) <
+                          CAST(ISNULL(rd.CantidadRequerida * op.CantidadProgramada
+                          / NULLIF(r.CantidadRendimientoBase, 0)
+                          * (1 + rd.PorcentajeMermaEstandar / 100.0), 0) AS DECIMAL(18,4))
+                     THEN CAST(ISNULL(rd.CantidadRequerida * op.CantidadProgramada
+                          / NULLIF(r.CantidadRendimientoBase, 0)
+                          * (1 + rd.PorcentajeMermaEstandar / 100.0), 0) AS DECIMAL(18,4))
+                          - ISNULL(SUM(s.CantidadActual), 0)
+                     ELSE 0 END AS Faltante
+            FROM Produccion.OrdenesProduccion op
+            JOIN Produccion.EstadosOP e          ON e.EstadoOPID   = op.EstadoOPID
+            JOIN Catalogo.Tarjetas pt            ON pt.ArticuloID  = op.ProductoTerminadoID
+            JOIN Produccion.RecetaBOM r          ON r.RecetaID     = op.RecetaID
+            JOIN Produccion.RecetaBOM_Detalle rd  ON rd.RecetaID   = r.RecetaID
+            JOIN Catalogo.Tarjetas t             ON t.ArticuloID   = rd.InsumoID
+            LEFT JOIN Inventario.InventarioStock s ON s.ArticuloID = rd.InsumoID
+                                                  AND s.BodegaID   = op.BodegaOrigenMPID
+            LEFT JOIN Catalogo.Presentacion pres  ON pres.Codigo   = t.PresentacionCodigo
+            WHERE e.Nombre IN ('Planificada', 'En Proceso', 'Retrasada')
+            GROUP BY op.OrdenProduccionID, op.CodigoOP, pt.Nombre, e.Nombre,
+                     t.Nombre, t.PresentacionCodigo, pres.Presentacion,
+                     rd.CantidadRequerida, rd.PorcentajeMermaEstandar,
+                     op.CantidadProgramada, r.CantidadRendimientoBase
+            HAVING ISNULL(SUM(s.CantidadActual), 0) <
+                   CAST(ISNULL(rd.CantidadRequerida * op.CantidadProgramada
+                   / NULLIF(r.CantidadRendimientoBase, 0)
+                   * (1 + rd.PorcentajeMermaEstandar / 100.0), 0) AS DECIMAL(18,4))
+            ORDER BY op.CodigoOP, Faltante DESC");
+    }
+
+    public async Task<IEnumerable<DesviacionConsumoItem>> ListarDesviacionesConsumoAsync(DateTime? desde, DateTime? hasta)
+    {
+        using var conn = _db.CreateConnection();
+        return await conn.QueryAsync<DesviacionConsumoItem>(@"
+            SELECT
+                op.OrdenProduccionID,
+                op.CodigoOP,
+                pt.Nombre  AS Producto,
+                op.FechaFin,
+                t.Nombre   AS Insumo,
+                ISNULL(pres.Presentacion, t.PresentacionCodigo) AS Unidad,
+                c.CantidadTeorica,
+                c.CantidadReal,
+                c.CantidadReal - c.CantidadTeorica AS Desviacion
+            FROM Produccion.OrdenesProduccion op
+            JOIN Produccion.EstadosOP e                    ON e.EstadoOPID      = op.EstadoOPID
+            JOIN Catalogo.Tarjetas pt                      ON pt.ArticuloID     = op.ProductoTerminadoID
+            JOIN Produccion.OrdenesProduccionConsumo c     ON c.OrdenProduccionID = op.OrdenProduccionID
+            JOIN Catalogo.Tarjetas t                       ON t.ArticuloID      = c.ArticuloID
+            LEFT JOIN Catalogo.Presentacion pres           ON pres.Codigo       = t.PresentacionCodigo
+            WHERE e.Nombre = 'Cerrada'
+              AND (@Desde IS NULL OR op.FechaFin >= @Desde)
+              AND (@Hasta IS NULL OR op.FechaFin < DATEADD(day, 1, @Hasta))
+            ORDER BY op.FechaFin DESC, op.CodigoOP, t.Nombre",
+            new { Desde = desde, Hasta = hasta });
     }
 
     public async Task<string> GenerarSiguienteNumeroLoteAsync(string prefijo)

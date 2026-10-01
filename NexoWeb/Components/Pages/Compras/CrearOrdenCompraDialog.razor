@@ -42,19 +42,11 @@
             <div class="mb-3"></div>
         }
 
-        <MudSelect T="int?" @bind-Value="_centroCostoId" Label="Centro de costo (opcional)" Clearable="true" Class="mb-3">
-            @foreach (var cc in _centrosCosto)
-            {
-                <MudSelectItem T="int?" Value="@((int?)cc.CentroCostoID)">@cc.Nombre</MudSelectItem>
-            }
-        </MudSelect>
+        <AppSelect TValue="int?" @bind-Value="_centroCostoId" Label="Centro de costo (opcional)" Class="mb-3"
+                   Items="@(_centrosCosto.Select(cc => new AppSelectItem<int?>(cc.Nombre, (int?)cc.CentroCostoID)))" />
 
-        <MudSelect T="int?" @bind-Value="_bodegaDestinoId" Label="Bodega Destino" Placeholder="Seleccionar..." Class="mb-4">
-            @foreach (var bodega in _bodegas)
-            {
-                <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
-            }
-        </MudSelect>
+        <AppSelect TValue="int?" @bind-Value="_bodegaDestinoId" Label="Bodega Destino" Placeholder="Seleccionar..." Class="mb-4"
+                   Items="@(_bodegas.Select(bodega => new AppSelectItem<int?>($"{bodega.Nombre} ({bodega.CentroCosto})", (int?)bodega.BodegaID)))" />
 
         <MudText Typo="Typo.subtitle2" Class="mb-2">Articulos</MudText>
 
@@ -124,10 +116,23 @@
         _lineas.Count > 0 && _lineas.All(l => l.ArticuloID > 0 && l.Cantidad > 0 && l.CostoUnitario > 0);
 
     [Parameter] public int? ArticuloPreseleccionadoID { get; set; }
+    [Parameter] public List<OCLineSugeridaItem> LineasSugeridas { get; set; } = new();
 
     protected override void OnInitialized()
     {
-        AgregarLinea();
+        if (LineasSugeridas.Count > 0)
+        {
+            foreach (var s in LineasSugeridas)
+            {
+                var art = new ArticuloItem(s.ArticuloID, s.SKU, s.Articulo, null, s.TipoArticulo,
+                    s.CostoPromedio, s.StockMinimo, 0, true, 0, null, null, false, null, null);
+                _lineas.Add(new LineaFormulario { ArticuloSeleccionado = art, Cantidad = s.CantidadSugerida, CostoUnitario = s.CostoPromedio });
+            }
+        }
+        else
+        {
+            AgregarLinea();
+        }
     }
 
     private void OnNitBusquedaCambiado()

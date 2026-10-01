@@ -12,21 +12,11 @@
 
             <div class="mb-3"></div>
 
-            <MudSelect T="int?" Value="_centroCostoId" ValueChanged="OnCentroCostoCambiado" Label="Centro de Costo" Required="true"
-                       RequiredError="Selecciona un centro de costo" Class="mb-3">
-                @foreach (var cc in CentrosCosto)
-                {
-                    <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
-                }
-            </MudSelect>
+            <AppSelect TValue="int?" Value="_centroCostoId" ValueChanged="OnCentroCostoCambiado" Label="Centro de Costo" Class="mb-3"
+                       Items="@(CentrosCosto.Select(cc => new AppSelectItem<int?>(cc.Nombre, (int?)cc.CentroCostoID)))" />
 
-            <MudSelect T="int?" @bind-Value="_bodegaOrigenId" Label="Bodega de Origen" Required="true"
-                       RequiredError="Selecciona una bodega" Class="mb-3">
-                @foreach (var b in BodegasFiltradas)
-                {
-                    <MudSelectItem T="int?" Value="@b.BodegaID">@b.Nombre</MudSelectItem>
-                }
-            </MudSelect>
+            <AppSelect TValue="int?" @bind-Value="_bodegaOrigenId" Label="Bodega de Origen" Class="mb-3"
+                       Items="@(BodegasFiltradas.Select(b => new AppSelectItem<int?>(b.Nombre, (int?)b.BodegaID)))" />
 
             <MudTextField @bind-Value="_direccion" Label="Dirección de Entrega" Class="mb-3" />
             <MudTextField @bind-Value="_observaciones" Label="Observaciones" Lines="2" Class="mb-3" />

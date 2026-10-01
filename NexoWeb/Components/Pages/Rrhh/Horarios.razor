@@ -205,26 +205,12 @@
 
         <MudGrid Spacing="2">
             <MudItem xs="12" sm="4">
-                <MudSelect T="int?" @bind-Value="_asigEmpleadoId" Label="Empleado"
-                           Placeholder="Selecciona el empleado">
-                    @foreach (var e in _empleadosSinHorario)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)e.EmpleadoID)">
-                            @e.Nombres @e.Apellidos
-                        </MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" @bind-Value="_asigEmpleadoId" Label="Empleado" Placeholder="Selecciona el empleado"
+                           Items="@(_empleadosSinHorario.Select(e => new AppSelectItem<int?>($"{e.Nombres} {e.Apellidos}", (int?)e.EmpleadoID)))" />
             </MudItem>
             <MudItem xs="12" sm="3">
-                <MudSelect T="int?" @bind-Value="_asigHorarioId" Label="Horario"
-                           Placeholder="Selecciona el horario">
-                    @foreach (var h in _horarios.Where(x => x.Activo))
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)h.HorarioID)">
-                            @h.Nombre
-                        </MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" @bind-Value="_asigHorarioId" Label="Horario" Placeholder="Selecciona el horario"
+                           Items="@(_horarios.Where(x => x.Activo).Select(h => new AppSelectItem<int?>(h.Nombre, (int?)h.HorarioID)))" />
             </MudItem>
             <MudItem xs="12" sm="3">
                 <MudDatePicker @bind-Date="_asigDesde" Label="Vigente desde"

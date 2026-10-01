@@ -1,4 +1,4 @@
-/* ================================================================
+﻿/* ================================================================
    NEXO ERP — Global Design System v3
    Paleta: Morado profundo (#7C5CFF / #5A3BFF) + Gris moderno
    Fuente: Mango Dream › Plus Jakarta Sans › Inter
@@ -112,10 +112,13 @@
   /* Shadow elevado para tarjetas KPI */
   --n-shadow-kpi: 0 10px 40px rgba(26,28,46,0.12), inset 0 1px 0 rgba(255,255,255,0.90);
 
-  /* Z-index del panel de notificaciones */
+  /* Z-index del panel de notificaciones.
+     Sidebar = 1200; AppBar MudBlazor = 1300; MudBlazor popovers = 1300.
+     Overlay sin !important → debe ser > sidebar (1200) y < AppBar (1300).
+     Panel > overlay para que los clicks en el panel no lo cierren. */
   --nexo-z-notif-container: 1001;
-  --nexo-z-notif-overlay:   1000;
-  --nexo-z-notif-panel:     1002;
+  --nexo-z-notif-overlay:   1250;
+  --nexo-z-notif-panel:     1280;
   --nexo-z-avatar:          1003;
 }
 
@@ -923,13 +926,31 @@ a, .btn-link { color: var(--n-purple); }
 
 /* Excepcion: el panel de notificaciones cuelga del Top Bar (chrome, no
    pagina) -- se mantiene blanco siempre, sin importar el tema. */
+.nexo-topbar__notif-panel {
+  color: #1A1C2E;
+}
+.nexo-topbar__notif-panel-title {
+  color: #1A1C2E !important;
+  font-weight: 700;
+}
+.nexo-topbar__notif-item-msg {
+  color: #111827 !important;
+  font-weight: 600;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+.nexo-topbar__notif-item-detalle {
+  color: #374151 !important;
+  font-size: 0.78rem;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+.nexo-topbar__notif-empty {
+  color: #374151 !important;
+}
 #nexo-app-root.nexo-tema-oscuro .nexo-topbar__notif-panel {
   background: #FFFFFF !important;
   color: #1A1C2E !important;
-}
-#nexo-app-root.nexo-tema-oscuro .nexo-topbar__notif-panel .mud-list-item-text,
-#nexo-app-root.nexo-tema-oscuro .nexo-topbar__notif-panel-title {
-  color: inherit !important;
 }
 
 /* ── §Glass TopBar y Sidebar — DARK MODE ────────────────────────────
@@ -1387,6 +1408,23 @@ a, .btn-link { color: var(--n-purple); }
   color: rgba(255,255,255,0.70);
   letter-spacing: -0.05em;
 }
+/* ── Badge de alerta en NavLink ─────────────────────────────── */
+.nexo-nav-alerta-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  background: var(--mud-palette-error);
+  color: #fff;
+  border-radius: 9px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+}
 /* ── MudNavGroup — header colapsable del sidebar ────────────── */
 .nexo-nav-group .mud-nav-group-header .mud-nav-link {
   color: rgba(255,255,255,0.50) !important;
@@ -1569,7 +1607,7 @@ a, .btn-link { color: var(--n-purple); }
   padding: 6px 16px !important;
   min-width: unset !important;
   transition: background .2s ease, color .2s ease !important;
-  color: rgba(30,20,60,0.6) !important;
+  color: var(--n-text-2, rgba(30,20,60,0.6)) !important;
 }
 .nexo-bi-tabs .mud-tab:hover:not(.mud-tab-active) {
   background: rgba(124,92,255,0.10) !important;
@@ -1633,9 +1671,10 @@ a, .btn-link { color: var(--n-purple); }
   min-width: 90px !important;
   letter-spacing: 0.01em !important;
 }
-/* Permitir que popovers de MudSelect floten sobre tabs sin clipear */
+/* Permitir que dropdowns floten sobre tabs sin ser clipados por mud-tabs-rounded */
 .mud-tabs-panels,
-.mud-tab-panel {
+.mud-tab-panel,
+.mud-tabs.mud-tabs-rounded {
   overflow: visible !important;
 }
 /* Modo oscuro refuerzo */
@@ -1958,11 +1997,17 @@ a, .btn-link { color: var(--n-purple); }
   border: 1px solid var(--n-border);
   border-radius: var(--n-radius);
   box-shadow: var(--n-shadow);
-  overflow: hidden;
+  overflow: visible;
   transition: box-shadow .2s;
 }
 .nexo-section:hover {
   box-shadow: var(--n-shadow-md);
+}
+/* Permitir que dropdowns (position:absolute) escapen contenedores MudTable */
+.nexo-section .mud-table-container,
+.nexo-section .mud-table-root,
+.nexo-section .mud-table {
+  overflow: visible;
 }
 .nexo-section__header {
   display: flex;
@@ -1971,6 +2016,8 @@ a, .btn-link { color: var(--n-purple); }
   padding: 1.1rem 1.4rem;
   border-bottom: 1px solid var(--n-border);
   border-left: 3px solid var(--section-accent, var(--n-purple));
+  border-radius: calc(var(--n-radius) - 1px) calc(var(--n-radius) - 1px) 0 0;
+  overflow: hidden;
 }
 .nexo-section__icon {
   width: 2.4rem;
@@ -2975,7 +3022,7 @@ a, .btn-link { color: var(--n-purple); }
   width: 4px;
   border-radius: 14px 0 0 0;
 }
-.nexo-ec--crm      .nexo-ec__header::before { background: #22D3EE; }
+/* .nexo-ec--crm: sin ::before estático — el border-top dinámico por etapa ya da el acento de color */
 .nexo-ec--catalogo .nexo-ec__header::before { background: #7C5CFF; }
 .nexo-ec--produccion .nexo-ec__header::before { background: #F59E0B; }
 .nexo-ec--rrhh     .nexo-ec__header::before { background: #EC4899; }
@@ -3030,3 +3077,224 @@ a, .btn-link { color: var(--n-purple); }
   justify-content: space-between;
   gap: 0.5rem;
 }
+
+/* Pipeline KPI strip */
+.nexo-pipeline-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.nexo-pipeline-kpi {
+  background: var(--n-surface);
+  border: 1px solid var(--n-border);
+  border-radius: 12px;
+  padding: 0.85rem 1rem 0.75rem;
+  min-width: 180px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow .18s ease, transform .18s ease;
+}
+.nexo-pipeline-kpi:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  transform: translateY(-1px);
+}
+.nexo-pipeline-kpi--accent {
+  border-color: var(--mud-palette-primary);
+  background: color-mix(in srgb, var(--mud-palette-primary) 6%, var(--n-surface));
+}
+.nexo-pipeline-kpi__left {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.nexo-pipeline-kpi__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.nexo-pipeline-kpi__val {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--n-text-1);
+  line-height: 1.2;
+}
+.nexo-pipeline-kpi__lbl {
+  font-size: 0.7rem;
+  color: var(--n-text-1);
+  opacity: .55;
+  margin-top: 1px;
+}
+.nexo-pipeline-kpi__spark {
+  width: 100%;
+  height: 28px;
+  display: block;
+  opacity: .7;
+}
+
+/* Pipeline empty state */
+.nexo-pipeline-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  gap: 0.75rem;
+  text-align: center;
+}
+.nexo-pipeline-empty__blob {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--mud-palette-primary) 12%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+.nexo-pipeline-empty__ico {
+  font-size: 3rem !important;
+  color: var(--mud-palette-primary);
+  opacity: .7;
+}
+.nexo-pipeline-empty__plus {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--mud-palette-primary);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.nexo-pipeline-empty__title {
+  opacity: .75;
+  font-weight: 600;
+}
+.nexo-pipeline-empty__sub {
+  font-size: 0.85rem;
+  color: var(--n-text-3);
+  max-width: 340px;
+  margin-bottom: 0.5rem;
+}
+
+/* Pipeline action pills */
+.nexo-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.6;
+  transition: opacity .15s, transform .1s;
+}
+.nexo-pill-btn:hover  { opacity: .82; transform: translateY(-1px); }
+.nexo-pill-btn:active { transform: translateY(0); }
+.nexo-pill-btn--next {
+  background: color-mix(in srgb, var(--mud-palette-primary) 15%, transparent);
+  color: var(--mud-palette-primary);
+  border: 1px solid color-mix(in srgb, var(--mud-palette-primary) 35%, transparent);
+}
+.nexo-pill-btn--primary {
+  background: var(--mud-palette-primary);
+  color: #fff;
+}
+.nexo-pill-btn--danger {
+  background: color-mix(in srgb, var(--mud-palette-error) 12%, transparent);
+  color: var(--mud-palette-error);
+  border: 1px solid color-mix(in srgb, var(--mud-palette-error) 30%, transparent);
+}
+.nexo-pill-btn:focus-visible {
+  outline: 2px solid var(--mud-palette-primary);
+  outline-offset: 2px;
+}
+
+/* -- AppSelect custom NEXO ------------------------------------------------ */
+.app-select-wrap { position: relative; display: flex; flex-direction: column; gap: 4px; }
+
+.app-select-lbl {
+  font-size: 0.72rem; font-weight: 600; color: var(--n-text-2);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+
+.app-sel-combo {
+  display: flex; align-items: center;
+  border: 1px solid #D1D5E8; border-radius: 8px;
+  background: #fff; min-height: 42px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.app-sel-combo:hover:not(.app-sel--disabled) { border-color: #9B7FFF; }
+.app-sel--open  { border-color: #7C5CFF !important; box-shadow: 0 0 0 2px rgba(124,92,255,0.18); }
+.app-sel--disabled { opacity: 0.55; pointer-events: none; background: #ECECF3; }
+
+.app-sel-combo-input {
+  flex: 1; border: none; outline: none; background: transparent;
+  padding: 9px 4px 9px 12px; font-size: 0.875rem; color: #1A1C2E;
+  font-family: inherit; cursor: text; min-width: 0;
+}
+.app-sel-combo-input::placeholder { color: #9B9BB4; }
+
+.app-sel-arrow {
+  color: #6B6B8A; font-size: 1rem; padding: 0 10px;
+  cursor: pointer; flex-shrink: 0; user-select: none;
+  transition: transform 0.15s;
+}
+.app-sel--open .app-sel-arrow { transform: rotate(180deg); }
+
+.app-sel-backdrop {
+  position: fixed; inset: 0; z-index: 1400;
+}
+
+.app-sel-list {
+  position: fixed; left: -9999px; top: 0; width: 160px;
+  background: #fff; border: 1px solid #D1D5E8;
+  border-radius: 8px; box-shadow: 0 8px 24px rgba(26,28,46,0.14);
+  z-index: 9999; max-height: 300px; overflow-y: auto;
+}
+
+.app-sel-item {
+  padding: 10px 14px; font-size: 0.875rem; color: #1A1C2E;
+  cursor: pointer; line-height: 1.4;
+  transition: background 0.1s;
+  border-bottom: 1px solid #E8E9EF;
+}
+.app-sel-item:last-child { border-bottom: none; }
+.app-sel-item:hover:not(.app-sel-item--ph) { background: #EEEDF8; }
+.app-sel-item--active { background: rgba(124,92,255,0.10); color: #7C5CFF; font-weight: 600; }
+.app-sel-item--ph { color: #9B9BB4; }
+.app-sel-item--ph:hover { background: transparent; cursor: default; }
+
+
+
+
+
+
+.app-sel-search-wrap {
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid #E8E9EF;
+  position: sticky; top: 0; background: #fff; z-index: 1;
+}
+.app-sel-search {
+  width: 100%; padding: 6px 10px;
+  border: 1px solid #D1D5E8; border-radius: 6px;
+  font-size: 0.8rem; font-family: inherit; color: #1A1C2E;
+  outline: none;
+}
+.app-sel-search:focus { border-color: #7C5CFF; box-shadow: 0 0 0 2px rgba(124,92,255,0.15); }

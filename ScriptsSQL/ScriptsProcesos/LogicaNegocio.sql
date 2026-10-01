@@ -355,6 +355,9 @@ BEGIN
     IF @EstadoActual <> 'En Proceso'
         THROW 51030, 'Solo se pueden cerrar ordenes en estado En Proceso.', 1;
 
+    IF @CantidadProducidaReal <= 0
+        THROW 51031, 'La cantidad producida real debe ser mayor a cero.', 1;
+
     DECLARE @CostoMateriales DECIMAL(18,4);
     SELECT @CostoMateriales = SUM(CantidadReal * ISNULL(k.CostoUnitario, a.CostoPromedio))
     FROM Produccion.OrdenesProduccionConsumo c

@@ -14,11 +14,13 @@ public class IntegracionController : ControllerBase
 {
     private readonly IIntegracionService _service;
     private readonly IOrdenesCompraService _compras;
+    private readonly ILogger<IntegracionController> _logger;
 
-    public IntegracionController(IIntegracionService service, IOrdenesCompraService compras)
+    public IntegracionController(IIntegracionService service, IOrdenesCompraService compras, ILogger<IntegracionController> logger)
     {
         _service = service;
         _compras = compras;
+        _logger  = logger;
     }
 
     private int CentroCostoDelAgente =>
@@ -46,8 +48,17 @@ public class IntegracionController : ControllerBase
     [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
     public async Task<ActionResult> RegistrarEventoEntrante(RegistrarEventoEntranteRequest request)
     {
-        await _service.RegistrarEventoEntranteAsync(request, CentroCostoDelAgente);
-        return Ok(new { mensaje = "Evento entrante procesado." });
+        try
+        {
+            await _service.RegistrarEventoEntranteAsync(request, CentroCostoDelAgente);
+            return Ok(new { mensaje = "Evento entrante procesado." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error procesando EventoEntrante {IdEventoExterno} TipoEvento={TipoEvento} Referencia={Referencia}",
+                request.IdEventoExterno, request.TipoEvento, request.CodigoArticuloVisions);
+            throw;
+        }
     }
 
     /// <summary>Genera la API Key de un cliente nuevo. Usa JWT normal, solo Administracion -- nada que ver con el agente.</summary>
@@ -105,6 +116,14 @@ public class IntegracionController : ControllerBase
         {
             return NotFound(new { error = ex.Message });
         }
+    }
+
+    [HttpPost("articulos-pendientes/resolver-todos")]
+    [Authorize(Roles = "Administracion")]
+    public async Task<ActionResult<ResolverTodosResponse>> ResolverTodos([FromQuery] int centroCostoId)
+    {
+        var resultado = await _service.ResolverTodosAsync(centroCostoId);
+        return Ok(resultado);
     }
 
     // ---------- Latido y monitoreo ----------
@@ -324,11 +343,17 @@ public class IntegracionController : ControllerBase
     /// <summary>Llamado por el Agente cuando detecta que una referencia fue eliminada de dbo.TARJETA en Visions.</summary>
     [HttpPost("sync/articulo-inactivar")]
     [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
-    public async Task<ActionResult> InactivarArticuloDesdeVisions([FromQuery] string referencia)
+    public async Task<ActionResult> InactivarArticuloDesdeVisions([FromQuery] string referencia, [FromQuery] string centroCostoVisions = "")
     {
-        await _service.InactivarArticuloDesdeVisionsAsync(referencia);
+        await _service.InactivarArticuloDesdeVisionsAsync(referencia, centroCostoVisions);
         return Ok(new { mensaje = "Articulo inactivado." });
     }
+
+    /// <summary>Llamado por el Agente para obtener articulos con imagen actualizada en NEXO y llevarlos a Visions.</summary>
+    [HttpGet("sync/articulos-imagen-actualizados")]
+    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    public async Task<ActionResult> ListarArticulosImagenActualizados([FromQuery] DateTime? desde)
+        => Ok(await _service.ListarArticulosConImagenActualizadaAsync(desde));
 
     /// <summary>Llamado por el Agente para obtener clientes activos de NEXO y sincronizarlos a NEXO_Clientes en Visions.</summary>
     [HttpGet("sync/clientes")]
@@ -381,6 +406,32 @@ public class IntegracionController : ControllerBase
         {
             await _service.DesactivarAgenteAsync(id);
             return Ok(new { mensaje = "Agente desactivado." });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+    }
+
+    /// <summary>Resetea a PENDIENTE todos los EventosSalientes en estado ERROR del agente.</summary>
+    [HttpPost("agentes/{id:int}/reintentar")]
+    [Authorize(Roles = "Administracion")]
+    public async Task<ActionResult> ReintentarPendientes(int id)
+    {
+        try
+        {
+            var count = await _service.ReintentarPendientesAsync(id);
+            return Ok(new { mensaje = $"{count} evento(s) reseteados a PENDIENTE.", count });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+    }
+
+    /// <summary>Reprocesa EventosEntrantes con Procesado=0 del agente (Visions→NEXO pendientes).</summary>
+    [HttpPost("agentes/{id:int}/reprocesar-entrantes")]
+    [Authorize(Roles = "Administracion")]
+    public async Task<ActionResult> ReprocesarEntrantes(int id)
+    {
+        try
+        {
+            var count = await _service.ReprocesarEntrantesAsync(id);
+            return Ok(new { mensaje = $"{count} evento(s) entrante(s) reprocesados.", count });
         }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
     }

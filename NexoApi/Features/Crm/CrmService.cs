@@ -30,20 +30,26 @@ public interface ICrmService
     Task<(byte[] Datos, string ContentType, string NombreArchivo)?> ObtenerDocumentoAsync(int documentoId);
     Task EliminarDocumentoAsync(int documentoId);
 
-    Task<IEnumerable<LeadItem>> ListarLeadsAsync(string? etapa);
+    Task<IEnumerable<LeadItem>> ListarLeadsAsync(string? etapa, int? responsableId = null);
+    Task<LeadItem?> ObtenerLeadAsync(int leadId);
     Task<int> CrearLeadAsync(CrearLeadRequest request);
     Task ActualizarLeadAsync(int leadId, ActualizarLeadRequest request);
     Task<int> ConvertirLeadAsync(int leadId);
 
     Task<IEnumerable<ClienteFrioItem>> ListarClientesFriosAsync(int diasSinContacto);
+    Task<IEnumerable<DuplicadoCandidatoItem>> BuscarDuplicadosAsync(string? nombre, string? nit);
     Task CambiarEtapaLeadAsync(int leadId, string etapa);
+    Task<IEnumerable<NotaLeadItem>> ListarNotasLeadAsync(int leadId);
+    Task<int> CrearNotaLeadAsync(int leadId, CrearNotaLeadRequest request, int? usuarioId);
+    Task<IEnumerable<NotaLeadItem>> ListarNotasLeadPorClienteAsync(int clienteId);
 
     // ---------- Pipeline unificado ----------
     Task<IEnumerable<PipelineItem>> ListarPipelineAsync(string? etapa, int? responsableId);
+    Task<PipelineMetricasDto> ObtenerMetricasPipelineAsync();
     Task<int> CrearOportunidadDesdeLeadAsync(int leadId, CrearOportunidadDesdeLeadRequest request);
 
     // ---------- Oportunidades (embudo de ventas, agosto 2026) ----------
-    Task<IEnumerable<OportunidadItem>> ListarOportunidadesAsync(string? etapa, int? responsableId);
+    Task<IEnumerable<OportunidadItem>> ListarOportunidadesAsync(string? etapa, int? responsableId, int? leadId = null);
     Task<int> CrearOportunidadAsync(CrearOportunidadRequest request);
     Task ActualizarOportunidadAsync(int oportunidadId, ActualizarOportunidadRequest request);
 
@@ -106,7 +112,7 @@ public class CrmService : ICrmService
                    (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion,
                    c.TipoPersona, c.PrimerNombre, c.SegundoNombre, c.PrimerApellido, c.SegundoApellido,
                    c.Departamento, c.Ciudad, c.TipoIdentificacion, c.CodigoDept, c.CodigoMuni, c.DigitoVerificacion,
-                   ti.Detalle AS TipoIdentificacionDetalle
+                   ti.Detalle AS TipoIdentificacionDetalle, c.Notas
             FROM Crm.Clientes c
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = c.ResponsableID
             LEFT JOIN Catalogo.TiposIdentificacion ti ON ti.Codigo = c.TipoIdentificacion
@@ -154,7 +160,7 @@ public class CrmService : ICrmService
                    (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion,
                    c.TipoPersona, c.PrimerNombre, c.SegundoNombre, c.PrimerApellido, c.SegundoApellido,
                    c.Departamento, c.Ciudad, c.TipoIdentificacion, c.CodigoDept, c.CodigoMuni, c.DigitoVerificacion,
-                   ti.Detalle AS TipoIdentificacionDetalle " + sqlBase + @"
+                   ti.Detalle AS TipoIdentificacionDetalle, c.Notas " + sqlBase + @"
             ORDER BY c.Nombre
             OFFSET @Offset ROWS FETCH NEXT @Tamano ROWS ONLY",
             new { Texto = string.IsNullOrWhiteSpace(texto) ? null : texto, ResponsableId = responsableId, TipoCliente = tipoCliente, FuenteContacto = fuenteContacto, Offset = offset, Tamano = tamano });
@@ -177,7 +183,7 @@ public class CrmService : ICrmService
                    (SELECT MAX(i.Fecha) FROM Crm.Interacciones i WHERE i.ClienteID = c.ClienteID) AS UltimaInteraccion,
                    c.TipoPersona, c.PrimerNombre, c.SegundoNombre, c.PrimerApellido, c.SegundoApellido,
                    c.Departamento, c.Ciudad, c.TipoIdentificacion, c.CodigoDept, c.CodigoMuni, c.DigitoVerificacion,
-                   ti.Detalle AS TipoIdentificacionDetalle
+                   ti.Detalle AS TipoIdentificacionDetalle, c.Notas
             FROM Crm.Clientes c
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = c.ResponsableID
             LEFT JOIN Catalogo.TiposIdentificacion ti ON ti.Codigo = c.TipoIdentificacion
@@ -235,7 +241,7 @@ public class CrmService : ICrmService
                 PrimerApellido = @PrimerApellido, SegundoApellido = @SegundoApellido,
                 Departamento = @Departamento, Ciudad = @Ciudad,
                 TipoIdentificacion = @TipoIdentificacion, CodigoDept = @CodigoDept, CodigoMuni = @CodigoMuni,
-                DigitoVerificacion = @DigitoVerificacion,
+                DigitoVerificacion = @DigitoVerificacion, Notas = @Notas,
                 FechaModificacion = GETDATE()
             WHERE ClienteID = @ClienteId";
 
@@ -245,7 +251,7 @@ public class CrmService : ICrmService
             r.Nombre, r.NIT, r.Telefono, r.Email, r.Direccion, r.Estado,
             r.FuenteContacto, TipoCliente = tipoClienteAct, r.ResponsableID, r.ProximoContacto,
             r.TipoPersona, r.PrimerNombre, r.SegundoNombre, r.PrimerApellido, r.SegundoApellido,
-            r.Departamento, r.Ciudad, r.TipoIdentificacion, r.CodigoDept, r.CodigoMuni, r.DigitoVerificacion
+            r.Departamento, r.Ciudad, r.TipoIdentificacion, r.CodigoDept, r.CodigoMuni, r.DigitoVerificacion, r.Notas
         });
 
         if (filas == 0)
@@ -471,7 +477,7 @@ public class CrmService : ICrmService
             throw new KeyNotFoundException($"No existe el documento {documentoId}.");
     }
 
-    public async Task<IEnumerable<LeadItem>> ListarLeadsAsync(string? etapa)
+    public async Task<IEnumerable<LeadItem>> ListarLeadsAsync(string? etapa, int? responsableId = null)
     {
         using var connection = _db.CreateConnection();
 
@@ -481,13 +487,57 @@ public class CrmService : ICrmService
                    l.ClienteIDConvertido, l.FechaCreacion, l.FechaConversion,
                    l.NIT, l.Direccion, l.TipoCliente, l.TipoPersona, l.TipoIdentificacion,
                    l.PrimerNombre, l.SegundoNombre, l.PrimerApellido, l.SegundoApellido,
-                   l.Departamento, l.Ciudad, l.CodigoDept, l.CodigoMuni, l.DigitoVerificacion
+                   l.Departamento, l.Ciudad, l.CodigoDept, l.CodigoMuni, l.DigitoVerificacion,
+                   CASE
+                     WHEN l.Etapa IN ('CONVERTIDO','DESCARTADO','CONTACTO_NO_UTIL') THEN NULL
+                     ELSE
+                       CASE
+                         WHEN (sc.RawScore < 1)   THEN 1
+                         WHEN (sc.RawScore > 100)  THEN 100
+                         ELSE sc.RawScore
+                       END
+                   END AS Score
             FROM Crm.Leads l
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = l.ResponsableID
+            CROSS APPLY (
+                SELECT
+                    CASE l.Etapa
+                        WHEN 'PROSPECTO'   THEN 20
+                        WHEN 'CONTACTADO'  THEN 35
+                        WHEN 'CALIFICADO'  THEN 55
+                        WHEN 'PROPUESTA'   THEN 75
+                        WHEN 'NEGOCIACION' THEN 90
+                        ELSE 20
+                    END
+                    - DATEDIFF(day, l.FechaCreacion, GETDATE()) / 5
+                    + CASE WHEN l.Notas IS NOT NULL AND LEN(l.Notas) > 0 THEN 10 ELSE 0 END
+                    AS RawScore
+            ) sc
             WHERE (@Etapa IS NULL OR l.Etapa = @Etapa)
-            ORDER BY l.FechaCreacion DESC";
+              AND (@ResponsableId IS NULL OR l.ResponsableID = @ResponsableId)
+            ORDER BY CASE WHEN l.Etapa IN ('CONVERTIDO','DESCARTADO','CONTACTO_NO_UTIL') THEN 1 ELSE 0 END,
+                     sc.RawScore DESC";
 
-        return await connection.QueryAsync<LeadItem>(sql, new { Etapa = etapa });
+        return await connection.QueryAsync<LeadItem>(sql, new { Etapa = etapa, ResponsableId = responsableId });
+    }
+
+    public async Task<LeadItem?> ObtenerLeadAsync(int leadId)
+    {
+        using var connection = _db.CreateConnection();
+
+        const string sql = @"
+            SELECT l.LeadID, l.Nombre, l.Empresa, l.Telefono, l.Email, l.FuenteContacto, l.Etapa, l.Notas,
+                   l.ResponsableID, e.Nombres + ' ' + e.Apellidos AS Responsable,
+                   l.ClienteIDConvertido, l.FechaCreacion, l.FechaConversion,
+                   l.NIT, l.Direccion, l.TipoCliente, l.TipoPersona, l.TipoIdentificacion,
+                   l.PrimerNombre, l.SegundoNombre, l.PrimerApellido, l.SegundoApellido,
+                   l.Departamento, l.Ciudad, l.CodigoDept, l.CodigoMuni, l.DigitoVerificacion,
+                   CAST(NULL AS int) AS Score
+            FROM Crm.Leads l
+            LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = l.ResponsableID
+            WHERE l.LeadID = @LeadID";
+
+        return await connection.QueryFirstOrDefaultAsync<LeadItem>(sql, new { LeadID = leadId });
     }
 
     public async Task<int> CrearLeadAsync(CrearLeadRequest r)
@@ -557,7 +607,7 @@ public class CrmService : ICrmService
         try
         {
             var lead = await connection.QuerySingleOrDefaultAsync<LeadParaConvertir>(@"
-                SELECT Nombre, Empresa, Telefono, Email, FuenteContacto, ResponsableID, Etapa,
+                SELECT Nombre, Empresa, Telefono, Email, FuenteContacto, ResponsableID, Etapa, Notas,
                        NIT, Direccion, TipoCliente, TipoPersona, TipoIdentificacion,
                        PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
                        Departamento, Ciudad, CodigoDept, CodigoMuni, DigitoVerificacion
@@ -581,13 +631,13 @@ public class CrmService : ICrmService
                     Nombre, Contacto, Telefono, Email, FuenteContacto, ResponsableID,
                     NIT, Direccion, TipoCliente, TipoPersona, TipoIdentificacion,
                     PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido,
-                    Departamento, Ciudad, CodigoDept, CodigoMuni, DigitoVerificacion)
+                    Departamento, Ciudad, CodigoDept, CodigoMuni, DigitoVerificacion, Notas)
                 OUTPUT INSERTED.ClienteID
                 VALUES (
                     @Nombre, @Contacto, @Telefono, @Email, @FuenteContacto, @ResponsableID,
                     @NIT, @Direccion, @TipoCliente, @TipoPersona, @TipoIdentificacion,
                     @PrimerNombre, @SegundoNombre, @PrimerApellido, @SegundoApellido,
-                    @Departamento, @Ciudad, @CodigoDept, @CodigoMuni, @DigitoVerificacion)";
+                    @Departamento, @Ciudad, @CodigoDept, @CodigoMuni, @DigitoVerificacion, @Notas)";
 
             var clienteId = await connection.ExecuteScalarAsync<int>(sqlCrearCliente, new
             {
@@ -596,7 +646,8 @@ public class CrmService : ICrmService
                 lead.Telefono, lead.Email, lead.FuenteContacto, lead.ResponsableID,
                 lead.NIT, lead.Direccion, lead.TipoCliente, lead.TipoPersona, lead.TipoIdentificacion,
                 lead.PrimerNombre, lead.SegundoNombre, lead.PrimerApellido, lead.SegundoApellido,
-                lead.Departamento, lead.Ciudad, lead.CodigoDept, lead.CodigoMuni, lead.DigitoVerificacion
+                lead.Departamento, lead.Ciudad, lead.CodigoDept, lead.CodigoMuni, lead.DigitoVerificacion,
+                lead.Notas
             }, transaction);
 
             await connection.ExecuteAsync(
@@ -629,9 +680,47 @@ public class CrmService : ICrmService
             throw new InvalidOperationException("No se puede cambiar la etapa de este lead (ya fue convertido o no existe).");
     }
 
+    public async Task<IEnumerable<NotaLeadItem>> ListarNotasLeadAsync(int leadId)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT n.NotaID, n.LeadID, n.Texto, n.Tipo, n.EtapaOrigen, n.EtapaDestino,
+                   u.Nombres + ' ' + u.Apellidos AS Usuario, n.Fecha
+            FROM Crm.NotasLead n
+            LEFT JOIN Seguridad.Usuarios u ON u.UsuarioID = n.UsuarioID
+            WHERE n.LeadID = @LeadID
+            ORDER BY n.Fecha DESC";
+        return await connection.QueryAsync<NotaLeadItem>(sql, new { LeadID = leadId });
+    }
+
+    public async Task<int> CrearNotaLeadAsync(int leadId, CrearNotaLeadRequest r, int? usuarioId)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            INSERT INTO Crm.NotasLead (LeadID, Texto, Tipo, EtapaOrigen, EtapaDestino, UsuarioID)
+            OUTPUT INSERTED.NotaID
+            VALUES (@LeadID, @Texto, @Tipo, @EtapaOrigen, @EtapaDestino, @UsuarioID)";
+        return await connection.ExecuteScalarAsync<int>(sql,
+            new { LeadID = leadId, r.Texto, r.Tipo, r.EtapaOrigen, r.EtapaDestino, UsuarioID = usuarioId });
+    }
+
+    public async Task<IEnumerable<NotaLeadItem>> ListarNotasLeadPorClienteAsync(int clienteId)
+    {
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT n.NotaID, n.LeadID, n.Texto, n.Tipo, n.EtapaOrigen, n.EtapaDestino,
+                   u.Nombres + ' ' + u.Apellidos AS Usuario, n.Fecha
+            FROM Crm.NotasLead n
+            JOIN Crm.Leads l ON l.LeadID = n.LeadID
+            LEFT JOIN Seguridad.Usuarios u ON u.UsuarioID = n.UsuarioID
+            WHERE l.ClienteIDConvertido = @ClienteID
+            ORDER BY n.Fecha DESC";
+        return await connection.QueryAsync<NotaLeadItem>(sql, new { ClienteID = clienteId });
+    }
+
     private record LeadParaConvertir(
         string Nombre, string? Empresa, string? Telefono, string? Email,
-        string? FuenteContacto, int? ResponsableID, string Etapa,
+        string? FuenteContacto, int? ResponsableID, string Etapa, string? Notas,
         string? NIT, string? Direccion, string? TipoCliente, string? TipoPersona,
         string? TipoIdentificacion,
         string? PrimerNombre, string? SegundoNombre, string? PrimerApellido, string? SegundoApellido,
@@ -675,13 +764,28 @@ public class CrmService : ICrmService
         using var connection = _db.CreateConnection();
         const string sql = @"
             SELECT 'LEAD' AS Tipo, l.LeadID AS ID, l.LeadID, CAST(NULL AS int) AS OportunidadID,
-                   l.ClienteIDConvertido AS ClienteID,
+                   l.ClienteIDConvertido AS ClienteID, cl.ExternalId AS ExternalIdCliente,
                    l.Nombre, l.Empresa, l.Telefono, l.Email, l.Etapa,
                    CAST(NULL AS decimal(18,2)) AS ValorEstimado, CAST(NULL AS nvarchar(20)) AS ConfianzaCierre,
                    l.ResponsableID, e.Nombres + ' ' + e.Apellidos AS Responsable, l.Notas,
-                   l.FechaCreacion, CAST(NULL AS datetime2) AS FechaCierreEsperada, l.FechaConversion AS FechaCierre
+                   l.FechaCreacion, CAST(NULL AS datetime2) AS FechaCierreEsperada, l.FechaConversion AS FechaCierre,
+                   CAST(CASE
+                       WHEN l.Etapa IN ('CONVERTIDO','DESCARTADO','CONTACTO_NO_UTIL') THEN NULL
+                       ELSE CASE
+                           WHEN (CASE l.Etapa WHEN 'PROSPECTO' THEN 20 WHEN 'CONTACTADO' THEN 35 WHEN 'CALIFICADO' THEN 55 WHEN 'PROPUESTA' THEN 75 WHEN 'NEGOCIACION' THEN 90 ELSE 20 END
+                                 - DATEDIFF(day, l.FechaCreacion, GETDATE()) / 5
+                                 + CASE WHEN l.Notas IS NOT NULL AND LEN(l.Notas) > 0 THEN 10 ELSE 0 END) < 1 THEN 1
+                           WHEN (CASE l.Etapa WHEN 'PROSPECTO' THEN 20 WHEN 'CONTACTADO' THEN 35 WHEN 'CALIFICADO' THEN 55 WHEN 'PROPUESTA' THEN 75 WHEN 'NEGOCIACION' THEN 90 ELSE 20 END
+                                 - DATEDIFF(day, l.FechaCreacion, GETDATE()) / 5
+                                 + CASE WHEN l.Notas IS NOT NULL AND LEN(l.Notas) > 0 THEN 10 ELSE 0 END) > 100 THEN 100
+                           ELSE (CASE l.Etapa WHEN 'PROSPECTO' THEN 20 WHEN 'CONTACTADO' THEN 35 WHEN 'CALIFICADO' THEN 55 WHEN 'PROPUESTA' THEN 75 WHEN 'NEGOCIACION' THEN 90 ELSE 20 END
+                                 - DATEDIFF(day, l.FechaCreacion, GETDATE()) / 5
+                                 + CASE WHEN l.Notas IS NOT NULL AND LEN(l.Notas) > 0 THEN 10 ELSE 0 END)
+                       END
+                   END AS int) AS Score
             FROM Crm.Leads l
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = l.ResponsableID
+            LEFT JOIN Crm.Clientes cl ON cl.ClienteID = l.ClienteIDConvertido
             WHERE l.Etapa NOT IN ('CONVERTIDO')
               AND NOT EXISTS (SELECT 1 FROM Crm.Oportunidades o WHERE o.LeadID = l.LeadID)
               AND (@Etapa IS NULL OR l.Etapa = @Etapa)
@@ -690,13 +794,15 @@ public class CrmService : ICrmService
             UNION ALL
 
             SELECT 'OPORTUNIDAD', o.OportunidadID, o.LeadID, o.OportunidadID, o.ClienteID,
+                   c.ExternalId AS ExternalIdCliente,
                    COALESCE(NULLIF(o.Nombre,''), l.Nombre, c.Nombre) AS Nombre,
                    COALESCE(l.Empresa, c.Nombre) AS Empresa,
                    COALESCE(l.Telefono, c.Telefono) AS Telefono,
                    COALESCE(l.Email, c.Email) AS Email,
                    o.Etapa, o.ValorEstimado, o.ConfianzaCierre,
                    o.ResponsableID, e.Nombres + ' ' + e.Apellidos AS Responsable, o.Notas,
-                   o.FechaCreacion, o.FechaCierreEsperada, o.FechaCierre
+                   o.FechaCreacion, o.FechaCierreEsperada, o.FechaCierre,
+                   CAST(NULL AS int) AS Score
             FROM Crm.Oportunidades o
             LEFT JOIN Crm.Leads l ON l.LeadID = o.LeadID
             LEFT JOIN Crm.Clientes c ON c.ClienteID = o.ClienteID
@@ -704,9 +810,58 @@ public class CrmService : ICrmService
             WHERE (@Etapa IS NULL OR o.Etapa = @Etapa)
               AND (@ResponsableId IS NULL OR o.ResponsableID = @ResponsableId)
 
-            ORDER BY FechaCreacion DESC";
+            ORDER BY Score DESC, FechaCreacion DESC";
 
         return await connection.QueryAsync<PipelineItem>(sql, new { Etapa = etapa, ResponsableId = responsableId });
+    }
+
+    public async Task<PipelineMetricasDto> ObtenerMetricasPipelineAsync()
+    {
+        using var connection = _db.CreateConnection();
+
+        var etapaLabels = new Dictionary<string, string>
+        {
+            ["NUEVO"] = "Nuevo", ["CONTACTADO"] = "Contactado", ["CALIFICADO"] = "Calificado",
+            ["CONTACTO_INICIAL"] = "Contacto Inicial", ["PRESENTACION"] = "Presentación",
+            ["REVISITA"] = "Revisita", ["VENTA_GANADA"] = "Venta Ganada",
+            ["CONTACTO_NO_UTIL"] = "No Útil"
+        };
+
+        var porEtapaRaw = (await connection.QueryAsync<(string Etapa, int Count)>(
+            @"SELECT Etapa, COUNT(*) AS Count FROM Crm.Leads
+              WHERE Etapa NOT IN ('CONVERTIDO','DESCARTADO')
+              GROUP BY Etapa")).ToList();
+
+        var valorOp = await connection.ExecuteScalarAsync<decimal>(
+            @"SELECT CAST(ISNULL(SUM(ValorEstimado),0) AS decimal(18,2)) FROM Crm.Oportunidades
+              WHERE Etapa NOT IN ('GANADA','PERDIDA')");
+
+        var countOp = await connection.ExecuteScalarAsync<int>(
+            @"SELECT COUNT(*) FROM Crm.Oportunidades WHERE Etapa NOT IN ('GANADA','PERDIDA')");
+
+        var conv = await connection.QuerySingleAsync<(int Total, int Convertidos)>(
+            @"SELECT COUNT(*) AS Total,
+                     SUM(CASE WHEN Etapa = 'CONVERTIDO' THEN 1 ELSE 0 END) AS Convertidos
+              FROM Crm.Leads WHERE FechaCreacion >= DATEADD(day,-90,GETDATE())");
+
+        var diasPromedio = await connection.ExecuteScalarAsync<double?>(
+            @"SELECT AVG(CAST(DATEDIFF(day, FechaCreacion, FechaCierre) AS float))
+              FROM Crm.Oportunidades WHERE Etapa = 'GANADA' AND FechaCierre IS NOT NULL");
+
+        var tasa = conv.Total > 0 ? Math.Round((double)conv.Convertidos / conv.Total * 100, 1) : 0.0;
+        var leadsPorEtapa = porEtapaRaw
+            .Select(r => new PipelineEtapaConteo(r.Etapa, etapaLabels.GetValueOrDefault(r.Etapa, r.Etapa), r.Count))
+            .OrderBy(r => r.Etiqueta)
+            .ToList();
+
+        return new PipelineMetricasDto(
+            porEtapaRaw.Sum(r => r.Count),
+            leadsPorEtapa,
+            valorOp,
+            countOp,
+            tasa,
+            diasPromedio.HasValue ? Math.Round(diasPromedio.Value, 1) : null
+        );
     }
 
     public async Task<int> CrearOportunidadDesdeLeadAsync(int leadId, CrearOportunidadDesdeLeadRequest r)
@@ -740,7 +895,7 @@ public class CrmService : ICrmService
         });
     }
 
-    public async Task<IEnumerable<OportunidadItem>> ListarOportunidadesAsync(string? etapa, int? responsableId)
+    public async Task<IEnumerable<OportunidadItem>> ListarOportunidadesAsync(string? etapa, int? responsableId, int? leadId = null)
     {
         using var connection = _db.CreateConnection();
 
@@ -754,9 +909,10 @@ public class CrmService : ICrmService
             LEFT JOIN Rrhh.Empleados e ON e.EmpleadoID = o.ResponsableID
             WHERE (@Etapa IS NULL OR o.Etapa = @Etapa)
               AND (@ResponsableId IS NULL OR o.ResponsableID = @ResponsableId)
+              AND (@LeadId IS NULL OR o.LeadID = @LeadId)
             ORDER BY o.FechaCreacion DESC";
 
-        return await connection.QueryAsync<OportunidadItem>(sql, new { Etapa = etapa, ResponsableId = responsableId });
+        return await connection.QueryAsync<OportunidadItem>(sql, new { Etapa = etapa, ResponsableId = responsableId, LeadId = leadId });
     }
 
     public async Task<int> CrearOportunidadAsync(CrearOportunidadRequest r)
@@ -1149,8 +1305,22 @@ public class CrmService : ICrmService
     public async Task<IEnumerable<TipoIdentificacionItem>> ListarTiposIdentificacionAsync()
     {
         using var connection = _db.CreateConnection();
-        return await connection.QueryAsync<TipoIdentificacionItem>(
-            "SELECT Codigo, Detalle FROM Catalogo.TiposIdentificacion ORDER BY COALESCE(Detalle, Codigo)");
+        return await connection.QueryAsync<TipoIdentificacionItem>(@"
+            SELECT Codigo,
+                CASE Codigo
+                    WHEN '13' THEN 'Cédula de Ciudadanía'
+                    WHEN '31' THEN 'NIT'
+                    WHEN '22' THEN 'Cédula de Extranjería'
+                    WHEN '41' THEN 'Pasaporte'
+                    WHEN '11' THEN 'Registro Civil'
+                    WHEN '12' THEN 'Tarjeta de Identidad'
+                    WHEN '42' THEN 'Documento de Identificación Extranjero'
+                    WHEN '50' THEN 'NIT de Otro País'
+                    WHEN '91' THEN 'NIUP'
+                    ELSE COALESCE(NULLIF(Detalle, Codigo), Codigo)
+                END AS Detalle
+            FROM Catalogo.TiposIdentificacion
+            ORDER BY 2");
     }
 
     // ── Segmentación automática ──────────────────────────────────────────
@@ -1276,5 +1446,34 @@ public class CrmService : ICrmService
             proxima = datos.UltimaCompra.Value.AddDays(datos.PromedioDias.Value);
 
         return new PrediccionCompraItem(datos.PromedioDias, datos.UltimaCompra, proxima, datos.TotalCompras);
+    }
+
+    public async Task<IEnumerable<DuplicadoCandidatoItem>> BuscarDuplicadosAsync(string? nombre, string? nit)
+    {
+        if (string.IsNullOrWhiteSpace(nombre) && string.IsNullOrWhiteSpace(nit))
+            return Enumerable.Empty<DuplicadoCandidatoItem>();
+
+        using var connection = _db.CreateConnection();
+        const string sql = @"
+            SELECT 'LEAD' AS Tipo, l.LeadID AS ID, l.Nombre, l.NIT, l.Empresa, l.Etapa
+            FROM Crm.Leads l
+            WHERE l.Etapa NOT IN ('CONVERTIDO','DESCARTADO','CONTACTO_NO_UTIL')
+              AND (
+                (@NIT IS NOT NULL AND l.NIT = @NIT)
+                OR (@Nombre IS NOT NULL AND LEN(@Nombre) >= 4
+                    AND SOUNDEX(l.Nombre) = SOUNDEX(@Nombre))
+              )
+            UNION ALL
+            SELECT 'CLIENTE' AS Tipo, c.ClienteID AS ID, c.Nombre, c.NIT, NULL AS Empresa, NULL AS Etapa
+            FROM Crm.Clientes c
+            WHERE (
+                (@NIT IS NOT NULL AND c.NIT = @NIT)
+                OR (@Nombre IS NOT NULL AND LEN(@Nombre) >= 4
+                    AND SOUNDEX(c.Nombre) = SOUNDEX(@Nombre))
+              )
+            ORDER BY Tipo, Nombre";
+        return await connection.QueryAsync<DuplicadoCandidatoItem>(sql,
+            new { NIT = string.IsNullOrWhiteSpace(nit) ? null : nit.Trim(),
+                  Nombre = string.IsNullOrWhiteSpace(nombre) ? null : nombre.Trim() });
     }
 }

@@ -61,11 +61,8 @@ else
                 @if (vm.Regla.Evento == "ETAPA_CAMBIADA")
                 {
                     <MudItem xs="12" sm="6">
-                        <MudSelect T="string" @bind-Value="vm.EtapaDestino" Label="Disparar al llegar a" Dense="true">
-                            <MudSelectItem Value="@("CALIFICACION")">Calificación</MudSelectItem>
-                            <MudSelectItem Value="@("PROPUESTA")">Propuesta</MudSelectItem>
-                            <MudSelectItem Value="@("NEGOCIACION")">Negociación</MudSelectItem>
-                        </MudSelect>
+                        <AppSelect TValue="string" @bind-Value="vm.EtapaDestino" Label="Disparar al llegar a"
+                                   Items="@(new AppSelectItem<string>[]{ new("Calificación","CALIFICACION"), new("Propuesta","PROPUESTA"), new("Negociación","NEGOCIACION") })" />
                     </MudItem>
                 }
                 else if (vm.Regla.Evento == "COTIZACION_PENDIENTE")
@@ -106,12 +103,8 @@ else
 
                 @* Acción — común a todas las reglas *@
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="string" @bind-Value="vm.TipoActividad" Label="Tipo de actividad a crear" Dense="true">
-                        <MudSelectItem Value="@("LLAMADA")">📞 Llamada</MudSelectItem>
-                        <MudSelectItem Value="@("EMAIL")">📧 Email</MudSelectItem>
-                        <MudSelectItem Value="@("REUNION")">🤝 Reunión</MudSelectItem>
-                        <MudSelectItem Value="@("TAREA")">✅ Tarea</MudSelectItem>
-                    </MudSelect>
+                    <AppSelect TValue="string" @bind-Value="vm.TipoActividad" Label="Tipo de actividad a crear"
+                               Items="@(new AppSelectItem<string>[]{ new("Llamada","LLAMADA"), new("Email","EMAIL"), new("Reunión","REUNION"), new("Tarea","TAREA") })" />
                 </MudItem>
                 <MudItem xs="12" sm="9">
                     <MudTextField T="string" @bind-Value="vm.TituloActividad" Label="Título de la actividad" Dense="true" />

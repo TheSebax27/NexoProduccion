@@ -4,10 +4,8 @@
     <DialogContent>
         <MudGrid Spacing="2">
             <MudItem xs="12">
-                <MudSelect T="string" Label="Tipo de impuesto" @bind-Value="_tipo" Variant="Variant.Outlined" Required="true">
-                    <MudSelectItem Value="@("IVA")">IVA</MudSelectItem>
-                    <MudSelectItem Value="@("ICO")">ICO (Impuesto al Consumo)</MudSelectItem>
-                </MudSelect>
+                <AppSelect TValue="string" Label="Tipo de impuesto" @bind-Value="_tipo"
+                           Items="@(new AppSelectItem<string>[]{ new("IVA","IVA"), new("ICO (Impuesto al Consumo)","ICO") })" />
             </MudItem>
             <MudItem xs="6">
                 <MudNumericField T="int" Label="@(_tipo == "ICO" ? "ICO %" : "IVA %")"

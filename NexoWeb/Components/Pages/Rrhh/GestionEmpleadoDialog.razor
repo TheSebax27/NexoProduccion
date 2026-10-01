@@ -36,13 +36,8 @@
 
             <MudTabPanel Text="Documentos">
                 <div class="d-flex align-center flex-wrap mb-3" style="gap: 0.5rem;">
-                    <MudSelect T="string" @bind-Value="_tipoDocumento" Label="Tipo" Style="max-width: 200px;">
-                        <MudSelectItem Value="@("CEDULA")">Cédula</MudSelectItem>
-                        <MudSelectItem Value="@("HOJA_VIDA")">Hoja de Vida</MudSelectItem>
-                        <MudSelectItem Value="@("CONTRATO")">Contrato</MudSelectItem>
-                        <MudSelectItem Value="@("CERTIFICADO")">Certificado</MudSelectItem>
-                        <MudSelectItem Value="@("OTRO")">Otro</MudSelectItem>
-                    </MudSelect>
+                    <AppSelect TValue="string" @bind-Value="_tipoDocumento" Label="Tipo" Style="max-width: 200px;"
+                               Items="@(new AppSelectItem<string>[]{ new("Cédula","CEDULA"), new("Hoja de Vida","HOJA_VIDA"), new("Contrato","CONTRATO"), new("Certificado","CERTIFICADO"), new("Otro","OTRO") })" />
                     <InputFile id="nexo-empleado-doc-input" OnChange="OnDocumentoSeleccionadoAsync" style="display:none;" />
                     <label for="nexo-empleado-doc-input" class="nexo-perfil-panel__btn-archivo">
                         Subir Documento
@@ -78,12 +73,8 @@
 
             <MudTabPanel Text="Ausencias">
                 <MudForm @ref="_formAusencia" Class="mb-3">
-                    <MudSelect T="string" @bind-Value="_tipoAusencia" Label="Tipo" Required="true" Class="mb-2">
-                        <MudSelectItem Value="@("VACACIONES")">Vacaciones</MudSelectItem>
-                        <MudSelectItem Value="@("INCAPACIDAD")">Incapacidad</MudSelectItem>
-                        <MudSelectItem Value="@("PERMISO")">Permiso</MudSelectItem>
-                        <MudSelectItem Value="@("OTRO")">Otro</MudSelectItem>
-                    </MudSelect>
+                    <AppSelect TValue="string" @bind-Value="_tipoAusencia" Label="Tipo" Class="mb-2"
+                               Items="@(new AppSelectItem<string>[]{ new("Vacaciones","VACACIONES"), new("Incapacidad","INCAPACIDAD"), new("Permiso","PERMISO"), new("Otro","OTRO") })" />
                     <MudDatePicker @bind-Date="_fechaInicioAusencia" Label="Fecha Inicio" Class="mb-2" />
                     <MudDatePicker @bind-Date="_fechaFinAusencia" Label="Fecha Fin" Class="mb-2" />
                     <MudTextField @bind-Value="_motivoAusencia" Label="Motivo (opcional)" Lines="2" Class="mb-2" />
@@ -121,12 +112,8 @@
 
             <MudTabPanel Text="Evaluaciones">
                 <MudForm @ref="_formEvaluacion" Class="mb-3">
-                    <MudSelect T="int?" @bind-Value="_responsableEvaluacionId" Label="Responsable (opcional)" Clearable="true" Class="mb-2">
-                        @foreach (var e in _empleadosActivos)
-                        {
-                            <MudSelectItem T="int?" Value="@e.EmpleadoID">@e.Nombres @e.Apellidos</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="int?" @bind-Value="_responsableEvaluacionId" Label="Responsable (opcional)" Class="mb-2"
+                               Items="@(_empleadosActivos.Select(e => new AppSelectItem<int?>($"{e.Nombres} {e.Apellidos}", (int?)e.EmpleadoID)))" />
                     <MudDatePicker @bind-Date="_fechaEvaluacion" Label="Fecha" Class="mb-2" />
                     <MudNumericField @bind-Value="_calificacionEvaluacion" Label="Calificación (1.0 a 5.0)" Min="1m" Max="5m" Step="0.5m" Class="mb-2" />
                     <MudTextField @bind-Value="_comentariosEvaluacion" Label="Comentarios" Lines="2" Class="mb-2" />

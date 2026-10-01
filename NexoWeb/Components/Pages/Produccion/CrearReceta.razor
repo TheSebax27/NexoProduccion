@@ -44,17 +44,11 @@ else
         <div class="nexo-section__body">
         @if (!EsNuevaVersion)
         {
-            <MudAutocomplete T="ArticuloItem"
-                             @bind-Value="_productoTerminado"
-                             SearchFunc="BuscarProductosTerminados"
-                             ToStringFunc="@(a => a?.Nombre ?? "")"
-                             Label="Producto Terminado*"
-                             Placeholder="Escribe para buscar el artículo que produce esta receta"
-                             Class="mb-4"
-                             MinCharacters="1"
-                             Clearable="true"
-                             CoerceText="true"
-                             ResetValueOnEmptyText="true" />
+            <ArticuloAutocomplete Value="_productoTerminado"
+                                  ValueChanged="@((ArticuloItem? a) => _productoTerminado = a)"
+                                  Label="Producto Terminado*"
+                                  SoloTerminados="true"
+                                  Class="mb-4" />
         }
         else
         {
@@ -88,77 +82,61 @@ else
                 Agregar insumo
             </MudButton>
         </div>
-        <div class="nexo-section__body" style="padding:0; overflow-x:auto;">
+        <div class="nexo-section__body" style="padding:0.5rem 1rem 1rem;">
 
-    <MudTable Items="_lineas" Dense="true" Hover="true" Class="mb-0" Elevation="0">
-        <HeaderContent>
-            <MudTh>Insumo</MudTh>
-            <MudTh>Cantidad</MudTh>
-            <MudTh>Presentación</MudTh>
-            <MudTh>% Merma Std.</MudTh>
-            <MudTh>Centro de Trabajo</MudTh>
-            <MudTh></MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            @{
-                var esCaja = context.ArticuloSeleccionado?.EsUnidadCaja == true;
+            @* Cabecera *@
+            <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1.5fr 40px;
+                        gap:0.5rem; padding:0.4rem 0.5rem; margin-bottom:2px;">
+                <span style="font-size:0.7rem; font-weight:700; color:var(--n-text-2); text-transform:uppercase; letter-spacing:.05em;">Insumo</span>
+                <span style="font-size:0.7rem; font-weight:700; color:var(--n-text-2); text-transform:uppercase; letter-spacing:.05em;">Cantidad</span>
+                <span style="font-size:0.7rem; font-weight:700; color:var(--n-text-2); text-transform:uppercase; letter-spacing:.05em;">Presentación</span>
+                <span style="font-size:0.7rem; font-weight:700; color:var(--n-text-2); text-transform:uppercase; letter-spacing:.05em;">% Merma</span>
+                <span style="font-size:0.7rem; font-weight:700; color:var(--n-text-2); text-transform:uppercase; letter-spacing:.05em;">Centro de Trabajo</span>
+                <span></span>
+            </div>
+
+            @if (_lineas.Count == 0)
+            {
+                <div style="padding:1rem 0.5rem; color:var(--n-text-2); font-size:0.85rem;">Agrega al menos un insumo.</div>
             }
-            <MudTd DataLabel="Insumo">
-                <MudAutocomplete T="ArticuloItem"
-                                 Value="context.ArticuloSeleccionado"
-                                 ValueChanged="@((ArticuloItem a) => OnInsumoSeleccionado(context, a))"
-                                 SearchFunc="BuscarInsumos"
-                                 ToStringFunc="@(a => a is null ? "" : FormatearInsumo(a))"
-                                 Placeholder="Escribe para buscar insumo"
-                                 Dense="true"
-                                 MinCharacters="1"
-                                 Clearable="true"
-                                 CoerceText="true"
-                                 ResetValueOnEmptyText="true" />
-            </MudTd>
-            <MudTd DataLabel="Cantidad">
-                @if (esCaja)
-                {
+
+            @foreach (var linea in _lineas)
+            {
+                var esCaja = linea.ArticuloSeleccionado?.EsUnidadCaja == true;
+                <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1.5fr 40px;
+                            gap:0.5rem; align-items:center; padding:0.3rem 0.5rem;
+                            border-top:1px solid var(--n-border);">
                     <div>
-                        <MudNumericField @bind-Value="context.CantidadRequerida" Min="0.001m" Format="N3" Dense="true"
-                                         HelperText="@($"cajas · {(context.CantidadRequerida * (context.ArticuloSeleccionado!.UnidadesPorEmbalaje ?? 1)).ToString("N0")} u")" />
+                        <ArticuloAutocomplete Value="linea.ArticuloSeleccionado"
+                                              ValueChanged="@((ArticuloItem? a) => OnInsumoSeleccionado(linea, a))" />
                     </div>
-                }
-                else
-                {
-                    <MudNumericField @bind-Value="context.CantidadRequerida" Min="0.001m" Format="N3" Dense="true" />
-                }
-            </MudTd>
-            <MudTd DataLabel="Presentación">
-                @if (context.ArticuloSeleccionado is not null)
-                {
-                    <MudText Typo="Typo.body2">@(context.ArticuloSeleccionado.PresentacionNombre ?? context.ArticuloSeleccionado.PresentacionCodigo ?? "-")</MudText>
-                }
-                else
-                {
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">—</MudText>
-                }
-            </MudTd>
-            <MudTd DataLabel="% Merma Std.">
-                <MudNumericField @bind-Value="context.PorcentajeMermaEstandar" Min="0m" Max="100m" Format="N1" Dense="true" />
-            </MudTd>
-            <MudTd DataLabel="Centro de Trabajo">
-                <MudSelect T="int?" @bind-Value="context.CentroTrabajoID" Dense="true" Clearable="true">
-                    @foreach (var centro in _centrosTrabajo)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)centro.CentroTrabajoID)">@centro.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudTd>
-            <MudTd>
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
-                               OnClick="@(() => QuitarLinea(context))" />
-            </MudTd>
-        </RowTemplate>
-        <NoRecordsContent>
-            <MudText>Agrega al menos un insumo.</MudText>
-        </NoRecordsContent>
-    </MudTable>
+                    <div>
+                        @if (esCaja)
+                        {
+                            <MudNumericField @bind-Value="linea.CantidadRequerida" Min="0.001m" Format="N3" Dense="true"
+                                             HelperText="@($"cajas · {(linea.CantidadRequerida * (linea.ArticuloSeleccionado!.UnidadesPorEmbalaje ?? 1)).ToString("N0")} u")" />
+                        }
+                        else
+                        {
+                            <MudNumericField @bind-Value="linea.CantidadRequerida" Min="0.001m" Format="N3" Dense="true" />
+                        }
+                    </div>
+                    <div style="font-size:0.82rem; color:var(--n-text-1);">
+                        @(linea.ArticuloSeleccionado?.PresentacionNombre ?? linea.ArticuloSeleccionado?.PresentacionCodigo ?? "—")
+                    </div>
+                    <div>
+                        <MudNumericField @bind-Value="linea.PorcentajeMermaEstandar" Min="0m" Max="100m" Format="N1" Dense="true" />
+                    </div>
+                    <div>
+                        <AppSelect TValue="int?" @bind-Value="linea.CentroTrabajoID"
+                                   Items="@(_centrosTrabajo.Select(c => new AppSelectItem<int?>(c.Nombre, (int?)c.CentroTrabajoID)))" />
+                    </div>
+                    <div style="display:flex; justify-content:center;">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                       OnClick="@(() => QuitarLinea(linea))" Size="Size.Small" />
+                    </div>
+                </div>
+            }
 
         </div>
     </div>
@@ -209,7 +187,7 @@ else
 
     private bool FormularioValido =>
         !string.IsNullOrWhiteSpace(_nombreReceta) && _cantidadRendimientoBase > 0 &&
-        (EsNuevaVersion || _productoTerminado?.ArticuloID is > 0) &&
+        (EsNuevaVersion || _productoTerminado?.ArticuloID > 0) &&
         _lineas.Count > 0 && _lineas.All(l => l.InsumoID > 0 && l.CantidadRequerida > 0);
 
     protected override async Task OnInitializedAsync()
@@ -282,7 +260,7 @@ else
 
     private void QuitarLinea(LineaRecetaEditable linea) => _lineas.Remove(linea);
 
-    private void OnInsumoSeleccionado(LineaRecetaEditable linea, ArticuloItem articulo)
+    private void OnInsumoSeleccionado(LineaRecetaEditable linea, ArticuloItem? articulo)
     {
         linea.ArticuloSeleccionado = articulo;
         linea.InsumoID = articulo?.ArticuloID ?? 0;

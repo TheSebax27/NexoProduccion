@@ -16,6 +16,8 @@ public class TareaExportarEntradasVisions
         string? GrupoMenorCodigo, string? PresentacionCodigo,
         decimal? ExistenciasActuales, decimal? ExistenciasMinimas);
 
+    private const int LotePorCiclo = 500;
+
     private readonly INexoApiClient _apiClient;
     private readonly IVisionsConnectionFactory _visionsDb;
     private readonly ILogger<TareaExportarEntradasVisions> _logger;
@@ -29,12 +31,12 @@ public class TareaExportarEntradasVisions
         _logger = logger;
     }
 
-    public async Task EjecutarAsync(int centroCostoVisions, CancellationToken ct)
+    public async Task EjecutarAsync(int centroCostoVisions, CancellationToken ct, DateTime? fechaInicioSync = null)
     {
         using var connection = _visionsDb.CreateConnection();
 
         const string sql = @"
-            SELECT m.CENTROCOSTO, m.TIPDOC, m.NRODOC, CAST(m.ORDEN AS INT) AS ORDEN, m.REFERENCIA,
+            SELECT TOP (@Lote) m.CENTROCOSTO, m.TIPDOC, m.NRODOC, CAST(m.ORDEN AS INT) AS ORDEN, m.REFERENCIA,
                    m.CANTIDAD, m.COSTOCOMPRA, m.FECDOC,
                    m.NIT                                                   AS ProveedorNIT,
                    t.DETALLE                                               AS DetalleTarjeta,
@@ -54,6 +56,7 @@ public class TareaExportarEntradasVisions
             WHERE cfg.Activo = 1
               AND m.CENTROCOSTO = @CentroCostoVisions
               AND m.TIPDOC IN ('FACTURA', 'REMISION', 'DOCUMENTO SOPORTE')
+              AND (@FechaInicio IS NULL OR m.FECDOC >= @FechaInicio)
               AND NOT EXISTS (
                   SELECT 1 FROM dbo.NEXO_EntradasExportadas e
                   WHERE e.CENTROCOSTO = m.CENTROCOSTO AND e.TIPDOC = m.TIPDOC
@@ -68,7 +71,12 @@ public class TareaExportarEntradasVisions
               )";
 
         var entradas = (await connection.QueryAsync<EntradaPendiente>(
-            sql, new { CentroCostoVisions = centroCostoVisions })).ToList();
+            sql, new
+            {
+                CentroCostoVisions = centroCostoVisions,
+                FechaInicio = fechaInicioSync.HasValue ? (object)fechaInicioSync.Value.Date : DBNull.Value,
+                Lote = LotePorCiclo
+            })).ToList();
 
         if (entradas.Count == 0)
             return;

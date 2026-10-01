@@ -184,6 +184,32 @@ public class ArticulosController : ControllerBase
         return File(bytes, "application/pdf", $"ficha_{articulo.Referencia}.pdf");
     }
 
+    // ── Plantilla de importación ─────────────────────────────────────────────
+
+    [HttpGet("plantilla")]
+    public IActionResult DescargarPlantilla()
+    {
+        using var wb = new XLWorkbook();
+        var ws = wb.Worksheets.Add("Artículos");
+        string[] cols = { "Referencia", "Nombre", "Descripcion", "Costo", "PPublico", "PBodega",
+                          "StockMinimo", "PuntoReorden", "MarcaCodigo", "GrupoMenorCodigo", "PresentacionCodigo" };
+        for (int i = 0; i < cols.Length; i++) ws.Cell(1, i + 1).Value = cols[i];
+        var hdr = ws.Range(1, 1, 1, cols.Length);
+        hdr.Style.Font.Bold = true;
+        hdr.Style.Fill.BackgroundColor = XLColor.FromHtml("#1976D2");
+        hdr.Style.Font.FontColor = XLColor.White;
+        ws.Cell(2, 1).Value = "REF001";
+        ws.Cell(2, 2).Value = "Nombre de ejemplo";
+        ws.Cell(2, 4).Value = 8000;
+        ws.Cell(2, 5).Value = 12000;
+        ws.Columns().AdjustToContents();
+        using var ms = new MemoryStream();
+        wb.SaveAs(ms);
+        return File(ms.ToArray(),
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "plantilla_articulos.xlsx");
+    }
+
     // ── Importación masiva por Excel ──────────────────────────────────────────
 
     [HttpPost("importar-excel")]

@@ -14,21 +14,11 @@
             y visibles para gerencia. Úsalo solo cuando sea estrictamente necesario.
         </MudAlert>
 
-        <MudSelect T="int?" @bind-Value="_empleadoId" Label="Empleado" Required
-                   Placeholder="Selecciona el empleado" Class="mb-3">
-            @foreach (var e in Empleados)
-            {
-                <MudSelectItem T="int?" Value="@((int?)e.EmpleadoID)">
-                    @e.Nombres @e.Apellidos
-                </MudSelectItem>
-            }
-        </MudSelect>
+        <AppSelect TValue="int?" @bind-Value="_empleadoId" Label="Empleado" Placeholder="Selecciona el empleado" Class="mb-3"
+                   Items="@(Empleados.Select(e => new AppSelectItem<int?>($"{e.Nombres} {e.Apellidos}", (int?)e.EmpleadoID)))" />
 
-        <MudSelect T="string?" @bind-Value="_tipo" Label="Tipo" Required
-                   Placeholder="Entrada o Salida" Class="mb-3">
-            <MudSelectItem T="string?" Value="@("ENTRADA")">Entrada</MudSelectItem>
-            <MudSelectItem T="string?" Value="@("SALIDA")">Salida</MudSelectItem>
-        </MudSelect>
+        <AppSelect TValue="string?" @bind-Value="_tipo" Label="Tipo" Placeholder="Entrada o Salida" Class="mb-3"
+                   Items="@(new AppSelectItem<string?>[]{ new("Entrada","ENTRADA"), new("Salida","SALIDA") })" />
 
         <MudDatePicker @bind-Date="_fecha" Label="Fecha" DateFormat="dd/MM/yyyy"
                        Class="mb-3" Required />

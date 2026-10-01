@@ -13,12 +13,9 @@
         <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--n-text-3, #9B9BB4);">
             Cuantas unidades trae esta presentacion (ej: 12 para una caja de 12 unidades). Dejar en 0 si no aplica.
         </MudText>
-        <MudSelect T="string?" @bind-Value="_tipo" Label="Tipo de presentacion" Clearable="true" Class="mb-3"
-                   Placeholder="Unidades (predeterminado)">
-            <MudSelectItem T="string?" Value="@((string?)null)">Unidades</MudSelectItem>
-            <MudSelectItem T="string?" Value="@("PESO")">Peso (kg, gr...)</MudSelectItem>
-            <MudSelectItem T="string?" Value="@("VOLUMEN")">Volumen (L, ml...)</MudSelectItem>
-        </MudSelect>
+        <AppSelect TValue="string?" @bind-Value="_tipo" Label="Tipo de presentacion" Class="mb-3"
+                   Placeholder="Unidades (predeterminado)"
+                   Items="@(new AppSelectItem<string?>[]{ new("Unidades",(string?)null), new("Peso (kg, gr...)","PESO"), new("Volumen (L, ml...)","VOLUMEN") })" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancelar">Cancelar</MudButton>

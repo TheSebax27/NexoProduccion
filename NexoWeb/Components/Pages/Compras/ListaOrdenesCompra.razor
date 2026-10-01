@@ -18,6 +18,11 @@
     </div>
     <div class="d-flex align-center" style="gap:8px">
         <VistaToggle OnCambio="StateHasChanged" />
+        <MudButton Variant="Variant.Outlined" Color="Color.Warning"
+                   StartIcon="@Icons.Material.Filled.AutoAwesome" OnClick="AbrirOCSugeridaAsync"
+                   Disabled="_cargandoSugerencia">
+            @(_cargandoSugerencia ? "Calculando…" : "OC Sugerida")
+        </MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => AbrirCreacionAsync(null))">
             Nuevo Pedido
@@ -111,24 +116,14 @@
         {
             @* Filtros *@
             <div class="d-flex flex-wrap gap-2 mt-2 mb-3">
-                <MudSelect T="int?" @bind-Value="_cmpFiltroArticulo"
-                           Label="Filtrar por artículo" Variant="Variant.Outlined"
-                           Clearable="true" Style="width:100%"
-                           @bind-Value:after="StateHasChanged">
-                    @foreach (var art in _cmpArticulos)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)art.Key)">@art.Value</MudSelectItem>
-                    }
-                </MudSelect>
-                <MudSelect T="int?" @bind-Value="_cmpFiltroProveedor"
-                           Label="Filtrar por proveedor" Variant="Variant.Outlined"
-                           Clearable="true" Style="width:100%"
-                           @bind-Value:after="StateHasChanged">
-                    @foreach (var prov in _cmpProveedores)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)prov.Key)">@prov.Value</MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" Value="_cmpFiltroArticulo"
+                           ValueChanged="@((int? v) => { _cmpFiltroArticulo = v; StateHasChanged(); })"
+                           Label="Filtrar por artículo" Style="width:100%"
+                           Items="@(_cmpArticulos.Select(art => new AppSelectItem<int?>(art.Value, (int?)art.Key)))" />
+                <AppSelect TValue="int?" Value="_cmpFiltroProveedor"
+                           ValueChanged="@((int? v) => { _cmpFiltroProveedor = v; StateHasChanged(); })"
+                           Label="Filtrar por proveedor" Style="width:100%"
+                           Items="@(_cmpProveedores.Select(prov => new AppSelectItem<int?>(prov.Value, (int?)prov.Key)))" />
             </div>
 
             @if (!_cmpDatos.Any())
@@ -332,6 +327,7 @@
     private List<CentroCostoItem> _centrosCosto = new();
     private int? _detalleAbierto;
     private bool _cargando = true;
+    private bool _cargandoSugerencia;
     private string? _errorCarga;
 
     // ── Tab Comparación ──
@@ -423,6 +419,57 @@
         {
             Snackbar.Add(ex.Message, Severity.Error);
         }
+    }
+
+    private async Task AbrirOCSugeridaAsync()
+    {
+        _cargandoSugerencia = true;
+        try
+        {
+            var sugeridas = await ApiClient.GetAsync<List<OCLineSugeridaItem>>("api/inventario/oc-sugerida") ?? new();
+            if (sugeridas.Count == 0)
+            {
+                Snackbar.Add("No hay artículos bajo el stock mínimo con historial de consumo.", Severity.Info);
+                return;
+            }
+
+            if (_proveedores.Count == 0)
+            {
+                var tp = ApiClient.GetAsync<List<ProveedorItem>>("api/catalogo/proveedores");
+                var tb = ApiClient.GetAsync<List<BodegaItem>>("api/catalogo/bodegas");
+                var tc = ApiClient.GetAsync<List<CentroCostoItem>>("api/catalogo/centros-costo");
+                await Task.WhenAll(tp, tb, tc);
+                _proveedores = await tp ?? new();
+                _bodegas     = await tb ?? new();
+                _centrosCosto = await tc ?? new();
+            }
+
+            var parametros = new DialogParameters<CrearOrdenCompraDialog>
+            {
+                { x => x._proveedores,    _proveedores },
+                { x => x._bodegas,        _bodegas },
+                { x => x._centrosCosto,   _centrosCosto },
+                { x => x.LineasSugeridas, sugeridas }
+            };
+
+            var dialogo = await DialogService.ShowAsync<CrearOrdenCompraDialog>(
+                $"OC Sugerida — {sugeridas.Count} artículo{(sugeridas.Count == 1 ? "" : "s")} bajo mínimo",
+                parametros,
+                new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+            var resultado = await dialogo.Result;
+            if (resultado is null || resultado.Canceled) return;
+
+            try
+            {
+                var request = (CrearOrdenCompraRequest)resultado.Data!;
+                await ApiClient.PostAsync<CrearOrdenCompraRequest, object?>("api/compras/ordenes", request);
+                Snackbar.Add("Pedido sugerido creado correctamente.", Severity.Success);
+                await CargarAsync();
+            }
+            catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _cargandoSugerencia = false; }
     }
 
     private async Task OnTabCambiado(int index)

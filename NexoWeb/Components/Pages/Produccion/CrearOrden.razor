@@ -87,38 +87,26 @@ else
             @if (!_esMto)
             {
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="int?" Value="_tipoProduccionId" ValueChanged="OnTipoProduccionCambiadoAsync"
-                               Label="Tipo de Produccion" Placeholder="Selecciona un tipo" Required="true" Variant="Variant.Outlined">
-                        @foreach (var tipo in _tiposProduccion.Where(t => t.Codigo != "MTO"))
-                        {
-                            <MudSelectItem T="int?" Value="@((int?)tipo.TipoProduccionID)">@tipo.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="int?" Value="_tipoProduccionId" ValueChanged="OnTipoProduccionCambiadoAsync"
+                               Label="Tipo de Produccion" Placeholder="Selecciona un tipo"
+                               Items="@(_tiposProduccion.Where(t => t.Codigo != "MTO").Select(tipo => new AppSelectItem<int?>(tipo.Nombre, (int?)tipo.TipoProduccionID)))" />
                 </MudItem>
             }
 
             @if (_esMto)
             {
                 <MudItem xs="12" sm="6">
-                    <MudAutocomplete T="ClienteItem" Label="Cliente" Required="true" Variant="Variant.Outlined"
-                                     Value="_clienteSeleccionado" ValueChanged="OnClienteSeleccionadoChanged"
-                                     SearchFunc="BuscarClienteAsync"
-                                     ToStringFunc="@(c => c is null ? "" : (string.IsNullOrWhiteSpace(c.NIT) ? c.Nombre : $"{c.NIT} — {c.Nombre}"))"
-                                     MinCharacters="1" Clearable="true" NoItemsText="Sin resultados"
-                                     HelperText="Escribe nombre o NIT para buscar" />
+                    <ClienteAutocomplete Value="_clienteSeleccionado"
+                                         ValueChanged="OnClienteSeleccionadoChanged"
+                                         Label="Cliente*"
+                                         Required="true" />
                 </MudItem>
             }
 
             <MudItem xs="12" sm="6">
-                <MudSelect T="int?" Value="_recetaId" ValueChanged="@((int? v) => OnRecetaCambiadaAsync(v))"
-                           Label="Receta (BOM)" Placeholder="Selecciona una receta" Required="true" Variant="Variant.Outlined">
-                    @foreach (var receta in _recetas)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)receta.RecetaID)">
-                            @receta.ProductoTerminado — @receta.NombreReceta (v@(receta.Version))
-                        </MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" Value="_recetaId" ValueChanged="@((int? v) => OnRecetaCambiadaAsync(v))"
+                           Label="Receta (BOM)" Placeholder="Selecciona una receta"
+                           Items="@(_recetas.Select(receta => new AppSelectItem<int?>($"{receta.ProductoTerminado} — {receta.NombreReceta} (v{receta.Version})", (int?)receta.RecetaID)))" />
                 @if (_recetas.Count == 0)
                 {
                     <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2">
@@ -159,13 +147,8 @@ else
             </MudItem>
 
             <MudItem xs="12" sm="4">
-                <MudSelect T="int?" @bind-Value="_centroCostoDestinoId" Label="Centro de Costos Destino"
-                           Placeholder="Selecciona" Required="true" Variant="Variant.Outlined">
-                    @foreach (var centro in _centrosCosto)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)centro.CentroCostoID)">@centro.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" @bind-Value="_centroCostoDestinoId" Label="Centro de Costos Destino" Placeholder="Selecciona"
+                           Items="@(_centrosCosto.Select(centro => new AppSelectItem<int?>(centro.Nombre, (int?)centro.CentroCostoID)))" />
             </MudItem>
 
             <MudItem xs="12" sm="4">
@@ -204,45 +187,26 @@ else
             @if (_produccionLocal)
             {
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="int?" Value="_bodegaLocalId" ValueChanged="OnBodegaLocalCambiadaAsync"
-                               Label="Bodega (MP y PT)" Placeholder="Selecciona una bodega" Required="true" Variant="Variant.Outlined">
-                        @foreach (var bodega in _todasLasBodegas)
-                        {
-                            <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="int?" Value="_bodegaLocalId" ValueChanged="OnBodegaLocalCambiadaAsync"
+                               Label="Bodega (MP y PT)" Placeholder="Selecciona una bodega"
+                               Items="@(_todasLasBodegas.Select(bodega => new AppSelectItem<int?>($"{bodega.Nombre} ({bodega.CentroCosto})", (int?)bodega.BodegaID)))" />
                 </MudItem>
             }
             else
             {
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="int?" @bind-Value="_bodegaOrigenMpId" Label="Bodega Origen (Materia Prima)"
-                               Placeholder="Selecciona" Required="true" Variant="Variant.Outlined">
-                        @foreach (var bodega in _bodegasMateriaPrima)
-                        {
-                            <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="int?" @bind-Value="_bodegaOrigenMpId" Label="Bodega Origen (Materia Prima)" Placeholder="Selecciona"
+                               Items="@(_bodegasMateriaPrima.Select(bodega => new AppSelectItem<int?>($"{bodega.Nombre} ({bodega.CentroCosto})", (int?)bodega.BodegaID)))" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="int?" @bind-Value="_bodegaDestinoPtId" Label="Bodega Destino (Producto Terminado)"
-                               Placeholder="Selecciona" Required="true" Variant="Variant.Outlined">
-                        @foreach (var bodega in _bodegasProductoTerminado)
-                        {
-                            <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="int?" @bind-Value="_bodegaDestinoPtId" Label="Bodega Destino (Producto Terminado)" Placeholder="Selecciona"
+                               Items="@(_bodegasProductoTerminado.Select(bodega => new AppSelectItem<int?>($"{bodega.Nombre} ({bodega.CentroCosto})", (int?)bodega.BodegaID)))" />
                 </MudItem>
             }
 
             <MudItem xs="12" sm="6">
-                <MudSelect T="int?" @bind-Value="_centroTrabajoId" Label="Centro de Trabajo (opcional)"
-                           Clearable="true" Variant="Variant.Outlined">
-                    @foreach (var centro in _centrosTrabajo)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)centro.CentroTrabajoID)">@centro.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" @bind-Value="_centroTrabajoId" Label="Centro de Trabajo (opcional)"
+                           Items="@(_centrosTrabajo.Select(centro => new AppSelectItem<int?>(centro.Nombre, (int?)centro.CentroTrabajoID)))" />
             </MudItem>
 
             <MudItem xs="12">
@@ -289,16 +253,10 @@ else
                         {
                             <tr style="border-bottom:1px solid var(--mud-palette-lines-default)">
                                 <td style="padding:4px 10px">
-                                    <MudSelect T="int?" Value="fila.MaquinariaID"
+                                    <AppSelect TValue="int?" Value="fila.MaquinariaID"
                                                ValueChanged="@((int? v) => fila.MaquinariaID = v)"
-                                               Placeholder="Selecciona maquina" Margin="Margin.Dense">
-                                        @foreach (var m in _maquinasDisponibles)
-                                        {
-                                            <MudSelectItem T="int?" Value="@((int?)m.MaquinariaID)">
-                                                @m.Nombre <small style="opacity:.6">(@m.TipoMaquinaria)</small>
-                                            </MudSelectItem>
-                                        }
-                                    </MudSelect>
+                                               Placeholder="Selecciona maquina"
+                                               Items="@(_maquinasDisponibles.Select(m => new AppSelectItem<int?>($"{m.Nombre} ({m.TipoMaquinaria})", (int?)m.MaquinariaID)))" />
                                 </td>
                                 <td style="padding:4px 10px">
                                     <MudNumericField @bind-Value="fila.Horas" T="int?" Min="0" Placeholder="0" Margin="Margin.Dense" />
@@ -380,20 +338,10 @@ else
                         {
                             <tr style="border-bottom:1px solid var(--mud-palette-lines-default)">
                                 <td style="padding:4px 10px">
-                                    <MudSelect T="int?" Value="fila.EmpleadoID"
+                                    <AppSelect TValue="int?" Value="fila.EmpleadoID"
                                                ValueChanged="@((int? v) => fila.EmpleadoID = v)"
-                                               Placeholder="Selecciona empleado" Margin="Margin.Dense">
-                                        @foreach (var emp in _empleadosDisponibles)
-                                        {
-                                            <MudSelectItem T="int?" Value="@((int?)emp.EmpleadoID)">
-                                                @emp.Nombres @emp.Apellidos
-                                                @if (emp.Cargo is not null)
-                                                {
-                                                    <small style="opacity:.6"> — @emp.Cargo</small>
-                                                }
-                                            </MudSelectItem>
-                                        }
-                                    </MudSelect>
+                                               Placeholder="Selecciona empleado"
+                                               Items="@(_empleadosDisponibles.Select(emp => new AppSelectItem<int?>($"{emp.Nombres} {emp.Apellidos}{(emp.Cargo is not null ? $" — {emp.Cargo}" : "")}", (int?)emp.EmpleadoID)))" />
                                 </td>
                                 <td style="padding:4px 10px">
                                     <MudNumericField @bind-Value="fila.Horas" T="int?" Min="0" Placeholder="0" Margin="Margin.Dense" />

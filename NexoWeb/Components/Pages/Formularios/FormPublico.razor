@@ -1,8 +1,12 @@
 @page "/f/{Token}"
 @attribute [AllowAnonymous]
 @using System.Text.Json
+@using System.Net.Http.Json
 @using Microsoft.AspNetCore.Authorization
-@inject INexoApiClient Api
+@using NexoWeb.Common.Dtos
+@inject IHttpClientFactory HttpFactory
+@inject IConfiguration Config
+@inject NavigationManager Nav
 @inject ISnackbar Snackbar
 @layout FormPublicoLayout
 
@@ -103,12 +107,8 @@
                         }
                         else if (campo.Tipo == "SELECCION")
                         {
-                            <MudSelect @bind-Value="_valores[campo.Etiqueta]" Variant="Variant.Outlined" Dense="true" T="string">
-                                @foreach (var op in ParseOpciones(campo.Opciones))
-                                {
-                                    <MudSelectItem Value="@op">@op</MudSelectItem>
-                                }
-                            </MudSelect>
+                            <AppSelect TValue="string" @bind-Value="_valores[campo.Etiqueta]"
+                                       Items="@(ParseOpciones(campo.Opciones).Select(op => new AppSelectItem<string>(op, op)))" />
                         }
                         else if (campo.Tipo == "MULTIPLE")
                         {
@@ -159,7 +159,7 @@
         _cargando = true;
         try
         {
-            _formulario = await Api.GetAsync<FormularioPublicoItem>($"api/formularios/publico/{Token}");
+            _formulario = await LlamarPublicoAsync();
             if (_formulario is not null)
             {
                 foreach (var c in _formulario.Campos)
@@ -169,14 +169,24 @@
                 }
             }
         }
-        catch
-        {
-            // formulario no encontrado o error de red — _formulario queda null → muestra "no encontrado"
-        }
-        finally
-        {
-            _cargando = false;
-        }
+        catch { }
+        finally { _cargando = false; }
+    }
+
+    private async Task<FormularioPublicoItem?> LlamarPublicoAsync()
+    {
+        // Usa cliente sin auth para que funcione tanto en pre-render como en fase interactiva.
+        // NavigationManager.BaseUri está disponible en ambas fases (a diferencia de IHttpContextAccessor).
+        var apiBase = Config["NexoApi:BaseUrl"]!;
+        var host = new Uri(Nav.BaseUri).Host;
+        var client = HttpFactory.CreateClient("img-proxy");
+        var req = new HttpRequestMessage(HttpMethod.Get, $"{apiBase}api/formularios/publico/{Token}");
+        if (!string.IsNullOrEmpty(host) && host != "localhost" && host != "127.0.0.1")
+            req.Headers.TryAddWithoutValidation("X-Nexo-Host", host);
+        var resp = await client.SendAsync(req);
+        if (!resp.IsSuccessStatusCode) return null;
+        var json = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        return await resp.Content.ReadFromJsonAsync<FormularioPublicoItem>(json);
     }
 
     private static List<string> ParseOpciones(string? opciones)
@@ -215,10 +225,29 @@
         }
 
         _enviando = true;
-        var datos = JsonSerializer.Serialize(_valores);
-        var req = new EnviarRespuestaRequest(_formulario.FormularioID, datos);
-        await Api.PostAsync("api/formularios/respuestas", req);
-        _enviado = true;
-        _enviando = false;
+        try
+        {
+            var datos = JsonSerializer.Serialize(_valores);
+            var payload = new EnviarRespuestaRequest(_formulario.FormularioID, datos);
+            var apiBase = Config["NexoApi:BaseUrl"]!;
+            var host = new Uri(Nav.BaseUri).Host;
+            var client = HttpFactory.CreateClient("img-proxy");
+            var httpReq = new HttpRequestMessage(HttpMethod.Post, $"{apiBase}api/formularios/respuestas");
+            if (!string.IsNullOrEmpty(host) && host != "localhost" && host != "127.0.0.1")
+                httpReq.Headers.TryAddWithoutValidation("X-Nexo-Host", host);
+            httpReq.Content = JsonContent.Create(payload);
+            var resp = await client.SendAsync(httpReq);
+            if (!resp.IsSuccessStatusCode)
+            {
+                _errorValidacion = "No se pudo enviar la respuesta. Intenta de nuevo.";
+                return;
+            }
+            _enviado = true;
+        }
+        catch
+        {
+            _errorValidacion = "Error de red al enviar. Intenta de nuevo.";
+        }
+        finally { _enviando = false; }
     }
 }

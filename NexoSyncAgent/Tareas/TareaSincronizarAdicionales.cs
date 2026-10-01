@@ -6,7 +6,7 @@ using NexoSyncAgent.VisionsData;
 namespace NexoSyncAgent.Tareas;
 
 // Sincronizacion adicionales bidireccional.
-// Paso 1 Visions→NEXO: upsert (inserta los que NEXO no tiene; no borra).
+// Paso 1 Visions→NEXO: upsert primero (preserva adiciones hechas desde el POS).
 // Paso 2 NEXO→Visions: reconciliacion completa (inserta + borra segun NEXO).
 public class TareaSincronizarAdicionales
 {
@@ -27,10 +27,13 @@ public class TareaSincronizarAdicionales
     {
         using var conn = _visionsDb.CreateConnection();
 
-        // ── PASO 1: Visions → NEXO (upsert; NEXO es quien elimina) ──────────────
+        // ── PASO 1: Visions → NEXO primero (upsert; preserva lo que el POS agrega) ─
+        // Si el operador marcó un adicional desde FRMTARJETA, NEXO debe recibirlo
+        // ANTES de que el paso de reconciliación compruebe qué tiene NEXO.
+        // De lo contrario NEXO devuelve vacío para ese ítem y el paso 2 lo borra de Visions.
         await SincronizarVisionsANexoAsync(conn, ct);
 
-        // ── PASO 2: NEXO → Visions (reconciliación completa) ────────────────────
+        // ── PASO 2: NEXO → Visions (reconciliación; NEXO es árbitro de borrados) ────
         var datos = await _apiClient.ListarAdicionalesSyncAsync(ct);
 
         // ── TARJETA_ES_ADICIONAL ──────────────────────────────────────────────
@@ -61,16 +64,28 @@ public class TareaSincronizarAdicionales
         var enVisionsEsAd = (await conn.QueryAsync<string>(
             "SELECT REFERENCIA FROM dbo.TARJETA_ES_ADICIONAL")).ToList();
 
-        foreach (var ref_ in enVisionsEsAd.Where(r => !refEsAdicionalEnNexo.Contains(r)))
+        // Guardia: si NEXO devuelve 0 y Visions tiene datos, NEXO no está configurado aún.
+        // No borrar; Visions es la fuente mientras NEXO esté vacío.
+        bool nexoTieneEsAdicional = datos.EsAdicional.Any();
+        if (!nexoTieneEsAdicional && enVisionsEsAd.Any())
         {
-            try
+            _logger.LogWarning(
+                "TARJETA_ES_ADICIONAL: NEXO sin datos pero Visions tiene {N}. Se omite borrado para evitar wipe masivo.",
+                enVisionsEsAd.Count);
+        }
+        else
+        {
+            foreach (var ref_ in enVisionsEsAd.Where(r => !refEsAdicionalEnNexo.Contains(r)))
             {
-                await conn.ExecuteAsync(
-                    "DELETE FROM dbo.TARJETA_ES_ADICIONAL WHERE REFERENCIA = @R",
-                    new { R = ref_ });
-                _logger.LogInformation("TARJETA_ES_ADICIONAL: quitada {Ref} (ya no es adicional en NEXO)", ref_);
+                try
+                {
+                    await conn.ExecuteAsync(
+                        "DELETE FROM dbo.TARJETA_ES_ADICIONAL WHERE REFERENCIA = @R",
+                        new { R = ref_ });
+                    _logger.LogInformation("TARJETA_ES_ADICIONAL: quitada {Ref} (ya no es adicional en NEXO)", ref_);
+                }
+                catch (Exception ex) { _logger.LogError(ex, "Error al quitar TARJETA_ES_ADICIONAL {Ref}", ref_); }
             }
-            catch (Exception ex) { _logger.LogError(ex, "Error al quitar TARJETA_ES_ADICIONAL {Ref}", ref_); }
         }
 
         _logger.LogInformation("TARJETA_ES_ADICIONAL: {N} activas", refEsAdicionalEnNexo.Count);
@@ -112,23 +127,34 @@ public class TareaSincronizarAdicionales
         var enVisionsAd = (await conn.QueryAsync<(string Referencia, string RefAdicional)>(
             "SELECT REFERENCIA, REFADICIONAL FROM dbo.TARJETA_ADICIONALES")).ToList();
 
-        foreach (var fila in enVisionsAd)
+        // Guardia: si NEXO devuelve 0 relaciones y Visions tiene datos, omitir borrado.
+        bool nexoTieneAdicionales = datos.Adicionales.Any();
+        if (!nexoTieneAdicionales && enVisionsAd.Any())
         {
-            var key = fila.Referencia + "|" + fila.RefAdicional;
-            if (!paresEnNexo.ContainsKey(key))
+            _logger.LogWarning(
+                "TARJETA_ADICIONALES: NEXO sin relaciones pero Visions tiene {N}. Se omite borrado para evitar wipe masivo.",
+                enVisionsAd.Count);
+        }
+        else
+        {
+            foreach (var fila in enVisionsAd)
             {
-                try
+                var key = fila.Referencia + "|" + fila.RefAdicional;
+                if (!paresEnNexo.ContainsKey(key))
                 {
-                    await conn.ExecuteAsync(
-                        "DELETE FROM dbo.TARJETA_ADICIONALES WHERE REFERENCIA = @R AND REFADICIONAL = @RA",
-                        new { R = fila.Referencia, RA = fila.RefAdicional });
-                    _logger.LogInformation(
-                        "TARJETA_ADICIONALES: eliminada relacion {Ref}→{RefAd}", fila.Referencia, fila.RefAdicional);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex,
-                        "Error al eliminar TARJETA_ADICIONALES {Ref}→{RefAd}", fila.Referencia, fila.RefAdicional);
+                    try
+                    {
+                        await conn.ExecuteAsync(
+                            "DELETE FROM dbo.TARJETA_ADICIONALES WHERE REFERENCIA = @R AND REFADICIONAL = @RA",
+                            new { R = fila.Referencia, RA = fila.RefAdicional });
+                        _logger.LogInformation(
+                            "TARJETA_ADICIONALES: eliminada relacion {Ref}→{RefAd}", fila.Referencia, fila.RefAdicional);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex,
+                            "Error al eliminar TARJETA_ADICIONALES {Ref}→{RefAd}", fila.Referencia, fila.RefAdicional);
+                    }
                 }
             }
         }

@@ -86,6 +86,25 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// El HTML shell de Blazor debe llegar siempre fresco: si el browser cachea el HTML
+// con referencias a assets viejos (tras cambio de dominio o deploy) la app no carga.
+// Solo afecta text/html — los assets estáticos los maneja MapStaticAssets() aparte.
+app.Use(async (ctx, next) =>
+{
+    ctx.Response.OnStarting(() =>
+    {
+        if (ctx.Response.ContentType is string ct &&
+            ct.StartsWith("text/html", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Response.Headers["Cache-Control"] = "no-store, must-revalidate";
+            ctx.Response.Headers["Pragma"] = "no-cache";
+        }
+        return Task.CompletedTask;
+    });
+    await next();
+});
+
 app.MapStaticAssets(); // fingerprinting + cache-busting automático para app.css / NexoWeb.styles.css
 app.UseAntiforgery();
 

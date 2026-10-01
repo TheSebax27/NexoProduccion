@@ -6,19 +6,13 @@
         <MudForm @ref="_form" Model="@this">
             @if (!EsEdicion)
             {
-                <MudSelect T="string" @bind-Value="_origen" Label="Origen" Class="mb-3">
-                    <MudSelectItem Value="@("LEAD")">Lead existente</MudSelectItem>
-                    <MudSelectItem Value="@("CLIENTE")">Cliente existente</MudSelectItem>
-                </MudSelect>
+                <AppSelect TValue="string" @bind-Value="_origen" Label="Origen" Class="mb-3"
+                           Items="@(new AppSelectItem<string>[]{ new("Lead existente","LEAD"), new("Cliente existente","CLIENTE") })" />
 
                 @if (_origen == "LEAD")
                 {
-                    <MudSelect T="int?" @bind-Value="_leadId" Label="Lead" Required="true" RequiredError="Selecciona un lead" Class="mb-3">
-                        @foreach (var l in Leads)
-                        {
-                            <MudSelectItem T="int?" Value="@l.LeadID">@l.Nombre @(l.Empresa is not null ? $"({l.Empresa})" : "")</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="int?" @bind-Value="_leadId" Label="Lead" Class="mb-3"
+                               Items="@(Leads.Select(l => new AppSelectItem<int?>($"{l.Nombre}{(l.Empresa is not null ? $" ({l.Empresa})" : "")}", (int?)l.LeadID)))" />
                 }
                 else
                 {
@@ -56,23 +50,13 @@
             </MudStack>
             <MudDatePicker @bind-Date="_fechaCierreEsperada" Label="Fecha de cierre esperada" Class="mb-3" />
 
-            <MudSelect T="int?" @bind-Value="_responsableId" Label="Responsable" Clearable="true" Class="mb-3">
-                @foreach (var e in Empleados)
-                {
-                    <MudSelectItem T="int?" Value="@e.EmpleadoID">@e.Nombres @e.Apellidos</MudSelectItem>
-                }
-            </MudSelect>
+            <AppSelect TValue="int?" @bind-Value="_responsableId" Label="Responsable" Class="mb-3"
+                       Items="@(Empleados.Select(e => new AppSelectItem<int?>($"{e.Nombres} {e.Apellidos}", (int?)e.EmpleadoID)))" />
 
             @if (EsEdicion)
             {
-                <MudSelect T="string" @bind-Value="_etapa" Label="Etapa" Class="mb-3">
-                    <MudSelectItem Value="@("PROSPECCION")">Prospección</MudSelectItem>
-                    <MudSelectItem Value="@("CALIFICACION")">Calificación</MudSelectItem>
-                    <MudSelectItem Value="@("PROPUESTA")">Propuesta</MudSelectItem>
-                    <MudSelectItem Value="@("NEGOCIACION")">Negociación</MudSelectItem>
-                    <MudSelectItem Value="@("GANADA")">Ganada</MudSelectItem>
-                    <MudSelectItem Value="@("PERDIDA")">Perdida</MudSelectItem>
-                </MudSelect>
+                <AppSelect TValue="string" @bind-Value="_etapa" Label="Etapa" Class="mb-3"
+                           Items="@(new AppSelectItem<string>[]{ new("Prospección","PROSPECCION"), new("Calificación","CALIFICACION"), new("Propuesta","PROPUESTA"), new("Negociación","NEGOCIACION"), new("Ganada","GANADA"), new("Perdida","PERDIDA") })" />
             }
 
             <MudTextField @bind-Value="_notas" Label="Notas" Lines="2" Class="mb-3" />

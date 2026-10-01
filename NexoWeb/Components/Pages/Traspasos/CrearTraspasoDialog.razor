@@ -3,19 +3,11 @@
 
 <MudDialog>
     <DialogContent>
-        <MudSelect T="int?" @bind-Value="_bodegaOrigenId" Label="Bodega Origen" Placeholder="Seleccionar..." Class="mb-3">
-            @foreach (var bodega in Bodegas)
-            {
-                <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
-            }
-        </MudSelect>
+        <AppSelect TValue="int?" @bind-Value="_bodegaOrigenId" Label="Bodega Origen" Placeholder="Seleccionar..." Class="mb-3"
+                   Items="@(Bodegas.Select(bodega => new AppSelectItem<int?>($"{bodega.Nombre} ({bodega.CentroCosto})", (int?)bodega.BodegaID)))" />
 
-        <MudSelect T="int?" @bind-Value="_bodegaDestinoId" Label="Bodega Destino" Placeholder="Seleccionar..." Class="mb-4">
-            @foreach (var bodega in Bodegas.Where(b => b.BodegaID != _bodegaOrigenId))
-            {
-                <MudSelectItem T="int?" Value="@((int?)bodega.BodegaID)">@bodega.Nombre (@bodega.CentroCosto)</MudSelectItem>
-            }
-        </MudSelect>
+        <AppSelect TValue="int?" @bind-Value="_bodegaDestinoId" Label="Bodega Destino" Placeholder="Seleccionar..." Class="mb-4"
+                   Items="@(Bodegas.Where(b => b.BodegaID != _bodegaOrigenId).Select(bodega => new AppSelectItem<int?>($"{bodega.Nombre} ({bodega.CentroCosto})", (int?)bodega.BodegaID)))" />
 
         <MudText Typo="Typo.subtitle2" Class="mb-2">Articulos a trasladar</MudText>
 

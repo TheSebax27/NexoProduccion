@@ -16,13 +16,9 @@
 
 <MudGrid Class="mb-4">
     <MudItem xs="12" sm="6" md="4">
-        <MudSelect T="int?" Value="_filtroCentroCostoId" ValueChanged="OnFiltroCambiadoAsync"
-                   Label="Filtrar por Centro de Costo" Clearable="true">
-            @foreach (var centro in _centrosCosto)
-            {
-                <MudSelectItem T="int?" Value="@centro.CentroCostoID">@centro.Nombre</MudSelectItem>
-            }
-        </MudSelect>
+        <AppSelect TValue="int?" Value="_filtroCentroCostoId" ValueChanged="OnFiltroCambiadoAsync"
+                   Label="Filtrar por Centro de Costo"
+                   Items="@(_centrosCosto.Select(centro => new AppSelectItem<int?>(centro.Nombre, (int?)centro.CentroCostoID)))" />
     </MudItem>
 </MudGrid>
 

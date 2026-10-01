@@ -84,6 +84,12 @@
                             <MudIconButton Icon="@Icons.Material.Outlined.Settings" Size="Size.Small"
                                            Style="color:white;" Title="Configurar agente"
                                            OnClick="@(() => AbrirConfigAsync(ag.AgenteSyncID))" />
+                            <MudIconButton Icon="@Icons.Material.Outlined.Replay" Size="Size.Small"
+                                           Style="color:rgba(255,255,255,0.85);" Title="Reintentar pendientes con error"
+                                           OnClick="@(() => ReintentarPendientesAsync(ag.AgenteSyncID))" />
+                            <MudIconButton Icon="@Icons.Material.Outlined.SyncAlt" Size="Size.Small"
+                                           Style="color:rgba(255,255,255,0.85);" Title="Reprocesar entradas Visions→NEXO pendientes"
+                                           OnClick="@(() => ReprocesarEntrantesAsync(ag.AgenteSyncID))" />
                             <MudIconButton Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small"
                                            Style="color:rgba(255,255,255,0.7);" Title="Eliminar agente"
                                            OnClick="@(() => EliminarAgenteAsync(ag.AgenteSyncID))" />
@@ -337,6 +343,34 @@
                                                         </MudText>
                                                     </MudTooltip>
                                                 }
+                                                else if (context.Estado != "CONFIRMADO")
+                                                {
+                                                    @if (context.IntentosEnvio > 0)
+                                                    {
+                                                        <MudText Typo="Typo.caption" Color="Color.Warning"
+                                                                 Style="font-size:10px;">
+                                                            ⚠ @context.IntentosEnvio intento(s) fallido(s) — reintentando
+                                                        </MudText>
+                                                    }
+                                                    else
+                                                    {
+                                                        var horasPendiente = (DateTime.UtcNow - context.FechaCreacion).TotalHours;
+                                                        @if (horasPendiente > 2)
+                                                        {
+                                                            <MudText Typo="Typo.caption" Color="Color.Warning"
+                                                                     Style="font-size:10px;">
+                                                                ⏳ En cola hace @((int)horasPendiente)h — usa "Reintentar"
+                                                            </MudText>
+                                                        }
+                                                        else
+                                                        {
+                                                            <MudText Typo="Typo.caption" Color="Color.Tertiary"
+                                                                     Style="font-size:10px;">
+                                                                En cola — el agente lo procesará en el próximo ciclo
+                                                            </MudText>
+                                                        }
+                                                    }
+                                                }
                                                 else
                                                 {
                                                     <MudText Typo="Typo.caption" Color="Color.Tertiary">—</MudText>
@@ -371,77 +405,7 @@
         }
     </MudTabPanel>
 
-    <!-- ══════════════════════════════════════ TAB 2: GUÍA -->
-    <MudTabPanel Text="Instalación" Icon="@Icons.Material.Outlined.MenuBook">
-
-        <MudAlert Severity="Severity.Info" Class="mb-4">
-            El <strong>NexoSyncAgent</strong> es un servicio de Windows que se instala con un solo clic desde esta pantalla.
-            Arranca automáticamente con Windows, no requiere consola ni intervención manual.
-            El agente siempre queda en <code>C:\NexoSyncAgent\</code> en el servidor de NEXO.
-        </MudAlert>
-
-        <div class="nexo-item-card pa-4 mb-3">
-            <div class="d-flex align-center gap-3 mb-2">
-                <MudAvatar Color="Color.Primary" Size="Size.Small">1</MudAvatar>
-                <MudText Typo="Typo.subtitle1" Style="font-weight:500">Crear y configurar el agente</MudText>
-            </div>
-            <ol style="padding-left:1.25rem;font-size:0.875rem;line-height:1.9;">
-                <li>Ir a la pestaña <strong>"Configurar agente"</strong></li>
-                <li>Seleccionar el Centro de Costo que usará este agente y hacer clic en <strong>"Crear"</strong></li>
-                <li>Completar el servidor SQL de Visions y el intervalo de sincronización</li>
-                <li>Clic en <strong>"Guardar configuración"</strong></li>
-            </ol>
-        </div>
-
-        <div class="nexo-item-card pa-4 mb-3">
-            <div class="d-flex align-center gap-3 mb-2">
-                <MudAvatar Color="Color.Primary" Size="Size.Small">2</MudAvatar>
-                <MudText Typo="Typo.subtitle1" Style="font-weight:500">Instalar el agente</MudText>
-            </div>
-            <MudPaper Class="pa-3" Outlined="true">
-                <div class="d-flex align-center gap-2 mb-3">
-                    <MudIcon Icon="@Icons.Material.Outlined.FileDownload" Color="Color.Success" Size="Size.Large" />
-                    <div>
-                        <MudText Typo="Typo.subtitle2">Descargar e instalar en el equipo del cliente</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">El instalador incluye todo — no hay que editar ningún archivo</MudText>
-                    </div>
-                </div>
-                <ol style="padding-left:1.1rem;font-size:0.875rem;line-height:2;">
-                    <li>Clic en <strong>"Descargar instalador"</strong> — genera <code>NexoAgente-Setup.exe</code> con todo incluido</li>
-                    <li>En el equipo del cliente: doble clic en <code>NexoAgente-Setup.exe</code></li>
-                    <li>Aceptar el Control de cuentas (UAC) — único paso manual</li>
-                </ol>
-                <MudAlert Severity="Severity.Success" Dense="true" Class="mt-2">
-                    El instalador se copia solo a <code>C:\NexoSyncAgent\</code>, instala el servicio de Windows y lo arranca.
-                    No hay extracción, no hay archivos BAT, no hay edición manual. Desde ese momento sincroniza con NEXO y arranca con Windows.
-                </MudAlert>
-            </MudPaper>
-        </div>
-
-        <div class="nexo-item-card pa-4 mb-3">
-            <div class="d-flex align-center gap-3 mb-2">
-                <MudAvatar Color="Color.Warning" Size="Size.Small"><MudIcon Icon="@Icons.Material.Outlined.WifiOff" Size="Size.Small" /></MudAvatar>
-                <MudText Typo="Typo.subtitle1" Style="font-weight:500">¿Qué pasa si se corta la conexión?</MudText>
-            </div>
-            <MudGrid>
-                <MudItem xs="12" md="6">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">NEXO → Visions</MudText>
-                    <MudText Typo="Typo.body2">Los eventos quedan en cola PENDIENTE. Al recuperar conexión se aplican automáticamente.</MudText>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">Visions → NEXO (ventas POS)</MudText>
-                    <MudText Typo="Typo.body2">Las ventas no se marcan exportadas hasta que NEXO confirme. Se exportan todas al reconectar.</MudText>
-                </MudItem>
-                <MudItem xs="12">
-                    <MudAlert Severity="Severity.Info" Dense="true" Class="mt-1">
-                        Backoff automático: 30 s → 60 s → 120 s antes de reintentar cuando NEXO no responde.
-                    </MudAlert>
-                </MudItem>
-            </MudGrid>
-        </div>
-    </MudTabPanel>
-
-    <!-- ══════════════════════════════════════ TAB 3: CONFIGURAR -->
+    <!-- ══════════════════════════════════════ TAB 2 (índice 1): CONFIGURAR -->
     <MudTabPanel Text="Configurar agente" Icon="@Icons.Material.Outlined.Settings" BadgeData="@(_agentes.Count > 0 ? null : "!")" BadgeColor="Color.Warning">
 
         @if (_cargandoConfig)
@@ -565,6 +529,19 @@
                     </MudText>
                 </MudItem>
 
+                <!-- Bodega de ventas Visions -->
+                <MudItem xs="12" md="6">
+                    <MudDivider Class="my-1" />
+                    <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Bodega para descuento de stock</MudText>
+                    <AppSelect TValue="int?" @bind-Value="_editBodegaVentaID"
+                               Label="Bodega de ventas Visions"
+                               Placeholder="Sin descuento de stock"
+                               Items="@(_bodegas.Select(b => new AppSelectItem<int?>(b.Nombre, (int?)b.BodegaID)))" />
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display:block;" Class="mt-1">
+                        Bodega de la que se descontará stock al registrar una venta desde Visions. Si no se asigna, las ventas solo se acumulan en BI sin mover inventario.
+                    </MudText>
+                </MudItem>
+
                 <!-- Botones -->
                 <MudItem xs="12">
                     <div class="d-flex gap-2 flex-wrap align-center">
@@ -627,6 +604,12 @@
                                             <MudText Typo="Typo.caption" Color="Color.Secondary">@ag.Descripcion</MudText>
                                         </div>
                                     </div>
+                                    <MudIconButton Icon="@Icons.Material.Outlined.Replay" Size="Size.Small"
+                                                   Color="Color.Warning" Title="Reintentar pendientes con error"
+                                                   OnClick="@(() => ReintentarPendientesAsync(ag.AgenteSyncID))" />
+                                    <MudIconButton Icon="@Icons.Material.Outlined.SyncAlt" Size="Size.Small"
+                                                   Color="Color.Info" Title="Reprocesar entradas Visions→NEXO pendientes"
+                                                   OnClick="@(() => ReprocesarEntrantesAsync(ag.AgenteSyncID))" />
                                     <MudIconButton Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small"
                                                    Color="Color.Error" Title="Eliminar agente"
                                                    OnClick="@(() => EliminarAgenteAsync(ag.AgenteSyncID))" />
@@ -648,13 +631,9 @@
             {
                 <MudGrid>
                     <MudItem xs="12" md="5">
-                        <MudSelect T="int?" @bind-Value="_nuevoCcId" Label="Centro de Costo"
-                                   Variant="Variant.Outlined" FullWidth="true" Placeholder="Selecciona...">
-                            @foreach (var cc in CentrosCostoDisponibles)
-                            {
-                                <MudSelectItem T="int?" Value="@((int?)cc.CentroCostoID)">@cc.Nombre</MudSelectItem>
-                            }
-                        </MudSelect>
+                        <AppSelect TValue="int?" @bind-Value="_nuevoCcId" Label="Centro de Costo"
+                                   Placeholder="Selecciona..."
+                                   Items="@(CentrosCostoDisponibles.Select(cc => new AppSelectItem<int?>(cc.Nombre, (int?)cc.CentroCostoID)))" />
                     </MudItem>
                     <MudItem xs="12" md="5">
                         <MudTextField @bind-Value="_nuevaDescripcion" Label="Descripcion (opcional)"
@@ -673,7 +652,7 @@
         }
     </MudTabPanel>
 
-    <!-- ══════════════════════════════════════ TAB 4: ARTÍCULOS PENDIENTES -->
+    <!-- ══════════════════════════════════════ TAB 3 (índice 2): ARTÍCULOS PENDIENTES -->
     <MudTabPanel Text="Artículos pendientes" Icon="@Icons.Material.Outlined.LinkOff"
                  BadgeData="@(_totalPendientes > 0 ? _totalPendientes.ToString() : null)"
                  BadgeColor="Color.Warning">
@@ -695,10 +674,26 @@
                 var pendientes = _pendientesPorAgente.GetValueOrDefault(ag.AgenteSyncID);
                 if (pendientes is null || !pendientes.Any()) continue;
 
-                <MudText Typo="Typo.subtitle1" Class="mb-2 mt-4">
-                    <MudIcon Icon="@Icons.Material.Outlined.Store" Size="Size.Small" Class="mr-1" />
-                    @ag.NombreCentroCosto — @pendientes.Count artículo(s) sin mapear
-                </MudText>
+                <div class="d-flex align-center justify-space-between mb-2 mt-4">
+                    <MudText Typo="Typo.subtitle1">
+                        <MudIcon Icon="@Icons.Material.Outlined.Store" Size="Size.Small" Class="mr-1" />
+                        @ag.NombreCentroCosto — @pendientes.Count artículo(s) sin mapear
+                    </MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small"
+                               StartIcon="@Icons.Material.Outlined.AutoFixHigh"
+                               OnClick="@(() => ResolverTodosAsync(ag.AgenteSyncID, ag.CentroCostoID, pendientes.Count))"
+                               Disabled="@_resolviendoTodos">
+                        @if (_resolviendoTodos)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" />
+                            <span>Resolviendo...</span>
+                        }
+                        else
+                        {
+                            <span>Resolver todos (@pendientes.Count)</span>
+                        }
+                    </MudButton>
+                </div>
 
                 <MudTable Items="@pendientes" Dense="true" Hover="true" Class="mb-6"
                           Style="border:1px solid var(--mud-palette-divider); border-radius:12px;">
@@ -730,7 +725,7 @@
         }
     </MudTabPanel>
 
-    <!-- ══════════════════════════════════════ TAB 5: PROGRESO DE SYNC -->
+    <!-- ══════════════════════════════════════ TAB 4 (índice 3): PROGRESO DE SYNC -->
     <MudTabPanel Text="Progreso de sync" Icon="@Icons.Material.Outlined.Sync">
 
         @if (_cargandoProgreso)
@@ -951,6 +946,10 @@
     // ── SINCANTSA ────────────────────────────────────────────────────────────
     private bool _editSincAntsa;
 
+    // ── Bodega para ventas Visions ───────────────────────────────────────────
+    private int? _editBodegaVentaID;
+    private List<BodegaItem> _bodegas = new();
+
     // ── Sync catálogo completo (faltantes entre puntos) ──────────────────────
     private HashSet<int> _sincronizandoCatalogo = new();
     private HashSet<int> _descartadosCatalogo   = new();
@@ -1031,6 +1030,45 @@
         finally { _cargandoPendientes = false; }
     }
 
+    private bool _resolviendoTodos = false;
+
+    private async Task ResolverTodosAsync(int agenteSyncId, int centroCostoId, int cantidad)
+    {
+        var confirmado = await DialogService.ShowMessageBox(
+            "¿Resolver todos los artículos pendientes?",
+            $"Se crearán {cantidad} artículo(s) nuevos en NEXO usando el código y nombre de Visions como referencia. " +
+            "Podrás editar los detalles después desde el catálogo.",
+            yesText: $"Sí, crear {cantidad} artículo(s)",
+            cancelText: "Cancelar");
+
+        if (confirmado != true) return;
+
+        _resolviendoTodos = true;
+        try
+        {
+            var resultado = await ApiClient.PostAsync<object?, ResolverTodosResponse>(
+                $"api/integracion/articulos-pendientes/resolver-todos?centroCostoId={centroCostoId}", null);
+
+            if (resultado is not null)
+            {
+                if (resultado.Errores == 0)
+                    Snackbar.Add($"{resultado.Resueltos} artículo(s) creados y vinculados correctamente.", Severity.Success);
+                else
+                    Snackbar.Add($"{resultado.Resueltos} resueltos, {resultado.Errores} con error (puede haber SKUs duplicados). Revisa el log del servidor.", Severity.Warning);
+
+                await CargarPendientesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al resolver todos: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _resolviendoTodos = false;
+        }
+    }
+
     private async Task AbrirResolverAsync(int agenteSyncId, int centroCostoId, ArticuloPendienteMapeoItem pendiente)
     {
         var parameters = new DialogParameters<ResolverPendienteDialog>
@@ -1061,7 +1099,7 @@
     {
         _cargandoConfig = true;
         _configAgente = null;
-        _tabs?.ActivatePanel(2);
+        _tabs?.ActivatePanel(1); // índice real: 0=Estado, 1=Configurar, 2=Artículos, 3=Progreso
         try
         {
             _configAgente = await ApiClient.GetAsync<ConfiguracionAgenteCompletaResponse>(
@@ -1076,6 +1114,17 @@
                 _editFechaInicioVentas = _configAgente.FechaInicioSyncVentas;
                 _modoFechaVentas = _configAgente.FechaInicioSyncVentas is null ? 0
                     : _configAgente.FechaInicioSyncVentas.Value.Date == DateTime.Today ? 1 : 2;
+
+                // Cargar bodegas y bodega actual del CC
+                try
+                {
+                    _bodegas = await ApiClient.GetAsync<List<BodegaItem>>(
+                        $"api/catalogo/bodegas?centroCostoId={_configAgente.CentroCostoID}") ?? new();
+                    _editBodegaVentaID = _centrosCosto
+                        .FirstOrDefault(c => c.CentroCostoID == _configAgente.CentroCostoID)
+                        ?.BodegaVentaVisionsID;
+                }
+                catch { _bodegas = new(); _editBodegaVentaID = null; }
 
                 try
                 {
@@ -1128,6 +1177,23 @@
             await ApiClient.PutAsync<SincAntsaRequest, object>(
                 $"api/integracion/agentes/{_configAgente.AgenteSyncID}/sincantsa",
                 new SincAntsaRequest(_editSincAntsa));
+
+            // Guardar bodega de ventas en el Centro de Costo
+            var ccActual = _centrosCosto.FirstOrDefault(c => c.CentroCostoID == _configAgente.CentroCostoID);
+            if (ccActual is not null)
+            {
+                await ApiClient.PutAsync<ActualizarCentroCostoRequest, object>(
+                    $"api/catalogo/centros-costo/{_configAgente.CentroCostoID}",
+                    new ActualizarCentroCostoRequest(
+                        ccActual.Nombre, ccActual.Direccion, null, ccActual.Estado,
+                        ccActual.TieneVisions, ccActual.IdentificadorClienteVisions,
+                        _editBodegaVentaID,
+                        ccActual.PrefijosDocumentoVentaVisions));
+                // Actualizar cache local
+                var idx = _centrosCosto.IndexOf(ccActual);
+                _centrosCosto[idx] = ccActual with { BodegaVentaVisionsID = _editBodegaVentaID };
+            }
+
             Snackbar.Add("Configuración guardada.", Severity.Success);
             _configAgente = _configAgente with
             {
@@ -1224,6 +1290,33 @@
         finally { _cargandoConfig = false; _configAgente = null; }
     }
 
+    private async Task ReintentarPendientesAsync(int agenteSyncId)
+    {
+        try
+        {
+            var data = await ApiClient.PostAsync<object, ReintentarPendientesResponse>(
+                $"api/integracion/agentes/{agenteSyncId}/reintentar", new object());
+            Snackbar.Add(data?.Mensaje ?? "Reintento iniciado.", data?.Count > 0 ? Severity.Success : Severity.Info);
+            _agentes = await ApiClient.GetAsync<List<EstadoIntegracionResponse>>("api/integracion/estado") ?? new();
+            StateHasChanged();
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+    }
+
+    private async Task ReprocesarEntrantesAsync(int agenteSyncId)
+    {
+        try
+        {
+            Snackbar.Add("Reprocesando entradas Visions→NEXO...", Severity.Info);
+            var data = await ApiClient.PostAsync<object, ReintentarPendientesResponse>(
+                $"api/integracion/agentes/{agenteSyncId}/reprocesar-entrantes", new object());
+            Snackbar.Add(data?.Mensaje ?? "Reproceso completado.", data?.Count > 0 ? Severity.Success : Severity.Info);
+            _agentes = await ApiClient.GetAsync<List<EstadoIntegracionResponse>>("api/integracion/estado") ?? new();
+            StateHasChanged();
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+    }
+
     private async Task EliminarAgenteAsync(int agenteSyncId)
     {
         var confirmado = await DialogService.ShowMessageBox(
@@ -1314,6 +1407,7 @@
 
     private record SincAntsaResponse(bool Activo);
     private record SincAntsaRequest(bool Activo);
+    private record ReintentarPendientesResponse(string Mensaje, int Count);
 
     public void Dispose()
     {

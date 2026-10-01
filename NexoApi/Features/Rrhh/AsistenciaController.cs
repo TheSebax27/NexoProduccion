@@ -65,7 +65,7 @@ public class AsistenciaController(IAsistenciaService service) : ControllerBase
     // ---- Admin: marcado manual con advertencia ----
 
     [HttpPost("marcar/manual")]
-    [Authorize]
+    [Authorize(Roles = "Administracion")]
     public async Task<ActionResult> MarcarManual(MarcarManualRequest request)
     {
         try { await service.MarcarManualAsync(UsuarioActualId, request); return Ok(); }
@@ -73,6 +73,7 @@ public class AsistenciaController(IAsistenciaService service) : ControllerBase
     }
 
     [HttpGet("lista")]
+    [Authorize]
     public async Task<ActionResult<IEnumerable<RegistroAsistenciaItem>>> Lista(
         [FromQuery] int? empleadoId, [FromQuery] DateOnly? desde, [FromQuery] DateOnly? hasta)
         => Ok(await service.ListarAsync(empleadoId, desde, hasta));
@@ -111,6 +112,7 @@ public class AsistenciaController(IAsistenciaService service) : ControllerBase
         => Ok(await service.ObtenerEmpleadosAsignadosAsync(id));
 
     [HttpGet("empleados-sin-horario")]
+    [Authorize]
     public async Task<ActionResult> EmpleadosSinHorario()
         => Ok(await service.ListarEmpleadosSinHorarioAsync());
 

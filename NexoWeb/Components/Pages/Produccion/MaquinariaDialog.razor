@@ -23,30 +23,16 @@
                               Placeholder="Ej: Horno rotativo principal" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudSelect T="int?" @bind-Value="_tipoId" Label="Tipo *" Required
-                           Placeholder="Selecciona tipo">
-                    @foreach (var t in Tipos)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)t.TipoMaquinariaID)">@t.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" @bind-Value="_tipoId" Label="Tipo *" Placeholder="Selecciona tipo"
+                           Items="@(Tipos.Select(t => new AppSelectItem<int?>(t.Nombre, (int?)t.TipoMaquinariaID)))" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudSelect T="int?" @bind-Value="_centroTrabajoId" Label="Centro de trabajo"
-                           Placeholder="Ninguno" Clearable>
-                    @foreach (var c in CentrosTrabajo)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)c.CentroTrabajoID)">@c.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" @bind-Value="_centroTrabajoId" Label="Centro de trabajo" Placeholder="Ninguno"
+                           Items="@(CentrosTrabajo.Select(c => new AppSelectItem<int?>(c.Nombre, (int?)c.CentroTrabajoID)))" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudSelect T="string" @bind-Value="_estado" Label="Estado">
-                    <MudSelectItem Value="@("Activa")">Activa</MudSelectItem>
-                    <MudSelectItem Value="@("EnMantenimiento")">En Mantenimiento</MudSelectItem>
-                    <MudSelectItem Value="@("Inactiva")">Inactiva</MudSelectItem>
-                    <MudSelectItem Value="@("BajaDefinitiva")">Baja Definitiva</MudSelectItem>
-                </MudSelect>
+                <AppSelect TValue="string" @bind-Value="_estado" Label="Estado"
+                           Items="@(new AppSelectItem<string>[]{ new("Activa","Activa"), new("En Mantenimiento","EnMantenimiento"), new("Inactiva","Inactiva"), new("Baja Definitiva","BajaDefinitiva") })" />
             </MudItem>
         </MudGrid>
 

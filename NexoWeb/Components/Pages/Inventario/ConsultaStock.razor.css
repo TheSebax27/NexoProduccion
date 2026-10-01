@@ -169,8 +169,9 @@
 .inv-pres-sub { font-size: 0.75rem; color: var(--n-text-3); }
 .inv-muted    { color: var(--n-text-3); font-size: 0.8rem; }
 .inv-sub      { font-size: 0.72rem; color: var(--n-text-3); }
-.inv-valor--rojo  { color: rgb(244,67,54); }
-.inv-valor--verde { color: rgb(76,175,80); }
+.inv-valor--rojo    { color: rgb(244,67,54); }
+.inv-valor--naranja { color: rgb(255,152,0); font-weight: 600; }
+.inv-valor--verde   { color: rgb(76,175,80); }
 .inv-lote-tag     { font-size: 0.72rem; background: rgba(124,92,255,.1); color: var(--n-purple); padding: 1px 5px; border-radius: 3px; margin-right: 4px; }
 
 /* ── Lotes en tarjeta ────────────────────────────────────────────────── */

@@ -144,11 +144,18 @@
 
     private async Task NuevoFormulario()
     {
-        var req = new CrearFormularioRequest("Nuevo formulario", null, null);
-        var resp = await Api.PostAsync<CrearFormularioRequest, NuevoFormularioResp>(
-            "api/formularios", req);
-        if (resp is not null)
-            Nav.NavigateTo($"/formularios/{resp.FormularioID}/builder");
+        try
+        {
+            var req = new CrearFormularioRequest("Nuevo formulario", null, null);
+            var resp = await Api.PostAsync<CrearFormularioRequest, NuevoFormularioResp>(
+                "api/formularios", req);
+            if (resp is not null)
+                Nav.NavigateTo($"/formularios/{resp.FormularioID}/builder");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al crear formulario: {ex.Message}", Severity.Error);
+        }
     }
 
     private record NuevoFormularioResp(int FormularioID);
@@ -156,8 +163,15 @@
     private async Task CopiarEnlace(string token)
     {
         var url = $"{Nav.BaseUri}f/{token}";
-        await JS.InvokeVoidAsync("navigator.clipboard.writeText", url);
-        Snackbar.Add("Enlace copiado", Severity.Success);
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", url);
+            Snackbar.Add("Enlace copiado", Severity.Success);
+        }
+        catch
+        {
+            Snackbar.Add($"Copia el enlace manualmente: {url}", Severity.Info);
+        }
     }
 
     private async Task Eliminar(FormularioItem f)

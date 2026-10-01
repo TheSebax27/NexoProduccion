@@ -20,9 +20,10 @@ public class SoporteController : ControllerBase
         [FromQuery] string? estado,
         [FromQuery] string? prioridad,
         [FromQuery] int? asignadoA,
-        [FromQuery] int? reportadoPor)
+        [FromQuery] int? reportadoPor,
+        [FromQuery] int? clienteId)
     {
-        var lista = await _svc.ListarTicketsAsync(estado, prioridad, asignadoA, reportadoPor);
+        var lista = await _svc.ListarTicketsAsync(estado, prioridad, asignadoA, reportadoPor, clienteId);
         return Ok(lista);
     }
 

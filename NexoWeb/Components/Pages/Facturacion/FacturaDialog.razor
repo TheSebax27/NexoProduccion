@@ -22,15 +22,9 @@
             @* ── Centro de Costo de venta (va primero para determinar si Visions gestiona el número) ── *@
             @if (CentrosCosto.Count > 0)
             {
-                <MudSelect T="int?" Value="_centroCostoId" Label="Centro de Costo" Clearable="true"
-                           Class="mb-3" Variant="Variant.Outlined" Margin="Margin.Dense"
-                           Placeholder="Sin asignar"
-                           ValueChanged="OnCentroCostoCambiado">
-                    @foreach (var cc in CentrosCosto)
-                    {
-                        <MudSelectItem T="int?" Value="@cc.CentroCostoID">@cc.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
+                <AppSelect TValue="int?" Value="_centroCostoId" Label="Centro de Costo"
+                           Class="mb-3" Placeholder="Sin asignar" ValueChanged="OnCentroCostoCambiado"
+                           Items="@(CentrosCosto.Select(cc => new AppSelectItem<int?>(cc.Nombre, (int?)cc.CentroCostoID)))" />
             }
 
             @* ── Cabecera: Tipo de documento + Nro ── *@
@@ -43,13 +37,8 @@
             else
             {
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
-                    <MudSelect T="string" @bind-Value="_tipDoc" Label="Tipo de Documento" Required="true"
-                               RequiredError="Selecciona un tipo" Variant="Variant.Outlined" Margin="Margin.Dense">
-                        @foreach (var td in TiposDocumento.Todos)
-                        {
-                            <MudSelectItem Value="@td">@td</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="string" @bind-Value="_tipDoc" Label="Tipo de Documento"
+                               Items="@(TiposDocumento.Todos.Select(td => new AppSelectItem<string>(td, td)))" />
                     <MudTextField @bind-Value="_nroDoc" Label="Nro. Documento (opcional)"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </div>
@@ -232,6 +221,13 @@
                             {
                                 <MudText Typo="Typo.caption" Style="color:var(--mud-palette-warning); font-size:0.7rem">Precio especial</MudText>
                             }
+                            @if (context.UltimoPrecio is { } up)
+                            {
+                                <MudText Typo="Typo.caption" Style="color:var(--mud-palette-info); font-size:0.7rem"
+                                         title="@($"Factura {up.NroDoc ?? "s/n"} del {up.Fecha:dd/MM/yy}")">
+                                    Últ: @up.Precio.ToString("N0") (@up.Fecha.ToString("dd/MM/yy"))
+                                </MudText>
+                            }
                         </MudTd>
                         <MudTd Style="text-align:right; font-weight:600">
                             @((CantidadFinal(context) * context.PrecioUnitario).ToString("C0"))
@@ -316,6 +312,7 @@
         public decimal     CantidadSimple { get; set; } = 1;
         public decimal     PrecioUnitario { get; set; }
         public bool        UsarPrecioCatalogo { get; set; } = true;
+        public UltimoPrecioItem? UltimoPrecio { get; set; }
     }
 
     private const int ClienteConsumidorFinalId = 11;
@@ -464,7 +461,7 @@
         return Task.FromResult(resultado);
     }
 
-    private void OnArticuloAutocompletado(LineaEditable linea, ArticuloItem? art)
+    private async void OnArticuloAutocompletado(LineaEditable linea, ArticuloItem? art)
     {
         linea.ArticuloID = art?.ArticuloID;
         linea.Articulo = art;
@@ -473,6 +470,18 @@
         linea.CantidadSimple = 1;
         linea.PrecioUnitario = art?.PrecioVenta ?? 0;
         linea.UsarPrecioCatalogo = true;
+        linea.UltimoPrecio = null;
+
+        if (art is not null && _clienteId is > 0)
+        {
+            try
+            {
+                linea.UltimoPrecio = await ApiClient.GetAsync<UltimoPrecioItem>(
+                    $"api/facturacion/ultimo-precio?clienteId={_clienteId}&articuloId={art.ArticuloID}");
+            }
+            catch { /* no crítico */ }
+            StateHasChanged();
+        }
     }
 
     private void OnComboAutocompletado(LineaEditable linea, ComboItem? combo)

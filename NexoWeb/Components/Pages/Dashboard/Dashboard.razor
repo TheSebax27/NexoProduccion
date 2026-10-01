@@ -403,11 +403,17 @@ else
                         @foreach (var prod in topProds)
                         {
                             var pct = maxPrecio > 0 ? (double)prod.PrecioVenta / maxPrecio * 100 : 0;
-                            <div class="nexo-bi-hbar mb-3">
-                                <div class="d-flex justify-space-between mb-1">
-                                    <span class="nexo-bi-hbar__label">@(prod.SKU) — @(prod.Nombre.Length > 22 ? prod.Nombre[..22] + "…" : prod.Nombre)</span>
-                                    <span class="nexo-bi-hbar__val">@prod.PrecioVenta.ToString("C0")</span>
-                                </div>
+                            <div class="nexo-bi-hbar mb-3" style="cursor:pointer"
+                                 @onclick="@(() => Navigation.NavigateTo($"/catalogo/articulos/{prod.ArticuloID}/editar"))">
+                                <MudTooltip Text="@($"{prod.SKU} — {prod.Nombre}")" Placement="Placement.Top">
+                                    <div class="d-flex justify-space-between mb-1" style="width:100%;gap:8px">
+                                        <div style="flex:1;min-width:0">
+                                            <div style="font-size:0.68rem;opacity:.55;font-family:monospace;line-height:1.2">@prod.SKU</div>
+                                            <div class="nexo-bi-hbar__label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">@prod.Nombre</div>
+                                        </div>
+                                        <span class="nexo-bi-hbar__val" style="flex-shrink:0">@prod.PrecioVenta.ToString("C0")</span>
+                                    </div>
+                                </MudTooltip>
                                 <div class="nexo-bi-hbar__track">
                                     <div class="nexo-bi-hbar__fill" style="width:@pct.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%"></div>
                                 </div>
@@ -420,6 +426,159 @@ else
                     </MudPaper>
                 </MudItem>
             </MudGrid>
+
+            @* ── FILA 3b: Análisis de canales (solo Visions) ─────────────── *@
+            @if (ConfiguracionEmpresa.UsaVisions)
+            {
+                <div class="nexo-section mb-2">
+                    <div class="nexo-section__dot" style="background:#7C5CFF"></div>
+                    <span class="nexo-section__label">Análisis de canales · últimos 30 días</span>
+                    <div class="nexo-section__line"></div>
+                </div>
+                @if (_cargandoChartsVisions)
+                {
+                    <div class="d-flex justify-center py-6 mb-4"><MudProgressCircular Indeterminate="true" /></div>
+                }
+                else
+                {
+                    <MudGrid Class="mb-4" Spacing="3">
+
+                        @* Gráfica 1: Ventas por día — línea doble NEXO vs Visions *@
+                        <MudItem xs="12" md="8">
+                            <MudPaper Class="pa-5" Style="height:100%">
+                                <div class="nexo-chart-header mb-3">
+                                    <MudIcon Icon="@Icons.Material.Outlined.ShowChart" Size="Size.Small" Class="nexo-chart-header__icon" />
+                                    <div>
+                                        <div class="nexo-chart-header__title">Ventas por día</div>
+                                        <div class="nexo-chart-header__sub">NEXO vs Visions POS · últimos 30 días</div>
+                                    </div>
+                                </div>
+                                @if (_seriesVentasDia.Count == 0 || _seriesVentasDia.All(s => s.Data.Length == 0))
+                                {
+                                    <div class="nexo-empty-state">
+                                        <MudIcon Icon="@Icons.Material.Outlined.BarChart" Class="nexo-empty-state__icon" />
+                                        <p class="nexo-empty-state__text">Sin ventas registradas en los últimos 30 días.</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <MudChart ChartType="ChartType.Line"
+                                              ChartSeries="@_seriesVentasDia"
+                                              XAxisLabels="@_labelsVentasDia"
+                                              ChartOptions="@_opcionesGrafico"
+                                              Width="100%" Height="220px" />
+                                }
+                            </MudPaper>
+                        </MudItem>
+
+                        @* Gráfica 2: Stock por estado — dona *@
+                        <MudItem xs="12" md="4">
+                            <MudPaper Class="pa-5" Style="height:100%">
+                                <div class="nexo-chart-header mb-3">
+                                    <MudIcon Icon="@Icons.Material.Outlined.DonutSmall" Size="Size.Small" Class="nexo-chart-header__icon" />
+                                    <div>
+                                        <div class="nexo-chart-header__title">Estado de stock</div>
+                                        <div class="nexo-chart-header__sub">@_totalArticulosActivos artículos activos</div>
+                                    </div>
+                                </div>
+                                @if (_totalArticulosActivos == 0)
+                                {
+                                    <div class="nexo-empty-state">
+                                        <MudIcon Icon="@Icons.Material.Outlined.Inventory" Class="nexo-empty-state__icon" />
+                                        <p class="nexo-empty-state__text">Sin artículos en catálogo.</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <MudChart ChartType="ChartType.Donut"
+                                              InputData="@DataStockEstado"
+                                              InputLabels="@LabelsStockEstado"
+                                              ChartOptions="@_opcionesGrafico"
+                                              Width="100%" Height="180px" />
+                                    <div class="d-flex justify-space-around mt-2" style="font-size:0.8rem">
+                                        <span style="color:#7C5CFF;font-weight:600">@(Math.Max(_totalArticulosActivos - _resumenInventario.ArticulosConAlerta, 0)) sobre mínimo</span>
+                                        <span style="color:#EF4444;font-weight:600">@_resumenInventario.ArticulosConAlerta bajo mínimo</span>
+                                    </div>
+                                }
+                            </MudPaper>
+                        </MudItem>
+
+                        @* Gráfica 3: Top artículos vendidos — barras horizontales *@
+                        <MudItem xs="12" md="6">
+                            <MudPaper Class="pa-5" Style="height:100%">
+                                <div class="nexo-chart-header mb-3">
+                                    <MudIcon Icon="@Icons.Material.Outlined.BarChart" Size="Size.Small" Class="nexo-chart-header__icon" />
+                                    <div>
+                                        <div class="nexo-chart-header__title">Top artículos vendidos</div>
+                                        <div class="nexo-chart-header__sub">Por unidades · NEXO + Visions</div>
+                                    </div>
+                                </div>
+                                @if (_topArtVendidos.Count == 0)
+                                {
+                                    <div class="nexo-empty-state">
+                                        <MudIcon Icon="@Icons.Material.Outlined.Inventory" Class="nexo-empty-state__icon" />
+                                        <p class="nexo-empty-state__text">Sin artículos vendidos en el período.</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    var maxCant = _topArtVendidos.Count > 0 ? _topArtVendidos.Max(a => a.CantTotal) : 1d;
+                                    @foreach (var art in _topArtVendidos.Take(8))
+                                    {
+                                        var pctA = maxCant > 0 ? art.CantTotal / maxCant * 100 : 0;
+                                        var colorCanal = art.Canal == "POS Visions" ? "#14B8A6" : "#7C5CFF";
+                                        <div class="nexo-bi-hbar mb-2">
+                                            <div class="d-flex justify-space-between mb-1">
+                                                <MudTooltip Text="@art.Nombre" Placement="Placement.Top">
+                                                    <span class="nexo-bi-hbar__label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65%">
+                                                        @art.SKU — @art.Nombre
+                                                    </span>
+                                                </MudTooltip>
+                                                <span class="nexo-bi-hbar__val">
+                                                    @art.CantTotal.ToString("N0")
+                                                    <span style="font-size:0.7rem;margin-left:4px;color:@colorCanal">(@art.Canal)</span>
+                                                </span>
+                                            </div>
+                                            <div class="nexo-bi-hbar__track">
+                                                <div class="nexo-bi-hbar__fill" style="width:@pctA.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%; background:@colorCanal"></div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </MudPaper>
+                        </MudItem>
+
+                        @* Gráfica 4: Ventas NEXO vs Visions por semana — barras apiladas *@
+                        <MudItem xs="12" md="6">
+                            <MudPaper Class="pa-5" Style="height:100%">
+                                <div class="nexo-chart-header mb-3">
+                                    <MudIcon Icon="@Icons.Material.Outlined.BarChart" Size="Size.Small" Class="nexo-chart-header__icon" />
+                                    <div>
+                                        <div class="nexo-chart-header__title">NEXO vs Visions por semana</div>
+                                        <div class="nexo-chart-header__sub">Total facturado acumulado por canal</div>
+                                    </div>
+                                </div>
+                                @if (_seriesNexoVsVisions.Count == 0 || _seriesNexoVsVisions.All(s => s.Data.Length == 0))
+                                {
+                                    <div class="nexo-empty-state">
+                                        <MudIcon Icon="@Icons.Material.Outlined.BarChart" Class="nexo-empty-state__icon" />
+                                        <p class="nexo-empty-state__text">Sin datos de ventas por canal.</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <MudChart ChartType="ChartType.Bar"
+                                              ChartSeries="@_seriesNexoVsVisions"
+                                              XAxisLabels="@_labelsNexoVsVisions"
+                                              ChartOptions="@_opcionesGrafico"
+                                              Width="100%" Height="220px" />
+                                }
+                            </MudPaper>
+                        </MudItem>
+
+                    </MudGrid>
+                }
+            }
 
             @* ── FILA 4: Barra cartera por cobrar ─────────────────────────── *@
             @if (_cartera.Count > 0)
@@ -626,15 +785,11 @@ else
                                 <MudIcon Icon="@Icons.Material.Outlined.BarChart" Size="Size.Small" Class="nexo-chart-header__icon" />
                                 <div>
                                     <div class="nexo-chart-header__title">Ingresos por Mes</div>
-                                    <div class="nexo-chart-header__sub">Facturado vs Cobrado — últimos @_mesesFact meses</div>
+                                    <div class="nexo-chart-header__sub">Facturado vs Cobrado · millones COP · últimos @_mesesFact meses</div>
                                 </div>
-                                <MudSelect T="int" Value="_mesesFact" ValueChanged="OnMesesFactCambiadoAsync"
-                                           Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:140px">
-                                    <MudSelectItem T="int" Value="3">3 meses</MudSelectItem>
-                                    <MudSelectItem T="int" Value="6">6 meses</MudSelectItem>
-                                    <MudSelectItem T="int" Value="12">12 meses</MudSelectItem>
-                                    <MudSelectItem T="int" Value="24">24 meses</MudSelectItem>
-                                </MudSelect>
+                                <AppSelect TValue="int" Value="_mesesFact" ValueChanged="OnMesesFactCambiadoAsync"
+                                           Style="max-width:140px"
+                                           Items="@(new AppSelectItem<int>[]{ new("3 meses",3), new("6 meses",6), new("12 meses",12), new("24 meses",24) })" />
                             </div>
                             <div class="nexo-chart-card__body">
                                 @if (_ingresosMes.Count == 0)
@@ -1088,13 +1243,9 @@ else
                             <div><div class="nexo-chart-header__title">Tendencia de Costo Unitario</div><div class="nexo-chart-header__sub">Por producto terminado</div></div>
                         </div>
                         <div class="nexo-chart-card__body">
-                            <MudSelect T="int" Value="_articuloSeleccionadoId" ValueChanged="OnProductoCambiadoAsync"
-                                       Label="Seleccionar producto" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4">
-                                @foreach (var producto in _productosTerminados)
-                                {
-                                    <MudSelectItem T="int" Value="@producto.ArticuloID">@producto.SKU - @producto.Nombre (@producto.TipoArticulo)</MudSelectItem>
-                                }
-                            </MudSelect>
+                            <AppSelect TValue="int" Value="_articuloSeleccionadoId" ValueChanged="OnProductoCambiadoAsync"
+                                       Label="Seleccionar producto" Class="mb-4"
+                                       Items="@(_productosTerminados.Select(producto => new AppSelectItem<int>($"{producto.SKU} - {producto.Nombre} ({producto.TipoArticulo})", producto.ArticuloID)))" />
                             @if (_articuloSeleccionadoId == 0)
                             {
                                 <div class="nexo-empty-state"><MudIcon Icon="@Icons.Material.Outlined.TouchApp" Class="nexo-empty-state__icon" /><p class="nexo-empty-state__text">Elige un producto para ver su tendencia de costo.</p></div>
@@ -1591,12 +1742,8 @@ else
             @* Controles *@
             <MudGrid Class="mb-4" Spacing="2">
                 <MudItem xs="12" sm="4">
-                    <MudSelect T="string" @bind-Value="_rptTipo" Label="Reporte" Variant="Variant.Outlined">
-                        @foreach (var r in _rptLista)
-                        {
-                            <MudSelectItem Value="@r.Tipo">@r.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AppSelect TValue="string" @bind-Value="_rptTipo" Label="Reporte"
+                               Items="@(_rptLista.Select(r => new AppSelectItem<string>(r.Nombre, r.Tipo)))" />
                 </MudItem>
                 <MudItem xs="6" sm="2">
                     <MudDatePicker @bind-Date="_rptDesde" Label="Desde" Variant="Variant.Outlined" />
@@ -1757,6 +1904,17 @@ else
     private List<EmpleadosPorCentroCostoItem> _empleadosPorCentroCosto = new();
     private int _totalEmpleadosActivos;
     private ResumenPlanificacionItem _resumenPlanificacion = new(0, 0);
+
+    // ── Charts canales (Visions) ─────────────────────────────────────────
+    private bool _cargandoChartsVisions;
+    private List<ChartSeries> _seriesVentasDia     = new();
+    private string[]          _labelsVentasDia      = Array.Empty<string>();
+    private List<ChartSeries> _seriesNexoVsVisions  = new();
+    private string[]          _labelsNexoVsVisions  = Array.Empty<string>();
+    private record TopArtVendido(string Nombre, string SKU, double CantTotal, string Canal);
+    private List<TopArtVendido> _topArtVendidos = new();
+    private double[] DataStockEstado  => new double[] { Math.Max(_totalArticulosActivos - _resumenInventario.ArticulosConAlerta, 0), (double)_resumenInventario.ArticulosConAlerta };
+    private static readonly string[] LabelsStockEstado = { "Sobre mínimo", "Bajo mínimo" };
     private ResumenInventarioItem _resumenInventario = new(0, 0);
     private EventoCalendarioItem? _proximoEvento;
     private List<ComboItem> _combosActivos = new();
@@ -1906,40 +2064,57 @@ else
 
         try { _combosActivos = await ApiClient.GetAsync<List<ComboItem>>("api/marketing/combos/activos") ?? new(); }
         catch { }
+
+        if (ConfiguracionEmpresa.UsaVisions)
+        {
+            await CargarChartsVisionsAsync();
+            StateHasChanged();
+        }
     }
 
     private async Task CargarResumenGeneralAsync()
     {
+        // Todas las llamadas en paralelo — sin esperas secuenciales
+        var tCrm         = ApiClient.GetAsync<ResumenCrmItem>($"api/dashboard/resumen-crm?desde={DateTime.Today.AddDays(-30):yyyy-MM-dd}&hasta={DateTime.Today:yyyy-MM-dd}");
+        var tFrios        = ApiClient.GetAsync<List<ClienteFrioItem>>("api/crm/clientes-frios?diasSinContacto=30");
+        var tVentasDept   = ApiClient.GetAsync<List<VentasPorDepartamentoItem>>("api/dashboard/ventas-por-departamento");
+        var tEmpleados    = ApiClient.GetAsync<List<EmpleadosPorCentroCostoItem>>("api/dashboard/empleados-por-centro-costo");
+        var tCartera      = ApiClient.GetAsync<FacturasPaginadasResponse>("api/facturacion/facturas?soloNoPagadas=true&pagina=1&tamano=200");
+        var tPlanif       = ApiClient.GetAsync<ResumenPlanificacionItem>("api/dashboard/resumen-planificacion");
+        var tInventario   = ApiClient.GetAsync<ResumenInventarioItem>("api/dashboard/resumen-inventario");
+        var tDesviaciones = ApiClient.GetAsync<List<DesviacionItem>>("api/planificacion/desviaciones?umbral=70");
+        var tAlertas      = ApiClient.GetAsync<List<ProyectoAlertaItem>>("api/proyectos/alertas");
+        var tEvento       = ApiClient.GetAsync<EventoCalendarioItem>("api/calendario/eventos/proximo");
+        var tMaquinaria   = ApiClient.GetAsync<ResumenMaquinariaItem>("api/dashboard/resumen-maquinaria");
+
+        try { await Task.WhenAll(tCrm, tFrios, tVentasDept, tEmpleados, tCartera,
+                                 tPlanif, tInventario, tDesviaciones, tAlertas, tEvento, tMaquinaria); }
+        catch { /* individual awaits below manejan cada fallo */ }
+
         try
         {
-            _resumenCrm = await ApiClient.GetAsync<ResumenCrmItem>(
-                $"api/dashboard/resumen-crm?desde={DateTime.Today.AddDays(-30):yyyy-MM-dd}&hasta={DateTime.Today:yyyy-MM-dd}") ?? new(0, 0);
-            _clientesFrios = await ApiClient.GetAsync<List<ClienteFrioItem>>("api/crm/clientes-frios?diasSinContacto=30") ?? new();
-            _ventasDept = await ApiClient.GetAsync<List<VentasPorDepartamentoItem>>("api/dashboard/ventas-por-departamento") ?? new();
-            _empleadosPorCentroCosto = await ApiClient.GetAsync<List<EmpleadosPorCentroCostoItem>>("api/dashboard/empleados-por-centro-costo") ?? new();
-            _totalEmpleadosActivos = _empleadosPorCentroCosto.Sum(e => e.TotalEmpleados);
-
-            var cartResp = await ApiClient.GetAsync<FacturasPaginadasResponse>("api/facturacion/facturas?soloNoPagadas=true&pagina=1&tamano=5");
-            _cartera = cartResp?.Items ?? new();
-            var cartTotal = await ApiClient.GetAsync<FacturasPaginadasResponse>("api/facturacion/facturas?soloNoPagadas=true&pagina=1&tamano=200");
-            _totalSaldoCartera = cartTotal?.Items?.Sum(f => f.SaldoPendiente) ?? _cartera.Sum(f => f.SaldoPendiente);
+            _resumenCrm              = await tCrm        ?? new(0, 0);
+            _clientesFrios           = await tFrios       ?? new();
+            _ventasDept              = await tVentasDept  ?? new();
+            _empleadosPorCentroCosto = await tEmpleados   ?? new();
+            _totalEmpleadosActivos   = _empleadosPorCentroCosto.Sum(e => e.TotalEmpleados);
+            var carteraItems         = (await tCartera)?.Items ?? new();
+            _cartera                 = carteraItems.Take(5).ToList();
+            _totalSaldoCartera       = carteraItems.Sum(f => f.SaldoPendiente);
         }
         catch (HttpRequestException) { }
 
         try
         {
-            _resumenPlanificacion = await ApiClient.GetAsync<ResumenPlanificacionItem>("api/dashboard/resumen-planificacion") ?? new(0, 0);
-            _resumenInventario    = await ApiClient.GetAsync<ResumenInventarioItem>("api/dashboard/resumen-inventario") ?? new(0, 0);
-            _desviaciones         = await ApiClient.GetAsync<List<DesviacionItem>>("api/planificacion/desviaciones?umbral=70") ?? new();
-            _alertasProyectos     = await ApiClient.GetAsync<List<ProyectoAlertaItem>>("api/proyectos/alertas") ?? new();
+            _resumenPlanificacion = await tPlanif       ?? new(0, 0);
+            _resumenInventario    = await tInventario   ?? new(0, 0);
+            _desviaciones         = await tDesviaciones ?? new();
+            _alertasProyectos     = await tAlertas      ?? new();
         }
         catch { }
 
-        try { _proximoEvento = await ApiClient.GetAsync<EventoCalendarioItem>("api/calendario/eventos/proximo"); }
-        catch { }
-
-        try { _resumenMaquinaria = await ApiClient.GetAsync<ResumenMaquinariaItem>("api/dashboard/resumen-maquinaria"); }
-        catch { }
+        try { _proximoEvento   = await tEvento;    } catch { }
+        try { _resumenMaquinaria = await tMaquinaria; } catch { }
 
         // ── Actividad, sparklines y estado del agente ──────────────────────
         try
@@ -2047,10 +2222,12 @@ else
     private void ActualizarGraficoIngresos()
     {
         _labelsIngresosMes = _ingresosMes.Select(p => p.NombreMes.Length > 3 ? p.NombreMes[..3] : p.NombreMes).ToArray();
+        // Dividir por 1 000 000 para que el eje Y muestre "24.9" en vez de "24903680".
+        // El subtítulo aclara la unidad: "millones COP".
         _seriesIngresosMes = new List<ChartSeries>
         {
-            new() { Name = "Facturado", Data = _ingresosMes.Select(p => (double)p.TotalFacturado).ToArray() },
-            new() { Name = "Cobrado",   Data = _ingresosMes.Select(p => (double)p.TotalCobrado).ToArray() },
+            new() { Name = "Facturado", Data = _ingresosMes.Select(p => Math.Round((double)p.TotalFacturado / 1_000_000, 1)).ToArray() },
+            new() { Name = "Cobrado",   Data = _ingresosMes.Select(p => Math.Round((double)p.TotalCobrado   / 1_000_000, 1)).ToArray() },
         };
     }
 
@@ -2247,6 +2424,68 @@ else
         if (_finDesde is null || _finHasta is null) return;
         _tabFinCargado = false;
         await CargarTabFinancieroAsync();
+    }
+
+    private async Task CargarChartsVisionsAsync()
+    {
+        _cargandoChartsVisions = true;
+        StateHasChanged();
+        try
+        {
+            var desde = DateTime.Today.AddDays(-30);
+            var hasta = DateTime.Today;
+            var reqPeriodo = new { Tipo = "ventas_por_periodo", Desde = desde, Hasta = hasta, Limite = 100 };
+            var reqTop     = new { Tipo = "top_articulos",      Desde = desde, Hasta = hasta, Limite = 20 };
+            var t1 = ApiClient.PostAsync<object, List<Dictionary<string, object?>>>("api/reportes/ejecutar", reqPeriodo);
+            var t2 = ApiClient.PostAsync<object, List<Dictionary<string, object?>>>("api/reportes/ejecutar", reqTop);
+            await Task.WhenAll(t1, t2);
+
+            var rowsPeriodo = await t1 ?? new();
+            var rowsTop     = await t2 ?? new();
+
+            static double Num(Dictionary<string, object?> r, string k) =>
+                r.TryGetValue(k, out var v) && v is not null ? Convert.ToDouble(v) : 0d;
+            static string Str(Dictionary<string, object?> r, string k) =>
+                r.TryGetValue(k, out var v) ? v?.ToString() ?? "" : "";
+            static DateTime FechaD(Dictionary<string, object?> r)
+            {
+                if (r.TryGetValue("Fecha", out var v))
+                {
+                    if (v is DateTime dt) return dt;
+                    if (v is string s && DateTime.TryParse(s, out var d)) return d;
+                }
+                return DateTime.MinValue;
+            }
+
+            // Gráfica 1: ventas por día
+            _labelsVentasDia = rowsPeriodo.Select(r => FechaD(r).ToString("dd/MM")).ToArray();
+            _seriesVentasDia = new List<ChartSeries>
+            {
+                new() { Name = "NEXO",    Data = rowsPeriodo.Select(r => Num(r, "TotalNEXO")).ToArray() },
+                new() { Name = "Visions", Data = rowsPeriodo.Select(r => Num(r, "TotalVisions")).ToArray() },
+            };
+
+            // Gráfica 3: top artículos vendidos
+            _topArtVendidos = rowsTop.Select(r => new TopArtVendido(
+                Str(r, "NombreArticulo"), Str(r, "Referencia"),
+                Num(r, "CantidadTotal"),  Str(r, "CanalPrincipal")
+            )).ToList();
+
+            // Gráfica 4: ventas por semana apiladas
+            var semanas = rowsPeriodo
+                .GroupBy(r => { var d = FechaD(r); return d == DateTime.MinValue ? d : d.AddDays(-(int)d.DayOfWeek); })
+                .Where(g => g.Key != DateTime.MinValue)
+                .OrderBy(g => g.Key)
+                .ToList();
+            _labelsNexoVsVisions = semanas.Select(g => g.Key.ToString("dd/MM")).ToArray();
+            _seriesNexoVsVisions = new List<ChartSeries>
+            {
+                new() { Name = "NEXO",    Data = semanas.Select(g => g.Sum(r => Num(r, "TotalNEXO"))).ToArray() },
+                new() { Name = "Visions", Data = semanas.Select(g => g.Sum(r => Num(r, "TotalVisions"))).ToArray() },
+            };
+        }
+        catch { }
+        finally { _cargandoChartsVisions = false; }
     }
 
     private bool _exportando;

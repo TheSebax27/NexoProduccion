@@ -134,3 +134,5 @@ public record AutoProducirResultItem(
     int ArticuloID, string Nombre, bool Exitoso,
     int? OrdenProduccionID, string? Error
 );
+
+public record UltimoPrecioItem(decimal Precio, DateTime Fecha, string? NroDoc);

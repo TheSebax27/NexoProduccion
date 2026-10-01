@@ -80,7 +80,7 @@
                                 }
                                 else
                                 {
-                                    @context.Cantidad.ToString("0.##") <text> @(context.Unidad ?? "")</text>
+                                    @($"{context.Cantidad:0.##}{(string.IsNullOrWhiteSpace(context.Unidad) || context.Unidad.All(char.IsDigit) ? "" : " " + context.Unidad)}")
                                 }
                             </MudTd>
                             <MudTd DataLabel="Precio Unit." Style="text-align:right">@context.PrecioUnitario.ToString("C0")</MudTd>
@@ -201,10 +201,10 @@
                                                 </HeaderContent>
                                                 <RowTemplate>
                                                     <MudTd DataLabel="Insumo">@context.Nombre</MudTd>
-                                                    <MudTd DataLabel="Necesario" Style="text-align:right">@context.CantidadRequerida.ToString("0.##") @context.Unidad</MudTd>
+                                                    <MudTd DataLabel="Necesario" Style="text-align:right">@($"{context.CantidadRequerida:0.##}{(string.IsNullOrWhiteSpace(context.Unidad) || context.Unidad.All(char.IsDigit) ? "" : " " + context.Unidad)}")</MudTd>
                                                     <MudTd DataLabel="Disponible" Style="text-align:right">
                                                         <span style="color: @(context.EsInsuficiente ? "var(--mud-palette-error)" : "var(--mud-palette-success)");">
-                                                            @context.StockDisponible.ToString("0.##") @context.Unidad
+                                                            @($"{context.StockDisponible:0.##}{(string.IsNullOrWhiteSpace(context.Unidad) || context.Unidad.All(char.IsDigit) ? "" : " " + context.Unidad)}")
                                                         </span>
                                                     </MudTd>
                                                 </RowTemplate>
@@ -289,13 +289,8 @@
                     <MudForm @ref="_formPago" Class="mb-3">
                         <div class="d-flex align-center flex-wrap" style="gap: 0.5rem;">
                             <MudNumericField T="decimal" @bind-Value="_montoPago" Label="Monto" Style="flex: 1; min-width: 120px;" Min="0.01m" Format="N0" />
-                            <MudSelect T="string" @bind-Value="_metodoPago" Label="Método de Pago" Style="flex: 1; min-width: 150px;">
-                                <MudSelectItem Value="@("EFECTIVO")">Efectivo</MudSelectItem>
-                                <MudSelectItem Value="@("TRANSFERENCIA")">Transferencia</MudSelectItem>
-                                <MudSelectItem Value="@("TARJETA")">Tarjeta</MudSelectItem>
-                                <MudSelectItem Value="@("CHEQUE")">Cheque</MudSelectItem>
-                                <MudSelectItem Value="@("OTRO")">Otro</MudSelectItem>
-                            </MudSelect>
+                            <AppSelect TValue="string" @bind-Value="_metodoPago" Label="Método de Pago" Style="flex: 1; min-width: 150px;"
+                                       Items="@(new AppSelectItem<string>[]{ new("Efectivo","EFECTIVO"), new("Transferencia","TRANSFERENCIA"), new("Tarjeta","TARJETA"), new("Cheque","CHEQUE"), new("Otro","OTRO") })" />
                             <MudDatePicker @bind-Date="_fechaPago" Label="Fecha de pago" Style="flex: 1; min-width: 140px;" />
                             <MudTextField @bind-Value="_notasPago" Label="Notas (opcional)" Style="flex: 2; min-width: 160px;" />
                             <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" OnClick="RegistrarPagoAsync" Disabled="_guardandoPago" />
